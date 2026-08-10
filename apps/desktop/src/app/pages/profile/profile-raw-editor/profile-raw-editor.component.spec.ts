@@ -3,7 +3,7 @@ import { Settings } from '@applye/core';
 import { AiService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
-import { ParsedProfile } from '../profile-parse.util';
+import { ParsedProfile } from '@applye/application';
 import { ProfileRawEditorComponent } from './profile-raw-editor.component';
 
 const SETTINGS = {

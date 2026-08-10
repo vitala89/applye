@@ -4,6 +4,7 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
+import { ProfileArtifactStore, ProfileStore } from '@applye/application';
 import { ProfileComponent } from './profile.component';
 
 /**
@@ -15,6 +16,12 @@ import { ProfileComponent } from './profile.component';
 describe('ProfileComponent scoring freshness wiring', () => {
   let component: ProfileComponent;
   let fixture: ComponentFixture<ProfileComponent>;
+  /** The page's state moved into component-scoped stores (ADR-0005, amendment
+   * thirty-seven). The invariant under test did not move: `savedMdHash` still
+   * describes the saved row, and `ProfileStore.persist` is still its only
+   * writer - the artefact store writes through it. */
+  let store: ProfileStore;
+  let artifacts: ProfileArtifactStore;
   let getProfile: jest.Mock;
   let upsertProfile: jest.Mock;
   let hashText: jest.Mock;
@@ -81,33 +88,35 @@ describe('ProfileComponent scoring freshness wiring', () => {
 
     fixture = TestBed.createComponent(ProfileComponent);
     component = fixture.componentInstance;
+    store = fixture.debugElement.injector.get(ProfileStore);
+    artifacts = fixture.debugElement.injector.get(ProfileArtifactStore);
     await component.ngOnInit();
   });
 
   it('reports fresh on load, when the artefact matches the saved markdown', () => {
-    expect(component.scoringState()).toBe('fresh');
+    expect(store.scoringState()).toBe('fresh');
   });
 
   it('reports unsaved while the markdown is edited but not saved', () => {
-    component.fullMd.set(NEW_MD);
-    expect(component.scoringState()).toBe('unsaved');
+    store.editor.fullMd.set(NEW_MD);
+    expect(store.scoringState()).toBe('unsaved');
   });
 
   // The headline regression: saving clears mdDirty without regenerating anything, so a
   // hash-blind check calls the artefact cached at the exact moment it goes stale.
   it('reports stale after saving a change, not cached', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
 
-    expect(component.scoringState()).toBe('stale');
+    expect(store.scoringState()).toBe('stale');
   });
 
   it('returns to fresh once the scoring profile is regenerated', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
     await component.generateScoringProfile();
 
-    expect(component.scoringState()).toBe('fresh');
+    expect(store.scoringState()).toBe('fresh');
     expect(upsertProfile).toHaveBeenLastCalledWith(
       expect.objectContaining({ scoringHash: fakeHash(NEW_MD.trim()) }),
     );
@@ -116,19 +125,19 @@ describe('ProfileComponent scoring freshness wiring', () => {
   // generatePitch persists fullMd too. It carries scoringHash forward unchanged, so if it does
   // not refresh savedMdHash it silently makes an edited-but-unsaved profile look cached.
   it('does not report cached after generatePitch persisted an unsaved edit', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
 
     await component.generatePitch();
 
-    expect(component.scoringState()).toBe('stale');
+    expect(store.scoringState()).toBe('stale');
   });
 
   // The artefact must describe the text it was generated from, even if the user keeps typing
   // during the AI round trip.
   it('persists the markdown it analysed, not whatever the form holds when the call returns', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     run.mockImplementation(async () => {
-      component.fullMd.set('# Typed while the AI was running');
+      store.editor.fullMd.set('# Typed while the AI was running');
       return { text: 'generated', tokensInput: 1, tokensOutput: 1 };
     });
 
@@ -142,30 +151,30 @@ describe('ProfileComponent scoring freshness wiring', () => {
   it('leaves the scoring profile alone when only archetypes changed', async () => {
     // What the target-roles section emits back to the page; the page owns the
     // list, so this is the same state change adding a role produces.
-    component.archetypes.set([{ name: '', fit: 'primary', sellWhen: '' }]);
-    expect(component.scoringState()).toBe('fresh');
+    store.archetypes.set([{ name: '', fit: 'primary', sellWhen: '' }]);
+    expect(store.scoringState()).toBe('fresh');
 
     await component.save();
-    expect(component.scoringState()).toBe('fresh');
+    expect(store.scoringState()).toBe('fresh');
   });
 
   it('reports the pitch fresh on load, when it matches the saved markdown', () => {
-    expect(component.pitchState()).toBe('fresh');
+    expect(store.pitchState()).toBe('fresh');
   });
 
   it('reports the pitch stale after saving a change, not cached', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
 
-    expect(component.pitchState()).toBe('stale');
+    expect(store.pitchState()).toBe('stale');
   });
 
   it('returns the pitch to fresh once regenerated, persisting its own hash', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
     await component.generatePitch();
 
-    expect(component.pitchState()).toBe('fresh');
+    expect(store.pitchState()).toBe('fresh');
     expect(upsertProfile).toHaveBeenLastCalledWith(
       expect.objectContaining({ pitchHash: fakeHash(NEW_MD.trim()) }),
     );
@@ -175,7 +184,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
   // advanced that hash and made a pitch written from the OLD markdown short-circuit as cached, so
   // the user could never refresh it. Keyed on pitchHash, generatePitch runs the AI here.
   it('regenerates the pitch after a rescore, instead of reporting the old pitch cached', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
     await component.generateScoringProfile(); // advances scoringHash to hash(NEW)
     run.mockClear();
@@ -183,7 +192,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
     await component.generatePitch();
 
     expect(run).toHaveBeenCalled();
-    expect(component.pitchState()).toBe('fresh');
+    expect(store.pitchState()).toBe('fresh');
     expect(upsertProfile).toHaveBeenLastCalledWith(
       expect.objectContaining({ pitchMd: 'generated', pitchHash: fakeHash(NEW_MD.trim()) }),
     );
@@ -193,7 +202,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
   // not NULL it. The pitch here is genuinely stale (md changed since it was written) - the point
   // is that the rescore preserved the pitch's own hash rather than clobbering it.
   it('carries pitchHash forward untouched when only the scoring profile was regenerated', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
     await component.generateScoringProfile();
 
@@ -208,31 +217,31 @@ describe('ProfileComponent scoring freshness wiring', () => {
   // every freshness test above still passes. Each artefact must drive its own three signals and
   // leave the other's untouched.
   it('drives only the pitch signals during a pitch run', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
 
     await component.generatePitch();
 
     expect(component.pitchStatus()).not.toBe('');
-    expect(component.pitching()).toBe(false);
+    expect(artifacts.busy('pitch')).toBe(false);
     expect(component.scoreStatus()).toBe('');
     expect(component.scoreError()).toBe(false);
   });
 
   it('drives only the scoring signals during a scoring run', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
 
     await component.generateScoringProfile();
 
     expect(component.scoreStatus()).not.toBe('');
-    expect(component.scoring()).toBe(false);
+    expect(artifacts.busy('scoring')).toBe(false);
     expect(component.pitchStatus()).toBe('');
     expect(component.pitchError()).toBe(false);
   });
 
   it('reports a failed pitch on the pitch status line, not the scoring one', async () => {
-    component.fullMd.set(NEW_MD);
+    store.editor.fullMd.set(NEW_MD);
     await component.save();
     run.mockRejectedValueOnce(new Error('no key'));
 

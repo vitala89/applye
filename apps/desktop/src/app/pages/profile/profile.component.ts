@@ -2,40 +2,20 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
-  WritableSignal,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from '@applye/ui';
-import { AiService, DbService } from '@applye/data';
 import {
-  Profile,
-  Settings,
-  ProfileForm,
-  ProfileFieldKey,
-  EMPTY_FORM,
-  parseProfileMd,
-  serializeProfileForm,
-  EducationEntry,
-  parseEducationEntries,
-  serializeEducationEntries,
-  ExperienceEntry,
-  parseExperienceEntries,
-  serializeExperienceEntries,
-  LanguageEntry,
-  parseLanguageEntries,
-  serializeLanguageEntries,
-  Archetype,
-  parseArchetypes,
-  serializeArchetypes,
-  profileCompleteness,
-  missingFields,
-  parseScoringJson,
-  scoringState as computeScoringState,
-  pitchState as computePitchState,
-} from '@applye/core';
+  ARTIFACT_CACHED_KEY,
+  type ArtifactOutcome,
+  type ProfileArtifact,
+  ProfileArtifactStore,
+  ProfileFormStore,
+  ProfileStore,
+} from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { LucideAngularModule, Info, Save, Check, RotateCcw, CircleDot } from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
@@ -50,26 +30,10 @@ import { ProfileSkillsComponent } from './profile-skills/profile-skills.componen
 import { ProfileAiToolsComponent } from './profile-ai-tools/profile-ai-tools.component';
 import { ProfileTextFieldComponent } from './profile-text-field/profile-text-field.component';
 import { ProfileRawEditorComponent } from './profile-raw-editor/profile-raw-editor.component';
-import {
-  ParsedProfile,
-  parsedContactPatch,
-  parsedEducationEntries,
-  parsedExperienceEntries,
-  parsedLanguageEntries,
-  parsedSkills,
-} from './profile-parse.util';
-import {
-  ARTIFACT_CACHED_KEY,
-  ProfileArtifact,
-  artifactCached,
-  artifactPatch,
-  artifactPrompt,
-} from './profile-artifact.util';
-import { withBackfilledNameParts, withComposedName } from './profile-name.util';
 
-/** Every collapsible section on the profile page. */
-type ProfileSectionKey =
-  'archetypes' | 'photo' | 'experience' | 'skills' | 'languages' | 'education';
+/** Which sentence the save status line is currently showing. The stores record
+ * what happened; choosing the wording is the page's job. */
+type SaveMessage = 'none' | 'loadFailed' | 'saved' | 'saveFailed';
 
 @Component({
   selector: 'app-profile',
@@ -91,11 +55,12 @@ type ProfileSectionKey =
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
+  providers: [ProfileFormStore, ProfileStore, ProfileArtifactStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent implements OnInit {
-  private readonly db = inject(DbService);
-  private readonly ai = inject(AiService);
+  protected readonly store = inject(ProfileStore);
+  protected readonly artifacts = inject(ProfileArtifactStore);
   private readonly i18n = inject(TranslateService);
   protected readonly onboarding = inject(OnboardingService);
   private readonly toast = inject(ToastService);
@@ -106,378 +71,101 @@ export class ProfileComponent implements OnInit {
   protected readonly rerunIcon = RotateCcw;
   protected readonly unsavedIcon = CircleDot;
 
-  readonly fullMd = signal('');
-  readonly rawMode = signal(false);
-  readonly form = signal<ProfileForm>({ ...EMPTY_FORM });
-  /** Structured mirror of `form().education` for the multi-entry editor. Its
-   * own signal (not a computed) so a freshly-added blank row survives until the
-   * user fills it - `serializeEducationEntries` drops blank lines from the
-   * string, but the row must stay editable. Re-seeded whenever the form is
-   * reparsed (load, leaving raw mode). */
-  readonly educationEntries = signal<EducationEntry[]>([]);
-  /** Structured mirror of `form().experienceText`, same rationale as `educationEntries`. */
-  readonly experienceEntries = signal<ExperienceEntry[]>([]);
-  /** Structured mirror of `form().languages`, same rationale as `educationEntries`. */
-  readonly languageEntries = signal<LanguageEntry[]>([]);
-  readonly archetypes = signal<Archetype[]>([]);
-  readonly profile = signal<Profile | null>(null);
-  readonly settings = signal<Settings | null>(null);
+  private readonly saveMessage = signal<SaveMessage>('none');
+  private readonly outcome = signal<Record<ProfileArtifact, ArtifactOutcome | 'none'>>({
+    scoring: 'none',
+    pitch: 'none',
+  });
 
-  readonly loading = signal(true);
-  readonly saving = signal(false);
-  readonly scoring = signal(false);
-  readonly pitching = signal(false);
+  /** A separator is presentation, so the store hands over the facts and the
+   * page joins them. */
+  readonly heroSubtitle = computed(() => this.store.heroFacts().join(' · '));
 
-  readonly saveStatus = signal('');
-  readonly saveError = signal(false);
-  readonly scoreStatus = signal('');
-  readonly scoreError = signal(false);
-  readonly pitchStatus = signal('');
-  readonly pitchError = signal(false);
-
-  /** The three signals each artefact drives, so `generateArtifact` can address
-   * one set by kind instead of taking them apart as parameters. */
-  private readonly artifactUi: Record<
-    ProfileArtifact,
-    {
-      busy: WritableSignal<boolean>;
-      status: WritableSignal<string>;
-      error: WritableSignal<boolean>;
+  readonly saveStatus = computed(() => {
+    const at = this.store.lastSavedAt();
+    switch (this.saveMessage()) {
+      case 'loadFailed':
+        return this.t()('profile.load_failed').replace('{error}', this.store.error());
+      case 'saveFailed':
+        return this.t()('profile.save_failed').replace('{error}', this.store.error());
+      case 'saved':
+        return this.t()('profile.saved_at').replace('{date}', at ?? 'now');
+      default:
+        return at ? this.t()('profile.last_saved').replace('{date}', at) : '';
     }
-  > = {
-    scoring: { busy: this.scoring, status: this.scoreStatus, error: this.scoreError },
-    pitch: { busy: this.pitching, status: this.pitchStatus, error: this.pitchError },
-  };
-
-  readonly scoringOpen = signal(true);
-  readonly sectionOpen = signal<Record<ProfileSectionKey, boolean>>({
-    archetypes: true,
-    photo: true,
-    experience: true,
-    skills: true,
-    languages: true,
-    education: true,
   });
 
-  readonly archetypesDirty = computed(
-    () =>
-      serializeArchetypes(this.archetypes()) !==
-      serializeArchetypes(parseArchetypes(this.profile()?.targetArchetypes)),
-  );
-  readonly mdDirty = computed(() => this.fullMd() !== (this.profile()?.fullMd ?? ''));
-  readonly dirty = computed(() => this.mdDirty() || this.archetypesDirty());
-
-  /** Hash of the saved fullMd. hashText is an IPC call, so it cannot be derived inside a computed. */
-  readonly savedMdHash = signal<string | null>(null);
-
-  /** Archetype edits are excluded via mdDirty: they never enter fullMd, so they cannot stale it. */
-  readonly scoringState = computed(() =>
-    computeScoringState({
-      hasScoringJson: !!this.profile()?.scoringJson,
-      mdDirty: this.mdDirty(),
-      savedMdHash: this.savedMdHash(),
-      scoringHash: this.profile()?.scoringHash,
-    }),
+  readonly saveError = computed(
+    () => this.saveMessage() === 'loadFailed' || this.saveMessage() === 'saveFailed',
   );
 
-  /** Same freshness rule as scoring, keyed on the pitch's own hash (not scoringHash). */
-  readonly pitchState = computed(() =>
-    computePitchState({
-      hasPitch: !!this.profile()?.pitchMd,
-      mdDirty: this.mdDirty(),
-      savedMdHash: this.savedMdHash(),
-      pitchHash: this.profile()?.pitchHash,
-    }),
-  );
+  readonly scoreStatus = computed(() => this.artifactStatus('scoring'));
+  readonly pitchStatus = computed(() => this.artifactStatus('pitch'));
+  readonly scoreError = computed(() => this.outcome().scoring === 'failed');
+  readonly pitchError = computed(() => this.outcome().pitch === 'failed');
 
-  readonly completeness = computed(() => profileCompleteness(this.form()));
-  readonly gaps = computed(() => missingFields(this.form()));
-  readonly heroSubtitle = computed(() => {
-    const s = parseScoringJson(this.profile()?.scoringJson ?? null);
-    const f = this.form();
-    return [s?.seniority, f.location || s?.location, ...(s?.domains ?? [])]
-      .filter(Boolean)
-      .join(' · ');
-  });
+  /** Each of the store's four outcomes is a different sentence, and all four
+   * are the page's to write. */
+  private artifactStatus(kind: ProfileArtifact): string {
+    switch (this.outcome()[kind]) {
+      case 'empty':
+        return this.t()('profile.empty_hint');
+      case 'cached':
+        return this.t()(ARTIFACT_CACHED_KEY[kind]);
+      case 'generated': {
+        const tokens = this.artifacts.tokens(kind);
+        return this.t()('profile.generated_tokens')
+          .replace('{in}', String(tokens?.input ?? 0))
+          .replace('{out}', String(tokens?.output ?? 0));
+      }
+      case 'failed':
+        return this.t()('profile.generate_failed').replace('{error}', this.artifacts.error(kind));
+      default:
+        return '';
+    }
+  }
 
   async ngOnInit(): Promise<void> {
-    try {
-      const [p, s] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
-      this.profile.set(p);
-      this.settings.set(s);
-      this.fullMd.set(p?.fullMd ?? '');
-      this.applyLoadedMarkdown(p?.fullMd ?? '');
-      this.educationEntries.set(parseEducationEntries(this.form().education));
-      this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
-      this.languageEntries.set(parseLanguageEntries(this.form().languages));
-      this.archetypes.set(parseArchetypes(p?.targetArchetypes));
-      await this.refreshSavedMdHash(p?.fullMd ?? '');
-      if (p?.updatedAt) {
-        this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
-      }
-    } catch (e) {
-      this.saveStatus.set(this.t()('profile.load_failed').replace('{error}', String(e)));
-      this.saveError.set(true);
-      this.toast.error(this.t()('profile.load_failed').replace('{error}', String(e)));
-    } finally {
-      this.loading.set(false);
-      this.seedSectionOpen();
+    if (!(await this.store.load())) {
+      this.saveMessage.set('loadFailed');
+      this.toast.error(this.t()('profile.load_failed').replace('{error}', this.store.error()));
     }
   }
 
-  toggleScoring(): void {
-    this.scoringOpen.update((v) => !v);
-  }
-
-  toggleSection(key: ProfileSectionKey): void {
-    this.sectionOpen.update((s) => ({ ...s, [key]: !s[key] }));
-  }
-
-  /** Collapse a section on load/seed when it already has content; leave empty
-   * sections expanded so they invite filling. */
-  private seedSectionOpen(): void {
-    this.sectionOpen.set({
-      archetypes: this.archetypes().length === 0,
-      photo: false,
-      experience: this.experienceEntries().length === 0,
-      skills: this.form().skills.length === 0,
-      languages: this.languageEntries().length === 0,
-      education: this.educationEntries().length === 0,
-    });
-  }
-
-  /** Trims to match the input generateScoringProfile hashes, or the two hashes never compare equal. */
-  private async refreshSavedMdHash(md: string): Promise<void> {
-    const text = md.trim();
-    if (!text) {
-      this.savedMdHash.set(null);
-      return;
-    }
-    try {
-      this.savedMdHash.set(await this.db.hashText(text));
-    } catch {
-      this.savedMdHash.set(null);
-    }
-  }
-
-  /**
-   * The only writer of the profile row, so that persisting fullMd and refreshing savedMdHash
-   * cannot come apart. A hash that lags the row it describes is precisely what makes the scoring
-   * chip report a stale artefact as cached, and every writer that maintained the hash by hand
-   * eventually forgot to.
-   *
-   * Pass mdHash only when it is known to be the hash of input.fullMd trimmed; otherwise the hash
-   * is recomputed from what the row actually came back with.
-   */
-  private async persistProfile(
-    input: Partial<
-      Pick<
-        Profile,
-        'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'pitchHash' | 'targetArchetypes'
-      >
-    >,
-    mdHash?: string,
-  ): Promise<Profile> {
-    const saved = await this.db.upsertProfile(input);
-    this.profile.set(saved);
-    if (mdHash) {
-      this.savedMdHash.set(mdHash);
-    } else {
-      await this.refreshSavedMdHash(saved.fullMd);
-    }
-    return saved;
-  }
-
-  private syncMdFromForm(): void {
-    this.fullMd.set(serializeProfileForm(this.form()));
-  }
-
-  /** Reads markdown into the form, backfilling the name split for profiles that
-   * predate the first/last fields. The derive happens here rather than inside
-   * `parseProfileMd` so the parser stays a faithful reader and its round-trip
-   * identity test keeps its meaning. Nothing is written back on read alone: the
-   * backfilled values reach disk on the user's next save. */
-  applyLoadedMarkdown(md: string): void {
-    this.form.set(withBackfilledNameParts(parseProfileMd(md)));
-  }
-
-  updateField<K extends keyof ProfileForm>(key: K, value: ProfileForm[K]): void {
-    this.form.update((f) => {
-      const next = { ...f, [key]: value };
-      return key === 'firstName' || key === 'lastName' ? withComposedName(f, next) : next;
-    });
-    this.syncMdFromForm();
-  }
-
-  /** What the languages section emits after any edit. The section transforms
-   * the list; folding it back into `languages` stays here, with the form. */
-  onLanguagesChanged(entries: LanguageEntry[]): void {
-    this.languageEntries.set(entries);
-    this.syncLanguages();
-  }
-
-  private syncLanguages(): void {
-    this.updateField('languages', serializeLanguageEntries(this.languageEntries()));
-  }
-
-  toggleRawMode(): void {
-    if (this.rawMode()) {
-      // leaving raw → re-parse edited markdown back into fields
-      this.applyLoadedMarkdown(this.fullMd());
-      this.educationEntries.set(parseEducationEntries(this.form().education));
-      this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
-      this.languageEntries.set(parseLanguageEntries(this.form().languages));
-      this.seedSectionOpen();
-    } else {
-      this.syncMdFromForm();
-    }
-    this.rawMode.update((v) => !v);
-  }
-
-  focusField(key: ProfileFieldKey): void {
+  /** Scrolling an element into view is the page's, not the layer's. */
+  focusField(key: string): void {
     const el = document.getElementById('field-' + key);
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     (el as HTMLElement | null)?.focus?.();
   }
 
-  /** What the education section emits after any edit. The section transforms
-   * the list; folding it back into `education` stays here, with the form. */
-  onEducationChanged(entries: EducationEntry[]): void {
-    this.educationEntries.set(entries);
-    this.syncEducation();
-  }
-
-  /** Folds the structured entries back into the `education` string (and thus
-   * `fullMd`). Blank entries serialize to nothing, so the string stays clean. */
-  private syncEducation(): void {
-    this.updateField('education', serializeEducationEntries(this.educationEntries()));
-  }
-
-  /** What the experience section emits after any edit. The section transforms
-   * the list; folding it back into `experienceText` stays here, because that is
-   * where `updateField` and the rest of the form live. */
-  onExperienceChanged(entries: ExperienceEntry[]): void {
-    this.experienceEntries.set(entries);
-    this.syncExperience();
-  }
-
-  /** Folds the structured entries back into the `experienceText` string (and thus
-   * `fullMd`). Blank entries serialize to nothing, so the string stays clean. */
-  private syncExperience(): void {
-    this.updateField('experienceText', serializeExperienceEntries(this.experienceEntries()));
-  }
-
   async save(): Promise<void> {
-    this.saving.set(true);
-    this.saveStatus.set('');
-    this.saveError.set(false);
-    try {
-      const p = this.profile();
-      const saved = await this.persistProfile({
-        fullMd: this.fullMd(),
-        scoringJson: p?.scoringJson,
-        scoringHash: p?.scoringHash,
-        pitchMd: p?.pitchMd,
-        pitchHash: p?.pitchHash,
-        targetArchetypes: serializeArchetypes(this.archetypes()),
-      });
-      this.archetypes.set(parseArchetypes(saved.targetArchetypes));
-      this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
+    if (await this.store.save()) {
+      this.saveMessage.set('saved');
       this.toast.success(this.t()('profile.saved_ok'));
-    } catch (e) {
-      this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));
-      this.saveError.set(true);
-      this.toast.error(this.t()('profile.save_failed').replace('{error}', String(e)));
-    } finally {
-      this.saving.set(false);
+    } else {
+      this.saveMessage.set('saveFailed');
+      this.toast.error(this.t()('profile.save_failed').replace('{error}', this.store.error()));
     }
   }
 
   generateScoringProfile(): Promise<void> {
-    return this.generateArtifact('scoring');
+    return this.generate('scoring');
   }
 
   generatePitch(): Promise<void> {
-    return this.generateArtifact('pitch');
+    return this.generate('pitch');
   }
 
-  /**
-   * Generates one artefact from the saved markdown and writes it to the row.
-   *
-   * Scoring and the pitch ran as two copies of this until they started to
-   * drift. What differs between them - the skill and its language, how the
-   * cache is keyed, and which columns the write owns - is in
-   * `profile-artifact.util.ts` as pure functions; what is left here is the
-   * sequence, which is identical for both.
-   */
-  private async generateArtifact(kind: ProfileArtifact): Promise<void> {
-    const ui = this.artifactUi[kind];
-    // Captured before any await: this is the text the artefact is generated from, so it is also
-    // the text the row and the artefact's hash must describe. Reading fullMd() again after the AI
-    // call would persist markdown nothing analysed.
-    const mdAtStart = this.fullMd();
-    const md = mdAtStart.trim();
-    if (!md) {
-      ui.status.set(this.t()('profile.empty_hint'));
-      return;
-    }
-    const p = this.profile();
-    const s = this.settings();
-    if (!s) return;
-
-    const hash = await this.db.hashText(md);
-    if (artifactCached(kind, p, hash)) {
-      ui.status.set(this.t()(ARTIFACT_CACHED_KEY[kind]));
-      return;
-    }
-
-    ui.busy.set(true);
-    ui.status.set('');
-    ui.error.set(false);
-    try {
-      const prompt = artifactPrompt(kind, md, s);
-      const rendered = await this.ai.renderSkill(prompt.skill, prompt.vars);
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: prompt.language,
-      });
-      await this.persistProfile(artifactPatch(kind, p, mdAtStart, res.text, hash), hash);
-      ui.status.set(
-        this.t()('profile.generated_tokens')
-          .replace('{in}', String(res.tokensInput))
-          .replace('{out}', String(res.tokensOutput)),
+  /** Only a real failure toasts. `empty` and `cached` are refusals: they say
+   * their piece in the status line and nowhere else, exactly as before. */
+  private async generate(kind: ProfileArtifact): Promise<void> {
+    const result = await this.artifacts.generate(kind);
+    this.outcome.update((o) => ({ ...o, [kind]: result }));
+    if (result === 'failed') {
+      this.toast.error(
+        this.t()('profile.generate_failed').replace('{error}', this.artifacts.error(kind)),
       );
-    } catch (e) {
-      ui.status.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
-      ui.error.set(true);
-      this.toast.error(this.t()('profile.generate_failed').replace('{error}', String(e)));
-    } finally {
-      ui.busy.set(false);
     }
-  }
-
-  /** Folds the parse the raw editor emitted into `ProfileForm` + the section
-   * signals, then resyncs `fullMd` and switches to the Form tab. Nulls from the
-   * AI (e.g. `endDate: null` for an ongoing role) become '' via `str`, matching
-   * what every section entry type already expects. */
-  applyParsedProfile(p: ParsedProfile): void {
-    this.form.update((f) => ({ ...f, ...parsedContactPatch(p, f) }));
-    this.experienceEntries.set(parsedExperienceEntries(p));
-    this.languageEntries.set(parsedLanguageEntries(p));
-    this.educationEntries.set(parsedEducationEntries(p));
-
-    // Fold section signals + scalar fields back into fullMd via updateField.
-    this.updateField('skills', parsedSkills(p));
-    this.syncExperience();
-    this.syncLanguages();
-    this.syncEducation();
-    this.syncMdFromForm();
-
-    this.seedSectionOpen();
-    this.rawMode.set(false); // switch to Form tab
   }
 }

@@ -6,7 +6,7 @@ import { AiService } from '@applye/data';
 import { Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
-import { ParsedProfile } from '../profile-parse.util';
+import { ParsedProfile } from '@applye/application';
 
 /**
  * Profile's raw-markdown editor: the textarea, the scaffold hint, and the

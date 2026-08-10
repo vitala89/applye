@@ -4,6 +4,7 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
+import { ProfileStore } from '@applye/application';
 import { ProfileComponent } from './profile.component';
 
 function createFixture(): ComponentFixture<ProfileComponent> {
@@ -34,8 +35,29 @@ function createFixture(): ComponentFixture<ProfileComponent> {
   return TestBed.createComponent(ProfileComponent);
 }
 
-function createComponent(): ProfileComponent {
-  return createFixture().componentInstance;
+/**
+ * The page's state lives in a component-scoped `ProfileStore` (ADR-0005,
+ * amendment thirty-seven), so the form assertions below read it through the
+ * component's own injector. The assertions themselves are unchanged.
+ */
+function createStore(): ProfileStore {
+  return createFixture().debugElement.injector.get(ProfileStore);
+}
+
+function storeOf(fixture: ComponentFixture<ProfileComponent>): ProfileStore {
+  return fixture.debugElement.injector.get(ProfileStore);
+}
+
+/**
+ * A fixture whose initial load has finished. `ProfileStore.load` sets `loading`
+ * while it runs and reseeds the sections when it finishes, so arranging state
+ * before it settles is arranging against a store that is about to overwrite it.
+ */
+async function settledFixture(): Promise<ComponentFixture<ProfileComponent>> {
+  const fixture = createFixture();
+  fixture.detectChanges();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return fixture;
 }
 
 /**
@@ -102,18 +124,18 @@ describe('unmatchable target role warning', () => {
     ).map((el) => el.textContent?.trim() ?? '');
   }
 
-  it('warns about a role whose words are all generic', () => {
-    const fixture = createFixture();
-    const c = fixture.componentInstance;
+  it('warns about a role whose words are all generic', async () => {
+    const fixture = await settledFixture();
+    const c = storeOf(fixture);
     c.loading.set(false);
     c.sectionOpen.update((s) => ({ ...s, archetypes: true }));
     c.archetypes.set([{ name: 'Senior Engineer', fit: 'primary', sellWhen: '' }]);
     expect(warnings(fixture)).toHaveLength(1);
   });
 
-  it('stays silent for a role with a distinctive word, including a short one', () => {
-    const fixture = createFixture();
-    const c = fixture.componentInstance;
+  it('stays silent for a role with a distinctive word, including a short one', async () => {
+    const fixture = await settledFixture();
+    const c = storeOf(fixture);
     c.loading.set(false);
     c.sectionOpen.update((s) => ({ ...s, archetypes: true }));
     c.archetypes.set([
@@ -123,9 +145,9 @@ describe('unmatchable target role warning', () => {
     expect(warnings(fixture)).toHaveLength(0);
   });
 
-  it('says nothing about a name the user has not typed yet', () => {
-    const fixture = createFixture();
-    const c = fixture.componentInstance;
+  it('says nothing about a name the user has not typed yet', async () => {
+    const fixture = await settledFixture();
+    const c = storeOf(fixture);
     c.loading.set(false);
     c.sectionOpen.update((s) => ({ ...s, archetypes: true }));
     c.archetypes.set([{ name: '  ', fit: 'primary', sellWhen: '' }]);
@@ -135,60 +157,64 @@ describe('unmatchable target role warning', () => {
 
 describe('name backfill', () => {
   it('fills the two fields from the H1 when the markdown has no Contact name lines', () => {
-    const c = createComponent();
-    c.applyLoadedMarkdown('# Anna Kowalska\n\n## Contact\n- Email: anna@example.com');
-    expect(c.form().name).toBe('Anna Kowalska');
-    expect(c.form().firstName).toBe('Anna');
-    expect(c.form().lastName).toBe('Kowalska');
+    const c = createStore();
+    c.editor.applyLoadedMarkdown('# Anna Kowalska\n\n## Contact\n- Email: anna@example.com');
+    expect(c.editor.form().name).toBe('Anna Kowalska');
+    expect(c.editor.form().firstName).toBe('Anna');
+    expect(c.editor.form().lastName).toBe('Kowalska');
   });
 
   it('leaves the stored split alone when the markdown already carries it', () => {
-    const c = createComponent();
-    c.applyLoadedMarkdown(
+    const c = createStore();
+    c.editor.applyLoadedMarkdown(
       '# Anna Maria Kowalska\n\n## Contact\n- First name: Anna\n- Last name: Maria Kowalska',
     );
-    expect(c.form().firstName).toBe('Anna');
-    expect(c.form().lastName).toBe('Maria Kowalska');
+    expect(c.editor.form().firstName).toBe('Anna');
+    expect(c.editor.form().lastName).toBe('Maria Kowalska');
   });
 
   it('recomposes the display name when a part is edited', () => {
-    const c = createComponent();
-    c.applyLoadedMarkdown('# Anna Kowalska');
-    c.updateField('lastName', 'Nowak');
-    expect(c.form().name).toBe('Anna Nowak');
+    const c = createStore();
+    c.editor.applyLoadedMarkdown('# Anna Kowalska');
+    c.editor.updateField('lastName', 'Nowak');
+    expect(c.editor.form().name).toBe('Anna Nowak');
   });
 
   it('never blanks the display name when both parts are cleared', () => {
-    const c = createComponent();
-    c.applyLoadedMarkdown('# Anna Kowalska');
-    c.updateField('firstName', '');
-    c.updateField('lastName', '');
+    const c = createStore();
+    c.editor.applyLoadedMarkdown('# Anna Kowalska');
+    c.editor.updateField('firstName', '');
+    c.editor.updateField('lastName', '');
     // A composition that comes out empty never overwrites, so the last
     // non-empty one stands and the generated documents keep a name on them.
-    expect(c.form().name).toBe('Kowalska');
+    expect(c.editor.form().name).toBe('Kowalska');
   });
 
   it('re-adopts the composed name after the display name itself is cleared', () => {
-    const c = createComponent();
-    c.applyLoadedMarkdown('# Anna Kowalska');
-    c.updateField('name', '');
-    c.updateField('firstName', 'Ania');
-    expect(c.form().name).toBe('Ania Kowalska');
+    const c = createStore();
+    c.editor.applyLoadedMarkdown('# Anna Kowalska');
+    c.editor.updateField('name', '');
+    c.editor.updateField('firstName', 'Ania');
+    expect(c.editor.form().name).toBe('Ania Kowalska');
   });
 
   it('leaves a hand-set display name alone when a part is edited afterwards', () => {
-    const c = createComponent();
-    c.applyLoadedMarkdown('# Anna Nowak\n\n## Contact\n- First name: Anna\n- Last name: Kowalska');
-    c.updateField('firstName', 'Ania');
-    expect(c.form().name).toBe('Anna Nowak');
-    expect(c.form().firstName).toBe('Ania');
+    const c = createStore();
+    c.editor.applyLoadedMarkdown(
+      '# Anna Nowak\n\n## Contact\n- First name: Anna\n- Last name: Kowalska',
+    );
+    c.editor.updateField('firstName', 'Ania');
+    expect(c.editor.form().name).toBe('Anna Nowak');
+    expect(c.editor.form().firstName).toBe('Ania');
   });
 
   it('follows the parts again once the display name matches them', () => {
-    const c = createComponent();
-    c.applyLoadedMarkdown('# Anna Nowak\n\n## Contact\n- First name: Anna\n- Last name: Kowalska');
-    c.updateField('name', 'Anna Kowalska');
-    c.updateField('lastName', 'Nowak');
-    expect(c.form().name).toBe('Anna Nowak');
+    const c = createStore();
+    c.editor.applyLoadedMarkdown(
+      '# Anna Nowak\n\n## Contact\n- First name: Anna\n- Last name: Kowalska',
+    );
+    c.editor.updateField('name', 'Anna Kowalska');
+    c.editor.updateField('lastName', 'Nowak');
+    expect(c.editor.form().name).toBe('Anna Nowak');
   });
 });

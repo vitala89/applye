@@ -50,3 +50,14 @@
   user-select: all;
   word-break: break-all;
 }
+
+/* Moved from the wizard's own stylesheet, where these were left behind when
+   this panel was extracted (#327). Angular scopes a component's styles to its
+   own template, so the page's copies had reached nothing since - the ok/warn
+   tint on the status icon has been dead, not merely misplaced. */
+.ob__cli-icon--warn {
+  color: var(--warning);
+}
+.ob__cli-icon--ok {
+  color: var(--success);
+}

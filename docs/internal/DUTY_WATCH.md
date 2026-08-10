@@ -44,6 +44,68 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, Onboarding, part one: the extraction, and a regression only the screen showed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/onboarding-steps`
+- **Commits:** two - the extraction (`2a36278`), then docs
+- **Pull request:** opened after the docs commit
+- **Objective:** first of two for `onboarding`, the last entry before `jobs`. **No allowlist movement
+  here** - it exists so the migration can land.
+- **Triage:** 8/10 (radius 2 · ambiguity 2 · risk 2 · verify 2 · unknowns 1). Two grilling rounds,
+  four decisions. No subagents.
+- **What set the plan:** three files over budget - class 738/400, template 514/300, stylesheet
+  642/400 - and the size gate fails an over-budget file that grows at all. Same forced sequencing as
+  Settings.
+- **A correction I made to my own inventory:** the first `ls` missed subdirectories and I nearly
+  planned around a folder that was less extracted than it is. `onboarding-api-key-card/`,
+  `onboarding-cli-card/` and `onboarding-review-step/` already existed. Re-measured before grilling.
+- **Completed:**
+  - `onboarding-resume-step/` and `onboarding-targeting-step/`, plus `OnboardingResumeService` (135)
+    and `OnboardingTargetingService` (164) beside the three siblings that already exist.
+  - Template **514 -> 291**, stylesheet **642 -> 391**, both under budget.
+  - **14 new tests, and all 1210 lines of the screen's existing tests still pass** - 1462 -> 1476.
+    The harness gained `resume` and `targeting` through `fixture.debugElement.injector.get`, the
+    pattern it already used for `aiKey`.
+- **Not completed:** the migration itself. `onboarding.component.ts` is 573/400 until then.
+- **Validation:** all run and observed. `nx test desktop` 1476/1476, `nx lint desktop` 0 errors
+  (8 pre-existing warnings), `nx build desktop` succeeded, `quality:file-size` passed,
+  `quality:attribution` passed, `format:check` passed, `git diff --check` clean.
+  `check-style-move.mjs --base origin/main` over four stylesheets: **4 lost, 0 gained**, all four the
+  deliberately deleted `.ob__note*` rules.
+- **Three dead-CSS finds, all one shape - a rule outliving its markup:**
+  1. `.ob__cli-icon--ok` / `--warn` were in the wizard's scoped stylesheet with their markup in the
+     CLI card since **#327**, so that icon's tint has been **dead since that PR**. Moved and checked
+     on screen: `--success` green and `--warning` amber both resolve now.
+  2. Four `.ob__note*` rules used by no template in the folder. Deleted.
+  3. `.ob__resume-grid` and `.ob__label-row` were stranded by **this** extraction.
+- **The one that matters, and how it was caught.** `quality:style-move` read **0 lost, 0 gained** for
+  both stranded rules - correctly, because nothing was lost; the declarations were still there, in a
+  file that no longer renders that markup. The gate cannot see reach. A rendered screen could: the
+  three resume tiles measured `display: block` with tops 225/364/504 instead of a row, and the roles
+  label and its badge sat at different tops instead of sharing one. After the move: `display: grid`,
+  `192px 192px 192px`, one row; badge at 466 against a label ending at 458, vertically centred.
+  **This is the first time in this campaign that the style gate's known blind spot cost a live
+  regression rather than a hypothetical one.**
+- **Two things I got wrong on the way**, both caught before they shipped: a scripted CSS
+  block-splitter mis-attached any rule preceded by a comment, which is how rules ended up in the
+  wrong file - the recovery was to check every declared class against the markup by hand; and my
+  first same-row assertion compared `top` edges, which differ by design under `align-items: center`.
+- **Privacy/security impact:** none. No new storage, no new IPC, no new external call. The keyring
+  path was not touched - it stays in `OnboardingAiKeyService` until part two.
+- **Decisions and assumptions:** two PRs not three; all three existing services move down in part two
+  publishing keys rather than translated text; resume and targeting are the two steps extracted; and
+  the new children inject a service rather than taking inputs, following this folder rather than
+  Settings.
+- **Open issues or blockers:** none new.
+- **Next first action:** part two - move all five services (`ai-key`, `cli-bridge`, `review`,
+  `resume`, `targeting`) into `libs/application` as stores, stripping `TranslateService` so they
+  publish i18n keys and the page renders the sentence, and move the wizard's own remaining state
+  (the AI-setup cluster and the finish/persist path) with them. That is what drops
+  `onboarding.component.ts` under budget and takes the allowlist **2 -> 1**. Expect the largest test
+  churn of the campaign: `onboarding.keys.spec.ts` is 386 lines and drives the services directly.
+
 ### 2026-08-10, Settings, part two: five stores, and the screen leaves the allowlist
 
 - **Status:** complete

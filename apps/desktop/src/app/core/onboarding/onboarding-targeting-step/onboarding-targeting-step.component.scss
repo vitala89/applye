@@ -1,0 +1,121 @@
+/* Step 4 markup only. `ob__eyebrow`, `ob__h1`, `ob__subtitle`, `ob__section`,
+   `ob__field-label`, `ob__badge` and `ob__muted-note` are global, declared in
+   `_onboarding-shell.scss` and `@use`d once from `styles.scss`. */
+
+.ob__role-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.ob__role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  color: var(--text-secondary);
+}
+.ob__role-chip--on {
+  background: var(--accent-tint);
+  border-color: var(--border-accent);
+  color: var(--text-accent);
+}
+.ob__role-add {
+  height: 34px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-card);
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+.ob__comp-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  padding: var(--space-6);
+}
+.ob__comp-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.ob__comp-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  height: 40px;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  background: var(--surface-sunken);
+}
+.ob__comp-currency-select {
+  height: 40px;
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  outline: none;
+}
+.ob__comp-number {
+  width: 56px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  outline: none;
+}
+.ob__comp-suffix {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+.ob__comp-dash {
+  color: var(--text-tertiary);
+}
+.ob__comp-hint {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.ob__comp-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  position: relative;
+  overflow: hidden;
+}
+.ob__comp-track-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+}
+
+/* Moved from the wizard's own stylesheet with this markup. Left behind by the
+   extraction, it reached nothing: the label and its "AI suggested" badge
+   stacked instead of sharing a row, which is how this was caught. */
+.ob__label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}

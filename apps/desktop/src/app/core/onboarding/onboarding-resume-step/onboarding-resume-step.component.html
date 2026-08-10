@@ -1,0 +1,105 @@
+<div>
+  <span class="ob__eyebrow">{{ t()('onboarding.resume.eyebrow') }}</span>
+  <h1 class="ob__h1">{{ t()('onboarding.resume.title') }}</h1>
+  <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.resume.subtitle') }}</p>
+</div>
+<div class="ob__resume-grid">
+  <button
+    type="button"
+    class="ob__resume-tile"
+    [class.ob__resume-tile--selected]="resume.path() === 'upload'"
+    (click)="choose('upload')"
+  >
+    <span
+      class="ob__resume-tile-icon"
+      [class.ob__resume-tile-icon--selected]="resume.path() === 'upload'"
+    >
+      <lucide-icon [img]="icons.upload" [size]="20" aria-hidden="true" />
+    </span>
+    <span class="ob__resume-tile-title">{{ t()('onboarding.resume.tile_upload_title') }}</span>
+    <span class="ob__resume-tile-sub">{{ t()('onboarding.resume.tile_upload_sub') }}</span>
+  </button>
+  <button
+    type="button"
+    class="ob__resume-tile"
+    [class.ob__resume-tile--selected]="resume.path() === 'paste'"
+    (click)="choose('paste')"
+  >
+    <span
+      class="ob__resume-tile-icon"
+      [class.ob__resume-tile-icon--selected]="resume.path() === 'paste'"
+    >
+      <lucide-icon [img]="icons.clipboardType" [size]="20" aria-hidden="true" />
+    </span>
+    <span class="ob__resume-tile-title">{{ t()('onboarding.resume.tile_paste_title') }}</span>
+    <span class="ob__resume-tile-sub">{{ t()('onboarding.resume.tile_paste_sub') }}</span>
+  </button>
+  <button
+    type="button"
+    class="ob__resume-tile"
+    [class.ob__resume-tile--selected]="resume.path() === 'skip'"
+    (click)="choose('skip')"
+  >
+    <span
+      class="ob__resume-tile-icon"
+      [class.ob__resume-tile-icon--selected]="resume.path() === 'skip'"
+    >
+      <lucide-icon [img]="icons.clock" [size]="20" aria-hidden="true" />
+    </span>
+    <span class="ob__resume-tile-title">{{ t()('onboarding.resume.tile_skip_title') }}</span>
+    <span class="ob__resume-tile-sub">{{ t()('onboarding.resume.tile_skip_sub') }}</span>
+  </button>
+</div>
+
+@if (resume.path() === 'upload') {
+  @if (resume.fileName()) {
+    <div class="ob__attached-card">
+      <span class="ob__attached-icon">
+        <lucide-icon [img]="icons.fileText" [size]="18" aria-hidden="true" />
+      </span>
+      <div class="ob__attached-body">
+        <div class="ob__attached-name">{{ resume.fileName() }}</div>
+        <div class="ob__attached-meta">{{ t()('onboarding.resume.ready_to_parse') }}</div>
+      </div>
+      <span class="ob__attached-status">
+        <lucide-icon [img]="icons.check" [size]="14" aria-hidden="true" />
+        {{ t()('onboarding.resume.attached') }}
+      </span>
+    </div>
+  } @else {
+    <button appButton variant="secondary" size="md" type="button" (click)="fileRequested.emit()">
+      <lucide-icon [img]="icons.upload" [size]="15" aria-hidden="true" />
+      {{ t()('onboarding.resume.upload') }}
+    </button>
+  }
+}
+@if (resume.path() === 'paste') {
+  <div class="ob__field">
+    <label class="ob__field-label" for="ob-resume-paste">{{
+      t()('onboarding.resume.paste_label')
+    }}</label>
+    <textarea
+      id="ob-resume-paste"
+      class="ob__textarea"
+      [ngModel]="resume.text()"
+      (ngModelChange)="resume.setPasted($event)"
+      [placeholder]="t()('onboarding.resume.paste_placeholder')"
+    ></textarea>
+  </div>
+}
+@if (resume.path() === 'skip') {
+  <div class="ob__info-row">
+    <lucide-icon [img]="icons.info" [size]="15" aria-hidden="true" />
+    {{ t()('onboarding.resume.skip_note') }}
+  </div>
+}
+<p class="ob__muted-note">{{ t()('onboarding.resume.privacy_note') }}</p>
+@if (resume.failed()) {
+  <div class="ob__key-status ob__key-status--invalid">
+    <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+    {{ t()('onboarding.resume.error') }}
+  </div>
+  @if (resume.failureDetail(); as detail) {
+    <p class="ob__muted-note">{{ detail }}</p>
+  }
+}

@@ -1,0 +1,99 @@
+<div>
+  <span class="ob__eyebrow">{{ t()('onboarding.archetypes.eyebrow') }}</span>
+  <h1 class="ob__h1">{{ t()('onboarding.archetypes.title') }}</h1>
+  <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.archetypes.help') }}</p>
+</div>
+<div class="ob__section">
+  <div class="ob__label-row">
+    <span class="ob__field-label">{{ t()('onboarding.archetypes.roles_label') }}</span>
+    <span class="ob__badge ob__badge--accent">
+      <lucide-icon [img]="icons.sparkles" [size]="11" aria-hidden="true" />
+      {{ t()('onboarding.archetypes.ai_suggested') }}
+    </span>
+  </div>
+  <div class="ob__role-list">
+    @for (r of targeting.displayRoles(); track r) {
+      <button
+        type="button"
+        class="ob__role-chip"
+        [class.ob__role-chip--on]="targeting.isRoleOn(r)"
+        (click)="targeting.toggleRole(r)"
+      >
+        @if (targeting.isRoleOn(r)) {
+          <lucide-icon [img]="icons.check" [size]="14" aria-hidden="true" />
+        } @else {
+          <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
+        }
+        {{ r }}
+      </button>
+    }
+    <input
+      #roleInput
+      type="text"
+      class="ob__role-add"
+      [placeholder]="t()('onboarding.archetypes.add_placeholder')"
+      (keydown.enter)="targeting.addArchetype(roleInput.value); roleInput.value = ''"
+    />
+  </div>
+  <button
+    appButton
+    variant="secondary"
+    size="sm"
+    type="button"
+    [disabled]="targeting.suggesting()"
+    (click)="suggestRequested.emit()"
+  >
+    {{ t()('onboarding.archetypes.suggest') }}
+  </button>
+</div>
+<div class="ob__comp-card">
+  <div class="ob__label-row">
+    <span class="ob__field-label">{{ t()('onboarding.archetypes.comp_label') }}</span>
+    <span class="ob__badge ob__badge--accent">
+      <lucide-icon [img]="icons.sparkles" [size]="11" aria-hidden="true" />
+      {{ t()('onboarding.archetypes.ai_suggested') }}
+    </span>
+  </div>
+  <div class="ob__comp-row">
+    <select
+      class="ob__comp-currency-select"
+      [ngModel]="targeting.compCurrency()"
+      (ngModelChange)="targeting.setCompCurrency($event)"
+      [attr.aria-label]="t()('onboarding.archetypes.comp_currency_label')"
+    >
+      @for (c of targeting.currencyOptions; track c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    </select>
+    <div class="ob__comp-input-wrap">
+      <input
+        type="text"
+        inputmode="numeric"
+        class="ob__comp-number"
+        [ngModel]="targeting.compMin() + ''"
+        (ngModelChange)="targeting.setCompMin($event)"
+      />
+      <span class="ob__comp-suffix">K</span>
+    </div>
+    <span class="ob__comp-dash">-</span>
+    <div class="ob__comp-input-wrap">
+      <input
+        type="text"
+        inputmode="numeric"
+        class="ob__comp-number"
+        [ngModel]="targeting.compMax() + ''"
+        (ngModelChange)="targeting.setCompMax($event)"
+      />
+      <span class="ob__comp-suffix">K</span>
+    </div>
+    <span class="ob__comp-hint">{{ t()('onboarding.archetypes.comp_hint') }}</span>
+  </div>
+  <div class="ob__comp-track">
+    <div
+      class="ob__comp-track-fill"
+      [style.left]="targeting.compLeft()"
+      [style.right]="targeting.compRight()"
+    ></div>
+  </div>
+</div>
+<p class="ob__muted-note">{{ t()('onboarding.archetypes.no_fabrication') }}</p>

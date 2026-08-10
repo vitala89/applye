@@ -166,131 +166,7 @@
             }
             @case (2) {
               <!-- STEP 2 · RESUME -->
-              <div>
-                <span class="ob__eyebrow">{{ t()('onboarding.resume.eyebrow') }}</span>
-                <h1 class="ob__h1">{{ t()('onboarding.resume.title') }}</h1>
-                <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.resume.subtitle') }}</p>
-              </div>
-              <div class="ob__resume-grid">
-                <button
-                  type="button"
-                  class="ob__resume-tile"
-                  [class.ob__resume-tile--selected]="resumePath() === 'upload'"
-                  (click)="chooseResume('upload')"
-                >
-                  <span
-                    class="ob__resume-tile-icon"
-                    [class.ob__resume-tile-icon--selected]="resumePath() === 'upload'"
-                  >
-                    <lucide-icon [img]="icons.upload" [size]="20" aria-hidden="true" />
-                  </span>
-                  <span class="ob__resume-tile-title">{{
-                    t()('onboarding.resume.tile_upload_title')
-                  }}</span>
-                  <span class="ob__resume-tile-sub">{{
-                    t()('onboarding.resume.tile_upload_sub')
-                  }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="ob__resume-tile"
-                  [class.ob__resume-tile--selected]="resumePath() === 'paste'"
-                  (click)="chooseResume('paste')"
-                >
-                  <span
-                    class="ob__resume-tile-icon"
-                    [class.ob__resume-tile-icon--selected]="resumePath() === 'paste'"
-                  >
-                    <lucide-icon [img]="icons.clipboardType" [size]="20" aria-hidden="true" />
-                  </span>
-                  <span class="ob__resume-tile-title">{{
-                    t()('onboarding.resume.tile_paste_title')
-                  }}</span>
-                  <span class="ob__resume-tile-sub">{{
-                    t()('onboarding.resume.tile_paste_sub')
-                  }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="ob__resume-tile"
-                  [class.ob__resume-tile--selected]="resumePath() === 'skip'"
-                  (click)="chooseResume('skip')"
-                >
-                  <span
-                    class="ob__resume-tile-icon"
-                    [class.ob__resume-tile-icon--selected]="resumePath() === 'skip'"
-                  >
-                    <lucide-icon [img]="icons.clock" [size]="20" aria-hidden="true" />
-                  </span>
-                  <span class="ob__resume-tile-title">{{
-                    t()('onboarding.resume.tile_skip_title')
-                  }}</span>
-                  <span class="ob__resume-tile-sub">{{
-                    t()('onboarding.resume.tile_skip_sub')
-                  }}</span>
-                </button>
-              </div>
-
-              @if (resumePath() === 'upload') {
-                @if (resumeFileName()) {
-                  <div class="ob__attached-card">
-                    <span class="ob__attached-icon">
-                      <lucide-icon [img]="icons.fileText" [size]="18" aria-hidden="true" />
-                    </span>
-                    <div class="ob__attached-body">
-                      <div class="ob__attached-name">{{ resumeFileName() }}</div>
-                      <div class="ob__attached-meta">
-                        {{ t()('onboarding.resume.ready_to_parse') }}
-                      </div>
-                    </div>
-                    <span class="ob__attached-status">
-                      <lucide-icon [img]="icons.check" [size]="14" aria-hidden="true" />
-                      {{ t()('onboarding.resume.attached') }}
-                    </span>
-                  </div>
-                } @else {
-                  <button
-                    appButton
-                    variant="secondary"
-                    size="md"
-                    type="button"
-                    (click)="pickResumeFile()"
-                  >
-                    <lucide-icon [img]="icons.upload" [size]="15" aria-hidden="true" />
-                    {{ t()('onboarding.resume.upload') }}
-                  </button>
-                }
-              }
-              @if (resumePath() === 'paste') {
-                <div class="ob__field">
-                  <label class="ob__field-label" for="ob-resume-paste">{{
-                    t()('onboarding.resume.paste_label')
-                  }}</label>
-                  <textarea
-                    id="ob-resume-paste"
-                    class="ob__textarea"
-                    [ngModel]="resumeText()"
-                    (ngModelChange)="setPastedResume($event)"
-                    [placeholder]="t()('onboarding.resume.paste_placeholder')"
-                  ></textarea>
-                </div>
-              }
-              @if (resumePath() === 'skip') {
-                <div class="ob__info-row">
-                  <lucide-icon [img]="icons.info" [size]="15" aria-hidden="true" />
-                  {{ t()('onboarding.resume.skip_note') }}
-                </div>
-              }
-              <p class="ob__muted-note">{{ t()('onboarding.resume.privacy_note') }}</p>
-              @if (resumeError()) {
-                <div class="ob__key-status ob__key-status--invalid">
-                  <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
-                  {{ t()('onboarding.resume.error') }}
-                </div>
-                @if (resumeErrorDetail(); as detail) {
-                  <p class="ob__muted-note">{{ detail }}</p>
-                }
-              }
+              <app-onboarding-resume-step (fileRequested)="pickResumeFile()" />
             }
             @case (3) {
               <!-- STEP 3 · REVIEW -->
@@ -298,107 +174,7 @@
             }
             @case (4) {
               <!-- STEP 4 · TARGETING -->
-              <div>
-                <span class="ob__eyebrow">{{ t()('onboarding.archetypes.eyebrow') }}</span>
-                <h1 class="ob__h1">{{ t()('onboarding.archetypes.title') }}</h1>
-                <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.archetypes.help') }}</p>
-              </div>
-              <div class="ob__section">
-                <div class="ob__label-row">
-                  <span class="ob__field-label">{{
-                    t()('onboarding.archetypes.roles_label')
-                  }}</span>
-                  <span class="ob__badge ob__badge--accent">
-                    <lucide-icon [img]="icons.sparkles" [size]="11" aria-hidden="true" />
-                    {{ t()('onboarding.archetypes.ai_suggested') }}
-                  </span>
-                </div>
-                <div class="ob__role-list">
-                  @for (r of displayRoles(); track r) {
-                    <button
-                      type="button"
-                      class="ob__role-chip"
-                      [class.ob__role-chip--on]="isRoleOn(r)"
-                      (click)="toggleRole(r)"
-                    >
-                      @if (isRoleOn(r)) {
-                        <lucide-icon [img]="icons.check" [size]="14" aria-hidden="true" />
-                      } @else {
-                        <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
-                      }
-                      {{ r }}
-                    </button>
-                  }
-                  <input
-                    #roleInput
-                    type="text"
-                    class="ob__role-add"
-                    [placeholder]="t()('onboarding.archetypes.add_placeholder')"
-                    (keydown.enter)="addArchetype(roleInput.value); roleInput.value = ''"
-                  />
-                </div>
-                <button
-                  appButton
-                  variant="secondary"
-                  size="sm"
-                  type="button"
-                  [disabled]="suggesting()"
-                  (click)="suggestArchetypes()"
-                >
-                  {{ t()('onboarding.archetypes.suggest') }}
-                </button>
-              </div>
-              <div class="ob__comp-card">
-                <div class="ob__label-row">
-                  <span class="ob__field-label">{{ t()('onboarding.archetypes.comp_label') }}</span>
-                  <span class="ob__badge ob__badge--accent">
-                    <lucide-icon [img]="icons.sparkles" [size]="11" aria-hidden="true" />
-                    {{ t()('onboarding.archetypes.ai_suggested') }}
-                  </span>
-                </div>
-                <div class="ob__comp-row">
-                  <select
-                    class="ob__comp-currency-select"
-                    [ngModel]="compCurrency()"
-                    (ngModelChange)="setCompCurrency($event)"
-                    [attr.aria-label]="t()('onboarding.archetypes.comp_currency_label')"
-                  >
-                    @for (c of currencyOptions; track c) {
-                      <option [value]="c">{{ c }}</option>
-                    }
-                  </select>
-                  <div class="ob__comp-input-wrap">
-                    <input
-                      type="text"
-                      inputmode="numeric"
-                      class="ob__comp-number"
-                      [ngModel]="compMin() + ''"
-                      (ngModelChange)="setCompMin($event)"
-                    />
-                    <span class="ob__comp-suffix">K</span>
-                  </div>
-                  <span class="ob__comp-dash">-</span>
-                  <div class="ob__comp-input-wrap">
-                    <input
-                      type="text"
-                      inputmode="numeric"
-                      class="ob__comp-number"
-                      [ngModel]="compMax() + ''"
-                      (ngModelChange)="setCompMax($event)"
-                    />
-                    <span class="ob__comp-suffix">K</span>
-                  </div>
-                  <span class="ob__comp-hint">{{ t()('onboarding.archetypes.comp_hint') }}</span>
-                </div>
-                <div class="ob__comp-track">
-                  <div
-                    class="ob__comp-track-fill"
-                    [style.left]="compLeft()"
-                    [style.right]="compRight()"
-                  ></div>
-                </div>
-              </div>
-              <p class="ob__muted-note">{{ t()('onboarding.archetypes.no_fabrication') }}</p>
+              <app-onboarding-targeting-step (suggestRequested)="suggestArchetypes()" />
             }
             @case (5) {
               <!-- STEP 5 · READY -->
@@ -435,16 +211,16 @@
                 <div class="ob__summary-row">
                   <span
                     class="ob__summary-icon"
-                    [class.ob__summary-icon--ok]="resumePath() !== 'skip'"
-                    [class.ob__summary-icon--muted]="resumePath() === 'skip'"
+                    [class.ob__summary-icon--ok]="resume.path() !== 'skip'"
+                    [class.ob__summary-icon--muted]="resume.path() === 'skip'"
                   >
                     <lucide-icon [img]="icons.fileText" [size]="15" aria-hidden="true" />
                   </span>
                   <span class="ob__summary-label">{{ t()('onboarding.done.summary_resume') }}</span>
                   <span
                     class="ob__summary-value"
-                    [class.ob__summary-value--ok]="resumePath() !== 'skip'"
-                    [class.ob__summary-value--muted]="resumePath() === 'skip'"
+                    [class.ob__summary-value--ok]="resume.path() !== 'skip'"
+                    [class.ob__summary-value--muted]="resume.path() === 'skip'"
                     >{{ resumeSummary() }}</span
                   >
                 </div>

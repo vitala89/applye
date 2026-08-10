@@ -2238,6 +2238,60 @@ toasted.
 The `<ng-content>` projection and the `:host` gaps from amendment forty-one still measure right after
 the rewiring - order `label, label, app-settings-cli-status, div, p, div`, gaps 16px throughout.
 
+## Amendment forty-three: three dead rules, and the one a rendered screen caught
+
+Onboarding is the last entry before `jobs`, and **three** of its files were over budget: the class
+738/400, the template 514/300, the stylesheet 642/400. Same forced sequencing as Settings, for the
+same reason - the size gate fails an over-budget file that grows at all - so this pull request is the
+extraction and **the allowlist does not move in it**.
+
+**The local convention won over the campaign's.** Settings' children stayed pure view with inputs and
+outputs. Onboarding's existing children inject a shared app-local service instead, and
+`onboarding-cli-card.component.ts` says why: the wizard provides that service and reads the same
+signals back for its Continue gate. The two new step components follow the folder they are in rather
+than the screen migrated the day before, and the two new services sit beside the three that already
+exist so the next pull request moves all five down as one set. Convention is local until there is a
+reason to make it global.
+
+**Easier than Settings in one specific way.** `_onboarding-shell.scss` is `@use`d from `styles.scss`,
+so its rules are global and cross Angular's component scoping. `.ob__eyebrow`, `.ob__h1`,
+`.ob__field`, `.ob__badge` and the rest reach the new children with nothing done - measured, not
+assumed. No shared partial was needed, which is the whole of what amendment forty-one had to build.
+
+**Three dead-CSS finds, all one shape: a rule outliving the markup it was written for.**
+
+1. `.ob__cli-icon--ok` and `--warn` sat in the wizard's scoped stylesheet while their markup moved
+   into the CLI card in **#327**. There is not even a base `.ob__cli-icon` rule. The ok/warn tint on
+   that status icon has therefore been **dead since that pull request**, not misplaced. Moved, and
+   verified on screen: `rgb(78, 203, 140)` = `--success`, `rgb(240, 184, 92)` = `--warning`.
+2. `.ob__note`, `.ob__note lucide-icon`, `.ob__note-text` and `.ob__note-text b` appear in no
+   template in this folder. Deleted; they are the 4 selectors `quality:style-move` reports lost.
+3. **`.ob__resume-grid` and `.ob__label-row` were stranded by this very extraction.** They stayed in
+   the page's stylesheet while their markup left, so they reached nothing.
+
+**The third one is the entry.** `quality:style-move` read **0 lost, 0 gained** for both of them
+throughout - correctly, because nothing was lost: the declarations were still there, in a file that
+no longer renders that markup. The gate cannot see reach, which amendments twenty-one and
+twenty-two said in the abstract; this is the first time it has cost this campaign a live regression.
+What caught it was a rendered screen and two measurements: the three resume tiles reported
+`display: block` with tops 225/364/504 - stacked, not a row - and the roles label and its "AI
+suggested" badge sat at different tops instead of sharing one. After the move: `display: grid`,
+`192px 192px 192px`, one row; and the badge starting at 466 against a label ending at 458,
+vertically centred.
+
+**A measurement of mine was also wrong, and I checked before believing it.** The first same-row test
+compared `top` edges, which differ by design under `align-items: center`. Comparing the boxes
+directly is what actually answers the question.
+
+**A scripted CSS split is not safe.** The block-splitter used to bucket 642 lines mis-attached any
+rule preceded by a comment, which is how two rules ended up in neither file and one in the wrong one.
+The recovery was to check every declared class against the markup, by hand, and then to render it.
+
+Template **514 -> 291**, stylesheet **642 -> 391**, both under budget. The class is 573 and stays
+over until the migration. **The screen's 1210 lines of existing tests all still pass** - 1462 before,
+1476 after, the 14 new ones covering the two step components. That the old tests pass unchanged
+against the new structure is the strongest evidence here that behaviour was preserved.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

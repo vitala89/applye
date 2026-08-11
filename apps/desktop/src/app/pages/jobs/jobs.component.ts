@@ -19,13 +19,15 @@ import { WizardActivity, WizardActivityService } from '../../shared/wizard-activ
 import { DocumentGenService, ReviewDocumentKind } from '../../shared/document-gen.service';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { AiService, DbService, JobsStore } from '@applye/data';
+import { AiService } from '@applye/data';
+import {
+  JobDetailStore,
+  documentReviewLanguageFor,
+  inferDocumentRegion,
+} from '@applye/application';
 import {
   Application,
   Job,
-  Profile,
-  Settings,
-  DocumentLibraryItem,
   parseArchetypes,
   jobHeaderTitle,
   parseLegitimacyNotes,
@@ -43,11 +45,7 @@ import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-mo
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
-import {
-  FinalCheckInputs,
-  FinalChecksService,
-  inferDocumentRegion,
-} from '../../shared/final-checks.service';
+import { FinalCheckInputs, FinalChecksService } from '../../shared/final-checks.service';
 import { DocumentExportService } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
 import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
@@ -76,7 +74,6 @@ import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.compon
 import { JobDocumentsStepComponent } from './job-documents-step/job-documents-step.component';
 import { JobUpdateScoreStepComponent } from './job-update-score-step/job-update-score-step.component';
 import { JOB_DETAIL_ICONS } from './job-detail-icons';
-import { baseCvChoices, documentReviewLanguageFor } from './job-document-defaults';
 
 @Component({
   selector: 'app-jobs',
@@ -104,6 +101,7 @@ import { baseCvChoices, documentReviewLanguageFor } from './job-document-default
   // Component-scoped: portal-answer drafts belong to the job open on this page
   // and must not outlive it, which is the lifetime they had as component fields.
   providers: [
+    JobDetailStore,
     PortalAnswersService,
     FinalChecksService,
     DocumentExportService,
@@ -125,8 +123,9 @@ import { baseCvChoices, documentReviewLanguageFor } from './job-document-default
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
-  private readonly db = inject(DbService);
-  private readonly jobsStore = inject(JobsStore);
+  /** Everything this screen loads. The page renders and orchestrates; the
+   * reads and the one write live in `libs/application` (ADR-0005). */
+  private readonly store = inject(JobDetailStore);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
@@ -199,10 +198,14 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   protected readonly icons = JOB_DETAIL_ICONS;
 
-  readonly jdText = signal('');
-  readonly job = signal<Job | null>(null);
-  readonly profile = signal<Profile | null>(null);
-  readonly settings = signal<Settings | null>(null);
+  /** Aliases onto `JobDetailStore`. The template binds these names, several
+   * methods write through them, and `unsavedJobGuard` reads `job` and
+   * `application` off this instance - so they stay the store's own signals
+   * rather than views of them. */
+  readonly jdText = this.store.jdText;
+  readonly job = this.store.job;
+  readonly profile = this.store.profile;
+  readonly settings = this.store.settings;
   // Scoring. Aliases onto `JobScoringService`; the template binds these names
   // and several component methods reset them directly, so they stay the same
   // writable signals rather than views of them.
@@ -216,7 +219,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly archetypeMatch = this.intake.archetypeMatch;
 
   // Job Detail: the application row (if this job is on the board) + action state.
-  readonly application = signal<Application | null>(null);
+  readonly application = this.store.application;
   readonly actionBusy = this.jobActions.busy;
   readonly deleteConfirmOpen = this.jobActions.deleteConfirmOpen;
 
@@ -273,9 +276,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   // Cover Letter tailoring (Phase 1c). The library list stays here because the
   // choose-existing dropdown reads the same rows; the modal's own state lives
   // in `CoverLetterTailorService` and is aliased in below.
-  readonly coverLetters = signal<DocumentLibraryItem[]>([]);
-  readonly matchingCvs = signal<DocumentLibraryItem[]>([]);
-  readonly selectedBaseCvId = signal<number | null>(null);
+  readonly coverLetters = this.store.coverLetters;
+  readonly matchingCvs = this.store.matchingCvs;
+  readonly selectedBaseCvId = this.store.selectedBaseCvId;
 
   /** German-market photo prompt: its own decision, its own service. */
   protected readonly photoPrompt = inject(CvPhotoPromptService);
@@ -356,22 +359,12 @@ export class JobsComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** The store answers with null rather than a translated throw, because the
+   * message is presentation and the store has no `TranslateService`. */
   async ensureApplicationDraft(): Promise<Application> {
-    const existing = this.application();
-    if (existing) return existing;
-
-    const job = this.job();
-    if (!job?.id) throw new Error(this.t()('jobs.not_found_label'));
-
-    const created = await this.db.upsertApplication({
-      jobId: job.id,
-      status: 'saved',
-      docLanguage: this.targets.language(),
-      sourceUrl: job.source,
-    });
-    this.application.set(created);
-    this.jobsStore.patchOverviewRow(job.id, { status: 'saved' });
-    return created;
+    const app = await this.store.ensureApplication(this.targets.language());
+    if (!app) throw new Error(this.t()('jobs.not_found_label'));
+    return app;
   }
 
   private async loadLinkedDocuments(): Promise<void> {
@@ -435,12 +428,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   async prepareDocumentsStep(): Promise<void> {
     await this.reviewStatus.run(async () => {
-      const [cvs, letters] = await Promise.all([
-        this.db.documentLibraryList('cv'),
-        this.db.documentLibraryList('cover_letter'),
-      ]);
-      this.matchingCvs.set(cvs);
-      this.coverLetters.set(letters);
+      await this.store.refreshLibrary();
       await this.ensureApplicationDraft();
       await this.loadLinkedDocuments();
       // Do not auto-create the CV on entering this step. The document is
@@ -632,13 +620,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
-    try {
-      const [p, s] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
-      this.profile.set(p);
-      this.settings.set(s);
-    } catch {
-      // non-fatal - user can still paste
-    }
+    await this.store.loadContext();
 
     // React to /jobs/:id param changes. Angular reuses this component when only
     // the id changes (e.g. the floating resume button jumping between jobs), so
@@ -726,30 +708,26 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.scoreSvc.loadCached(id, this.profile()?.scoringHash);
   }
 
+  /**
+   * The store fetches the job, its application row and the document library;
+   * everything below sequences the page's own services around what it loaded.
+   * The cached score used to be restored between the job read and the
+   * application read - the two are independent, and doing it here keeps the
+   * store free of anything it cannot import.
+   */
   private async loadJob(id: number): Promise<void> {
+    if (!(await this.store.loadJob(id))) return;
+    const job = this.job();
+    if (!job) return;
     try {
-      const job = await this.db.getJob(id);
-      if (!job) return;
-      this.job.set(job);
-      this.jdText.set(job.jdText ?? '');
       await this.loadCachedScore(id);
-      const apps = await this.db.listApplications();
-      const app = apps.find((a) => a.jobId === id) ?? null;
-      this.application.set(app);
+      const app = this.application();
       this.targets.language.set(documentReviewLanguageFor(app, job, this.settings()));
       this.targets.region.set(inferDocumentRegion(job));
-
-      const coverLetters = await this.db.documentLibraryList('cover_letter');
-      this.coverLetters.set(coverLetters);
-
-      const cvs = await this.db.documentLibraryList('cv');
-      const choices = baseCvChoices(cvs, job, this.settings(), app?.cvDocumentId ?? null);
-      this.matchingCvs.set(choices.matches);
-      this.selectedBaseCvId.set(choices.selectedId);
       await this.loadLinkedDocuments();
 
       this.portal.reset(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
-      await this.portal.loadFromCache(this.job(), this.profile(), this.settings());
+      await this.portal.loadFromCache(job, this.profile(), this.settings());
       await this.restoreTailoringFromCache();
     } catch {
       // non-fatal - detail still renders, user can re-score

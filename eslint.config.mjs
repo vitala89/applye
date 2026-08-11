@@ -13,19 +13,29 @@ import tseslint from 'typescript-eslint';
  * services, which is a different and much larger change. The rule below is what
  * the ADR actually meant, and it can be an error today.
  *
- * **This list only ever shrinks.** A component that is not on it fails the build
- * for injecting `DbService`, so the 27th cannot be added; each migrated page
- * deletes its own line. When the list is empty, the rule and the list go with it.
+ * **The list only ever shrank, and it is now empty.** It started at 26; every
+ * migrated page deleted its own line, and `jobs` deleted the last one. The rule
+ * itself stays, and now applies to every component without exception: a new
+ * `inject(DbService)` in a `*.component.ts` fails the build outright, which is
+ * the state the ADR was written to reach.
  *
- * The entries start with a double-star glob on purpose, and it is not decoration.
- * `nx lint` loads `apps/desktop/eslint.config.mjs`, which spreads this file, so a
- * `files` pattern resolves against **that** directory rather than the repository
- * root - a repo-relative path silently matches nothing, and a silent allowlist
- * entry means a rule that never fires where it should. Verified both ways: the
- * rule errors on a component not listed here, and stays quiet on every one that
- * is.
+ * **It is not deleted yet, and that is deliberate.** `app.ts` injects the
+ * gateway and this rule cannot see it, because the glob matches `*.component.ts`
+ * and that file is not one - so the list was undercounting by one throughout.
+ * Deleting the rule now would remove the only pressure on that file. The rule
+ * goes when `app.ts` is migrated or the glob is widened (ADR-0005, level two).
+ *
+ * The override below is spread in conditionally, because a flat-config entry
+ * with `files: []` does not mean "no files" - an empty allowlist written inline
+ * would have switched the rule off everywhere. The entries used to start with a
+ * double-star glob
+ * on purpose: `nx lint` loads `apps/desktop/eslint.config.mjs`, which spreads
+ * this file, so a `files` pattern resolves against **that** directory rather
+ * than the repository root, and a repo-relative path would have silently matched
+ * nothing. Verified both ways while the list still had entries: the rule errored
+ * on a component not listed, and stayed quiet on every one that was.
  */
-const COMPONENTS_STILL_USING_THE_GATEWAY = ['**/pages/jobs/jobs.component.ts'];
+const COMPONENTS_STILL_USING_THE_GATEWAY = [];
 
 /** Matches `inject(DbService)` however it is written, including a type argument. */
 const GATEWAY_INJECTION =
@@ -123,10 +133,17 @@ export default tseslint.config(
       ],
     },
   },
-  {
-    files: COMPONENTS_STILL_USING_THE_GATEWAY,
-    rules: { 'no-restricted-syntax': 'off' },
-  },
+  // Spread rather than written inline: a flat-config entry with `files: []`
+  // does not mean "no files", so an empty allowlist would have turned the rule
+  // off everywhere - the exact opposite of what emptying it means.
+  ...(COMPONENTS_STILL_USING_THE_GATEWAY.length
+    ? [
+        {
+          files: COMPONENTS_STILL_USING_THE_GATEWAY,
+          rules: { 'no-restricted-syntax': 'off' },
+        },
+      ]
+    : []),
   {
     files: ['**/*.html'],
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],

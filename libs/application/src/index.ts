@@ -39,6 +39,8 @@ export * from './lib/documents/cv-regeneration';
 export * from './lib/documents/cv-regeneration.store';
 export * from './lib/documents/cv-section-order';
 export * from './lib/documents/cv-style.store';
+export * from './lib/jobs/job-detail.store';
+export * from './lib/jobs/job-document-defaults';
 export * from './lib/jobs/job-overview-rows';
 export * from './lib/jobs/my-jobs.store';
 export * from './lib/jobs/tracklist-import';

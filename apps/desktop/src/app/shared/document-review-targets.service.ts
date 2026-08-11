@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SupportedLanguage } from '@applye/core';
-import { DocumentRegionTag, FinalChecksService } from './final-checks.service';
+import { DocumentRegionTag } from '@applye/application';
+import { FinalChecksService } from './final-checks.service';
 
 /**
  * Which market and which language the wizard's documents are written for.

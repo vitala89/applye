@@ -42,6 +42,19 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`app.ts` is migrated and the lint rule now covers it. Level two, item one is closed.** It held the
+  last `inject(DbService)` in a component anywhere in the app, and the rule never fired on it - the
+  pattern matched `*.component.ts` and that file is not named like one, so **the allowlist read 26
+  where 27 files were injecting the gateway, for the whole campaign**. `FirstLaunchStore` is
+  `BootGateStore` and owns both directions of the same two settings flags: `load()` answers
+  `'first-launch' | 'onboarding' | 'app'` and fails open, `dismiss()` records it. The rule's pattern
+  is `['**/*.component.ts', '**/app.ts']`, documented as a convention check rather than a proof - an
+  off-convention component name still slips through, and the fix for that is the convention. Its
+  error message no longer points at the empty allowlist. **The rule can now be deleted whenever it is
+  judged to have served its purpose; nothing is hiding from it.** `app.ts` 66/400,
+  `boot-gate.store.ts` 74/250. **Next first action:** level two, item three - move the app's 18
+  `shared/*` services into `libs/application`, decomposing the ones over 250 lines. Item four, the
+  `type:data` allowlist flip, unblocks only after that (ADR-0005, amendment forty-eight).
 - **`COMPONENTS_STILL_USING_THE_GATEWAY` is empty. Level one of ADR-0005 is closed.** 26 -> 0, first
   entry deleted 2026-08-07, last 2026-08-11. `JobDetailStore` in
   `libs/application/src/lib/jobs/job-detail.store.ts` (142/250) owns the job page's four data paths;

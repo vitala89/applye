@@ -2556,6 +2556,61 @@ whose blocker is now the `shared/*` services rather than the gateway. `applicati
 
 **Level one is closed.** Level two starts at `app.ts`.
 
+## Amendment forty-eight: the file the rule could not see
+
+`app.ts` held the last `inject(DbService)` in a component anywhere in the app, and the rule never
+fired on it. The pattern is `**/*.component.ts`; this file is not named like one. **That is what made
+the allowlist read 26 when 27 files were injecting the gateway** - for the entire campaign, the number
+this ADR reported progress against was wrong by one, and nothing in the toolchain could have said so.
+
+**Widening the glob was never a whole answer, and noticing that collapsed the decision.** The item on
+this checklist read "decide whether the rule's glob widens or `app.ts` is migrated on its own", as
+though they were alternatives. They are not: the moment the rule sees the file it errors, and the
+allowlist only shrinks. So `app.ts` had to be migrated regardless. The glob question was only ever
+whether the rule can _prove_ it stays migrated.
+
+**The read and the write were in different layers, over the same two flags.** `FirstLaunchStore` has
+owned the write of `healthCheckSeen` and `onboardingSeen` since amendment thirty-five; `app.ts` read
+them at boot to decide which of three screens to open. It is `BootGateStore` now, and `load()` answers
+`'first-launch' | 'onboarding' | 'app'`, taking the `shouldAutoOpenOnboarding` call with it. One
+store, both directions, and the boot rule is testable without a `TestBed` for the first time.
+
+**`load()` fails open, and that is now a test rather than a comment.** A settings read that throws
+answers `'app'`. Blocking startup on a health-flag read would trap the user outside an application
+whose data is otherwise fine, and the flags are the least important thing the app knows. The old
+`catch {}` said so in a comment; four tests say so now, one per branch.
+
+**The component keeps `onboarding.requestOpen()`.** The open signal is also written by the dashboard
+banner and by Settings, so `OnboardingService` owns it and the root component routes into it rather
+than holding a fourth copy.
+
+**The store is provided in two places and that is deliberate**, not an oversight to be found later:
+the root component and the welcome screen each provide it, so there are two instances. Its one signal
+is read only by the screen that owns the write, and giving a stateless store a singleton lifetime
+would assert something about it that is not true.
+
+**The pattern is now `['**/*.component.ts', '**/app.ts']`, and the comment says what it is worth.**
+It is a **convention check, not a proof**. Another component named off convention slips through the
+same hole this file did, and the honest fix for that is the naming convention rather than a longer
+glob. Renaming `app.ts` to `app.component.ts` was the alternative and was rejected: it renames the
+bootstrap entry point for a lint reason.
+
+**The rule's message was lying by the time it fired.** It told the reader to remove the file's entry
+from `COMPONENTS_STILL_USING_THE_GATEWAY` - a list that is empty and that the ratchet forbids adding
+to. It now says there is no allowlist and the read or write belongs in a store.
+
+Verified positively, as in amendment forty-seven: `inject(DbService)` re-added to `app.ts` fails lint
+with the ADR message, then reverted. Verified on a rendered screen against a stubbed IPC layer: both
+flags unseen renders the welcome screen, welcome-seen-only renders onboarding, both seen renders the
+shell, and a settings read that throws renders the shell. The boot path issues exactly two IPC calls.
+
+`app.ts` 68 -> 66, `BootGateStore` 41 -> 74/250. `app.spec.ts` was a create-smoke-test; routing the
+gate's answer is the component's only remaining logic, and it has four tests now.
+
+**Level two, item one is closed. The rule can now be deleted whenever the maintainer decides it has
+served its purpose** - nothing is hiding from it. Item three, the 18 services that legitimately inject
+the gateway, is next and is the larger half.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2632,10 +2687,15 @@ whose blocker is now the `shared/*` services rather than the gateway. `applicati
         `onboarding-banner` migrated to `OnboardingBannerStore`, and `paste-job-modal` turned out to
         be injecting the gateway without ever calling it - so the count had been overstating the work
         by one. **Deleting the rule is deliberately not part of it**, see the next item
-  - [ ] **`app.ts` injects the gateway and the lint rule cannot see it**, because the rule matches
-        `*.component.ts` and that file is not one. Found while migrating `first-launch` (amendment
-        thirty-five); the allowlist has been undercounting by one throughout. Decide whether the
-        rule's glob widens or `app.ts` is migrated on its own
+  - [x] **`app.ts` injects the gateway and the lint rule cannot see it** - done in amendment
+        forty-eight. Found while migrating `first-launch` (amendment thirty-five); the allowlist had
+        been undercounting by one throughout, reading 26 where 27 files injected the gateway. The
+        checklist framed the glob and the migration as alternatives; they were not - widening the
+        glob errors on the file, and the allowlist only shrinks, so **both** were needed. The boot
+        read moved into `BootGateStore` and the pattern is now
+        `['**/*.component.ts', '**/app.ts']`, documented as a convention check rather than a proof.
+        **The rule can be deleted whenever it is judged to have served its purpose; nothing is
+        hiding from it any more**
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

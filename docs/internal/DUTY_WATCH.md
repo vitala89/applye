@@ -44,6 +44,86 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-11, app.ts: the file the lint rule could not see
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5). Triage 7/10 - radius 1, ambiguity 2, risk 1, verification 2,
+  unknowns 1. Ambiguity 2 sent it through `aif-grilling`, one round, three decisions. No subagents.
+- **Branch:** `refactor/app-boot-gate`
+- **Commits:** `265f027` migration, plus this documentation commit
+- **Pull request:** see the branch
+- **Objective:** ADR-0005 level two, item one. `app.ts` injects `DbService` and the lint rule cannot
+  see it, because the rule matches `**/*.component.ts` and that file is not named like one.
+- **Completed:**
+  - **The framing on the checklist was wrong, and settling that collapsed the decision.** It read
+    "decide whether the rule's glob widens **or** `app.ts` is migrated". They are not alternatives:
+    widening the glob makes the rule error on the file, and the allowlist only shrinks, so the
+    migration was mandatory and the glob question was only about proving it stays done. **Both.**
+  - **`FirstLaunchStore` -> `BootGateStore`** (`libs/application/src/lib/onboarding/`, 41 -> **74/250**),
+    file and spec renamed, index export updated. It already wrote `healthCheckSeen` and
+    `onboardingSeen`; `load()` now reads them and answers
+    `'first-launch' | 'onboarding' | 'app'`, taking the `shouldAutoOpenOnboarding` call with it.
+  - **`load()` fails open** - a settings read that throws answers `'app'`. Faithful port of the old
+    `catch {}`, and a test rather than a comment now.
+  - **`app.ts` 68 -> 66** and injects no gateway. It keeps `onboarding.requestOpen()`, because that
+    signal is also written by the dashboard banner and by Settings.
+  - **Rule pattern `['**/*.component.ts', '**/app.ts']`**, with a comment saying it is a convention
+    check and not a proof.
+  - **The rule's message was corrected.** It told the reader to remove the file's entry from
+    `COMPONENTS_STILL_USING_THE_GATEWAY` - a list that is empty and that the ratchet forbids adding
+    to, so the advice was to do something impossible.
+  - **`app.spec.ts` rewritten.** It was a create-smoke-test; routing the gate's answer is now the
+    component's only logic, so four tests cover all three screens and the fire-and-forget update
+    check.
+- **Not completed:** Level two item three - the 18 `apps/desktop` services that legitimately inject
+  the gateway (16 under `shared/*`, plus `cv-photo-prompt.service.ts` and
+  `followup-draft.service.ts`). That is the larger half and unblocks item four.
+- **Files or packages changed:** `libs/application/src/lib/onboarding/boot-gate.store.{ts,spec.ts}`
+  (renamed from `first-launch.store.*`), `libs/application/src/index.ts`, `eslint.config.mjs`,
+  `apps/desktop/src/app/app.ts`, `apps/desktop/src/app/app.spec.ts`,
+  `apps/desktop/src/app/core/first-launch.component.ts` (rename only), ADR-0005, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** Run and observed on this branch. `nx run-many --target=type-check --skip-nx-cache`
+  pass, 7 projects. `nx run-many --target=lint --skip-nx-cache` pass, 7 projects, 0 errors, 18
+  pre-existing warnings. `nx test application --skip-nx-cache` pass, **1096** (from 1092).
+  `nx test desktop --skip-nx-cache` pass, **1439** (from 1435). `nx build desktop` pass.
+  `npm run quality:file-size` pass - only `first-launch.component.ts` 419/400 reported, unchanged
+  from base. `npm run quality:attribution`, `npm run format:check`, `git diff --check` pass.
+  **Rule verified positively:** `inject(DbService)` re-added to `app.ts` produced the ADR-0005 error,
+  then reverted. Without that check the glob change is an untested claim.
+  **Rendered check** against a stubbed `window.__TAURI_INTERNALS__.invoke`, installed in the console
+  and never committed, driving all four branches through the real store and the real component: both
+  flags unseen renders `app-first-launch`; welcome-seen-only renders `app-onboarding`; both seen
+  renders `app-shell-layout`; a settings read that throws renders `app-shell-layout`. The welcome
+  screen was screenshotted. The boot path issues exactly two IPC calls - `plugin:updater|check` and
+  `db_get_settings`.
+- **Privacy/security impact:** None. The same one read, from a different file. The boot decision is
+  unchanged in every branch including the failure branch.
+- **Decisions and assumptions:** Three, settled through `aif-grilling` before any edit. (1) The read
+  joins the write in the same store rather than getting a second store or staying in an
+  `apps/desktop` service. (2) The store answers _which screen_, not _the settings_ - the whole boot
+  rule in one testable place. (3) The glob gains `'**/app.ts'` rather than renaming the file to
+  `app.component.ts`, which would rename the bootstrap entry point for a lint reason. Two things
+  decided by precedent rather than asked: the store stays `@Injectable()` and component-provided like
+  every other store, which means two instances, and that is written into its docstring rather than
+  left to be found; and it stays in `onboarding/` because both flags are onboarding flags and
+  `shouldAutoOpenOnboarding` already lives there.
+- **Risks or compatibility impact:** No schema, IPC or public API change. `FirstLaunchStore` is
+  renamed in `libs/application`'s public surface; the only consumer is
+  `first-launch.component.ts`, updated in the same commit. The behaviour risk is the boot decision
+  itself, which is why all four branches were driven on a rendered screen rather than reasoned about.
+- **Open issues or blockers:** All previously logged debts unchanged. **Observed, not a defect:** the
+  Dashboard and the health check throw `TypeError: Cannot read properties of null` when driven
+  against the stub, because it returns `null` for commands it does not model. Both degrade gracefully
+  - the health check renders its error inline with a re-run button. Not investigated further; it is a
+    stub artefact, and the boot path itself issues only the two commands named above.
+- **Next first action:** Open the pull request for `refactor/app-boot-gate`, wait for CI, merge by
+  squash. Then level two, item three: move the 18 `shared/*` services into `libs/application`. Start
+  by listing them with their line counts and their `DbService` call counts, because the ones over 250
+  lines have to be decomposed on the way rather than moved whole.
+- **Evidence:** Commit `265f027`; ADR-0005 amendment forty-eight; the check output quoted above; the
+  positive lint verification; the four-branch browser probe and the welcome-screen screenshot.
+
 ### 2026-08-11, the gateway allowlist reaches zero
 
 - **Status:** complete

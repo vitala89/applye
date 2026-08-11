@@ -42,6 +42,19 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **Level two item three is mapped, restated, and its first blocker is cleared.** The checklist said
+  "move the app's `shared/*` services into `libs/application`". `shared/` is **34 files, 3886 lines**
+  and holds four components plus `page-title.service`, none of which may go there - so the item is
+  restated as **sorting**, not moving. **17 services inject the gateway** (2929 lines; three over
+  budget: `cover-letter-tailor` 305, `job-scoring` 300, `tailoring` 298), and they divide by blocker:
+  6 behind `cv-content.util`, 4 behind `toast.service`, the rest free. **The highest-leverage move is
+  not a service:** the `cv-content` family is 1287 pure lines importing only `@applye/core`, sitting
+  in `apps/desktop`, and **nine files in `libs/application` already carry documented workarounds for
+  its absence**. The size gate refuses to receive a moved file that is over budget - it reads a
+  rename as an add - so `cv-content.util.ts` was split in place first: **596 -> 352**, plus
+  `cv-selection.util.ts` 155 and `cv-page.util.ts` 116, barrel unchanged, all 43 consumers untouched.
+  **Next first action:** move the six-file family to `libs/core` - now genuinely imports-only - then
+  retire the nine workarounds in a separate PR (ADR-0005, amendment forty-nine).
 - **`app.ts` is migrated and the lint rule now covers it. Level two, item one is closed.** It held the
   last `inject(DbService)` in a component anywhere in the app, and the rule never fired on it - the
   pattern matched `*.component.ts` and that file is not named like one, so **the allowlist read 26

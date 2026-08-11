@@ -44,6 +44,79 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-11, level two item three: mapped, restated, and the cv-content split
+
+- **Status:** partial - this is the first of five sub-steps, and the item is now written down as such
+- **Agent/tool:** Claude Code (Opus 5). Triage 9/10 - radius 2, ambiguity 2, risk 1, verification 2,
+  unknowns 2. Unknowns at 2 meant the first step was a bounded map, not implementation.
+  `aif-grilling` ran two rounds, five decisions. No subagents.
+- **Branch:** `refactor/cv-content-split`
+- **Commits:** `0937ccb` split, plus this documentation commit
+- **Pull request:** see the branch
+- **Objective:** Start ADR-0005 level two item three. Map it first, because the checklist entry was
+  one sentence and the work is a campaign.
+- **Completed:**
+  - **The map, which changed the item.** `shared/` is 34 files / 3886 lines, not 18 services, and it
+    holds four components and `page-title.service` that must never go to `libs/application`. The item
+    is restated as **sorting**, and the checklist now carries five sub-steps with the first ticked.
+  - **The blocker analysis.** 17 services inject the gateway, 2929 lines. 6 are blocked by
+    `cv-content.util`, 4 by `toast.service`, 22 files by nothing.
+  - **The finding worth the whole map:** the `cv-content` family is 1287 pure lines importing only
+    `@applye/core`, and **nine files in `libs/application` carry documented pass-in workarounds for
+    its absence**. Moving it unblocks 6 services and lets those nine be simplified.
+  - **The gate finding.** `tools/check-file-size-budgets.mjs` passes `--no-renames` and keys the
+    baseline on the new path, so a moved file reads as added and line 398 makes any new over-budget
+    file a hard violation. `cv-content.util.ts` at 596/400 could not be moved. **This invalidated the
+    plan the maintainer had already approved**, and was taken back to them rather than worked around.
+  - **The split, in place, moving nothing.** `cv-selection.util.ts` (155), `cv-page.util.ts` (116),
+    `cv-content.util.ts` **596 -> 352**. Barrel unchanged, so all 43 consumers are untouched. Both
+    groups had to come out; taking only the first leaves 466.
+  - **The spec split with the code**, since every sibling util already has its own.
+- **Not completed:** The move itself, the nine workarounds, the 22 unblocked files, and the four
+  toast couplings. Four of five sub-steps.
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/cv-content.util.{ts,spec.ts}`,
+  new `cv-selection.util.{ts,spec.ts}` and `cv-page.util.{ts,spec.ts}`, ADR-0005, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** Run and observed on this branch. `nx run-many --target=type-check --skip-nx-cache`
+  pass, 7 projects. `nx run-many --target=lint --skip-nx-cache` pass, 7 projects, 0 errors, 18
+  pre-existing warnings. `nx run-many --target=test --skip-nx-cache` pass, all 7 projects; `desktop`
+  **1439 / 134 suites**, unchanged from 1439 / 132 - two new suites, same test count.
+  `nx build desktop` pass. `npm run quality:file-size` pass - `cv-content.util.ts` 352/400 against
+  base 596. `npm run quality:attribution`, `npm run format:check`, `git diff --check` pass.
+  **Rendered check** on `/documents/cv/1` against a stubbed IPC layer, installed in the console and
+  never committed: the contact line renders `Berlin | +49 000 | v@example.test | vitaliikasap.com |
+in/vk` - reference order, `|` separator, no dangling separators; all six sections render with
+  grouped skills; `app-cv-live-style-panel` mounts; `leafPath` returns `summary`, `pd.fullName`,
+  `exp.0.bullet.0`, `skills.0.values`; selecting `exp.0.bullet.0` puts "Rebuilt the design system"
+  into the panel's sample, which is `cvLeafText` resolving across the new file boundary. Screenshot
+  taken.
+- **Privacy/security impact:** None. Pure code motion inside one folder; no data, storage, network,
+  IPC surface or permission touched.
+- **Decisions and assumptions:** Five, settled through `aif-grilling`. (1) The `cv-content` family is
+  the first slice, ahead of the 22 unblocked services and the four toast couplings. (2) It lands in
+  `libs/core`, because every type it touches is already defined there and `libs/core` cannot import
+  `libs/application`. (3) The nine workaround retirements get their own PR, so a signature change
+  cannot hide among 43 mechanical import edits. (4) The checklist item is restated as sorting. (5)
+  **Re-grilled mid-task**: the size-gate finding made the approved imports-only move impossible, so
+  it went back to the maintainer, who chose split-in-place first and move second - one kind of change
+  per PR. File names and the choice to leave `cv-style.util.ts` at 336 rather than let it absorb the
+  panel types were mine; absorbing them would have put that file at 380/400 with no headroom.
+- **Risks or compatibility impact:** No API, schema or IPC change; the barrel keeps every existing
+  import path valid. The risk is a symbol lost or duplicated in the cut, which is what the `it`-count
+  reconciliation and the rendered check are for.
+- **Open issues or blockers:** **A near miss worth recording.** Splitting the spec by `describe` block
+  truncated `resolvePageSettings` and its five tests off the end of the page spec. **The suite went
+  green** - 1434 passing, 0 failing - and every gate would have passed. Only reconciling the `it`
+  count (30 before, 30 after) caught it. A green suite is not evidence that a split preserved its
+  tests. All previously logged debts unchanged.
+- **Next first action:** Open the pull request for `refactor/cv-content-split`, wait for CI, merge by
+  squash. Then sub-step two: `git mv` the six `cv-*.util.ts` files and their specs into
+  `libs/core/src/lib/cv/`, add the five export lines to `libs/core/src/index.ts`, and rewrite the 43
+  consumer imports to `@applye/core`. It is imports-only now; run the same rendered check afterwards,
+  because the barrel disappears in that step and a missing export would only show on screen.
+- **Evidence:** Commit `0937ccb`; ADR-0005 amendment forty-nine and the restated checklist item; the
+  check output quoted above; the rendered CV screenshot and the `leafPath`/`cvLeafText` probe.
+
 ### 2026-08-11, app.ts: the file the lint rule could not see
 
 - **Status:** complete

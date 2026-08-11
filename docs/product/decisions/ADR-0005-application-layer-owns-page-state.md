@@ -2611,6 +2611,79 @@ gate's answer is the component's only remaining logic, and it has four tests now
 served its purpose** - nothing is hiding from it. Item three, the 18 services that legitimately inject
 the gateway, is next and is the larger half.
 
+## Amendment forty-nine: what level two item three actually is, and the wall in front of it
+
+The checklist said "move the app's `shared/*` services into `libs/application`, decomposing the five
+over 250 lines". Mapping it first changed three things about that sentence.
+
+**It is not 18 services. `shared/` is 34 files and 3886 lines**, and it is not homogeneous: it holds
+four **components** (`paste-job-modal`, `job-identity-prompt`, `job-identity-badge`,
+`unsaved-job-prompt`) and `page-title.service`, which overrides the topbar title. None of those may
+go to `libs/application` at all. The item is therefore restated as **sorting** rather than moving -
+pure logic and gateway access to the library, UI to a component folder in the app. The old wording
+named a destination for files that must not go there, and this ADR has now been misled by its own
+checklist twice: item one framed `app.ts`'s glob and its migration as alternatives when they were
+not.
+
+**Seventeen services inject the gateway, 2929 lines, and they divide by what blocks them:**
+
+| blocked by        | count    | note                                                                 |
+| ----------------- | -------- | -------------------------------------------------------------------- |
+| `cv-content.util` | 6        | pure logic sitting in `pages/documents/`                             |
+| `toast.service`   | 4        | a UI concern that cannot cross; needs the outcome pattern (debt six) |
+| nothing           | 22 files | largest `job-scoring` at 300                                         |
+
+**The highest-leverage move in the whole item is not a service.** `cv-content.util.ts` (596) plus
+`cv-style.util.ts` (336), `cv-parse.util.ts` (237) and `cv-entry.util.ts` (118) are **1287 lines that
+import only `@applye/core`** - pure, no Angular, no I/O - and they are in `apps/desktop`. Moving them
+to `libs/core` unblocks six of the seventeen services in one step.
+
+**And they have already been paid for once.** Nine files in `libs/application` carry documented
+workarounds for their absence, taking functions as arguments with comments that say _"it lives in
+`apps/desktop`, which this layer may not import, so they are passed in"_: `cv-codec.ts`,
+`cv-style.store.ts`, `cv-print.store.ts`, `cv-regeneration.store.ts`, `cover-letter-generate.store.ts`,
+`cover-letter-ai.store.ts`, `onboarding-resume.store.ts`, `onboarding-content.util.ts` and
+`tracker-report.ts`. That is the accumulated interest on one misplaced file, and it is only visible
+once you count it.
+
+**The size gate refuses the move, and that is the third thing the map found.**
+`tools/check-file-size-budgets.mjs` passes `--no-renames` to every git diff and resolves a file's
+baseline by its **new** path, so a moved file reads as _added_ - and line 398 makes any new file over
+budget a hard violation rather than a notice. `cv-content.util.ts` is 596 against 400, so the
+imports-only move would have been refused on arrival. **The gate constrains the order of the work
+again**, exactly as it did for the jobs template, and the answer is the same shape: split first, move
+second, one kind of change per pull request.
+
+**This amendment covers the split only. Nothing moved and no import outside the folder changed.** Two
+groups came out, and both had to, because taking only the first leaves 466:
+
+- **`cv-selection.util.ts`** (155) - the identity of a click target in the live preview:
+  `CvPreviewSelection`, `CvStyleScope`, `CvStylePanelChange`, `leafPath`, and its inverse
+  `cvLeafText`. One string is both the inline-edit draft key and the `elementStyles` override key,
+  which is what keeps "which leaf is this" answered in one place.
+- **`cv-page.util.ts`** (116) - the two things about the page rather than the content:
+  `buildContactLine` with its contact-field leaves, and `resolvePageSettings` with the margin
+  normalisation behind it.
+
+`cvLeafText` calls `buildContactLine`, so selection imports page: one directed edge, no cycle.
+`cv-content.util.ts` is **596 -> 352** and keeps the barrel, so all 43 consumers are untouched.
+
+**The spec split with the code, and the test count is what made the cut safe.** Every sibling util
+already has its own spec. Splitting by `describe` block moved `function parsed()` to the wrong file
+and then, fixing that, truncated `resolvePageSettings` and its five tests off the end of the page
+spec. Nothing failed - the suite went green with 1434 tests instead of 1439. **Only the reconciliation
+caught it**: 30 `it` blocks before, 30 after. A green suite is not evidence that a split preserved
+its tests; the count is.
+
+Verified on a rendered CV: the contact line renders in reference order with its `|` separator, all
+six sections render with grouped skills, the live style panel mounts, `leafPath` returns `summary`,
+`pd.fullName`, `exp.0.bullet.0` and `skills.0.values`, and selecting `exp.0.bullet.0` puts "Rebuilt
+the design system" in the panel's sample - `cvLeafText` resolving across the new file boundary.
+
+**Next:** move the six files to `libs/core`, which is now genuinely imports-only. Then retire the nine
+pass-in workarounds, in their own pull request, because that changes nine store signatures and would
+otherwise hide inside 43 mechanical import edits.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2696,6 +2769,22 @@ the gateway, is next and is the larger half.
         `['**/*.component.ts', '**/app.ts']`, documented as a convention check rather than a proof.
         **The rule can be deleted whenever it is judged to have served its purpose; nothing is
         hiding from it any more**
-  - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
+  - [ ] **Sort `apps/desktop/src/app/shared/` - 34 files, 3886 lines** (restated in amendment
+        forty-nine; the old wording said "move the services into `libs/application`", which named a
+        destination for files that must not go there). Pure logic and gateway access to
+        `libs/application`; the four components and `page-title.service` to a UI folder in the app.
+        **17 services inject the gateway**, 2929 lines, three over the 250 budget -
+        `cover-letter-tailor` 305, `job-scoring` 300, `tailoring` 298. They divide by blocker: 6
+        behind `cv-content.util`, 4 behind `toast.service` (the outcome pattern, debt six), the rest
+        free. Sub-steps:
+    - [x] Split `cv-content.util.ts` under its budget in place - **596 -> 352**, plus
+          `cv-selection.util.ts` 155 and `cv-page.util.ts` 116 (amendment forty-nine). Forced first
+          by the size gate, which reads a moved file as added and refuses a new file over budget
+    - [ ] Move the six-file `cv-content` family to `libs/core` - now genuinely imports-only, 43
+          consumers, and it unblocks 6 of the 17 services
+    - [ ] Retire the nine pass-in workarounds in `libs/application` that exist only because that
+          family was unreachable, in their own pull request - it changes nine store signatures
+    - [ ] Move the 22 unblocked files
+    - [ ] The four `toast.service` couplings, which need the outcome pattern rather than a move
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

@@ -2684,6 +2684,58 @@ the design system" in the panel's sample - `cvLeafText` resolving across the new
 pass-in workarounds, in their own pull request, because that changes nine store signatures and would
 otherwise hide inside 43 mechanical import edits.
 
+## Amendment fifty: the cv-content family crosses the boundary
+
+Sub-step two, and the payoff for the split in amendment forty-nine. 1287 pure lines leave
+`apps/desktop/src/app/pages/documents/` for `libs/core/src/lib/cv/`, with their specs. **Six of the
+seventeen gateway-injecting services are now unblocked, and the nine pass-in workarounds in
+`libs/application` are now removable** - in their own pull request, as decided.
+
+**Seven files, not six.** `cv-style-scope.util.ts` was not in the plan. It is imported by
+`libs/application/src/lib/documents/cv-style.store.ts`, which is one of the nine files carrying a
+documented workaround for this family being unreachable - so it was always part of the same wall, and
+counting the workarounds is what found it.
+
+**Inside `libs/core` these files cannot import `@applye/core`, and that is not a style rule.**
+`cv-parse.util` imports `splitDisplayName`, a **value**; a self-referential path alias would resolve
+back through `libs/core/src/index.ts` and be a real module cycle rather than an erased type import.
+No existing file in `libs/core` imports the alias. Every symbol the seven use resolves to exactly two
+files - `models/document.model.ts` and `profile/split-display-name.ts` - so the rewrite was two
+relative paths.
+
+**The barrel inside `cv-content.util` is gone, and removing it was the honest end state rather than
+extra churn.** It re-exported four siblings because splitting a module used to cost each consumer an
+import line and several consumers were over budget - the reasoning recorded in its own comment.
+`@applye/core` is the single specifier now, so it is one import either way and the justification had
+expired. Removing it surfaced the files leaning on it: `cv-style-scope.util` and five sibling specs
+were importing symbols from `cv-content.util` that never lived there. Each now imports the module
+that owns what it uses, which is what they should always have done.
+
+**The size gate caught this "imports-only" change growing an over-budget file, which is the third time
+it has constrained this campaign.** Merging the two `@applye/core` imports in
+`cv-live-style-panel.component.ts` costs two lines, and that file is **704/400**. The type imports
+therefore stay as two statements from the same module. A comment in the file explaining why would
+itself have cost the three lines the gate refuses - so the reason is here instead, which is exactly
+the kind of thing that goes dead when nobody writes it down.
+
+Two casts needed `as unknown as Record<...>` under `libs/core`'s spec tsconfig, having been
+`as Record<...>` under the app's - a strictness difference between the two projects that only a move
+reveals.
+
+**The counters reconcile exactly, and that is the check that matters for a move.** `core` 18 suites /
+301 tests -> **25 / 453**; `desktop` 134 / 1439 -> **127 / 1287**. Same seven suites, same 152 tests,
+opposite signs. Amendment forty-nine's near miss is why this is stated rather than assumed.
+
+Verified on a rendered CV, because the barrel disappears in this step and a missing export would only
+show on screen: the contact line renders in reference order, all six sections render, `leafPath`
+returns `summary`, `exp.0.bullet.0` and `skills.0.values`, `cvLeafText` puts "Rebuilt the design
+system" into the style panel's sample, and a `scope: 'element'` change routed through
+`cv-style-scope.util` in `libs/core` and `cv-style.store` in `libs/application` moves that one leaf
+from Calibri 400 to Georgia 700 and nothing else. No console errors.
+
+**Next:** retire the nine pass-in workarounds, then the 22 unblocked files, then the four
+`toast.service` couplings.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2780,8 +2832,9 @@ otherwise hide inside 43 mechanical import edits.
     - [x] Split `cv-content.util.ts` under its budget in place - **596 -> 352**, plus
           `cv-selection.util.ts` 155 and `cv-page.util.ts` 116 (amendment forty-nine). Forced first
           by the size gate, which reads a moved file as added and refuses a new file over budget
-    - [ ] Move the six-file `cv-content` family to `libs/core` - now genuinely imports-only, 43
-          consumers, and it unblocks 6 of the 17 services
+    - [x] Move the `cv-content` family to `libs/core` - done in amendment fifty. **Seven files, not
+          six**: `cv-style-scope.util.ts` is consumed by `cv-style.store.ts`, one of the nine
+          workaround files, so it is part of the same wall. 53 import sites across 31 files
     - [ ] Retire the nine pass-in workarounds in `libs/application` that exist only because that
           family was unreachable, in their own pull request - it changes nine store signatures
     - [ ] Move the 22 unblocked files

@@ -197,189 +197,33 @@
           />
 
           <!-- Step 3: Updated score - auto-rescores the tailored resume -->
-          <div wizardUpdateScoreStep class="wizard-step-content">
-            <div class="apply-fields-header">
-              <span class="eyebrow">{{ t()('jobs.wizard.updated_score_eyebrow') }}</span>
-              <h4 class="apply-fields-title">{{ t()('jobs.wizard.updated_score_title') }}</h4>
-            </div>
+          <app-job-update-score-step
+            wizardUpdateScoreStep
+            class="wizard-step-content"
+            [job]="job()"
+            (retry)="updateScoreAfterTailor()"
+          />
 
-            @if (updatingScore()) {
-              <!-- Design-system skeleton card while the rescore runs -->
-              <div class="rescore-loading">
-                <div class="ai-thinking">
-                  <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-                  {{ t()('jobs.wizard.updating_score_hint') }}
-                </div>
-                <lib-skeleton-card [lines]="2" />
-                <lib-skeleton-card [media]="false" [lines]="3" [footer]="false" />
-              </div>
-            } @else if (postTailorScore(); as post) {
-              <app-updated-score-view
-                [before]="cache()"
-                [after]="post"
-                [jobTitle]="job()?.title ?? ''"
-                [ats]="atsReport()"
-                [icons]="icons"
-              />
-            } @else if (updateScoreError()) {
-              <div class="row">
-                <span class="status status--error">{{ updateScoreStatus() }}</span>
-                <button class="btn btn--secondary btn--md" (click)="updateScoreAfterTailor()">
-                  <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
-                  {{ t()('common.retry') }}
-                </button>
-              </div>
-            } @else {
-              <p class="muted">{{ t()('jobs.wizard.updated_score_skip') }}</p>
-            }
-          </div>
-
-          <div wizardDocumentsStep class="wizard-step-content">
-            <div class="apply-fields-header">
-              <span class="eyebrow">{{ t()('jobs.wizard.review_documents_eyebrow') }}</span>
-              <h4 class="apply-fields-title">
-                {{ t()('jobs.wizard.review_documents_title') }}
-              </h4>
-              <p class="muted">{{ t()('jobs.wizard.review_documents_hint') }}</p>
-            </div>
-
-            <div class="document-targets">
-              <label>
-                {{ t()('documents.cv_field_region') }}
-                <select [ngModel]="documentReviewRegion()" (ngModelChange)="onRegionChange($event)">
-                  @for (region of documentRegionTags; track region) {
-                    <option [value]="region">{{ regionLabel(region) }}</option>
-                  }
-                </select>
-              </label>
-              <label>
-                {{ t()('documents.cv_field_language') }}
-                <select
-                  [ngModel]="documentReviewLanguage()"
-                  (ngModelChange)="
-                    documentReviewLanguage.set($event); finalChecksOutdated.set(!!finalChecks())
-                  "
-                >
-                  @for (language of portalLanguages; track language) {
-                    <option [value]="language">{{ nativeLang(language) }}</option>
-                  }
-                </select>
-              </label>
-            </div>
-
-            <app-job-document-cards
-              [job]="job()"
-              [application]="application()"
-              [matchingCvs]="matchingCvs()"
-              [coverLetters]="coverLetters()"
-              [finalTailoredCvMd]="finalTailoredCvMd()"
-              (openCv)="openCv($event, true)"
-              (openCoverLetter)="openCoverLetter($event, true)"
-              (createCv)="createCvDraft()"
-              (createCoverLetter)="createCoverLetterDraft()"
-              (chooseDocument)="chooseExistingDocument($event.kind, $event.id)"
-            />
-
-            <section class="final-checks card">
-              <div class="final-checks__head">
-                <div>
-                  <h5>{{ t()('jobs.wizard.final_checks_title') }}</h5>
-                  @if (finalChecksOutdated()) {
-                    <p class="status status--error">
-                      {{ t()('jobs.wizard.final_checks_outdated') }}
-                    </p>
-                  }
-                </div>
-                <button
-                  class="btn btn--secondary btn--sm"
-                  type="button"
-                  [disabled]="!linkedCv()"
-                  (click)="runFinalChecks()"
-                >
-                  <lucide-icon [img]="icons.checklist" [size]="14" aria-hidden="true" />
-                  {{ t()('jobs.wizard.final_checks_run') }}
-                </button>
-              </div>
-              @if (!linkedCv()) {
-                <p class="muted">{{ t()('jobs.wizard.final_checks_needs_cv') }}</p>
-              }
-              <div class="final-checks__rows">
-                <div>
-                  <span>{{ t()('jobs.wizard.final_checks_ats') }}</span>
-                  <strong>{{
-                    t()(
-                      finalCheckStatusKey(
-                        finalChecksOutdated() ? 'outdated' : finalChecks()?.ats || 'not_run'
-                      )
-                    )
-                  }}</strong>
-                </div>
-                <div>
-                  <span>{{ t()('jobs.wizard.final_checks_hr') }}</span>
-                  <strong>{{
-                    t()(
-                      finalCheckStatusKey(
-                        finalChecksOutdated() ? 'outdated' : finalChecks()?.hr || 'not_run'
-                      )
-                    )
-                  }}</strong>
-                </div>
-                <div>
-                  <span>{{ t()('jobs.wizard.final_checks_fit') }}</span>
-                  <strong>{{
-                    t()(
-                      finalCheckStatusKey(
-                        finalChecksOutdated() ? 'outdated' : finalChecks()?.fit || 'not_run'
-                      )
-                    )
-                  }}</strong>
-                </div>
-              </div>
-              @if (finalChecks()?.notes?.length) {
-                <ul class="final-checks__notes">
-                  @for (note of finalChecks()?.notes; track note) {
-                    <li>{{ note }}</li>
-                  }
-                </ul>
-              }
-              @if (finalChecks()?.fit === 'rescore' || finalChecksOutdated()) {
-                <button
-                  class="btn btn--ghost btn--sm"
-                  type="button"
-                  (click)="updateScoreAfterTailor()"
-                >
-                  {{ t()('jobs.wizard.final_checks_rescore_action') }}
-                </button>
-              }
-              @if (finalChecksNeedRetailor()) {
-                <div class="final-checks__retailor">
-                  <p class="muted">{{ t()('jobs.wizard.final_checks_retailor_hint') }}</p>
-                  <button
-                    class="btn btn--secondary btn--sm"
-                    type="button"
-                    [disabled]="tailoring()"
-                    (click)="retailorFromFinalChecks()"
-                  >
-                    <lucide-icon [img]="icons.another" [size]="14" aria-hidden="true" />
-                    {{
-                      tailoring()
-                        ? t()('jobs.wizard.phase_running')
-                        : t()('jobs.wizard.final_checks_retailor_action')
-                    }}
-                  </button>
-                </div>
-              }
-            </section>
-
-            @if (gapDialogOpen() || gapAnalyzing()) {
-              <app-cv-gap-dialog
-                [questions]="gapQuestions()"
-                [analyzing]="gapAnalyzing()"
-                (submit)="onGapSubmit($event)"
-                (cancel)="onGapCancel()"
-              />
-            }
-          </div>
+          <app-job-documents-step
+            wizardDocumentsStep
+            class="wizard-step-content"
+            [job]="job()"
+            [application]="application()"
+            [matchingCvs]="matchingCvs()"
+            [coverLetters]="coverLetters()"
+            [finalTailoredCvMd]="finalTailoredCvMd()"
+            [tailoring]="tailoring()"
+            (openCv)="openCv($event, true)"
+            (openCoverLetter)="openCoverLetter($event, true)"
+            (createCv)="createCvDraft()"
+            (createCoverLetter)="createCoverLetterDraft()"
+            (chooseDocument)="chooseExistingDocument($event.kind, $event.id)"
+            (runChecks)="runFinalChecks()"
+            (rescore)="updateScoreAfterTailor()"
+            (retailor)="retailorFromFinalChecks()"
+            (gapSubmit)="onGapSubmit($event)"
+            (gapCancel)="onGapCancel()"
+          />
 
           <app-job-export-apply-step
             wizardExportApplyStep

@@ -44,6 +44,109 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-11, Jobs, part two: the wizard's last two inline steps
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5). Triage 8/10 - radius 2, ambiguity 2, risk 1, verify 2,
+  unknowns 1. Ambiguity 2 sent it through `aif-grilling` before any edit, two rounds, six decisions.
+  No subagents; the maintainer did not ask for any.
+- **Branch:** `refactor/jobs-wizard-steps`
+- **Commits:** `9d3e92e` extraction, plus this documentation commit
+- **Pull request:** see the branch
+- **Objective:** Bring `jobs.component.html` under its 300-line budget by extracting the apply
+  wizard's two remaining inline steps, so the state migration - which the size gate blocks while the
+  template is over budget - can proceed in the next session. State migration explicitly out of scope.
+- **Completed:**
+  - **Three components, one folder each**, siblings of `job-tailor-step/`:
+    `job-update-score-step` (injects `JobScoringService` and the root `TailorScoreService`, keyed by
+    job id; emits `retry`), `job-documents-step` (the targets selects, the document cards, the final
+    checks and the gap dialog; six inputs, eight outputs), and `job-final-checks` nested inside it
+    (injects `FinalChecksService` and `LinkedDocumentsService`; emits `runChecks`, `rescore`,
+    `retailor`).
+  - **`DocumentReviewTargetsService`**, 36 lines, provided component-scoped by the page as its
+    eighteenth provider. Holds `region` and `language`; `setRegion`/`setLanguage` also stale a stored
+    final-checks result. The plain signals stay public because `ngOnInit` seeds them and a restored
+    result is not stale.
+  - **Seventeen page declarations retired**, every one an alias the template alone named:
+    `atsReport`, `updateScoreStatus`, `updateScoreError`, `portalLanguages`, `documentRegionTags`,
+    `documentReviewRegion`, `documentReviewLanguage`, `regionLabel`, `nativeLang`, `onRegionChange`,
+    `finalCheckStatusKey`, `finalChecksNeedRetailor`, `gapAnalyzing`, `gapDialogOpen`, `gapQuestions`,
+    and four now-unused imports.
+  - **Stylesheet split by reachability, not by eye.** Moved: `.rescore-loading`, `.document-targets*`,
+    all `.final-checks*`, and the two `max-width: 760px` grid rules that belong to them. Copied, in
+    original source order: `.eyebrow`, `.card`, `.muted`, `.row`, `.status`, `.status--error`.
+    `.apply-fields-header`/`.apply-fields-title` turned out to be moves, not copies - after the two
+    steps left, nothing in the page template bound them.
+  - **15 new tests** across the three components, including the staleness rule exercised through the
+    real `DocumentReviewTargetsService` rather than a stub.
+- **Not completed:** The state migration, deliberately - `jobs.component.ts` is 998/400 and injects
+  `DbService` in eight places. It is the next session and needs its own grilling round.
+- **Files or packages changed:** `apps/desktop/src/app/pages/jobs/jobs.component.{ts,html,scss}`,
+  new `job-update-score-step/`, `job-documents-step/` and `job-final-checks/` folders (four files
+  each), new `apps/desktop/src/app/shared/document-review-targets.service.ts`,
+  `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, `docs/internal/DUTY_WATCH.md`.
+- **Validation:** Run and observed on this branch. `nx run desktop:type-check` pass.
+  `nx lint desktop --skip-nx-cache` pass (0 errors, 8 pre-existing non-null-assertion warnings).
+  `nx test desktop --skip-nx-cache` pass, **1447 tests / 133 suites**, up from 1432 - every
+  pre-existing test unchanged. `nx build desktop` pass (the initial-bundle budget warning is
+  pre-existing, from the completed locales, and is a warning not an error).
+  `npm run quality:file-size` pass - `jobs.component.ts` 998/400 against base 1036, shrinkage is what
+  the gate requires. `npm run quality:attribution` pass. `npm run format:check` pass after
+  `nx format:write` reflowed two spec files. `git diff --check` clean.
+  `node tools/check-style-move.mjs --base origin/main` across all four stylesheets: **0 lost, 1
+  gained** - the deliberate `:host { display: contents }`. Per-class reachability scan: 19 hits, the
+  17 known false positives (concatenated class names in `job-tailor-step` and `job-document-cards`)
+  plus the two `.base-cv-picker` rules described below; **no new orphan**.
+  **Rendered check at 1440px and 700px**, against a mocked job with the Tauri stub applied and removed
+  in the same console call: all four wizard slots project a component host with `.wizard-step-content`
+  computing identically (`flex`, gap 16px); every branch of the update-score step renders (skip,
+  loading with two skeletons, result card, error with retry); the documents step renders header,
+  two-column targets, cards and the final-checks card; `job-final-checks`'s host computes
+  `display: contents` so the `<section>` stays the flex item; `.final-checks` wins padding 16px and
+  gap 12px over `.card`, which is the source order preserved; both moved grids collapse to one column
+  at 700px; changing the region select sets `targets.region`, stales the checks, flips all three rows
+  to "Outdated", withdraws the re-tailor offer and raises the German photo prompt the page owns; the
+  language select stales them too. No console errors.
+- **Privacy/security impact:** None. No storage, network, IPC surface, permission, AI provider or
+  user data behaviour changed. The new service holds two presentation settings in memory.
+- **Decisions and assumptions:** Six, all settled with the maintainer through `aif-grilling` before
+  any file was touched. (1) The documents step splits in two rather than one, because the final-checks
+  card is 90 of its 146 markup lines and has three actions of its own. (2) The region and language go
+  into a component-scoped service rather than travelling as inputs and outputs, because six page
+  methods read them and the two selects write them - inputs plus outputs would rebuild the alias
+  pattern the last two sessions deleted. (3) The staleness rule lives in that service's setters, so
+  the region path and the language path cannot diverge again. (4) `job-final-checks` injects for its
+  reads and emits all three actions, because `runFinalChecks` needs the job description text the page
+  owns. (5) The document cards travel inside the new step and it re-emits their five outputs, because
+  the wizard slot has to be one host element - `.wizard-step-content`'s gap is internal, so siblings
+  would lose the spacing between them. (6) Shared classes are copied in original source order and
+  exclusive ones moved, which is the precedent `job-export-apply-step` already set.
+  **Two handoff claims were wrong and looking settled both:** `.editor` is bound at
+  `jobs.component.html:7` in the page header, not the documents step, so it stayed; and the predicted
+  205 template lines assumed thinner hosts - eight outputs and six inputs put it at 236.
+- **Risks or compatibility impact:** No API, schema or IPC change. The visible risk is the stylesheet
+  split, which no gate can prove correct - hence the rendered check at two breakpoints and the
+  per-class scan. `quality:style-move` read clean here, but part one's false LOST is why it is not
+  what the claim rests on.
+- **Open issues or blockers:** **New, pre-existing, not fixed:** the page's
+  `@media (max-width: 760px)` block still carries `.base-cv-picker` and `.base-cv-picker__control`,
+  whose markup moved into `job-tailor-step` two sessions ago - Angular scopes the stylesheet to its
+  own template, so the rule cannot reach it and the picker's mobile grid has been inert since. Left in
+  place with a comment: restoring it changes the mobile layout, which is a product-visible call rather
+  than an extraction's. It surfaced only because the reachability scan's regex was widened to match
+  indented selectors; the previous version anchored at column 0 and could not see inside a media
+  query - **worth re-running the widened scan across the whole app**. The twelve debts logged in the
+  previous entry are all unchanged, including the unreachable cover-letter tailoring feature and the
+  `desktop` suite's flakiness (four clean full runs this session, which still does not settle it).
+- **Next first action:** Open the pull request for `refactor/jobs-wizard-steps`, wait for CI, merge by
+  squash. Then start the jobs state migration in a fresh session: read
+  `docs/internal/AGENT_START_HERE.md`, triage, and run a grilling round on how the eight `DbService`
+  call sites and the eighteen component-scoped providers divide between `libs/application` stores -
+  Settings and onboarding suggest two or three parts.
+- **Evidence:** Commit `9d3e92e`; ADR-0005 amendment forty-six; the check output quoted above; the
+  browser measurements taken at 1440px and 700px after `resize_window`.
+
 ### 2026-08-11, Jobs, part one: the dialogs, and a feature nothing can open
 
 - **Status:** complete

@@ -25,21 +25,15 @@ import {
   Job,
   Profile,
   Settings,
-  SupportedLanguage,
-  LANGUAGE_NATIVE_NAMES,
   DocumentLibraryItem,
   parseArchetypes,
   jobHeaderTitle,
   parseLegitimacyNotes,
-  SUPPORTED_LANGUAGES,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { SkeletonCard } from '@applye/ui';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
-import { UpdatedScoreView } from './updated-score-view.component';
 import { type CvGapAnswer } from '../documents/cv-content.util';
-import { CvGapDialog } from './cv-gap-dialog.component';
 import { JobCrossJobConfirmComponent } from './job-cross-job-confirm/job-cross-job-confirm.component';
 import { JobDeleteConfirmComponent } from './job-delete-confirm/job-delete-confirm.component';
 import { JobDetailActionsComponent } from './job-detail-actions/job-detail-actions.component';
@@ -50,7 +44,6 @@ import { CvPhotoPromptService } from './cv-photo-prompt.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
 import {
-  DocumentRegionTag,
   FinalCheckInputs,
   FinalChecksService,
   inferDocumentRegion,
@@ -64,6 +57,7 @@ import { CvDraftService } from '../../shared/cv-draft.service';
 import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
+import { DocumentReviewTargetsService } from '../../shared/document-review-targets.service';
 import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
 import { JobGapFillService, jobDocLabel } from '../../shared/job-gap-fill.service';
 import { GapFillHooks } from '../../shared/gap-fill';
@@ -79,7 +73,8 @@ import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JobExportApplyStepComponent } from './job-export-apply-step/job-export-apply-step.component';
 import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.component';
-import { JobDocumentCardsComponent } from './job-document-cards/job-document-cards.component';
+import { JobDocumentsStepComponent } from './job-documents-step/job-documents-step.component';
+import { JobUpdateScoreStepComponent } from './job-update-score-step/job-update-score-step.component';
 import { JOB_DETAIL_ICONS } from './job-detail-icons';
 import { baseCvChoices, documentReviewLanguageFor } from './job-document-defaults';
 
@@ -91,12 +86,10 @@ import { baseCvChoices, documentReviewLanguageFor } from './job-document-default
     LucideAngularModule,
     ScoringView,
     ApplyWizard,
-    UpdatedScoreView,
-    SkeletonCard,
-    CvGapDialog,
     JobMetaCardComponent,
-    JobDocumentCardsComponent,
+    JobDocumentsStepComponent,
     JobTailorStepComponent,
+    JobUpdateScoreStepComponent,
     JobExportApplyStepComponent,
     JobCrossJobConfirmComponent,
     JobDeleteConfirmComponent,
@@ -122,6 +115,7 @@ import { baseCvChoices, documentReviewLanguageFor } from './job-document-default
     CoverLetterDraftService,
     CoverLetterTailorService,
     DocumentReviewStatusService,
+    DocumentReviewTargetsService,
     TailoringDiscardService,
     JobGapFillService,
     LinkedDocumentsService,
@@ -144,6 +138,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly coverLetterSvc = inject(CoverLetterDraftService);
   private readonly coverLetterTailor = inject(CoverLetterTailorService);
   private readonly reviewStatus = inject(DocumentReviewStatusService);
+  /** The market and language the wizard's documents are written for; the
+   * review step's two selects write through it. */
+  private readonly targets = inject(DocumentReviewTargetsService);
   private readonly discardSvc = inject(TailoringDiscardService);
   private readonly gapFill = inject(JobGapFillService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
@@ -201,11 +198,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   protected readonly t = this.i18n.t;
 
   protected readonly icons = JOB_DETAIL_ICONS;
-
-  /** Supported document languages. Named for the portal-answers language select
-   * it was introduced for; the template now also uses it for the CV/cover-letter
-   * language dropdowns. */
-  protected readonly portalLanguages = SUPPORTED_LANGUAGES;
 
   readonly jdText = signal('');
   readonly job = signal<Job | null>(null);
@@ -269,10 +261,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   // of it, scoped to the job currently shown.
   readonly postTailorScore = computed(() => this.tailorScore.resultFor(this.job()?.id ?? -1));
   readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.job()?.id ?? -1));
-  readonly updateScoreStatus = computed(() => this.tailorScore.statusFor(this.job()?.id ?? -1));
-  readonly updateScoreError = computed(() => this.tailorScore.isErrorFor(this.job()?.id ?? -1));
   private readonly postTailorSaved = this.scoreSvc.postTailorSaved;
-  readonly atsReport = this.scoreSvc.atsReport;
   /** Non-null while the post-apply/update success card is shown before the
    * redirect fires. */
   readonly applyResult = signal<'updated' | null>(null);
@@ -288,30 +277,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly matchingCvs = signal<DocumentLibraryItem[]>([]);
   readonly selectedBaseCvId = signal<number | null>(null);
 
-  readonly documentRegionTags: DocumentRegionTag[] = ['de', 'us', 'uk', 'generic'];
-  readonly documentReviewRegion = signal<DocumentRegionTag>('generic');
-
-  /** Country name for a CV region tag ("Germany", not "DE") - the picker names
-   * the market the CV is written for, and a bare code does not read as one. */
-  regionLabel(region: DocumentRegionTag): string {
-    return this.t()(`documents.cv_region_${region}`);
-  }
-  /** Endonym for a document language ("Deutsch", not "DE"), matching Settings. */
-  nativeLang(language: SupportedLanguage): string {
-    return LANGUAGE_NATIVE_NAMES[language];
-  }
-
   /** German-market photo prompt: its own decision, its own service. */
   protected readonly photoPrompt = inject(CvPhotoPromptService);
   readonly profilePhoto = computed(() => this.profile()?.photoDataUri ?? null);
-
-  /** Region picker handler: keep the final checks honest, then let the photo
-   * prompt decide whether this market is worth raising it for. */
-  onRegionChange(region: DocumentRegionTag): void {
-    this.documentReviewRegion.set(region);
-    this.finalChecksOutdated.set(!!this.finalChecks());
-    this.photoPrompt.onRegionChosen(region);
-  }
 
   async acceptPhotoPrompt(): Promise<void> {
     const doc = await this.photoPrompt.accept(this.profilePhoto(), this.linkedCv());
@@ -323,7 +291,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (status) this.reviewStatus.status.set(status);
   }
 
-  readonly documentReviewLanguage = signal<SupportedLanguage>('en');
   /** Aliases onto `LinkedDocumentsService`'s writable signals. */
   readonly linkedCv = this.linkedDocs.cv;
   readonly linkedCoverLetter = this.linkedDocs.coverLetter;
@@ -335,11 +302,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.docGen.isPreparing(this.job()?.id ?? -1, 'cover_letter'),
   );
   readonly anyDocPreparing = computed(() => this.docGen.anyPreparing(this.job()?.id ?? -1));
-  // Aliases onto `CvGapDialogService`; the template binds these names.
-  readonly gapAnalyzing = this.gapSvc.analyzing;
-  readonly gapDialogOpen = this.gapSvc.open;
-  readonly gapQuestions = this.gapSvc.questions;
-  /** Aliases onto `DocumentReviewStatusService`; the template binds these names. */
   /** Aliases onto `FinalChecksService`. The template writes `finalChecksOutdated`
    * directly, so these stay the same writable signals rather than views of them. */
   readonly finalChecks = this.finalChecksSvc.checks;
@@ -394,8 +356,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     });
   }
 
-  readonly finalCheckStatusKey = this.finalChecksSvc.statusKey.bind(this.finalChecksSvc);
-
   async ensureApplicationDraft(): Promise<Application> {
     const existing = this.application();
     if (existing) return existing;
@@ -406,7 +366,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     const created = await this.db.upsertApplication({
       jobId: job.id,
       status: 'saved',
-      docLanguage: this.documentReviewLanguage(),
+      docLanguage: this.targets.language(),
       sourceUrl: job.source,
     });
     this.application.set(created);
@@ -425,8 +385,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     const input = cvStaleInput(
       this.job(),
       tailoredMd,
-      this.documentReviewLanguage(),
-      this.documentReviewRegion(),
+      this.targets.language(),
+      this.targets.region(),
     );
     return input ? this.linkedDocs.isStale('cv', input) : Promise.resolve(false);
   }
@@ -437,8 +397,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     const input = coverLetterStaleInput(
       this.job(),
       this.profile(),
-      this.documentReviewLanguage(),
-      this.documentReviewRegion(),
+      this.targets.language(),
+      this.targets.region(),
     );
     return input ? this.linkedDocs.isStale('cover_letter', input) : Promise.resolve(false);
   }
@@ -498,7 +458,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.gapFill.hooks({
       job,
       settings: this.settings(),
-      language: this.documentReviewLanguage(),
+      language: this.targets.language(),
       profile: this.profile(),
       applyProfile: (profile) => this.profile.set(profile),
     });
@@ -527,8 +487,8 @@ export class JobsComponent implements OnInit, OnDestroy {
         job,
         settings,
         tailoredMd,
-        language: this.documentReviewLanguage(),
-        region: this.documentReviewRegion(),
+        language: this.targets.language(),
+        region: this.targets.region(),
         label: jobDocLabel(job, 'Tailored CV'),
         ensureApplication: () => this.ensureApplicationDraft(),
         ...this.gapFillHooks(job),
@@ -556,8 +516,8 @@ export class JobsComponent implements OnInit, OnDestroy {
         job,
         profile,
         settings,
-        language: this.documentReviewLanguage(),
-        region: this.documentReviewRegion(),
+        language: this.targets.language(),
+        region: this.targets.region(),
         label: jobDocLabel(job, 'Cover Letter'),
         // `preparingCv()` is part of this condition, not an extra guard: a CV
         // still generating has not linked itself yet, so testing only
@@ -579,7 +539,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (!id) return;
     await this.reviewStatus.run(async () => {
       const app = await this.ensureApplicationDraft();
-      const result = await this.linkedDocs.link(kind, id, app, this.documentReviewLanguage());
+      const result = await this.linkedDocs.link(kind, id, app, this.targets.language());
       if (!result) return;
       this.application.set(result.application);
       this.reviewStatus.closeChooser(kind);
@@ -589,10 +549,6 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   runFinalChecks(): Promise<void> {
     return this.finalChecksSvc.run(this.finalCheckInputs());
-  }
-
-  finalChecksNeedRetailor(): boolean {
-    return this.finalChecksSvc.needRetailor(this.linkedCv());
   }
 
   async retailorFromFinalChecks(): Promise<void> {
@@ -618,8 +574,8 @@ export class JobsComponent implements OnInit, OnDestroy {
       cv: this.linkedCv(),
       coverLetter: this.linkedCoverLetter(),
       jdText: this.jdText(),
-      language: this.documentReviewLanguage(),
-      region: this.documentReviewRegion(),
+      language: this.targets.language(),
+      region: this.targets.region(),
     };
   }
 
@@ -780,8 +736,8 @@ export class JobsComponent implements OnInit, OnDestroy {
       const apps = await this.db.listApplications();
       const app = apps.find((a) => a.jobId === id) ?? null;
       this.application.set(app);
-      this.documentReviewLanguage.set(documentReviewLanguageFor(app, job, this.settings()));
-      this.documentReviewRegion.set(inferDocumentRegion(job));
+      this.targets.language.set(documentReviewLanguageFor(app, job, this.settings()));
+      this.targets.region.set(inferDocumentRegion(job));
 
       const coverLetters = await this.db.documentLibraryList('cover_letter');
       this.coverLetters.set(coverLetters);
@@ -1007,7 +963,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       jdText: this.jdText(),
       legitimacyNotes: this.legitimacyNotes(),
       tailoredResumeMd,
-      reviewRegion: this.documentReviewRegion(),
+      reviewRegion: this.targets.region(),
     };
   }
 

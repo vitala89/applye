@@ -1,0 +1,64 @@
+/* No `:host { display: contents }` here: the host element carries
+ * `.wizard-step-content` in the page template, and `display: contents` would
+ * drop the flex column that spaces this step's blocks apart.
+ *
+ * `.eyebrow`, `.muted` and the two `.apply-fields-*` rules are copies - the page
+ * still binds all four elsewhere. `.document-targets*` is a move. Source order
+ * follows `jobs.component.scss`. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+.muted {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+.apply-fields-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.apply-fields-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+.document-targets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.document-targets label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.document-targets select {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+}
+
+@media (max-width: 760px) {
+  .document-targets {
+    grid-template-columns: 1fr;
+  }
+}

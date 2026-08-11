@@ -45,7 +45,7 @@ export * from './lib/jobs/job-overview-rows';
 export * from './lib/jobs/my-jobs.store';
 export * from './lib/jobs/tracklist-import';
 export * from './lib/jobs/tracklist-import.store';
-export * from './lib/onboarding/first-launch.store';
+export * from './lib/onboarding/boot-gate.store';
 export * from './lib/onboarding/onboarding-ai-key.store';
 export * from './lib/onboarding/onboarding-ai-setup.store';
 export * from './lib/onboarding/onboarding-banner.store';

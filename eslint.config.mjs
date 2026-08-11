@@ -42,7 +42,7 @@ const GATEWAY_INJECTION =
   'CallExpression[callee.name="inject"] > Identifier.arguments[name="DbService"]';
 
 const GATEWAY_INJECTION_MESSAGE =
-  'A component may not inject DbService (ADR-0005). Screen state and data access belong to a signal store in libs/application; the component renders and delegates. If this component is being migrated, remove its entry from COMPONENTS_STILL_USING_THE_GATEWAY in eslint.config.mjs.';
+  'A component may not inject DbService (ADR-0005). Screen state and data access belong to a signal store in libs/application; the component renders and delegates. There is no allowlist any more - every component in the app was migrated, so put this read or write in a store.';
 
 export default tseslint.config(
   ...nx.configs['flat/base'],
@@ -121,10 +121,15 @@ export default tseslint.config(
     },
   },
   {
-    // ADR-0005, enforced: a component does not reach the data gateway. The
-    // allowlist below it is the ratchet - a component not named there fails the
-    // build for injecting `DbService`.
-    files: ['**/*.component.ts'],
+    // ADR-0005, enforced: a component does not reach the data gateway.
+    //
+    // `app.ts` is listed explicitly because it is a component that is not named
+    // like one, and for the whole campaign that is exactly what hid it - the
+    // allowlist read 26 when 27 files were injecting the gateway. The pattern is
+    // therefore a **convention check, not a proof**: another component named off
+    // convention would slip through the same hole, and the fix for that is the
+    // naming convention rather than a longer glob.
+    files: ['**/*.component.ts', '**/app.ts'],
     ignores: ['**/*.spec.ts'],
     rules: {
       'no-restricted-syntax': [

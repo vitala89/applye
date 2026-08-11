@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
-import { FirstLaunchStore } from '@applye/application';
+import { BootGateStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { HealthCheckPanelComponent } from './health-check-panel.component';
@@ -412,11 +412,11 @@ export interface FirstLaunchDismiss {
       }
     `,
   ],
-  providers: [FirstLaunchStore],
+  providers: [BootGateStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FirstLaunchComponent {
-  private readonly store = inject(FirstLaunchStore);
+  private readonly store = inject(BootGateStore);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 

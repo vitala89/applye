@@ -12,8 +12,7 @@ import { UpdaterService } from './core/updater.service';
 import { FirstLaunchComponent, FirstLaunchDismiss } from './core/first-launch.component';
 import { OnboardingComponent } from './core/onboarding/onboarding.component';
 import { OnboardingService } from './core/onboarding/onboarding.service';
-import { shouldAutoOpenOnboarding } from '@applye/application';
-import { DbService } from '@applye/data';
+import { BootGateStore } from '@applye/application';
 import { ToastContainerComponent } from './core/toast/toast-container.component';
 
 @Component({
@@ -37,10 +36,13 @@ import { ToastContainerComponent } from './core/toast/toast-container.component'
   `,
   styles: [':host { display: block; height: 100%; }'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [BootGateStore],
 })
 export class App implements OnInit {
   private readonly updater = inject(UpdaterService);
-  private readonly db = inject(DbService);
+  /** Which screen the app opens on. The rule is the store's; this component
+   * only routes the answer (ADR-0005). */
+  private readonly boot = inject(BootGateStore);
   readonly onboarding = inject(OnboardingService);
 
   readonly theme = signal<'dark' | 'light'>('dark');
@@ -52,15 +54,12 @@ export class App implements OnInit {
     // and the About block, never through a dialog over a window they just
     // opened. Never blocks startup.
     void this.updater.check();
-    try {
-      const settings = await this.db.getSettings();
-      this.showFirstLaunch.set(!settings.healthCheckSeen);
-      if (settings.healthCheckSeen && shouldAutoOpenOnboarding(settings)) {
-        this.onboarding.requestOpen();
-      }
-    } catch {
-      // fail open - never block the app on a health-flag read error
-    }
+
+    // `requestOpen` rather than a local signal: the same open state is written
+    // by the dashboard banner and by Settings, so `OnboardingService` owns it.
+    const screen = await this.boot.load();
+    if (screen === 'first-launch') this.showFirstLaunch.set(true);
+    else if (screen === 'onboarding') this.onboarding.requestOpen();
   }
 
   onFirstLaunchDismissed(intent: FirstLaunchDismiss): void {

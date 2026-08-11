@@ -7,7 +7,8 @@ import { CvGapDialogService } from '../../../shared/cv-gap-dialog.service';
 import { DocumentReviewTargetsService } from '../../../shared/document-review-targets.service';
 import { DocumentGenService } from '../../../shared/document-gen.service';
 import { DocumentReviewStatusService } from '../../../shared/document-review-status.service';
-import { DocumentRegionTag, FinalChecksService } from '../../../shared/final-checks.service';
+import { DocumentRegionTag } from '@applye/application';
+import { FinalChecksService } from '../../../shared/final-checks.service';
 import { LinkedDocumentsService } from '../../../shared/linked-documents.service';
 import { CvPhotoPromptService } from '../cv-photo-prompt.service';
 

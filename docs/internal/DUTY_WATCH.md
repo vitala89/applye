@@ -44,6 +44,89 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-11, the gateway allowlist reaches zero
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5). Re-triaged when the scope changed from template extraction to
+  state migration: 9/10 - radius 2, ambiguity 2, risk 1, verification 2, unknowns 2. Ambiguity 2 sent
+  it through `aif-grilling`, two rounds, seven decisions. No subagents.
+- **Branch:** `refactor/jobs-state-migration`
+- **Commits:** `b740ec8` migration, plus this documentation commit
+- **Pull request:** see the branch
+- **Objective:** Delete the last entry from `COMPONENTS_STILL_USING_THE_GATEWAY` by moving the job
+  page's eight `DbService` call sites into `libs/application`. Wizard and tailoring orchestration
+  explicitly out of scope.
+- **Completed:**
+  - **`JobDetailStore`**, `libs/application/src/lib/jobs/job-detail.store.ts`, **142/250**. Owns job,
+    jdText, profile, settings, application, coverLetters, matchingCvs, selectedBaseCvId and four
+    paths: `loadContext`, `loadJob`, `refreshLibrary`, `ensureApplication`. Provided component-scoped
+    by the page as its nineteenth provider; exported from `libs/application/src/index.ts`.
+  - **The allowlist is `[]`.** The rule stays and now binds every component.
+  - **`baseCvChoices`, `documentReviewLanguageFor`, `inferDocumentRegion` and `DocumentRegionTag`
+    moved** to `libs/application/src/lib/jobs/job-document-defaults.ts` with their spec. Six importers
+    across `apps/desktop` updated directly; no re-export.
+  - **A real bug fixed.** `matchingCvs` had two writers: `loadJob` narrowed it with `baseCvChoices`,
+    `prepareDocumentsStep` set it to the raw `documentLibraryList('cv')`. The editor-return path took
+    the second, so the base-CV picker and the choose-existing dropdown filled with every CV in the
+    library after one round trip. One writer now.
+  - **24 tests** in `libs/application`: 12 moved with the helpers, 12 new for the store.
+- **Not completed:** The class is **980/400**. The wizard, tailoring and scoring orchestration stay on
+  the page; their blocker is now the `shared/*` services, not the gateway. The lint rule is **not**
+  deleted - `app.ts` injects the gateway outside its glob and the rule is the only pressure on it.
+- **Files or packages changed:** new `libs/application/src/lib/jobs/job-detail.store.ts` and its spec;
+  `job-document-defaults.{ts,spec.ts}` moved from `apps/desktop/src/app/pages/jobs/`;
+  `libs/application/src/index.ts`; `eslint.config.mjs`; `apps/desktop/src/app/pages/jobs/jobs.component.ts`;
+  `cv-photo-prompt.service.ts`, `job-documents-step.component.{ts,spec.ts}`, `cover-letter-draft.service.ts`,
+  `cv-draft.service.ts`, `document-review-targets.service.ts`, `final-checks.service.ts` (import
+  changes only); ADR-0005; `CHANGELOG.md`; `docs/product/CURRENT_STATE.md`; this file.
+- **Validation:** Run and observed on this branch. `nx run-many --target=type-check --skip-nx-cache`
+  pass, 7 projects. `nx run-many --target=lint --skip-nx-cache` pass, 7 projects, 0 errors, 18
+  pre-existing warnings. `nx test application --skip-nx-cache` pass, **1092 tests / 85 suites**
+  (from 1068). `nx test desktop --skip-nx-cache` pass, **1435 tests / 132 suites** (from 1447; the 12
+  helper tests moved). `nx build desktop` pass. `npm run quality:file-size` pass - 980/400 against
+  base 998. `npm run quality:attribution`, `npm run format:check`, `git diff --check` pass.
+  **The lint rule was verified positively, not assumed:** `inject(DbService)` added to
+  `job-meta-card.component.ts` produced the ADR-0005 error with the allowlist empty, and the change
+  was reverted. That check exists because a flat-config entry with `files: []` does not mean "no
+  files" - written inline, the emptied list would have switched the rule off everywhere, and every
+  other gate would still have passed.
+  **Rendered check** against a stubbed `window.__TAURI_INTERNALS__.invoke` installed in the console
+  and never committed: `loadContext` dispatches `db_get_profile` and `db_get_settings`; `loadJob`
+  dispatches `db_get_job`, `db_list_applications` and `document_library_list` for both kinds, and a
+  four-CV library (two `en`, one `de`, one `fr`) narrows to `[1, 2]`; `refreshLibrary` narrows
+  identically, which is the fixed bug; the base-CV picker on screen lists exactly those two;
+  `ensureApplication` returns the existing row with no write, and answers null with no job, which the
+  page turns into the translated "not found". Job detail renders with its description, company, title
+  and filter badge. No console errors.
+- **Privacy/security impact:** None. The same four reads and one write, against the same commands,
+  from a different file. No new data crosses a boundary, nothing is logged or persisted that was not
+  before.
+- **Decisions and assumptions:** Seven, settled through `aif-grilling` before any edit. (1) One store,
+  not two, and not split across two PRs - the eight sites are one cluster and the allowlist reaching
+  zero in one PR is the campaign's actual milestone. (2) The store stops at the data: `loadJob`
+  fetches and answers whether the row existed, and the page sequences the six services
+  `libs/application` cannot import. (3) The cached score therefore restores after all four reads
+  instead of partway through - accepted and named. (4) `matchingCvs` narrows on both paths. (5)
+  `ensureApplication` returns `Application | null` rather than throwing a translated string. (6) The
+  three pure helpers and `DocumentRegionTag` move to `libs/application`. (7) The rule is not deleted
+  with the list. **One deviation from what a decision anticipated:** the null check landed in one
+  place, the page's own `ensureApplicationDraft`, not the four call sites - three of the four hand the
+  method to a service as a `() => Promise<Application>` callback, so honouring the letter would have
+  changed three service signatures for no gain.
+- **Risks or compatibility impact:** No schema, IPC or public API change beyond the new
+  `libs/application` exports. Two behaviour changes, both intended and both named above. The load
+  ordering change is the one worth watching: if a future path depends on the score being restored
+  before the application row is read, it will now see a stale score for the duration of two awaits.
+- **Open issues or blockers:** All thirteen previously logged debts unchanged, including the
+  unreachable cover-letter tailoring feature, the dead `.base-cv-picker` mobile rule, and the
+  `desktop` suite's flakiness (three more clean full runs this session). **New:** none.
+- **Next first action:** Open the pull request for `refactor/jobs-state-migration`, wait for CI, merge
+  by squash. Then level two, item one: decide whether the lint rule's glob widens to catch `app.ts`
+  or `app.ts` is migrated on its own - it is the one gateway injection the list never counted, and
+  the rule cannot be deleted until it is resolved.
+- **Evidence:** Commit `b740ec8`; ADR-0005 amendment forty-seven; the check output quoted above; the
+  positive lint verification described above; the browser probe of all four store paths.
+
 ### 2026-08-11, Jobs, part two: the wizard's last two inline steps
 
 - **Status:** complete

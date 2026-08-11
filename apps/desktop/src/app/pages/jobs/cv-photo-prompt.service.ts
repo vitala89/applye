@@ -4,7 +4,7 @@ import { CvContent, DocumentLibraryItem } from '@applye/core';
 import { withCvPhoto } from '../documents/cv-content.util';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { DocumentRegionTag } from '../../shared/final-checks.service';
+import { DocumentRegionTag } from '@applye/application';
 
 /**
  * The German-market photo prompt.

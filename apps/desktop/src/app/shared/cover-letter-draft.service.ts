@@ -14,7 +14,7 @@ import { AiService, DbService } from '@applye/data';
 import { cleanJsonText } from '../pages/documents/cv-content.util';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
-import { DocumentRegionTag } from './final-checks.service';
+import { DocumentRegionTag } from '@applye/application';
 import { GapFillHooks, foldInGapAnswers } from './gap-fill';
 
 /** Everything the cover letter is built from, plus the hand-offs the page still

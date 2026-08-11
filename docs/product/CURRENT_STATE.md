@@ -42,6 +42,17 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`COMPONENTS_STILL_USING_THE_GATEWAY` is empty. Level one of ADR-0005 is closed.** 26 -> 0, first
+  entry deleted 2026-08-07, last 2026-08-11. `JobDetailStore` in
+  `libs/application/src/lib/jobs/job-detail.store.ts` (142/250) owns the job page's four data paths;
+  `jobs.component.ts` is **980/400** and injects no gateway. The lint rule **stays** and now binds
+  every component - it is deleted only when `app.ts` is dealt with, because that file injects the
+  gateway outside the rule's `*.component.ts` glob and the rule is the only pressure on it.
+  **A bug was fixed on the way:** `matchingCvs` had two writers and two meanings, so returning from
+  the document editor replaced the narrowed base-CV offer with the whole library, in every language.
+  One writer now, verified on a rendered screen. **Next first action:** level two, item one - decide
+  whether the rule's glob widens to catch `app.ts` or `app.ts` is migrated on its own
+  (ADR-0005, amendment forty-seven).
 - **Jobs, part two is done: the template is under budget and the state migration is unblocked.** The
   apply wizard's last two inline steps are components - `job-update-score-step`, `job-documents-step`
   and, nested inside the second, `job-final-checks`. `jobs.component.html` is **236/300**, the
@@ -83,9 +94,10 @@
   binds new code now; existing pages migrate **when touched for another reason**, which is the same
   trigger the budgets already use, so the two are **one stream of work**. **The boundary is enforced by
   lint as of ADR-0005 amendment four**: a `*.component.ts` injecting `DbService` is an error unless it
-  is named in `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs`, a list of **1** that only
-  ever shrinks - `jobs.component.ts`, and nothing else. It started at 26. The `type:data` allowlist flip is a separate, later goal - it keys on the project tag,
-  so it also bans the gateway from the app's 18 `shared/*` services.
+  is named in `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs`. **That list is now empty**
+  - it started at 26, only ever shrank, and `jobs` deleted the last line - so the rule binds every
+    component without exception. The `type:data` allowlist flip is a separate, later goal - it keys on
+    the project tag, so it also bans the gateway from the app's 18 `shared/*` services.
 - **Onboarding is out of the gateway, and `jobs` is the only component left in the allowlist.** Seven
   stores in `libs/application/src/lib/onboarding/` hold what the wizard's page class used to: the five
   its steps already had, plus `OnboardingAiSetupStore` (the mode, the settings the AI step writes, and

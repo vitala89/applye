@@ -7,6 +7,18 @@ import {
   normalizeSupportedLanguage,
 } from '@applye/core';
 
+/** Which regional document conventions a CV or cover letter is written to. */
+export type DocumentRegionTag = 'de' | 'us' | 'uk' | 'generic';
+
+/**
+ * Which regional document conventions a job implies. German postings get the
+ * German set; everything else gets the neutral one. Pure, and here rather than
+ * in the final-checks service because the tag it returns is defined here.
+ */
+export function inferDocumentRegion(job: { language?: string } | null): DocumentRegionTag {
+  return job?.language === 'de' ? 'de' : 'generic';
+}
+
 /**
  * Which language the Review documents step opens in.
  *

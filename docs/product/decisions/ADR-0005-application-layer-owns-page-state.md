@@ -2485,6 +2485,77 @@ retired, every one of them an alias the template alone named. All 1432 existing 
 **Next:** the class is 998 against 400 and the page still injects `DbService` in eight places. That is
 the state migration, and it is its own session with its own grilling round.
 
+## Amendment forty-seven: the allowlist reaches zero
+
+`COMPONENTS_STILL_USING_THE_GATEWAY` is `[]`. It started at **26**, only ever shrank, and `jobs` held
+the last line. The rule stays and now binds every component without exception.
+
+**What actually had to move was smaller than the page.** The rule bans `inject(DbService)` in a
+`*.component.ts`; it says nothing about a 998-line class. Eight call sites across four methods -
+`getProfile`+`getSettings`, `getJob`+`listApplications`+`documentLibraryList` twice,
+`documentLibraryList` twice again, and one `upsertApplication` - are what stood between this page and
+the empty list. Separating that from "migrate the whole screen" is what made a one-session job out of
+what the previous three amendments had deferred as a two-or-three-part one.
+
+**One store, and it stops at the data.** `JobDetailStore` (142 lines against 250) owns the job, its
+description, the profile and settings, the application row and the document-library rows, with
+`loadContext`, `loadJob`, `refreshLibrary` and `ensureApplication`. It does **not** own the load
+sequence, and that is the boundary rather than a preference: the page's `loadJob` interleaved those
+reads with the cached score, the review targets, the linked documents, the portal answers and the
+tailoring restore - six `apps/desktop` services `libs/application` cannot import. So the store fetches
+and answers whether the row existed; the page sequences the rest. The rejected alternative, passing
+five callbacks in, would have put page orchestration behind an argument list and made the store's
+tests depend on stubs for services it has no business knowing about.
+
+**The page keeps aliases, and here they are load-bearing rather than habit.** `unsavedJobGuard` reads
+`page.job()` and `page.application()` off the component instance, so those names have to resolve on
+the class. They are the store's own signals, not views of them, for the same reason every other alias
+on this page is.
+
+**A bug fell out of the migration, which is the second time consolidating two writers has done that.**
+`matchingCvs` had two meanings: `loadJob` narrowed it with `baseCvChoices`, and
+`prepareDocumentsStep` set it to the raw `documentLibraryList('cv')`. Returning from the document
+editor took the second path, so the base-CV picker and the choose-existing dropdown quietly filled
+with every CV in the library, in every language. One writer now - `refreshLibrary` - and one meaning.
+Confirmed on a rendered screen against a four-CV library: the picker lists the two written in the
+job's language, on the load path and the refresh path alike.
+
+**An ordering change, named rather than hidden.** The cached score used to be restored between the job
+read and the application read; it now runs after all four. The two are independent, and the alternative
+was the store importing the scoring service across a boundary it cannot cross.
+
+**The store answers with an outcome, not a translated throw.** `ensureApplication` returns
+`Application | null`; `libs/application` has no `TranslateService`, and debt six already records
+`CoverLetterAiStore` throwing where its neighbours answer. **The null check landed in one place rather
+than the four the decision anticipated**, because three of the four call sites hand the method to a
+service as a `() => Promise<Application>` callback - honouring the letter would have changed three
+service signatures for no gain, so the page's own wrapper is where null becomes
+`jobs.not_found_label`.
+
+**An empty allowlist is not the same as a deleted one, and getting that wrong would have inverted the
+rule.** A flat-config entry with `files: []` does not mean "no files". Written inline, the emptied
+list would have switched `no-restricted-syntax` **off everywhere** - a PR whose headline is "the rule
+now binds every component" shipping the rule bound to none. The override is spread in conditionally,
+and the rule was verified positively: `inject(DbService)` added to `job-meta-card` fails lint with the
+ADR message, and the change was reverted.
+
+**The rule is not deleted, deliberately.** `app.ts` injects the gateway and the rule cannot see it -
+the glob matches `*.component.ts` and that file is not one, so the list undercounted by one throughout
+its life. Deleting the rule now removes the only pressure on that file. It goes when `app.ts` is
+migrated or the glob widens.
+
+`baseCvChoices`, `documentReviewLanguageFor` and `inferDocumentRegion` moved to `libs/application`
+with their specs, and `DocumentRegionTag` moved with them - it is the type `inferDocumentRegion`
+returns, and leaving it behind would have made the function unmovable. Six importers updated directly
+rather than through a re-export.
+
+`jobs.component.ts` **998 -> 980**, still 2.45x its budget. That is stated rather than dressed up: the
+wizard, tailoring and scoring orchestration are still on the page, and they are a separate migration
+whose blocker is now the `shared/*` services rather than the gateway. `application` 1068 -> 1092,
+`desktop` 1447 -> 1435 (the twelve helper tests moved with their helpers).
+
+**Level one is closed.** Level two starts at `app.ts`.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2555,12 +2626,12 @@ the state migration, and it is its own session with its own grilling round.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**1** entry - `jobs`; `onboarding` came off in
-        amendment forty-four;
-        first deleted 2026-08-07,
-        then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
-        to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
-        without ever calling it - so the count had been overstating the work by one)
+  - [x] **Empty `COMPONENTS_STILL_USING_THE_GATEWAY`** - done in amendment forty-seven. **26 -> 0**,
+        first deleted 2026-08-07, last deleted 2026-08-11; `onboarding` came off in amendment
+        forty-four and `jobs` held the final line. Two went in amendment twenty-five:
+        `onboarding-banner` migrated to `OnboardingBannerStore`, and `paste-job-modal` turned out to
+        be injecting the gateway without ever calling it - so the count had been overstating the work
+        by one. **Deleting the rule is deliberately not part of it**, see the next item
   - [ ] **`app.ts` injects the gateway and the lint rule cannot see it**, because the rule matches
         `*.component.ts` and that file is not one. Found while migrating `first-launch` (amendment
         thirty-five); the allowlist has been undercounting by one throughout. Decide whether the

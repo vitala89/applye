@@ -25,6 +25,19 @@ describe('cleanJsonText', () => {
     const text = 'Here you go:\n[{"a": 1}]\nEnjoy.';
     expect(JSON.parse(cleanJsonText(text))).toEqual([{ a: 1 }]);
   });
+
+  it('strips whitespace on both sides of both fences', () => {
+    const text = '```json   \n\n  {"a": 1}  \n\n   ```';
+    expect(JSON.parse(cleanJsonText(text))).toEqual({ a: 1 });
+  });
+
+  it('stays fast on a long run of whitespace before the closing fence', () => {
+    // The quadratic form of this function took seconds on input this shape.
+    const text = `\`\`\`json\n{"a": 1}${' '.repeat(50_000)}\n\`\`\``;
+    const started = performance.now();
+    expect(JSON.parse(cleanJsonText(text))).toEqual({ a: 1 });
+    expect(performance.now() - started).toBeLessThan(1_000);
+  });
 });
 
 describe('parseDateAnswer', () => {

@@ -25,10 +25,16 @@ import { splitDisplayName } from '../profile/split-display-name';
  * instead of a silent empty draft. */
 export function cleanJsonText(text: string): string {
   let cleaned = text.trim();
-  cleaned = cleaned
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/i, '')
-    .trim();
+  // The fences are stripped by slicing rather than by `/\s*```\s*$/`. That
+  // pattern has an unbounded `\s*` before a literal it has to find, so every
+  // run of whitespace is rescanned and the cost is quadratic in the length of
+  // the answer - and the answer here is a whole model reply, which is the one
+  // input that is both attacker-influenced and routinely thousands of
+  // characters (CodeQL js/polynomial-redos). `endsWith` and `trimEnd` do the
+  // same job in one pass.
+  const openFence = /^```(?:json)?/i.exec(cleaned);
+  if (openFence) cleaned = cleaned.slice(openFence[0].length).trimStart();
+  if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3).trimEnd();
   const braceIdx = cleaned.indexOf('{');
   const bracketIdx = cleaned.indexOf('[');
   const isArray = bracketIdx !== -1 && (braceIdx === -1 || bracketIdx < braceIdx);

@@ -2,8 +2,10 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CvPrintStore } from '@applye/application';
 import { CvPreviewComponent } from '../cv-detail/cv-preview/cv-preview.component';
-import { normalizeCvContent } from '../cv-content.util';
+
 import { awaitPrintSettle } from '../print-settle.util';
+
+import { normalizeCvContent } from '@applye/core';
 
 /**
  * Print-only CV route (`print/cv/:id`), loaded by a HIDDEN Tauri window during

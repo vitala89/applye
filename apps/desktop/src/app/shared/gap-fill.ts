@@ -1,9 +1,6 @@
 import { WritableSignal } from '@angular/core';
-import {
-  buildAdditionalInfoBlock,
-  type CvGapAnswer,
-  type CvGapQuestion,
-} from '../pages/documents/cv-content.util';
+
+import { buildAdditionalInfoBlock, type CvGapAnswer, type CvGapQuestion } from '@applye/core';
 
 export type GapAnswers = { answers: CvGapAnswer[]; saveToProfile: boolean } | null;
 

@@ -15,7 +15,8 @@
  * that did not exist yet.
  */
 
-import { CvParsedContent, splitDisplayName } from '@applye/core';
+import { CvParsedContent } from '../models/document.model';
+import { splitDisplayName } from '../profile/split-display-name';
 
 /** Parses a skill response (JSON, possibly fenced) that is either a single
  * object (`cv-import`/`cv-generate-baseline`/cover-letter skills) or a JSON

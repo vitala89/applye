@@ -12,7 +12,8 @@ import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { DocumentRowActionsComponent } from '../document-row-actions/document-row-actions.component';
-import { cleanJsonText } from '../cv-content.util';
+
+import { cleanJsonText } from '@applye/core';
 
 const REGION_TAGS = ['de', 'us', 'uk', 'generic'];
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];

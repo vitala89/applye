@@ -4,14 +4,16 @@ import { CvPhotoStore } from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
+
+import { CvDetailComponent } from './cv-detail.component';
+
 import {
   effectiveSectionStyle,
   effectiveTitleBorder,
   effectiveTitleRuleColor,
   effectiveTitleRuleWidth,
   effectiveTitleStyle,
-} from '../cv-content.util';
-import { CvDetailComponent } from './cv-detail.component';
+} from '@applye/core';
 
 describe('CvDetailComponent per-section style', () => {
   let component: CvDetailComponent;

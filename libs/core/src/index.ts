@@ -28,3 +28,14 @@ export * from './lib/analytics/analytics';
 export * from './lib/geo/geo-scope';
 export * from './lib/geo/local-market';
 export * from './lib/ai/api-models';
+
+// CV content, style and layout - pure, and here rather than in the app because
+// nine files in `libs/application` were taking these functions as arguments to
+// work around their being unreachable (ADR-0005, amendment fifty).
+export * from './lib/cv/cv-content.util';
+export * from './lib/cv/cv-entry.util';
+export * from './lib/cv/cv-page.util';
+export * from './lib/cv/cv-parse.util';
+export * from './lib/cv/cv-selection.util';
+export * from './lib/cv/cv-style.util';
+export * from './lib/cv/cv-style-scope.util';

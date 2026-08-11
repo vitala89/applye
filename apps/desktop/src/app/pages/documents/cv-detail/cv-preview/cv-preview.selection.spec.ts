@@ -1,7 +1,9 @@
 import { ComponentFixture } from '@angular/core/testing';
-import type { CvPreviewSelection } from '../../cv-content.util';
+
 import { CvPreviewComponent } from './cv-preview.component';
 import { createCvPreview } from './cv-preview.harness';
+
+import type { CvPreviewSelection } from '@applye/core';
 
 describe('CvPreviewComponent selection', () => {
   let component: CvPreviewComponent;

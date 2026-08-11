@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { CvContent, DocumentLibraryItem } from '@applye/core';
-import { withCvPhoto } from '../documents/cv-content.util';
+import { CvContent, DocumentLibraryItem, withCvPhoto } from '@applye/core';
+
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { DocumentRegionTag } from '@applye/application';

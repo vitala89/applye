@@ -31,8 +31,8 @@ import type {
   CvSectionStyle,
   CvStyle,
   CvTextStyle,
-} from '@applye/core';
-import type { CvPreviewSelection, CvStylePanelChange } from './cv-content.util';
+} from '../models/document.model';
+import type { CvPreviewSelection, CvStylePanelChange } from './cv-selection.util';
 import {
   clearSectionElementOverrides,
   clearSectionEntryRuleOverrides,

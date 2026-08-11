@@ -36,7 +36,22 @@ import type {
   PhotoPlacement,
   StyleNote,
 } from '@applye/core';
-import { PAGE_SETTINGS_DEFAULT } from '@applye/core';
+import {
+  PAGE_SETTINGS_DEFAULT,
+  REGENERATABLE_SECTION_KEYS,
+  cvFieldAtsNoteKeys,
+  cvLeafText,
+  mergeRegeneratedSection,
+  normalizeCvContent,
+  parseCvSkillResponse,
+  patchCvSectionStyle,
+  resetCvSectionStyle,
+  resolvePageSettings,
+  routeCvStyleChange,
+  sectionLabelKey,
+  type CvPreviewSelection,
+  type CvStylePanelChange,
+} from '@applye/core';
 import {
   CvDocumentStore,
   CvNoProfileError,
@@ -59,21 +74,6 @@ import { CvSkillsEditorComponent } from './section-editors/cv-skills-editor.comp
 import { CvEducationEditorComponent } from './section-editors/cv-education-editor.component';
 import { CvExperienceEditorComponent } from './section-editors/cv-experience-editor.component';
 import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-details-editor.component';
-import {
-  cvFieldAtsNoteKeys,
-  cvLeafText,
-  type CvPreviewSelection,
-  type CvStylePanelChange,
-  mergeRegeneratedSection,
-  normalizeCvContent,
-  parseCvSkillResponse,
-  patchCvSectionStyle,
-  REGENERATABLE_SECTION_KEYS,
-  resetCvSectionStyle,
-  resolvePageSettings,
-  sectionLabelKey,
-} from '../cv-content.util';
-import { routeCvStyleChange } from '../cv-style-scope.util';
 
 @Component({
   selector: 'app-cv-detail',

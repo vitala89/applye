@@ -12,11 +12,12 @@ import {
   Profile,
   Settings,
   SupportedLanguage,
+  cleanJsonText,
   sanitizeSignature,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { cleanJsonText } from '../pages/documents/cv-content.util';
+
 import { ToastService } from '../core/toast/toast.service';
 
 /** Everything the tailored copy is built from. The page still owns the library

@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Trash2 } from 'lucide-angular';
 import type { CvEducationEntry, CvEducationSection } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { blankEducationEntry } from '../../cv-content.util';
+
+import { blankEducationEntry } from '@applye/core';
 
 /**
  * Editor arm for the `education` CV section: a list of degree/institution/

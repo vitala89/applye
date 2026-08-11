@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { CvContent, CvParsedContent, CvTemplate } from '@applye/core';
 import { buildOnboardingCvInput, regionTagForUiLanguage } from '@applye/application';
-import { buildCvContent } from '../../pages/documents/cv-content.util';
+
+import { buildCvContent } from '@applye/core';
 
 /**
  * The half of `onboarding-content.util`'s coverage that cannot follow it into

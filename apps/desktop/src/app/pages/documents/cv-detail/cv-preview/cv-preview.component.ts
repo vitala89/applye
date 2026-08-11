@@ -30,27 +30,16 @@ import type {
   PhotoPlacement,
 } from '@applye/core';
 import {
-  getBuiltinTheme,
-  parseInlineEmphasis,
-  themeCssVars,
-  themeTitleRule,
-  toggleBoldWrap,
-  toggleWordBold,
-  wordTokens,
-} from '@applye/core';
-import { TranslateService } from '@applye/i18n';
-import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
-import {
   buildContactLine,
-  type CvContactFieldKey,
-  type CvPreviewSelection,
   effectiveSectionStyle,
   effectiveTitleBorder,
   effectiveTitleRuleColor,
   effectiveTitleRuleWidth,
   effectiveTitleStyle,
+  getBuiltinTheme,
   leafPath,
   orderedVisibleSections,
+  parseInlineEmphasis,
   parseSkillValues,
   replaceEducationEntryField,
   replaceExperienceBullet,
@@ -60,8 +49,17 @@ import {
   replaceSkillGroupValues,
   resolvePageSettings,
   sectionLabelKey,
+  themeCssVars,
+  themeTitleRule,
+  toggleBoldWrap,
+  toggleWordBold,
+  type CvContactFieldKey,
+  type CvPreviewSelection,
   visiblePersonalContactFields,
-} from '../../cv-content.util';
+  wordTokens,
+} from '@applye/core';
+import { TranslateService } from '@applye/i18n';
+import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
 
 /** Field key for a per-leaf accessible-name suffix (Task 6 a11y hardening,
  * review minor T2): every per-leaf selectable host - one with its own

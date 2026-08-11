@@ -8,7 +8,7 @@
  * legacy preset string, or absent - into clamped millimetres plus the
  * resolution-independent percentages the preview pads with.
  */
-import type { CvPersonalDetailsSection, PageMargins, PageSettings } from '@applye/core';
+import type { CvPersonalDetailsSection, PageMargins, PageSettings } from '../models/document.model';
 
 /** Reference-order single-line contact string: location · phone · email ·
  * website · linkedin, then optionally birthdate/marital. Empty fields drop out

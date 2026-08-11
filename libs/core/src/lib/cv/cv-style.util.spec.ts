@@ -1,18 +1,18 @@
 import {
+  clearSectionElementOverrides,
   effectiveLeafStyle,
   effectiveSectionStyle,
-  effectiveTitleStyle,
-  clearSectionElementOverrides,
   effectiveTitleBorder,
   effectiveTitleRuleColor,
   effectiveTitleRuleWidth,
+  effectiveTitleStyle,
   patchCvDocumentBody,
   patchCvElementStyle,
   patchCvSectionStyle,
   resetCvElementStyle,
   resetCvSectionStyle,
-} from './cv-content.util';
-import { CV_STYLE_DEFAULT, CvStyle } from '@applye/core';
+} from './cv-style.util';
+import { CV_STYLE_DEFAULT, CvStyle } from '../models/document.model';
 
 describe('effectiveSectionStyle', () => {
   const base: CvStyle = { ...CV_STYLE_DEFAULT }; // fontFamily Calibri, fontSizePt 11, accentColorHex #333333, fontWeight 400

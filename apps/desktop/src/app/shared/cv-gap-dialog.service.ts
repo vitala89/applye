@@ -1,11 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiService } from '@applye/data';
-import { Job, Settings, SupportedLanguage } from '@applye/core';
 import {
+  Job,
+  Settings,
+  SupportedLanguage,
   parseCvGapResponse,
   type CvGapAnswer,
   type CvGapQuestion,
-} from '../pages/documents/cv-content.util';
+} from '@applye/core';
 
 export interface CvGapResult {
   answers: CvGapAnswer[];

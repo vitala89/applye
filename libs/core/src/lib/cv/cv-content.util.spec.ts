@@ -1,12 +1,12 @@
-import type { CvContent, CvParsedContent, CvSection, CvTemplate } from '@applye/core';
+import type { CvContent, CvParsedContent, CvSection, CvTemplate } from '../models/document.model';
 import {
   buildCvContent,
   cvContentToMd,
   mergeRegeneratedSection,
   normalizeCvContent,
-  parseCvSkillResponse,
   withCvPhoto,
 } from './cv-content.util';
+import { parseCvSkillResponse } from './cv-parse.util';
 
 function parsedMin(): CvParsedContent {
   return {
@@ -65,7 +65,7 @@ describe('normalizeCvContent', () => {
       groups: { label: string; values: string[] }[];
     };
     expect(skills.groups).toEqual([{ label: 'Skills', values: ['TypeScript', 'Rust'] }]);
-    expect((skills as Record<string, unknown>)['items']).toBeUndefined();
+    expect((skills as unknown as Record<string, unknown>)['items']).toBeUndefined();
   });
 
   it('leaves an already-grouped skills section untouched', () => {
@@ -95,7 +95,7 @@ describe('buildCvContent (enriched)', () => {
 
   it('maps title/website/linkedin onto personal_details', () => {
     const content = buildCvContent(parsed(), template);
-    const pd = content.sections.find((s) => s.key === 'personal_details') as Record<
+    const pd = content.sections.find((s) => s.key === 'personal_details') as unknown as Record<
       string,
       unknown
     >;
@@ -152,7 +152,7 @@ describe('buildCvContent personal_details guarantee', () => {
     const content = buildCvContent(parsedMin(), template);
     expect(content.sections[0].key).toBe('personal_details');
     expect(content.sections[0].order).toBe(0);
-    const pd = content.sections[0] as Record<string, unknown>;
+    const pd = content.sections[0] as unknown as Record<string, unknown>;
     expect(pd['fullName']).toBe('Vitalii Kasap');
     expect(content.sections.map((s) => s.key)).toEqual([
       'personal_details',
@@ -183,7 +183,10 @@ describe('normalizeCvContent personal_details', () => {
     } as unknown as CvContent;
     const out = normalizeCvContent(legacy);
     expect(out.sections.some((s) => s.key === 'personal_details')).toBe(true);
-    const pd = out.sections.find((s) => s.key === 'personal_details') as Record<string, unknown>;
+    const pd = out.sections.find((s) => s.key === 'personal_details') as unknown as Record<
+      string,
+      unknown
+    >;
     expect(pd['fullName']).toBe('');
     expect(pd['order']).toBe(0);
   });

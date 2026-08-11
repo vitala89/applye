@@ -26,7 +26,7 @@ import {
   Upload,
   Wallet,
 } from 'lucide-angular';
-import { AiMode, AiProvider } from '@applye/core';
+import { AiMode, AiProvider, buildCvContent, parseCvSkillResponse } from '@applye/core';
 import {
   ONBOARDING_CLI_PROVIDERS,
   OnboardingAiKeyStore,
@@ -43,8 +43,7 @@ import {
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { buildCvContent } from '../../pages/documents/cv-content.util';
-import { parseCvSkillResponse } from '../../pages/documents/cv-parse.util';
+
 import { OnboardingApiKeyCardComponent } from './onboarding-api-key-card/onboarding-api-key-card.component';
 import { OnboardingCliCardComponent } from './onboarding-cli-card/onboarding-cli-card.component';
 import { OnboardingReviewStepComponent } from './onboarding-review-step/onboarding-review-step.component';

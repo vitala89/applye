@@ -15,7 +15,7 @@
  * that did not exist yet.
  */
 
-import { CvParsedContent } from '../models/document.model';
+import { CoverLetterContent, CvParsedContent } from '../models/document.model';
 import { splitDisplayName } from '../profile/split-display-name';
 
 /** Parses a skill response (JSON, possibly fenced) that is either a single
@@ -163,6 +163,32 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
     languages: parsed.languages ?? [],
     lowConfidenceNotes: parsed.lowConfidenceNotes ?? [],
   };
+}
+
+/**
+ * Reads a cover-letter skill's answer. The letter is applied field by field by
+ * the caller, so an answer that fills only some blocks is legitimate and the
+ * result is deliberately partial.
+ *
+ * **It throws rather than returning an empty letter.** `CoverLetterGenerateStore`
+ * turns that throw into its `bad-json` outcome, which is the sentence the user
+ * reads; a silent `{}` would populate the editor with nothing and look like a
+ * model that had nothing to say.
+ *
+ * A truncated answer is **not** repaired here, unlike `parseCvSkillResponse`.
+ * That is the behaviour the page's own parse had before this function existed,
+ * and changing it would change what the user sees on a cut-off answer - a
+ * decision of its own, not a rider on moving the parse into this layer.
+ */
+export function parseCoverLetterResponse(text: string): Partial<CoverLetterContent> {
+  const value: unknown = JSON.parse(cleanJsonText(text));
+  // An array or a bare scalar parses fine and then lies its way through the
+  // cast, reaching the editor as a letter with no fields rather than as the
+  // failure it is.
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
+  }
+  return value as Partial<CoverLetterContent>;
 }
 
 export interface CvGapQuestion {

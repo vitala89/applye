@@ -3,6 +3,7 @@ import { buildCvContent } from './cv-content.util';
 import {
   buildAdditionalInfoBlock,
   cleanJsonText,
+  parseCoverLetterResponse,
   parseCvGapResponse,
   parseCvSkillResponse,
   parseDateAnswer,
@@ -526,5 +527,37 @@ describe('parseCvSkillResponse name split', () => {
     expect(cv.personalDetails.firstName).toBeNull();
     expect(cv.personalDetails.lastName).toBeNull();
     expect(cv.personalDetails.nameSplitConfident).toBe(false);
+  });
+});
+
+describe('parseCoverLetterResponse', () => {
+  it('reads a fenced answer into the letter fields', () => {
+    const text = '```json\n{"greeting": "Dear Team", "bodyParagraphs": ["One", "Two"]}\n```';
+    expect(parseCoverLetterResponse(text)).toEqual({
+      greeting: 'Dear Team',
+      bodyParagraphs: ['One', 'Two'],
+    });
+  });
+
+  it('keeps a partial answer partial rather than filling the missing blocks', () => {
+    const letter = parseCoverLetterResponse('{"closing": "Sincerely"}');
+    expect(letter).toEqual({ closing: 'Sincerely' });
+    expect(letter.greeting).toBeUndefined();
+  });
+
+  it('throws on an answer that is not JSON, carrying the raw text', () => {
+    expect(() => parseCoverLetterResponse('I could not write that letter')).toThrow();
+  });
+
+  it('throws on a truncated answer rather than repairing it', () => {
+    expect(() => parseCoverLetterResponse('{"greeting": "Dear Te')).toThrow();
+  });
+
+  it('rejects a JSON array instead of casting it into an empty letter', () => {
+    expect(() => parseCoverLetterResponse('[{"greeting": "Dear Team"}]')).toThrow(/invalid JSON/);
+  });
+
+  it('rejects a bare scalar for the same reason', () => {
+    expect(() => parseCoverLetterResponse('null')).toThrow(/invalid JSON/);
   });
 });

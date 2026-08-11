@@ -1,0 +1,34 @@
+<div class="apply-fields-header">
+  <span class="eyebrow">{{ t()('jobs.wizard.updated_score_eyebrow') }}</span>
+  <h4 class="apply-fields-title">{{ t()('jobs.wizard.updated_score_title') }}</h4>
+</div>
+
+@if (updatingScore()) {
+  <!-- Design-system skeleton card while the rescore runs -->
+  <div class="rescore-loading">
+    <div class="ai-thinking">
+      <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+      {{ t()('jobs.wizard.updating_score_hint') }}
+    </div>
+    <lib-skeleton-card [lines]="2" />
+    <lib-skeleton-card [media]="false" [lines]="3" [footer]="false" />
+  </div>
+} @else if (postTailorScore(); as post) {
+  <app-updated-score-view
+    [before]="cache()"
+    [after]="post"
+    [jobTitle]="job()?.title ?? ''"
+    [ats]="atsReport()"
+    [icons]="icons"
+  />
+} @else if (updateScoreError()) {
+  <div class="row">
+    <span class="status status--error">{{ updateScoreStatus() }}</span>
+    <button class="btn btn--secondary btn--md" (click)="retry.emit()">
+      <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
+      {{ t()('common.retry') }}
+    </button>
+  </div>
+} @else {
+  <p class="muted">{{ t()('jobs.wizard.updated_score_skip') }}</p>
+}

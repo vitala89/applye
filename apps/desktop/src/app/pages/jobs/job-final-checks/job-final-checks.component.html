@@ -1,0 +1,68 @@
+<section class="final-checks card">
+  <div class="final-checks__head">
+    <div>
+      <h5>{{ t()('jobs.wizard.final_checks_title') }}</h5>
+      @if (outdated()) {
+        <p class="status status--error">
+          {{ t()('jobs.wizard.final_checks_outdated') }}
+        </p>
+      }
+    </div>
+    <button
+      class="btn btn--secondary btn--sm"
+      type="button"
+      [disabled]="!linkedCv()"
+      (click)="runChecks.emit()"
+    >
+      <lucide-icon [img]="icons.checklist" [size]="14" aria-hidden="true" />
+      {{ t()('jobs.wizard.final_checks_run') }}
+    </button>
+  </div>
+  @if (!linkedCv()) {
+    <p class="muted">{{ t()('jobs.wizard.final_checks_needs_cv') }}</p>
+  }
+  <div class="final-checks__rows">
+    <div>
+      <span>{{ t()('jobs.wizard.final_checks_ats') }}</span>
+      <strong>{{ t()(rowStatus(checks()?.ats)) }}</strong>
+    </div>
+    <div>
+      <span>{{ t()('jobs.wizard.final_checks_hr') }}</span>
+      <strong>{{ t()(rowStatus(checks()?.hr)) }}</strong>
+    </div>
+    <div>
+      <span>{{ t()('jobs.wizard.final_checks_fit') }}</span>
+      <strong>{{ t()(rowStatus(checks()?.fit)) }}</strong>
+    </div>
+  </div>
+  @if (checks()?.notes?.length) {
+    <ul class="final-checks__notes">
+      @for (note of checks()?.notes; track note) {
+        <li>{{ note }}</li>
+      }
+    </ul>
+  }
+  @if (checks()?.fit === 'rescore' || outdated()) {
+    <button class="btn btn--ghost btn--sm" type="button" (click)="rescore.emit()">
+      {{ t()('jobs.wizard.final_checks_rescore_action') }}
+    </button>
+  }
+  @if (needRetailor()) {
+    <div class="final-checks__retailor">
+      <p class="muted">{{ t()('jobs.wizard.final_checks_retailor_hint') }}</p>
+      <button
+        class="btn btn--secondary btn--sm"
+        type="button"
+        [disabled]="tailoring()"
+        (click)="retailor.emit()"
+      >
+        <lucide-icon [img]="icons.another" [size]="14" aria-hidden="true" />
+        {{
+          tailoring()
+            ? t()('jobs.wizard.phase_running')
+            : t()('jobs.wizard.final_checks_retailor_action')
+        }}
+      </button>
+    </div>
+  }
+</section>

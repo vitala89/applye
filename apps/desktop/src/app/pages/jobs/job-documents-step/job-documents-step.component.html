@@ -1,0 +1,55 @@
+<div class="apply-fields-header">
+  <span class="eyebrow">{{ t()('jobs.wizard.review_documents_eyebrow') }}</span>
+  <h4 class="apply-fields-title">
+    {{ t()('jobs.wizard.review_documents_title') }}
+  </h4>
+  <p class="muted">{{ t()('jobs.wizard.review_documents_hint') }}</p>
+</div>
+
+<div class="document-targets">
+  <label>
+    {{ t()('documents.cv_field_region') }}
+    <select [ngModel]="region()" (ngModelChange)="onRegionChange($event)">
+      @for (regionTag of regionTags; track regionTag) {
+        <option [value]="regionTag">{{ regionLabel(regionTag) }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    {{ t()('documents.cv_field_language') }}
+    <select [ngModel]="language()" (ngModelChange)="onLanguageChange($event)">
+      @for (lang of languages; track lang) {
+        <option [value]="lang">{{ nativeLang(lang) }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+<app-job-document-cards
+  [job]="job()"
+  [application]="application()"
+  [matchingCvs]="matchingCvs()"
+  [coverLetters]="coverLetters()"
+  [finalTailoredCvMd]="finalTailoredCvMd()"
+  (openCv)="openCv.emit($event)"
+  (openCoverLetter)="openCoverLetter.emit($event)"
+  (createCv)="createCv.emit()"
+  (createCoverLetter)="createCoverLetter.emit()"
+  (chooseDocument)="chooseDocument.emit($event)"
+/>
+
+<app-job-final-checks
+  [tailoring]="tailoring()"
+  (runChecks)="runChecks.emit()"
+  (rescore)="rescore.emit()"
+  (retailor)="retailor.emit()"
+/>
+
+@if (gapDialogOpen() || gapAnalyzing()) {
+  <app-cv-gap-dialog
+    [questions]="gapQuestions()"
+    [analyzing]="gapAnalyzing()"
+    (submit)="gapSubmit.emit($event)"
+    (cancel)="gapCancel.emit()"
+  />
+}

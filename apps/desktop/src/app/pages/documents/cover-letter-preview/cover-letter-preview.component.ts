@@ -10,7 +10,10 @@ import {
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import {
+  effectiveCoverLetterBlockStyle,
+  effectiveCoverLetterParagraphStyle,
   formatLetterDate,
+  resolvePageSettings,
   stripSubjectLabel,
   type CoverLetterBlockKey,
   type CoverLetterContent,
@@ -18,11 +21,6 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
-import {
-  effectiveCoverLetterBlockStyle,
-  effectiveCoverLetterParagraphStyle,
-  resolvePageSettings,
-} from '../cv-content.util';
 
 /**
  * The cover letter's rendered page view - the single render shared by the

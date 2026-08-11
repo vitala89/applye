@@ -1,9 +1,16 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiService, DbService } from '@applye/data';
-import { CvContent, DocumentLibraryItem, Job, Profile, ScoringCache, Settings } from '@applye/core';
+import {
+  CvContent,
+  DocumentLibraryItem,
+  Job,
+  Profile,
+  ScoringCache,
+  Settings,
+  cvContentToMd,
+} from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { WizardActivityService } from './wizard-activity.service';
-import { cvContentToMd } from '../pages/documents/cv-content.util';
 
 export interface PassResult {
   pass: number;

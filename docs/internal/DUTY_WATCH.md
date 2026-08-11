@@ -44,6 +44,84 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-11, the cv-content family crosses into libs/core
+
+- **Status:** partial - sub-step two of five in level two item three
+- **Agent/tool:** Claude Code (Opus 5). Re-triaged for the narrowed scope: 5/10 - radius 2,
+  ambiguity 0, risk 1, verification 2, unknowns 0. No grilling round: the destination, the
+  imports-only shape and the deferral of the workaround cleanup were all settled in the previous
+  watch. No subagents.
+- **Branch:** `refactor/cv-utils-to-core`
+- **Commits:** `ba310b6` move, plus this documentation commit
+- **Pull request:** see the branch
+- **Objective:** Move the `cv-content` family out of `apps/desktop` into `libs/core`, which unblocks
+  six of the seventeen gateway-injecting services and makes the nine pass-in workarounds in
+  `libs/application` removable.
+- **Completed:**
+  - **Seven files, not six.** `cv-style-scope.util.ts` was not in the plan; `cv-style.store.ts` in
+    `libs/application` imports it, and that store is one of the nine workaround files, so it was
+    always part of the same wall. Counting the workarounds is what found it.
+  - **1287 lines moved** to `libs/core/src/lib/cv/` with their seven specs, plus seven export lines
+    in `libs/core/src/index.ts`.
+  - **Their `@applye/core` imports became relative**, which was mandatory rather than stylistic:
+    `cv-parse.util` imports `splitDisplayName`, a value, so a self-referential alias would be a real
+    module cycle. Every symbol resolved to two files, so it was two relative paths.
+  - **The barrel inside `cv-content.util` was removed.** Its stated reason - that splitting cost
+    consumers import lines while several were over budget - expired the moment `@applye/core` became
+    the single specifier. Removing it surfaced `cv-style-scope.util` and five sibling specs importing
+    symbols from a module that never owned them; each now points at the real owner.
+  - **53 import sites across 31 files** rewritten to `@applye/core`.
+- **Not completed:** The nine workaround retirements, the 22 unblocked files, and the four
+  `toast.service` couplings. Three of five sub-steps.
+- **Files or packages changed:** seven `cv-*.util.ts` and seven `cv-*.util.spec.ts` moved from
+  `apps/desktop/src/app/pages/documents/` to `libs/core/src/lib/cv/`; `libs/core/src/index.ts`; 31
+  consumer files across `apps/desktop` and `libs/application`; ADR-0005; `CHANGELOG.md`;
+  `docs/product/CURRENT_STATE.md`; this file.
+- **Validation:** Run and observed on this branch. `nx run-many --target=type-check --skip-nx-cache`
+  pass, 7 projects. `nx run-many --target=lint --skip-nx-cache` pass, 7 projects, 0 errors.
+  `nx run-many --target=test --skip-nx-cache` pass, all 7. `nx build desktop` pass.
+  `npm run quality:file-size` pass. `npm run quality:attribution`, `npm run format:check`,
+  `git diff --check` pass.
+  **Counters reconciled in both directions**, which is the check that matters for a move: `core`
+  18 suites / 301 tests -> **25 / 453**; `desktop` 134 / 1439 -> **127 / 1287**. Same seven suites,
+  same 152 tests, opposite signs. The baseline was measured by checking out `main` rather than
+  recalled.
+  **Rendered check** on `/documents/cv/1` against a stubbed IPC layer, installed in the console and
+  never committed - required here because the barrel disappears in this step and a missing export
+  would only show on screen: contact line in reference order, all six sections, `leafPath` returning
+  `summary` / `exp.0.bullet.0` / `skills.0.values`, `cvLeafText` putting "Rebuilt the design system"
+  in the style panel's sample, and a `scope: 'element'` change routed through `cv-style-scope.util`
+  (`libs/core`) and `cv-style.store` (`libs/application`) moving that one leaf from Calibri 400 to
+  Georgia 700 and nothing else. No console errors. Screenshot taken.
+- **Privacy/security impact:** None. Pure code motion; no data, storage, network, IPC surface or
+  permission touched.
+- **Decisions and assumptions:** No new grilling round - the destination (`libs/core`), the
+  imports-only shape, and deferring the workaround cleanup were settled in the previous watch. Three
+  judgment calls were mine: (1) `cv-style-scope.util.ts` moves too, because it is behind the same
+  wall; (2) the barrel is removed rather than kept inside the library, because its recorded
+  justification no longer holds; (3) the two imports in `cv-live-style-panel.component.ts` stay
+  unmerged, because merging costs two lines in a 704/400 file.
+- **Risks or compatibility impact:** `libs/core`'s public surface grows by seven modules. No schema,
+  IPC or behaviour change. The risk of a move is a symbol silently lost, which the counter
+  reconciliation and the rendered check are for.
+- **Open issues or blockers:** **The size gate caught this "imports-only" change growing an
+  over-budget file** - merging two `@applye/core` imports in `cv-live-style-panel.component.ts` cost
+  two lines against 704/400. The type imports stay as two statements from the same module, and **a
+  comment in the file explaining why would itself have cost the three lines the gate refuses**, so
+  the reason lives in ADR-0005 amendment fifty. A future tidy-up that merges them will fail the gate
+  with no local explanation. Also noted: two casts needed `as unknown as Record<...>` under
+  `libs/core`'s spec tsconfig having been `as Record<...>` under the app's - a strictness difference
+  between the two projects that only a move reveals. All previously logged debts unchanged.
+- **Next first action:** Open the pull request for `refactor/cv-utils-to-core`, wait for CI, merge by
+  squash. Then sub-step three: retire the nine pass-in workarounds in `libs/application`
+  (`cv-codec.ts`, `cv-style.store.ts`, `cv-print.store.ts`, `cv-regeneration.store.ts`,
+  `cover-letter-generate.store.ts`, `cover-letter-ai.store.ts`, `onboarding-resume.store.ts`,
+  `onboarding-content.util.ts`, `tracker-report.ts`) - each takes one or more of these functions as a
+  parameter with a comment saying why; the comments come out with the parameters, and each call site
+  loses an argument. Start by grepping `may not import` in `libs/application/src`.
+- **Evidence:** Commit `ba310b6`; ADR-0005 amendment fifty; the check output and the two test-count
+  baselines quoted above; the rendered CV screenshot and the style-scope probe.
+
 ### 2026-08-11, level two item three: mapped, restated, and the cv-content split
 
 - **Status:** partial - this is the first of five sub-steps, and the item is now written down as such

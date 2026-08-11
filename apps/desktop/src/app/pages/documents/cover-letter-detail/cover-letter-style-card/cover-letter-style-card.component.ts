@@ -9,10 +9,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ChevronDown, LucideAngularModule, RefreshCw } from 'lucide-angular';
 import type { PageMargins, PageSettings, PageSize, StyleNote } from '@applye/core';
-import { CV_ATS_SAFE_FONTS, PAGE_SETTINGS_DEFAULT } from '@applye/core';
+import { CV_ATS_SAFE_FONTS, PAGE_SETTINGS_DEFAULT, resolvePageSettings } from '@applye/core';
 import { CoverLetterStyleStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
-import { resolvePageSettings } from '../../cv-content.util';
 
 /**
  * The document-wide Style card: font, size, weight, accent colour, page size

@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import type { CvStylePanelChange } from '../../cv-content.util';
+
 import { CvLiveStylePanelComponent } from './cv-live-style-panel.component';
+
+import type { CvStylePanelChange } from '@applye/core';
 
 /** Shared setup for the panel's specs, which were one 913-line file. */
 export interface PanelHarness {

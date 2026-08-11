@@ -1,5 +1,5 @@
-import { CV_STYLE_DEFAULT, type CvStyle } from '@applye/core';
-import type { CvPreviewSelection, CvStylePanelChange } from './cv-content.util';
+import { CV_STYLE_DEFAULT, type CvStyle } from '../models/document.model';
+import type { CvPreviewSelection, CvStylePanelChange } from './cv-selection.util';
 import { routeCvStyleChange } from './cv-style-scope.util';
 
 const titleSel = (sectionKey: CvPreviewSelection['sectionKey']): CvPreviewSelection => ({

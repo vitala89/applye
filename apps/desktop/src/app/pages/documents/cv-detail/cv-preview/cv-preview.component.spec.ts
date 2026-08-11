@@ -1,8 +1,10 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
-import type { CvPreviewSelection } from '../../cv-content.util';
+
 import { CvPreviewComponent } from './cv-preview.component';
 import { createCvPreview } from './cv-preview.harness';
+
+import type { CvPreviewSelection } from '@applye/core';
 
 describe('CvPreviewComponent', () => {
   let component: CvPreviewComponent;

@@ -6,10 +6,10 @@ import {
   CvContent,
   DocumentLibraryItem,
   SupportedLanguage,
+  cvContentToMd,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentRegionTag } from '@applye/application';
-import { cvContentToMd } from '../pages/documents/cv-content.util';
 
 export type FinalCheckStatus =
   'not_run' | 'pass' | 'needs_review' | 'strong' | 'needs_edits' | 'valid' | 'rescore' | 'outdated';

@@ -28,14 +28,15 @@ import {
 import {
   Application,
   Job,
-  parseArchetypes,
   jobHeaderTitle,
+  parseArchetypes,
   parseLegitimacyNotes,
+  type CvGapAnswer,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
-import { type CvGapAnswer } from '../documents/cv-content.util';
+
 import { JobCrossJobConfirmComponent } from './job-cross-job-confirm/job-cross-job-confirm.component';
 import { JobDeleteConfirmComponent } from './job-delete-confirm/job-delete-confirm.component';
 import { JobDetailActionsComponent } from './job-detail-actions/job-detail-actions.component';

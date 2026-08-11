@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArrowLeft, LucideAngularModule, Save, Check, Eye, Pencil, Sparkles } from 'lucide-angular';
 import type { CoverLetterContent } from '@applye/core';
-import { COVER_LETTER_BLOCK_KEYS } from '@applye/core';
+import { COVER_LETTER_BLOCK_KEYS, cleanJsonText, resolvePageSettings } from '@applye/core';
 import {
   CoverLetterAiStore,
   CoverLetterContentStore,
@@ -17,7 +17,7 @@ import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
-import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
+
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
 import { CoverLetterAvailabilityCardComponent } from './cover-letter-availability-card/cover-letter-availability-card.component';
 import { CoverLetterBodyParagraphsComponent } from './cover-letter-body-paragraphs/cover-letter-body-paragraphs.component';

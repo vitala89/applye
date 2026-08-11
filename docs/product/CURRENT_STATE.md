@@ -42,6 +42,15 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **The `cv-content` family is in `libs/core`. Six of the seventeen blocked services are unblocked.**
+  Seven files - not six; `cv-style-scope.util.ts` turned out to be consumed by `cv-style.store.ts`,
+  one of the nine workaround files - moved to `libs/core/src/lib/cv/` with their specs, 53 import
+  sites across 31 files rewritten to `@applye/core`. The barrel inside `cv-content.util` is gone;
+  `@applye/core` is the single specifier now. **The nine pass-in workarounds in `libs/application`
+  are removable, and that is the next PR** - it changes nine store signatures, so it is kept out of
+  the import rewrite. Counters reconciled both ways: `core` 18 suites/301 tests -> **25/453**,
+  `desktop` 134/1439 -> **127/1287**. **Next first action:** retire those nine workarounds, then move
+  the 22 unblocked files, then the four `toast.service` couplings (ADR-0005, amendment fifty).
 - **Level two item three is mapped, restated, and its first blocker is cleared.** The checklist said
   "move the app's `shared/*` services into `libs/application`". `shared/` is **34 files, 3886 lines**
   and holds four components plus `page-title.service`, none of which may go there - so the item is

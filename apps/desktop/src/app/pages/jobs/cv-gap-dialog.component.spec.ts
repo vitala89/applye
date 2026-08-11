@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { CvGapDialog } from './cv-gap-dialog.component';
 import { TranslateService } from '@applye/i18n';
-import type { CvGapQuestion } from '../documents/cv-content.util';
+
+import type { CvGapQuestion } from '@applye/core';
 
 function setup(questions: CvGapQuestion[], analyzing = false) {
   TestBed.configureTestingModule({

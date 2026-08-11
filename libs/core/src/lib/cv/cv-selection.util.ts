@@ -19,7 +19,7 @@ import type {
   CvSectionKey,
   CvSkillsSection,
   CvSummarySection,
-} from '@applye/core';
+} from '../models/document.model';
 
 import { buildContactLine } from './cv-page.util';
 

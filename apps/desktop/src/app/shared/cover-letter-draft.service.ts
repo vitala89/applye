@@ -9,9 +9,10 @@ import {
   Profile,
   Settings,
   SupportedLanguage,
+  cleanJsonText,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
-import { cleanJsonText } from '../pages/documents/cv-content.util';
+
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
 import { DocumentRegionTag } from '@applye/application';

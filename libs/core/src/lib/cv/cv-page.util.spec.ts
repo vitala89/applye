@@ -1,4 +1,4 @@
-import type { CvPersonalDetailsSection } from '@applye/core';
+import type { CvPersonalDetailsSection } from '../models/document.model';
 import {
   buildContactLine,
   resolvePageSettings,

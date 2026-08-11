@@ -20,7 +20,7 @@ import {
   CvSectionStyle,
   CvStyle,
   CvTextStyle,
-} from '@applye/core';
+} from '../models/document.model';
 
 /** Applies an immutable per-section style patch while keeping the persisted
  * override tree minimal. Nested title fields are deep-merged; inherited

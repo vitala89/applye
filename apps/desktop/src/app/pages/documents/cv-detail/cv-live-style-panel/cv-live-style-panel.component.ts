@@ -18,14 +18,14 @@ import type {
   CvStyle,
   CvTextStyle,
 } from '@applye/core';
-import { CV_ATS_SAFE_FONTS } from '@applye/core';
-import { TranslateService } from '@applye/i18n';
+import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '@applye/core';
 import {
+  CV_ATS_SAFE_FONTS,
   effectiveTitleRuleColor,
   effectiveTitleRuleWidth,
   sectionLabelKey,
-} from '../../cv-content.util';
-import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '../../cv-content.util';
+} from '@applye/core';
+import { TranslateService } from '@applye/i18n';
 
 /**
  * Contextual live-style panel shown beside the paper in Preview mode. Receives

@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Trash2, X } from 'lucide-angular';
 import type { CvExperienceEntry, CvExperienceSection } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { blankExperienceEntry } from '../../cv-content.util';
+
+import { blankExperienceEntry } from '@applye/core';
 
 /** Entry field names editable via a plain text input (i.e. everything on a
  * `CvExperienceEntry` except the `bullets` array, which has its own nested

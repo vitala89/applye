@@ -1,8 +1,10 @@
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { ComponentFixture } from '@angular/core/testing';
-import type { CvStylePanelChange } from '../../cv-content.util';
+
 import { CvLiveStylePanelComponent } from './cv-live-style-panel.component';
 import { collectChanges, createPanel } from './cv-live-style-panel.harness';
+
+import type { CvStylePanelChange } from '@applye/core';
 
 describe('CvLiveStylePanelComponent experience entry rule', () => {
   let component: CvLiveStylePanelComponent;

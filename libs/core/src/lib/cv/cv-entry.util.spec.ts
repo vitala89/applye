@@ -3,7 +3,7 @@ import type {
   CvExperienceSection,
   CvLanguagesSection,
   CvSkillsSection,
-} from '@applye/core';
+} from '../models/document.model';
 import {
   blankEducationEntry,
   blankExperienceEntry,
@@ -14,7 +14,7 @@ import {
   replaceLanguageValue,
   replaceSkillGroupLabel,
   replaceSkillGroupValues,
-} from './cv-content.util';
+} from './cv-entry.util';
 
 describe('blank entry factories', () => {
   it('creates an empty experience entry with an empty bullet', () => {

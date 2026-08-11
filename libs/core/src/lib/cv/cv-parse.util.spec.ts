@@ -1,4 +1,4 @@
-import type { CvTemplate } from '@applye/core';
+import type { CvTemplate } from '../models/document.model';
 import { buildCvContent } from './cv-content.util';
 import {
   buildAdditionalInfoBlock,
@@ -113,7 +113,7 @@ describe('cv-generate-baseline output → content', () => {
       parseCvSkillResponse(sample),
       null as unknown as CvTemplate | null,
     );
-    const pd = content.sections.find((s) => s.key === 'personal_details') as Record<
+    const pd = content.sections.find((s) => s.key === 'personal_details') as unknown as Record<
       string,
       unknown
     >;
@@ -259,7 +259,7 @@ describe('cv-import output → content', () => {
       parseCvSkillResponse(sample),
       null as unknown as CvTemplate | null,
     );
-    const pd = content.sections.find((s) => s.key === 'personal_details') as Record<
+    const pd = content.sections.find((s) => s.key === 'personal_details') as unknown as Record<
       string,
       unknown
     >;
@@ -293,10 +293,10 @@ describe('parseCvSkillResponse - content-only boundary', () => {
         'summary',
       ].sort(),
     );
-    expect((res as Record<string, unknown>)['style']).toBeUndefined();
-    expect((res as Record<string, unknown>)['theme']).toBeUndefined();
-    expect((res as Record<string, unknown>)['themeId']).toBeUndefined();
-    expect((res as Record<string, unknown>)['fontFamily']).toBeUndefined();
+    expect((res as unknown as Record<string, unknown>)['style']).toBeUndefined();
+    expect((res as unknown as Record<string, unknown>)['theme']).toBeUndefined();
+    expect((res as unknown as Record<string, unknown>)['themeId']).toBeUndefined();
+    expect((res as unknown as Record<string, unknown>)['fontFamily']).toBeUndefined();
   });
 
   it('strips unknown keys nested inside personalDetails', () => {
@@ -320,8 +320,12 @@ describe('parseCvSkillResponse - content-only boundary', () => {
         'website',
       ].sort(),
     );
-    expect((res.personalDetails as Record<string, unknown>)['fontFamily']).toBeUndefined();
-    expect((res.personalDetails as Record<string, unknown>)['accentColorHex']).toBeUndefined();
+    expect(
+      (res.personalDetails as unknown as Record<string, unknown>)['fontFamily'],
+    ).toBeUndefined();
+    expect(
+      (res.personalDetails as unknown as Record<string, unknown>)['accentColorHex'],
+    ).toBeUndefined();
   });
 
   it('preserves all valid content fields unchanged', () => {

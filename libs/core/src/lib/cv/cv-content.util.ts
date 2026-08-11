@@ -6,21 +6,21 @@ import type {
   CvSkillGroup,
   CvSkillsSection,
   CvTemplate,
-} from '@applye/core';
+} from '../models/document.model';
 
-// Style editing, entry editing, skill-response parsing, preview-leaf selection
-// and the page/contact helpers each live in their own file - this module was
-// 1245 lines against a 400 budget and held four unrelated jobs, then 596 and
-// three. They are re-exported here rather than imported directly by every
-// consumer, because splitting a module costs each consumer one import line and
-// several of them are already over budget: the size gate refused that version,
-// which is the whole reason those files are separate now. Import from the
-// specific module in new code.
-export * from './cv-style.util';
-export * from './cv-entry.util';
-export * from './cv-parse.util';
-export * from './cv-selection.util';
-export * from './cv-page.util';
+/**
+ * Building a CV document and rendering it back out: the section order a
+ * template implies, the enriched content a parse produces, the markdown a
+ * tailoring run reads, and the normalisation every load runs through.
+ *
+ * Style editing, entry editing, skill-response parsing, preview-leaf selection
+ * and the page/contact helpers each live in their own file - this module was
+ * 1245 lines against a 400 budget and held four unrelated jobs, then 596 and
+ * three. It used to re-export them, because splitting a module cost each
+ * consumer an import line and several consumers were over budget. That barrel
+ * is gone: `@applye/core` is the single specifier now, so every one of them is
+ * one import either way.
+ */
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
  * for the seeded built-ins, but keeps the builder total). */

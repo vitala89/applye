@@ -1,13 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { Application, DocumentLibraryItem, Job, Settings, SupportedLanguage } from '@applye/core';
 import {
+  Application,
+  DocumentLibraryItem,
+  Job,
+  Settings,
+  SupportedLanguage,
   buildAdditionalInfoBlock,
   buildCvContent,
   parseCvSkillResponse,
   parseDateAnswer,
   type CvGapAnswer,
   type CvGapQuestion,
-} from '../pages/documents/cv-content.util';
+} from '@applye/core';
+
 import { GapFillHooks, foldInGapAnswers, saveBlockBestEffort } from './gap-fill';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';

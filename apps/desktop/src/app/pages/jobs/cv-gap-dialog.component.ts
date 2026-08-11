@@ -9,7 +9,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateService } from '@applye/i18n';
-import type { CvGapAnswer, CvGapQuestion } from '../documents/cv-content.util';
+
+import type { CvGapAnswer, CvGapQuestion } from '@applye/core';
 
 @Component({
   selector: 'app-cv-gap-dialog',

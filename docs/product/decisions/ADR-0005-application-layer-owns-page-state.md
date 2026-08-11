@@ -2420,6 +2420,71 @@ existing tests pass **unchanged**, and 15 new ones cover the six components.
 **Still to do before the migration:** the template is 387 against 300. Part two takes the scoring and
 wizard region.
 
+## Amendment forty-six: the jobs page, part two, and the setting neither side could own
+
+Part one left the template at **387/300**, which is the whole reason part two exists before the state
+migration: an over-budget file may not grow by a line, so every binding the migration wants to add is
+blocked until the template is under 300. Two of the apply wizard's four steps were still inline
+markup on the page - the updated-score step at 36 lines and the review-documents step at 146.
+**The allowlist does not move in this amendment either.**
+
+Three components come out rather than two, one folder each, following `job-tailor-step/` and
+`job-export-apply-step/`. The documents step is 146 lines of four separate responsibilities - the
+market and language selects, the document cards, the final-checks card, the gap dialog - and the
+final-checks card is 90 of them, with its own 72 lines of stylesheet and three actions of its own. It
+became `job-final-checks`, nested inside `job-documents-step`, which re-emits its three outputs. That
+takes the documents step to eight outputs, the same shape `job-detail-actions` established with five
+in part one.
+
+**The wizard slot is one host element, and that is a layout fact rather than a preference.**
+`.wizard-step-content` is `display: flex; flex-direction: column; gap`, and the gap lives _inside_
+it. Three sibling elements each carrying `wizardDocumentsStep` would each become their own flex
+column and the spacing _between_ them would come from the wizard body, which has none. So the class
+stays on one host in the page template - and for the same reason neither step host may take
+`display: contents`, which would delete the column outright. `job-final-checks` is a plain nested
+child and does take it, so its `<section>` remains the flex item its rules were written for.
+
+**A setting neither side could own.** `documentReviewRegion` and `documentReviewLanguage` are read by
+six page methods - the two draft paths, the link path, `finalCheckInputs`, `scoreContext` and
+`ngOnInit`, which seeds them from the application - and written by the two selects that were moving
+out. Inputs plus outputs would have rebuilt the alias-and-handler pattern the last two sessions spent
+their diffs deleting, and moving them wholesale into the child would have inverted six dependencies.
+They live in `DocumentReviewTargetsService`, provided component-scoped by the page like the
+seventeen before it, and the page and the step both inject it. It is 36 lines and it is the eighteenth
+provider; it is also one more `shared/*` service that level two inherits.
+
+**The service earns its keep by holding one rule that was written twice.** Changing either target
+invalidates a stored final-checks result, and that rule lived in a page method for the region and
+**inline in the template** for the language - `finalChecksOutdated.set(!!finalChecks())` spelled out
+in an `(ngModelChange)` expression, where the next reader had to notice it twice to know it existed.
+`setRegion`/`setLanguage` hold it once; the plain signals stay public because `ngOnInit` seeds the
+targets on load and a freshly restored result is not stale.
+
+**Two claims in the handoff were wrong, and looking settled both.** `.editor` was listed as documents-step
+styling; it is bound at `jobs.component.html:7`, in the page header, and stays. And the estimate of
+205 template lines assumed thin hosts - eight outputs and six inputs put it at 236, still comfortably
+under 300.
+
+**The reachability scan found a rule dead since part one's neighbour.** Widening its regex to match
+indented selectors - the previous version anchored at column 0 - surfaced `.base-cv-picker` and
+`.base-cv-picker__control` inside the page's `@media (max-width: 760px)` block. That markup moved into
+`job-tailor-step` two sessions ago, so the page-scoped rule cannot reach it and the picker's mobile
+grid has been inert since. It is **documented in place, not fixed**: restoring it changes the mobile
+layout, which is not an extraction's call. The two rules in the same block that belonged to the
+markup this amendment moved travelled with it, and both were confirmed collapsing at 700px on a
+rendered screen.
+
+**`quality:style-move` read clean this time** - 0 lost, 1 gained, the deliberate `display: contents`.
+That is worth recording only because part one's LOST was a false positive: the tool is unreliable in
+both directions, and the claim still rests on the per-class reachability scan and the rendered screen.
+
+Template **387 -> 236**, stylesheet **289 -> 186**, class **1036 -> 998** - seventeen declarations
+retired, every one of them an alias the template alone named. All 1432 existing tests pass unchanged;
+15 new ones cover the three components and the staleness rule.
+
+**Next:** the class is 998 against 400 and the page still injects `DbService` in eight places. That is
+the state migration, and it is its own session with its own grilling round.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

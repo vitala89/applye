@@ -42,8 +42,22 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **Jobs, part two is done: the template is under budget and the state migration is unblocked.** The
+  apply wizard's last two inline steps are components - `job-update-score-step`, `job-documents-step`
+  and, nested inside the second, `job-final-checks`. `jobs.component.html` is **236/300**, the
+  stylesheet **186/400**, and `jobs.component.ts` **998/400** - the class is the only file still over,
+  and it is the next session's job. `DocumentReviewTargetsService` is new and provided
+  component-scoped: the region and language are read by six page methods and written by the step's two
+  selects, so neither side could own them, and its setters hold the "changing either stales the final
+  checks" rule that used to be written twice - once in a page method and once inline in the template.
+  The lint allowlist is untouched at **1**. **One find, pre-existing:** the base-CV picker's
+  `max-width: 760px` grid rule has been dead since that markup moved into `job-tailor-step`; it is
+  documented in place rather than fixed, because restoring it changes the mobile layout
+  (ADR-0005, amendment forty-six). **Next first action:** migrate `jobs.component.ts` state into
+  `libs/application`, starting with a grilling round - the page injects `DbService` in eight places
+  and provides eighteen services component-scoped, so it is two or three parts.
 - **Jobs, part one of its decomposition, is done: five dialogs and the action row are their own
-  components.** `jobs.component.ts` is **1036/400**, the template **387/300** and the stylesheet
+  components.** `jobs.component.ts` was **1036/400**, the template **387/300** and the stylesheet
   **289/400** - the stylesheet is under budget, the other two are not, and the template is what part
   two has to finish before any state can move. Each new component injects the service that already
   owned its state and asks the page, with an output, for what only the page can do. The lint allowlist

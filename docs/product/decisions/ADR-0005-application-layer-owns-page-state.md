@@ -3214,6 +3214,48 @@ should be testing.
 Over budget across the repository: 23, unchanged - the file is smaller but still over. Selection
 comes out next, then the 895/300 template.
 
+## Amendment fifty-nine: re-measure before the second cut, because the file is not the file you planned against
+
+Shipped as #437. `cv-preview.component.ts` 816 -> **597**, and the interesting part is that the slice
+taken was not the slice agreed.
+
+**The plan said selection next. The plan was made against a 1047-line file.** After amendment
+fifty-eight took the editing family out, the remaining blocks measured differently: selection was 120
+non-empty lines, and the **styling** family - `effStyle`, `bodyCss`, `leafCss`, `entryCss`,
+`bulletCss`, `titleCss`, `titleBorderCss`, `readSelectedHostStyle` - was 228. Thirteen of its eighteen
+`this.` reads are the document style, so it was also the cleaner dependency. **A decomposition plan
+is a hypothesis about a file that the previous cut has already changed**; re-measuring cost one
+command and moved 108 more lines.
+
+**`bind()` over injection, for the second time.** `CvPreviewStyleService` takes style, selection,
+theme and host through a bound `deps` object rather than injecting them, because they are the host
+component's own inputs and a second source of them would be a second truth. That is now the shape
+this level produces: a sibling service that receives the component's state rather than re-deriving it.
+
+**`readSelectedHostStyle` measures the live DOM**, which is what settles the layer question without
+further debate - and the component keeps a one-line delegator for it, because `cv-detail` samples the
+selected host's resolved style _through the child_, and that contract belongs to the parent.
+
+**The harness is the seam for tests.** Rather than three specs each reaching into the injector,
+`cv-preview.harness.ts` now returns the service alongside the component, which is what a shared
+harness is for. Forty-four assertions moved from `component.<cssMethod>()` to `styles.<cssMethod>()`.
+
+**A regex lookbehind hid six call sites.** The template rewrite used `(?<![\w.])name\(` to avoid
+matching property access - and the spread operator ends in a dot, so `...entryCss(` and
+`...leafCss(` were skipped silently. Type-check caught it, but only because these were typed calls;
+in a template that is not guaranteed. **The audit that follows a regex rewrite has to look for what
+was _not_ changed**, not only at what was.
+
+**The name is `css` because 92 + 8 > 100.** The longest styling binding measured 92 columns, so any
+prefix over eight characters would have wrapped it and the gate reads a wrap as growth. Measured
+before the rewrite this time, rather than after (amendment fifty-eight).
+
+**Counts unchanged at 265 / 3043.** Rendered check on a real CV: the section carries
+`color: rgb(51, 68, 85)` from the stubbed `bodyColorHex` while the accent `#7c3aed` correctly does
+**not** leak into body text - the no-accent-leak rule the extracted `bodyCss` exists to enforce.
+
+Over budget: still 23. The file is 597/400, with selection and the 895/300 template left.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

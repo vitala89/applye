@@ -42,6 +42,24 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`cv-preview.component.ts` 816 -> 597, and the slice taken was not the slice planned.** Shipped as
+  **#437**. The agreed order was selection next, but that plan was made against the 1047-line file;
+  after the editing cut the blocks measured differently - selection 120 non-empty lines, **styling
+  228**, with thirteen of its eighteen `this.` reads being the document style. Re-measuring cost one
+  command and moved 108 more lines. **A decomposition plan is a hypothesis about a file the previous
+  cut has already changed.** `CvPreviewStyleService` owns the effective per-section style and every
+  `[ngStyle]` map the template asks for; it takes style, selection, theme and host through `bind()`
+  rather than injecting them, because those are the component's own inputs and a second source would
+  be a second truth. `readSelectedHostStyle` measures the live DOM, which settles the layer question,
+  and the component keeps a one-line delegator because `cv-detail` samples the selected host through
+  the child. `cv-preview.harness.ts` now hands the service to the specs - 44 assertions moved from
+  `component.<cssMethod>()` to `styles.<cssMethod>()`. **A regex lookbehind hid six call sites**: the
+  spread operator ends in a dot, so `...entryCss(` and `...leafCss(` were skipped silently; the audit
+  after a regex rewrite has to look for what was _not_ changed. The injected name is `css` because
+  the longest binding measured 92 columns and the gate reads a Prettier wrap as growth - measured
+  before the rewrite this time. Counts unchanged at 265/3043. **Next first action:** the selection
+  state machine (~120 lines, `cv-preview.selection.spec.ts` covers it), which takes the file to
+  roughly 480, then the 895/300 template. 23 files remain over budget.
 - **The worst file in the app is 1047 -> 816.** Shipped as **#436**. `cv-preview.component.ts` was
   one class rendering the CV, running a selection state machine and hosting seventeen inline-editing
   handlers. The editing family is now `CvPreviewEditingService` beside it - the draft map, every

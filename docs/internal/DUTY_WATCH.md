@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, level three: the CV preview loses its style rules, and the plan is re-measured
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5. Re-grilled mid-plan - one round, one question - because the file's shape had changed since the order was agreed. No subagents.
+- **Branch:** `refactor/cv-preview-selection-service` (named before the re-measure; it carries the styling cut)
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #437
+- **Objective:** Continue cutting `cv-preview.component.ts`, 816/400 after #436.
+- **Completed:** `CvPreviewStyleService` extracted (effective section style, every `[ngStyle]` map, the title rule, `readSelectedHostStyle`). Component 816 -> 597. Harness extended to hand the service to specs; 44 assertions retargeted. ADR-0005 amendment fifty-nine, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** Selection (~120 lines) and the 895/300 template. The file is still over budget at 597/400, so the repository count stays at 23.
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/cv-detail/cv-preview/` only, plus documentation.
+- **Validation:** `nx run-many --target=type-check` (7 projects), `nx run-many --target=lint --skip-nx-cache` (7 projects), `nx run-many --target=test --skip-nx-cache` (265 suites / 3043 tests, unchanged), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`. All observed passing. **Rendered check on a real CV**: the section carries `color: rgb(51, 68, 85)` from the stubbed `bodyColorHex` while the accent `#7c3aed` does not leak into body text - the no-accent-leak rule the extracted `bodyCss` exists to enforce - with headings purple and body dark on screen.
+- **Privacy/security impact:** None. Presentation only.
+- **Decisions and assumptions:** (1) Styling before selection, against the earlier agreement, because re-measuring after the previous cut showed it nearly twice the size and the cleaner dependency. (2) `bind()` over injection, so the service does not re-derive the component's inputs. (3) `readSelectedHostStyle` keeps a one-line delegator on the component, because the parent samples it through the child. (4) The harness, not each spec, provides the service.
+- **Risks or compatibility impact:** 51 template bindings rewritten by regex, plus **six that the first pass silently skipped** - the lookbehind `(?<![\w.])` excludes a preceding dot, and the spread operator ends in one. Type-check caught them; the lesson recorded is that the audit after a regex rewrite must look for what was not changed. The injected name is `css` because the longest binding measured 92 columns and a longer prefix would have wrapped it.
+- **Open issues or blockers:** Debt twelve unchanged. 23 files over budget.
+- **Next first action:** Extract the selection state machine from `cv-preview.component.ts` - `selectable`, `isSelected`, `isSectionSelected`, `isElementSelected`, `isNewSelection`, `selectPart`, `selectLeaf`, `onSelectKey` and the two aria-label builders, ~120 lines, covered by `cv-preview.selection.spec.ts`. Measure the block again first.
+- **Evidence:** PR #437, ADR-0005 amendment fifty-nine, `docs/product/CURRENT_STATE.md`.
+
 ### 2026-08-12, level three: the CV preview loses its editing half
 
 - **Status:** complete

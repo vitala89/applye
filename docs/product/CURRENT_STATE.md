@@ -42,6 +42,37 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`apps/desktop/src/app/shared/` holds no services at all. Level two, item three is closed.** All
+  seven moved, in five PRs - **#427** the toast store, **#428** the wizard navigator, **#429** the
+  document export, review status and discard services, **#430** the job actions and portal answers,
+  **#431** the cover-letter tailor split. **Two of the three walls the plan named were not walls.**
+  `ToastService` is 91 lines of signal state depending on nothing but Angular signals and
+  `TranslateService`, so it moved to `libs/application/src/lib/shell/` as the store it always was,
+  with `toast.component`, `toast-container.component` and `toast-error.handler` left in the app;
+  that one move unblocked all four coupled services, and **no outcome pattern was needed**.
+  `TranslateService` blocked nothing at any point - `libs/i18n` is tagged `type:util`, and twelve
+  files in `libs/application` already imported it. `wizard-nav` moved too, against amendment
+  fifty-three's "never moves": the reasoning was right and the unit was wrong - only `scrollToTop()`
+  is view, and it had four call sites rather than two, because `goTo()` and `close()` scroll
+  internally. The store now publishes a `scrollTick` counter and the page satisfies it through
+  `scrollOnTick()` in `apps/desktop/src/app/core/scroll-to-top.ts`, which is the general shape for a
+  store that needs something done to the DOM. `cover-letter-tailor` was the one real split, 305
+  against the 250 budget: `BaseLetter`, `emptyBaseLetter`, `readBaseLetter` and
+  `buildTailoredContent` to `libs/core`, the rest at **206/250**. `jobs.component.ts` went **980 ->
+  979** while gaining an effect, by merging six of its seventeen separate `@applye/application`
+  import statements. **A store may name `@tauri-apps`**: `document-export` calls
+  `await import('@tauri-apps/plugin-dialog')`, which a dynamic import hid from two greps, and it was
+  ratified rather than reverted - this layer has always reached Tauri through `DbService` and
+  `AiService`, and the nx boundary rule constrains workspace libraries, not npm packages. Counts
+  reconciled at every step against a `main` baseline taken in a separate worktree: 258/3028 ->
+  **260/3033**, the five new tests being the scroll helper's own. Four of the five PRs were checked
+  on a rendered screen. One flake reproduced and not introduced: `cv-detail.component.spec.ts` failed
+  once at 48.9s under seven-project parallel load and passed 3/3 in isolation at 1.7s (debt twelve).
+  **What is left in `shared/`:** `job-identity-prompt/`, `page-title/`, `paste-job-modal/` and
+  `unsaved-job-prompt/` - four component folders, which are UI and stay. **Next first action:**
+  remove `type:data` from `type:app`'s allowlist in `eslint.config.mjs`, which is now blocked only by
+  `cv-photo-prompt.service` (injects `Router`) and `followup-draft.service`, both kept out of
+  sub-step five deliberately; the Tauri question for the second is already answered above.
 - **`shared/` is down to seven blocked files, and every remaining one is blocked for a named reason.
   Sub-step 4b is closed.** Five more modules moved to `libs/application/src/lib/jobs/`: the
   final-checks step, the wizard progress record, the document review targets, job scoring and its

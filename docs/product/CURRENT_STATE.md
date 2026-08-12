@@ -42,6 +42,21 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **The gateway lint rule is kept and widened; `ADR-0005`'s enforcement questions are all now
+  answered.** Shipped as **#434**. It named `DbService` alone, which is how three components
+  injecting `AiService` and one injecting `JobSourceService` stayed invisible to it until #433. The
+  selector is built from a `GATEWAY_SERVICES` list now, so a fourth service is one line.
+  **Retiring it was the serious alternative and was rejected on two stated grounds**:
+  `@nx/enforce-module-boundaries` covers strictly more - every app file, every service in `libs/data`
+  - but reports a list of tags and takes **no custom message**, while this rule names the ADR and says
+    put the read in a store; and a data service re-exported through `@applye/application` would satisfy
+    the tag check with `inject()` as the only remaining evidence. `COMPONENTS_STILL_USING_THE_GATEWAY`
+    and its conditional spread are deleted after running 26 -> 0. Verified in both directions: a probe
+    component injecting all three errors once per injection, the tree lints clean, and the probe was
+    deleted in the same command. Configuration only - 262 suites / 3043 tests unmoved. **Next first
+    action:** level three, the file-size budgets. 25 files are over, the gate passes only because it
+    forbids growth rather than size, and the worst is `cv-preview.component.ts` at **1047/400**, which
+    this campaign has never touched. Full audit: `node tools/check-file-size-budgets.mjs --all`.
 - **The app cannot reach `libs/data` any more. `type:data` is out of `type:app`'s allowlist, and the
   item amendment four opened is closed.** Shipped as **#432** and **#433**. **Thirty-two files stood
   in the way, not the two the checklist named** - the previous entry's blocker list came from an

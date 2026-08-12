@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 
 describe('DocumentReviewStatusService', () => {

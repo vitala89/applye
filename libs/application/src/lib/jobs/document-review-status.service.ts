@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { ToastService } from '@applye/application';
-import { ReviewDocumentKind } from '@applye/application';
+import { ToastService } from '../shell/toast.service';
+import { ReviewDocumentKind } from '../documents/document-gen.service';
 
 /**
  * The one status line under the Review documents step, and the two

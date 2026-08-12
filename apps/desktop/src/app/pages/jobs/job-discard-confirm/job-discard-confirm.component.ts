@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
-import { TailoringDiscardService } from '../../../shared/tailoring-discard.service';
+import { TailoringDiscardService } from '@applye/application';
 
 /**
  * Abandoning the tailoring throws away generated drafts, so it asks first and

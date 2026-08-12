@@ -3,7 +3,7 @@ import { signal } from '@angular/core';
 import { DocumentLibraryItem, Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { JobExportApplyStepComponent } from './job-export-apply-step.component';
-import { DocumentExportService } from '../../../shared/document-export.service';
+import { DocumentExportService } from '@applye/application';
 import { JobActionsService } from '../../../shared/job-actions.service';
 import { LinkedDocumentsService } from '@applye/application';
 import { WizardActivityService } from '@applye/application';

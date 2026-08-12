@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { LucideAngularModule } from 'lucide-angular';
 import { Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { DocumentExportService, ExportFormat } from '../../../shared/document-export.service';
+import { DocumentExportService, ExportFormat } from '@applye/application';
 import { ReviewDocumentKind } from '@applye/application';
 import { JobActionsService } from '../../../shared/job-actions.service';
 import { LinkedDocumentsService } from '@applye/application';

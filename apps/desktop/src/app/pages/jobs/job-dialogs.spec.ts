@@ -9,7 +9,7 @@ import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.com
 import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { JobActionsService } from '../../shared/job-actions.service';
-import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
+import { TailoringDiscardService } from '@applye/application';
 import { WizardNavService } from '@applye/application';
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
 

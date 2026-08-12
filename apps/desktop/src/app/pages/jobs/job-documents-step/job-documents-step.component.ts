@@ -11,7 +11,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from '@applye/application';
-import { DocumentReviewTargetsService } from '../../../shared/document-review-targets.service';
+import { DocumentReviewTargetsService } from '@applye/application';
 import { DocumentRegionTag } from '@applye/application';
 
 import { CvGapDialog } from '../cv-gap-dialog.component';

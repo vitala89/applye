@@ -31,7 +31,7 @@ import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-moda
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { UpdaterService } from '../core/updater.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
-import { WizardProgressService } from '../shared/wizard-progress.service';
+import { WizardProgressService } from '@applye/application';
 import { WizardActivity, WizardActivityService } from '@applye/application';
 import { DocumentGenService } from '@applye/application';
 import { ThemeService } from '../core/theme.service';

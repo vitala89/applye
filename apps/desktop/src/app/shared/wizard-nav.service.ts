@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 import { DbService, JobsStore } from '@applye/data';
-import { WizardProgressService } from './wizard-progress.service';
+import { WizardProgressService } from '@applye/application';
 
 /** What the caller still owes once the job has loaded, if anything. */
 export type WizardRestore = 'return' | 'restore-docs' | null;

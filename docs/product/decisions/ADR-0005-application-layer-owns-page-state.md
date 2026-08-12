@@ -2908,6 +2908,65 @@ permanently - `querySelector` and `scrollingElement` are view, and this layer do
 **Next:** substep 4b, the `sessionStorage` seam and the four files behind it; then substep five, the
 four `toast.service` couplings, which need the outcome pattern rather than a move.
 
+## Amendment fifty-three: the storage seam was never a DOM dependency, and four more files follow it
+
+Sub-step 4b, shipped as #424, #425 and #426. It closes what amendment fifty-two deliberately deferred,
+and it needed no new decision - only the application of one this ADR made twenty amendments ago.
+
+**`final-checks` and `wizard-progress` injected `DOCUMENT` for exactly one expression each:**
+`document.defaultView?.sessionStorage`. That single injection is what had kept them, and the two files
+behind them, in `apps/desktop`. Amendment thirty-three had already settled the question when
+`sidebarCollapsed` moved into `shell.store.ts`: browser storage is **not** one of this layer's DOM
+exclusions - it is screen state that happens to outlive the session - and a storage token was
+considered and refused as "a new symbol in the layer's public API to abstract one boolean". Both files
+now read `globalThis.sessionStorage?.`, the same form, and both say why in place so the next reader
+does not re-litigate it.
+
+**The optional chain is load-bearing in one of them.** `WizardProgressService` is a root singleton
+whose signal is initialised from storage at construction, so a non-browser environment must fall
+through to "no progress" rather than throw during bootstrap.
+
+**The fake that came out was honest, and that is worth recording, because the last one was not.**
+`final-checks.service.spec.ts` provided a stub `DOCUMENT` whose `sessionStorage` implemented `getItem`
+and `setItem` and nothing else - exactly as much of `Storage` as the service happened to call, so it
+could confirm the calls made but never that they add up to a round trip. All 19 tests pass unchanged
+against jsdom's real `sessionStorage`. Unlike the mocks amendment fifty-one removed, this one was not
+describing an application that never existed; it was replaced because a real `Storage` is better
+evidence, not because it lied. **A fake is not automatically a defect**, and this campaign should not
+start reading it as one.
+
+**`job-scoring` needed the same split-before-move as `tailoring`**, for the same reason: 300 non-empty
+lines against 250. `job-score-payload.ts` took the types, `parseScoreResponse` and three payload
+builders, leaving the service at 242, and it landed at 243.
+
+The split exposed real duplication rather than merely relocating lines. **Scoring wrote the same
+fourteen fields three times** - from a fresh parse, into the in-memory post-tailor result, and back out
+of it on commit - each with its own `JSON.stringify` and its own `?? []`. They are now
+`scoreCacheSaveInput`, `tailoredScoringCache` and `postTailorSaveInput`, and **the asymmetry between
+them is deliberate and now documented**: the two fed by a fresh parse default only `before_you_submit`,
+the one field the skill may omit, while the commit path defaults every column, because by then the row
+has been through an in-memory hop and a save that threw on one absent column would lose a score the
+user has already been shown. `runSkill` also now parses and returns a `ScoreRunResult`, so a non-JSON
+reply fails in one place and both paths carry the model that produced them - the post-tailor result
+used to re-read `settings.economyModel` to recover a value the call already had.
+
+**The rendered check was run three times and compared against `main`**, because a storage seam is
+precisely the thing jsdom can agree with while a browser does not. All three runs produce byte-identical
+results: `applye:wizardProgress` written as `{"jobId":1,"step":0}` and updated through step 3, and the
+computed result parked under `applye:wizardFinalChecks:h599` with the same `inputHash`, statuses and
+notes on the pre-move branch, the post-move branch and `main`.
+
+**`shared/` is now seven non-spec files and four component folders**, and every one of the seven is
+genuinely blocked: `cover-letter-tailor`, `document-review-status`, `job-actions` and `portal-answers`
+on `ToastService`, with `tailoring-discard` transitively behind them - that is sub-step five;
+`document-export` on `@tauri-apps/plugin-dialog`; and `wizard-nav` on real layout DOM. **`wizard-nav`
+never moves**, and that is a conclusion rather than a deferral: `querySelector` and `scrollingElement`
+are view, and this layer does not own view.
+
+**Next:** sub-step five - the four `toast.service` couplings, which need an outcome rather than a
+relocation, and which will also decide what happens to `CoverLetterTailorService`, whose feature has
+been unreachable since `openTailorCoverLetterModal()` lost its last caller.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -3017,10 +3076,11 @@ four `toast.service` couplings, which need the outcome pattern rather than a mov
           transitively was on the wrong side. `job-identity-resolver` and `job-intake` were listed as
           blocked and were not. `tailoring.service` had to be split 305 -> 226 first, because the
           250 budget covers every file in `libs/application`, not only `*.store.ts`
-    - [ ] Rewrite the `sessionStorage` seam in `final-checks` and `wizard-progress` to
+    - [x] Rewrite the `sessionStorage` seam in `final-checks` and `wizard-progress` to
           `globalThis.sessionStorage?.` (the ruling in amendment thirty-three) and move them, with
-          `document-review-targets` and `job-scoring` behind them - `job-scoring` at 319 needs its own
-          split first. `wizard-nav` never moves: `querySelector` and `scrollingElement` are view
+          `document-review-targets` and `job-scoring` behind them - done in amendment fifty-three, as
+          PRs #424, #425 and #426. `job-scoring` split 300 -> 242 first. `wizard-nav` stays: its
+          `querySelector` and `scrollingElement` are view, and this layer does not own view
     - [ ] The four `toast.service` couplings, which need the outcome pattern rather than a move
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

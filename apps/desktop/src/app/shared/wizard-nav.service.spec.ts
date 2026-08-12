@@ -3,7 +3,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DbService, JobsStore } from '@applye/data';
 import { WizardNavService } from './wizard-nav.service';
-import { WizardProgressService } from './wizard-progress.service';
+import { WizardProgressService } from '@applye/application';
 
 describe('WizardNavService', () => {
   let svc: WizardNavService;

@@ -26,7 +26,7 @@ import { TranslateService } from '@applye/i18n';
 
 import { missingFields, parseProfileMd, pitchState, profileCompleteness } from '@applye/core';
 import { OnboardingBannerComponent } from '../../core/onboarding/onboarding-banner.component';
-import { WizardProgressService } from '../../shared/wizard-progress.service';
+import { WizardProgressService } from '@applye/application';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
 import {
   DashboardStore,

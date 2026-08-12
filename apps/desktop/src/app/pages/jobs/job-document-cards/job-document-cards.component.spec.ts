@@ -5,7 +5,7 @@ import { TranslateService } from '@applye/i18n';
 import { JobDocumentCardsComponent } from './job-document-cards.component';
 import { DocumentGenService } from '@applye/application';
 import { CvGapDialogService } from '@applye/application';
-import { FinalChecksService } from '../../../shared/final-checks.service';
+import { FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 import { DocumentReviewStatusService } from '../../../shared/document-review-status.service';
 

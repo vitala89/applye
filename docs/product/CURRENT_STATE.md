@@ -42,6 +42,26 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **The worst file in the app is 1047 -> 816.** Shipped as **#436**. `cv-preview.component.ts` was
+  one class rendering the CV, running a selection state machine and hosting seventeen inline-editing
+  handlers. The editing family is now `CvPreviewEditingService` beside it - the draft map, every
+  section's commit rule, the `**bold**` helpers - **a service rather than a store**, because it types
+  on `HTMLTextAreaElement` and keys drafts by DOM id, which is the rule that kept `scrollToTop` in
+  the app (amendment fifty-four). **The cut line came from the spec files, not from the class**:
+  `cv-preview.editing.spec.ts` and `cv-preview.bullet-editor.spec.ts` had already drawn it.
+  `canBoldActiveEditor` and `applyBoldToActiveEditor` stayed behind deliberately - they answer which
+  editor is on screen, which is about the page rather than the draft. The component binds the emit
+  callback once in its constructor, so the service never reaches for an output it does not own; the
+  alternative, seventeen wrapper methods, would have returned most of the saved lines. **The template
+  cost two characters**: prefixing its 70 bindings with `editor.` pushed three past 100 columns,
+  Prettier wrapped them, and the gate refused the file at 903/895 - a wrap is growth. The injected
+  name is `edit` and the template is unchanged at 895. Counts unchanged at 265/3043;
+  `cv-preview.identity.spec.ts` reads the draft where it now lives, which is the identity that suite
+  exists to pin. **Verified on a rendered screen**, because the specs call these methods directly and
+  would not notice a mis-wired seam: click selects the summary body with `elementPath: 'summary'`,
+  double-click mounts the editor, typing puts the draft in the service, blur emits a new section
+  through the component's output. **Next first action:** the selection state machine out of the same
+  file (~230 lines, `cv-preview.selection.spec.ts` covers it), then the 895/300 template.
 - **Level three is open: 25 files over budget became 23.** Shipped as **#435**, and the first cut was
   chosen for being unable to fail invisibly - `analytics.ts` and `profile-markdown.ts` are pure
   functions with no Angular and no I/O, so the gates are the whole proof and no rendered check

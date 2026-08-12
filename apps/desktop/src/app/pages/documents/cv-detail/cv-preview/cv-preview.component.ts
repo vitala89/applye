@@ -14,16 +14,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
+import { CvPreviewEditingService } from './cv-preview-editing.service';
 import type {
-  CvEducationEntry,
-  CvEducationSection,
-  CvExperienceEntry,
   CvExperienceSection,
-  CvLanguagesSection,
-  CvPersonalDetailsSection,
   CvSection,
   CvSectionKey,
-  CvSkillsSection,
   CvStyle,
   CvSummarySection,
   CvTextRun,
@@ -40,20 +35,12 @@ import {
   leafPath,
   orderedVisibleSections,
   parseInlineEmphasis,
-  parseSkillValues,
-  replaceEducationEntryField,
   replaceExperienceBullet,
-  replaceExperienceEntryField,
-  replaceLanguageValue,
-  replaceSkillGroupLabel,
-  replaceSkillGroupValues,
   resolvePageSettings,
   sectionLabelKey,
   themeCssVars,
   themeTitleRule,
-  toggleBoldWrap,
   toggleWordBold,
-  type CvContactFieldKey,
   type CvPreviewSelection,
   visiblePersonalContactFields,
   wordTokens,
@@ -124,8 +111,15 @@ const LEAF_FIELD_LABEL_KEYS: Record<CvLeafFieldKey, string> = {
   imports: [NgStyle, PaginatedSheetComponent],
   templateUrl: './cv-preview.component.html',
   styleUrl: './cv-preview.component.scss',
+  // Component-scoped: an in-progress draft belongs to this preview and must
+  // not outlive it.
+  providers: [CvPreviewEditingService],
 })
 export class CvPreviewComponent {
+  /** Drafting and committing; the component keeps only the question of which
+   * editor is on screen. Bound below so commits reach `sectionChange`. */
+  protected readonly edit = inject(CvPreviewEditingService);
+
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -257,7 +251,7 @@ export class CvPreviewComponent {
     // A key event bubbling up from an inline editor must NOT be treated as a
     // host activation: otherwise typing Space into an input gets
     // `preventDefault`'d (no space char) and re-selects the host, yanking
-    // focus out of the editor. Let the editor handle its own keys.
+    // focus out of the edit. Let the editor handle its own keys.
     const target = event.target as HTMLElement | null;
     if (target?.closest('.cvpreview__leaf-editor')) return;
     event.preventDefault();
@@ -348,6 +342,7 @@ export class CvPreviewComponent {
    * off `focusKey()` (section+part) + `editing()`, not the raw `selection()`
    * object, so an elementPath-only change never re-triggers this. */
   constructor() {
+    this.edit.bind((section) => this.sectionChange.emit(section));
     effect(() => {
       const key = this.focusKey();
       const editing = this.editing();
@@ -406,190 +401,6 @@ export class CvPreviewComponent {
    * string, so `leafDraft`'s draft key and `selectLeaf`/`selectPart`'s
    * emitted `elementPath` can never drift apart. */
   protected readonly leafPath = leafPath;
-
-  // --- Inline leaf editing (summary + personal_details) -----------------
-  //
-  // A leaf becomes a native editor while it is BOTH the active `selection`
-  // (Task 3) and on a selectable (page, interactive) render - the measure
-  // pass is never selectable, so it can never mount an editor. Typing only
-  // updates this local draft map (`drafts`); nothing is emitted until the
-  // control blurs (or an explicit apply keystroke triggers blur), and only
-  // if the draft actually differs from the resting model value - which also
-  // makes "Escape then blur" a no-op for free: Escape resets the draft back
-  // to the resting value, so the following blur sees no change and emits
-  // nothing.
-  private readonly drafts = signal<Record<string, string>>({});
-
-  /** Current draft text for a leaf, or the resting model value if the leaf
-   * has no in-progress edit yet (e.g. right after mounting the editor). */
-  leafDraft(id: string, resting: string): string {
-    return this.drafts()[id] ?? resting;
-  }
-
-  /** Drafting - updates local state only, emits nothing. */
-  onLeafInput(id: string, value: string): void {
-    this.drafts.update((d) => ({ ...d, [id]: value }));
-  }
-
-  /** Escape - discard the in-progress draft. Dropping the entry (rather than
-   * writing the resting value back into it) makes `leafDraft` fall through to
-   * the live resting value, so the editor reverts AND no stale draft can
-   * survive an unmount or selection change that never fires a blur. A
-   * subsequent blur then sees an unchanged value and skips the commit. */
-  onLeafEscape(id: string): void {
-    this.clearDraft(id);
-  }
-
-  private clearDraft(id: string): void {
-    this.drafts.update((d) => {
-      if (!(id in d)) return d;
-      const next = { ...d };
-      delete next[id];
-      return next;
-    });
-  }
-
-  /** Commit the summary leaf on blur: emits one new immutable
-   * `CvSummarySection` only if the draft actually changed the text. */
-  commitSummary(section: CvSummarySection, resting: string): void {
-    const id = 'summary';
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit({ ...section, text: value });
-    }
-  }
-
-  /** Wrap/unwrap `**bold**` around the summary textarea's current selection -
-   * modifies the draft only (still drafting; the eventual blur commits it),
-   * then restores the caret. Bound to the Bold button and Cmd/Ctrl+B. */
-  applySummaryBold(el: HTMLTextAreaElement, resting: string): void {
-    const id = 'summary';
-    const current = this.drafts()[id] ?? resting;
-    const start = el.selectionStart ?? current.length;
-    const end = el.selectionEnd ?? current.length;
-    const r = toggleBoldWrap(current, start, end);
-    this.drafts.update((d) => ({ ...d, [id]: r.text }));
-    queueMicrotask(() => {
-      el.value = r.text;
-      el.setSelectionRange(r.selStart, r.selEnd);
-      el.focus();
-    });
-  }
-
-  /** Cmd/Ctrl+B handler for the summary textarea. */
-  onSummaryBoldKeydown(event: KeyboardEvent, el: HTMLTextAreaElement, resting: string): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
-      event.preventDefault();
-      this.applySummaryBold(el, resting);
-    }
-  }
-
-  /** Commit a single personal-details field on blur: emits one new immutable
-   * `CvPersonalDetailsSection` only if the draft actually changed the value -
-   * this is what keeps a localized fallback (e.g. the "Untitled" placeholder)
-   * from ever becoming persisted content: the draft starts at the real
-   * (possibly empty) field value, never at the fallback label, so an
-   * untouched field never diffs from `resting` and never commits. */
-  commitPersonalField(
-    section: CvPersonalDetailsSection,
-    field: CvContactFieldKey | 'fullName' | 'title',
-    resting: string,
-  ): void {
-    const id = `pd.${field}`;
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit({ ...section, [field]: value });
-    }
-  }
-
-  /** Text fields of an experience entry editable in the preview - dates stay
-   * plain strings (no date-picker), matching the resting render. */
-  private static readonly EXP_TEXT_FIELDS = [
-    'company',
-    'industry',
-    'location',
-    'role',
-    'startDate',
-    'endDate',
-  ] as const;
-
-  /** Commit a single experience-entry field on blur: emits one new immutable
-   * `CvExperienceSection` (only the targeted entry/field replaced) - only if
-   * the draft actually changed the value. */
-  commitExperienceField(
-    section: CvExperienceSection,
-    index: number,
-    field: (typeof CvPreviewComponent.EXP_TEXT_FIELDS)[number],
-    resting: string,
-  ): void {
-    const id = `exp.${index}.${field}`;
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit(
-        replaceExperienceEntryField(
-          section,
-          index,
-          field,
-          value as CvExperienceEntry[typeof field],
-        ),
-      );
-    }
-  }
-
-  /** Commit a single experience bullet on blur: emits one new immutable
-   * `CvExperienceSection` touching only that entry's targeted bullet. */
-  commitExperienceBullet(
-    section: CvExperienceSection,
-    entryIndex: number,
-    bulletIndex: number,
-    resting: string,
-  ): void {
-    const id = `exp.${entryIndex}.bullet.${bulletIndex}`;
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit(replaceExperienceBullet(section, entryIndex, bulletIndex, value));
-    }
-  }
-
-  /** Wrap/unwrap `**bold**` around an experience bullet textarea's current
-   * selection - mirrors `applySummaryBold` for the per-bullet draft id. */
-  applyBulletBold(
-    el: HTMLTextAreaElement,
-    entryIndex: number,
-    bulletIndex: number,
-    resting: string,
-  ): void {
-    const id = `exp.${entryIndex}.bullet.${bulletIndex}`;
-    const current = this.drafts()[id] ?? resting;
-    const start = el.selectionStart ?? current.length;
-    const end = el.selectionEnd ?? current.length;
-    const r = toggleBoldWrap(current, start, end);
-    this.drafts.update((d) => ({ ...d, [id]: r.text }));
-    queueMicrotask(() => {
-      el.value = r.text;
-      el.setSelectionRange(r.selStart, r.selEnd);
-      el.focus();
-    });
-  }
-
-  /** Cmd/Ctrl+B handler for an experience bullet textarea. */
-  onBulletBoldKeydown(
-    event: KeyboardEvent,
-    el: HTMLTextAreaElement,
-    entryIndex: number,
-    bulletIndex: number,
-    resting: string,
-  ): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
-      event.preventDefault();
-      this.applyBulletBold(el, entryIndex, bulletIndex, resting);
-    }
-  }
-
   /** Whether the currently-EDITING leaf supports `**bold**` - the summary body
    * and experience bullets are the only markdown-backed editors. Drives the
    * live-style panel's Bold button (the inline "B" was removed in favour of a
@@ -614,74 +425,13 @@ export class CvPreviewComponent {
     const seg = sel.elementPath.split('.');
     if (seg[0] === 'summary') {
       const s = this.sections().find((x) => x.key === 'summary') as CvSummarySection | undefined;
-      this.applySummaryBold(el, s?.text ?? '');
+      this.edit.applySummaryBold(el, s?.text ?? '');
     } else if (seg[0] === 'exp' && seg[2] === 'bullet') {
       const i = Number(seg[1]);
       const b = Number(seg[3]);
       const s = this.sections().find((x) => x.key === sel.sectionKey) as
         CvExperienceSection | undefined;
-      this.applyBulletBold(el, i, b, s?.entries[i]?.bullets?.[b] ?? '');
-    }
-  }
-
-  private static readonly EDU_TEXT_FIELDS = [
-    'degree',
-    'institution',
-    'startDate',
-    'endDate',
-  ] as const;
-
-  /** Commit a single education-entry field on blur: emits one new immutable
-   * `CvEducationSection` (only the targeted entry/field replaced). */
-  commitEducationField(
-    section: CvEducationSection,
-    index: number,
-    field: (typeof CvPreviewComponent.EDU_TEXT_FIELDS)[number],
-    resting: string,
-  ): void {
-    const id = `edu.${index}.${field}`;
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit(
-        replaceEducationEntryField(section, index, field, value as CvEducationEntry[typeof field]),
-      );
-    }
-  }
-
-  /** Commit a skill group's label on blur: emits one new immutable
-   * `CvSkillsSection` touching only that group's label. */
-  commitSkillLabel(section: CvSkillsSection, groupIndex: number, resting: string): void {
-    const id = `skills.${groupIndex}.label`;
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit(replaceSkillGroupLabel(section, groupIndex, value));
-    }
-  }
-
-  /** Commit a skill group's comma-separated values on blur: emits one new
-   * immutable `CvSkillsSection` touching only that group's values array. */
-  commitSkillValues(section: CvSkillsSection, groupIndex: number, resting: string): void {
-    const id = `skills.${groupIndex}.values`;
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit(
-        replaceSkillGroupValues(section, groupIndex, parseSkillValues(value)),
-      );
-    }
-  }
-
-  /** Commit a single language's visible value on blur: emits one new
-   * immutable `CvLanguagesSection` touching only that item's `language` -
-   * the (non-rendered) `level` field is left untouched. */
-  commitLanguageValue(section: CvLanguagesSection, index: number, resting: string): void {
-    const id = `lang.${index}.language`;
-    const value = this.drafts()[id] ?? resting;
-    this.clearDraft(id);
-    if (value !== resting) {
-      this.sectionChange.emit(replaceLanguageValue(section, index, value));
+      this.edit.applyBulletBold(el, i, b, s?.entries[i]?.bullets?.[b] ?? '');
     }
   }
 

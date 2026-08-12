@@ -54,11 +54,11 @@
           color: effStyle('personal_details').colorHex,
           ...leafCss(leafPath('pd', 'fullName')),
         }"
-        [value]="leafDraft(leafPath('pd', 'fullName'), section.fullName)"
+        [value]="edit.leafDraft(leafPath('pd', 'fullName'), section.fullName)"
         [placeholder]="t()('documents.cv_untitled')"
-        (input)="onLeafInput(leafPath('pd', 'fullName'), $any($event.target).value)"
-        (blur)="commitPersonalField(section, 'fullName', section.fullName)"
-        (keydown.escape)="onLeafEscape(leafPath('pd', 'fullName'))"
+        (input)="edit.onLeafInput(leafPath('pd', 'fullName'), $any($event.target).value)"
+        (blur)="edit.commitPersonalField(section, 'fullName', section.fullName)"
+        (keydown.escape)="edit.onLeafEscape(leafPath('pd', 'fullName'))"
         (keydown.enter)="finishLeafEdit($any($event.target), 'personal_details', 'body')"
       />
     } @else {
@@ -95,10 +95,10 @@
           type="text"
           class="cvpreview__title cvpreview__leaf-editor cvpreview__element-selected"
           [ngStyle]="leafCss(leafPath('pd', 'title'))"
-          [value]="leafDraft(leafPath('pd', 'title'), section.title)"
-          (input)="onLeafInput(leafPath('pd', 'title'), $any($event.target).value)"
-          (blur)="commitPersonalField(section, 'title', section.title)"
-          (keydown.escape)="onLeafEscape(leafPath('pd', 'title'))"
+          [value]="edit.leafDraft(leafPath('pd', 'title'), section.title)"
+          (input)="edit.onLeafInput(leafPath('pd', 'title'), $any($event.target).value)"
+          (blur)="edit.commitPersonalField(section, 'title', section.title)"
+          (keydown.escape)="edit.onLeafEscape(leafPath('pd', 'title'))"
           (keydown.enter)="finishLeafEdit($any($event.target), 'personal_details', 'body')"
         />
       } @else {
@@ -184,11 +184,11 @@
         [class.cvpreview__selected]="true"
         [class.cvpreview__element-selected]="isElementSelected(leafPath('summary'))"
         [ngStyle]="leafCss(leafPath('summary'))"
-        [value]="leafDraft(leafPath('summary'), section.text)"
-        (input)="onLeafInput(leafPath('summary'), $any($event.target).value)"
-        (blur)="commitSummary(section, section.text)"
-        (keydown.escape)="onLeafEscape(leafPath('summary'))"
-        (keydown)="onSummaryBoldKeydown($event, summaryEl, section.text)"
+        [value]="edit.leafDraft(leafPath('summary'), section.text)"
+        (input)="edit.onLeafInput(leafPath('summary'), $any($event.target).value)"
+        (blur)="edit.commitSummary(section, section.text)"
+        (keydown.escape)="edit.onLeafEscape(leafPath('summary'))"
+        (keydown)="edit.onSummaryBoldKeydown($event, summaryEl, section.text)"
       ></textarea>
     } @else {
       <p
@@ -293,10 +293,10 @@
               type="text"
               class="cvpreview__leaf-editor cvpreview__skill-label cvpreview__element-selected"
               [ngStyle]="leafCss(leafPath('skills', i, 'label'))"
-              [value]="leafDraft(leafPath('skills', i, 'label'), group.label)"
-              (input)="onLeafInput(leafPath('skills', i, 'label'), $any($event.target).value)"
-              (blur)="commitSkillLabel(section, i, group.label)"
-              (keydown.escape)="onLeafEscape(leafPath('skills', i, 'label'))"
+              [value]="edit.leafDraft(leafPath('skills', i, 'label'), group.label)"
+              (input)="edit.onLeafInput(leafPath('skills', i, 'label'), $any($event.target).value)"
+              (blur)="edit.commitSkillLabel(section, i, group.label)"
+              (keydown.escape)="edit.onLeafEscape(leafPath('skills', i, 'label'))"
               (keydown.enter)="finishLeafEdit($any($event.target), 'skills', 'body')"
             />
           } @else {
@@ -329,10 +329,10 @@
               type="text"
               class="cvpreview__leaf-editor cvpreview__skill-values cvpreview__element-selected"
               [ngStyle]="leafCss(leafPath('skills', i, 'values'))"
-              [value]="leafDraft(leafPath('skills', i, 'values'), group.values.join(', '))"
-              (input)="onLeafInput(leafPath('skills', i, 'values'), $any($event.target).value)"
-              (blur)="commitSkillValues(section, i, group.values.join(', '))"
-              (keydown.escape)="onLeafEscape(leafPath('skills', i, 'values'))"
+              [value]="edit.leafDraft(leafPath('skills', i, 'values'), group.values.join(', '))"
+              (input)="edit.onLeafInput(leafPath('skills', i, 'values'), $any($event.target).value)"
+              (blur)="edit.commitSkillValues(section, i, group.values.join(', '))"
+              (keydown.escape)="edit.onLeafEscape(leafPath('skills', i, 'values'))"
               (keydown.enter)="finishLeafEdit($any($event.target), 'skills', 'body')"
             />
           } @else {
@@ -401,10 +401,10 @@
             type="text"
             class="cvpreview__entry-company cvpreview__leaf-editor cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('exp', i, 'company'))"
-            [value]="leafDraft(leafPath('exp', i, 'company'), entry.company)"
-            (input)="onLeafInput(leafPath('exp', i, 'company'), $any($event.target).value)"
-            (blur)="commitExperienceField(section, i, 'company', entry.company)"
-            (keydown.escape)="onLeafEscape(leafPath('exp', i, 'company'))"
+            [value]="edit.leafDraft(leafPath('exp', i, 'company'), entry.company)"
+            (input)="edit.onLeafInput(leafPath('exp', i, 'company'), $any($event.target).value)"
+            (blur)="edit.commitExperienceField(section, i, 'company', entry.company)"
+            (keydown.escape)="edit.onLeafEscape(leafPath('exp', i, 'company'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
         } @else {
@@ -434,10 +434,10 @@
               type="text"
               class="cvpreview__entry-industry cvpreview__leaf-editor cvpreview__element-selected"
               [ngStyle]="leafCss(leafPath('exp', i, 'industry'))"
-              [value]="leafDraft(leafPath('exp', i, 'industry'), entry.industry || '')"
-              (input)="onLeafInput(leafPath('exp', i, 'industry'), $any($event.target).value)"
-              (blur)="commitExperienceField(section, i, 'industry', entry.industry || '')"
-              (keydown.escape)="onLeafEscape(leafPath('exp', i, 'industry'))"
+              [value]="edit.leafDraft(leafPath('exp', i, 'industry'), entry.industry || '')"
+              (input)="edit.onLeafInput(leafPath('exp', i, 'industry'), $any($event.target).value)"
+              (blur)="edit.commitExperienceField(section, i, 'industry', entry.industry || '')"
+              (keydown.escape)="edit.onLeafEscape(leafPath('exp', i, 'industry'))"
               (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
             />
           } @else {
@@ -468,10 +468,10 @@
           type="text"
           class="cvpreview__entry-meta cvpreview__leaf-editor cvpreview__element-selected"
           [ngStyle]="leafCss(leafPath('exp', i, 'location'))"
-          [value]="leafDraft(leafPath('exp', i, 'location'), entry.location || '')"
-          (input)="onLeafInput(leafPath('exp', i, 'location'), $any($event.target).value)"
-          (blur)="commitExperienceField(section, i, 'location', entry.location || '')"
-          (keydown.escape)="onLeafEscape(leafPath('exp', i, 'location'))"
+          [value]="edit.leafDraft(leafPath('exp', i, 'location'), entry.location || '')"
+          (input)="edit.onLeafInput(leafPath('exp', i, 'location'), $any($event.target).value)"
+          (blur)="edit.commitExperienceField(section, i, 'location', entry.location || '')"
+          (keydown.escape)="edit.onLeafEscape(leafPath('exp', i, 'location'))"
           (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
         />
       } @else {
@@ -501,10 +501,10 @@
           type="text"
           class="cvpreview__entry-role cvpreview__leaf-editor cvpreview__element-selected"
           [ngStyle]="leafCss(leafPath('exp', i, 'role'))"
-          [value]="leafDraft(leafPath('exp', i, 'role'), entry.role)"
-          (input)="onLeafInput(leafPath('exp', i, 'role'), $any($event.target).value)"
-          (blur)="commitExperienceField(section, i, 'role', entry.role)"
-          (keydown.escape)="onLeafEscape(leafPath('exp', i, 'role'))"
+          [value]="edit.leafDraft(leafPath('exp', i, 'role'), entry.role)"
+          (input)="edit.onLeafInput(leafPath('exp', i, 'role'), $any($event.target).value)"
+          (blur)="edit.commitExperienceField(section, i, 'role', entry.role)"
+          (keydown.escape)="edit.onLeafEscape(leafPath('exp', i, 'role'))"
           (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
         />
       } @else {
@@ -531,10 +531,10 @@
             type="text"
             class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('exp', i, 'startDate'))"
-            [value]="leafDraft(leafPath('exp', i, 'startDate'), entry.startDate)"
-            (input)="onLeafInput(leafPath('exp', i, 'startDate'), $any($event.target).value)"
-            (blur)="commitExperienceField(section, i, 'startDate', entry.startDate)"
-            (keydown.escape)="onLeafEscape(leafPath('exp', i, 'startDate'))"
+            [value]="edit.leafDraft(leafPath('exp', i, 'startDate'), entry.startDate)"
+            (input)="edit.onLeafInput(leafPath('exp', i, 'startDate'), $any($event.target).value)"
+            (blur)="edit.commitExperienceField(section, i, 'startDate', entry.startDate)"
+            (keydown.escape)="edit.onLeafEscape(leafPath('exp', i, 'startDate'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
         } @else {
@@ -565,11 +565,11 @@
             type="text"
             class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('exp', i, 'endDate'))"
-            [value]="leafDraft(leafPath('exp', i, 'endDate'), entry.endDate || '')"
+            [value]="edit.leafDraft(leafPath('exp', i, 'endDate'), entry.endDate || '')"
             [placeholder]="t()('documents.cv_present')"
-            (input)="onLeafInput(leafPath('exp', i, 'endDate'), $any($event.target).value)"
-            (blur)="commitExperienceField(section, i, 'endDate', entry.endDate || '')"
-            (keydown.escape)="onLeafEscape(leafPath('exp', i, 'endDate'))"
+            (input)="edit.onLeafInput(leafPath('exp', i, 'endDate'), $any($event.target).value)"
+            (blur)="edit.commitExperienceField(section, i, 'endDate', entry.endDate || '')"
+            (keydown.escape)="edit.onLeafEscape(leafPath('exp', i, 'endDate'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
         } @else {
@@ -628,11 +628,11 @@
           #bulletEl
           class="cvpreview__leaf-editor cvpreview__bullet-editor"
           [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))"
-          [value]="leafDraft(leafPath('exp', i, 'bullet', b), bullet)"
-          (input)="onLeafInput(leafPath('exp', i, 'bullet', b), $any($event.target).value)"
-          (blur)="commitExperienceBullet(section, i, b, bullet)"
-          (keydown.escape)="onLeafEscape(leafPath('exp', i, 'bullet', b))"
-          (keydown)="onBulletBoldKeydown($event, bulletEl, i, b, bullet)"
+          [value]="edit.leafDraft(leafPath('exp', i, 'bullet', b), bullet)"
+          (input)="edit.onLeafInput(leafPath('exp', i, 'bullet', b), $any($event.target).value)"
+          (blur)="edit.commitExperienceBullet(section, i, b, bullet)"
+          (keydown.escape)="edit.onLeafEscape(leafPath('exp', i, 'bullet', b))"
+          (keydown)="edit.onBulletBoldKeydown($event, bulletEl, i, b, bullet)"
         ></textarea>
       </li>
     } @else {
@@ -692,10 +692,10 @@
             type="text"
             class="cvpreview__leaf-editor cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('edu', i, 'degree'))"
-            [value]="leafDraft(leafPath('edu', i, 'degree'), entry.degree)"
-            (input)="onLeafInput(leafPath('edu', i, 'degree'), $any($event.target).value)"
-            (blur)="commitEducationField(section, i, 'degree', entry.degree)"
-            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'degree'))"
+            [value]="edit.leafDraft(leafPath('edu', i, 'degree'), entry.degree)"
+            (input)="edit.onLeafInput(leafPath('edu', i, 'degree'), $any($event.target).value)"
+            (blur)="edit.commitEducationField(section, i, 'degree', entry.degree)"
+            (keydown.escape)="edit.onLeafEscape(leafPath('edu', i, 'degree'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
         } @else {
@@ -725,10 +725,10 @@
             type="text"
             class="cvpreview__leaf-editor cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('edu', i, 'institution'))"
-            [value]="leafDraft(leafPath('edu', i, 'institution'), entry.institution)"
-            (input)="onLeafInput(leafPath('edu', i, 'institution'), $any($event.target).value)"
-            (blur)="commitEducationField(section, i, 'institution', entry.institution)"
-            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'institution'))"
+            [value]="edit.leafDraft(leafPath('edu', i, 'institution'), entry.institution)"
+            (input)="edit.onLeafInput(leafPath('edu', i, 'institution'), $any($event.target).value)"
+            (blur)="edit.commitEducationField(section, i, 'institution', entry.institution)"
+            (keydown.escape)="edit.onLeafEscape(leafPath('edu', i, 'institution'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
         } @else {
@@ -757,10 +757,10 @@
             type="text"
             class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('edu', i, 'startDate'))"
-            [value]="leafDraft(leafPath('edu', i, 'startDate'), entry.startDate)"
-            (input)="onLeafInput(leafPath('edu', i, 'startDate'), $any($event.target).value)"
-            (blur)="commitEducationField(section, i, 'startDate', entry.startDate)"
-            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'startDate'))"
+            [value]="edit.leafDraft(leafPath('edu', i, 'startDate'), entry.startDate)"
+            (input)="edit.onLeafInput(leafPath('edu', i, 'startDate'), $any($event.target).value)"
+            (blur)="edit.commitEducationField(section, i, 'startDate', entry.startDate)"
+            (keydown.escape)="edit.onLeafEscape(leafPath('edu', i, 'startDate'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
         } @else {
@@ -791,11 +791,11 @@
             type="text"
             class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('edu', i, 'endDate'))"
-            [value]="leafDraft(leafPath('edu', i, 'endDate'), entry.endDate || '')"
+            [value]="edit.leafDraft(leafPath('edu', i, 'endDate'), entry.endDate || '')"
             [placeholder]="t()('documents.cv_present')"
-            (input)="onLeafInput(leafPath('edu', i, 'endDate'), $any($event.target).value)"
-            (blur)="commitEducationField(section, i, 'endDate', entry.endDate || '')"
-            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'endDate'))"
+            (input)="edit.onLeafInput(leafPath('edu', i, 'endDate'), $any($event.target).value)"
+            (blur)="edit.commitEducationField(section, i, 'endDate', entry.endDate || '')"
+            (keydown.escape)="edit.onLeafEscape(leafPath('edu', i, 'endDate'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
         } @else {
@@ -867,10 +867,10 @@
             type="text"
             class="cvpreview__leaf-editor cvpreview__language-input cvpreview__element-selected"
             [ngStyle]="leafCss(leafPath('lang', i, 'language'))"
-            [value]="leafDraft(leafPath('lang', i, 'language'), item.language)"
-            (input)="onLeafInput(leafPath('lang', i, 'language'), $any($event.target).value)"
-            (blur)="commitLanguageValue(section, i, item.language)"
-            (keydown.escape)="onLeafEscape(leafPath('lang', i, 'language'))"
+            [value]="edit.leafDraft(leafPath('lang', i, 'language'), item.language)"
+            (input)="edit.onLeafInput(leafPath('lang', i, 'language'), $any($event.target).value)"
+            (blur)="edit.commitLanguageValue(section, i, item.language)"
+            (keydown.escape)="edit.onLeafEscape(leafPath('lang', i, 'language'))"
             (keydown.enter)="finishLeafEdit($any($event.target), 'languages', 'body')"
           />
         } @else {

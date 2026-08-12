@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, level three: the CV preview loses its editing half
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5, continuation of the level-three plan settled by grilling earlier in the session (cheap `libs/core` modules first, then cv-preview's editing family, into a component-provided service, template last). No new gate: the four decisions covered this PR. No subagents.
+- **Branch:** `refactor/cv-preview-editing-service`
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #436
+- **Objective:** Cut `cv-preview.component.ts`, 1047/400 and the largest file in `apps/desktop`.
+- **Completed:** `CvPreviewEditingService` extracted (draft map, every section's commit rule, the bold helpers). Component 1047 -> 816. `cv-preview.identity.spec.ts` retargeted at the service. ADR-0005 amendment fifty-eight, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** The selection state machine (~230 lines) and the 895/300 template. The file is smaller and still over budget, so the repository count stays at 23.
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/cv-detail/cv-preview/` only, plus documentation.
+- **Validation:** `nx run-many --target=type-check` (7 projects), `nx run-many --target=lint --skip-nx-cache` (7 projects), `nx run-many --target=test --skip-nx-cache` (265 suites / 3043 tests, unchanged), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`. All observed passing. **Rendered check on a real CV**: click selects the summary body reporting `elementPath: 'summary'`, double-click mounts the editor, typing lands the draft in the service, blur emits a new `CvSummarySection` through the component's output.
+- **Privacy/security impact:** None. No data flow, storage or network path changed.
+- **Decisions and assumptions:** (1) The editing family before selection, per the grilling. (2) A component-provided service rather than a store, because the code types on `HTMLTextAreaElement`. (3) `canBoldActiveEditor` and `applyBoldToActiveEditor` stay in the component - they answer which editor is on screen. (4) One `bind()` call rather than seventeen wrapper methods, which would have returned most of the saved lines.
+- **Risks or compatibility impact:** 70 template bindings were rewritten by regex. Every changed line was audited individually after the ARIA break in #433; all 70 are method calls inside bindings, and the file's line count is identical. The injected name is `edit` rather than `editor` because the longer name wrapped three bindings past 100 columns and the size gate treats a wrap as growth.
+- **Open issues or blockers:** Debt twelve unchanged. 23 files over budget; `cv-preview.component.ts` is still one of them at 816/400.
+- **Next first action:** Extract the selection state machine from `cv-preview.component.ts` - `selectPart`, `selectLeaf`, `isSelected`, `isElementSelected`, `onSelectKey` and the aria-label builders, ~230 lines, covered by `cv-preview.selection.spec.ts`. Then the 895/300 template.
+- **Evidence:** PR #436, ADR-0005 amendment fifty-eight, `docs/product/CURRENT_STATE.md`.
+
 ### 2026-08-12, ADR-0005 level three opens: the two pure modules in `libs/core`
 
 - **Status:** complete

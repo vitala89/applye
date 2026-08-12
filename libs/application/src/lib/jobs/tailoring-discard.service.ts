@@ -2,8 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Application, DocumentLibraryItem } from '@applye/core';
 import { DbService } from '@applye/data';
 import { DocumentReviewStatusService } from './document-review-status.service';
-import { LinkedDocumentsService } from '@applye/application';
-import { TailorScoreService } from '@applye/application';
+import { LinkedDocumentsService } from '../documents/linked-documents.service';
+import { TailorScoreService } from './tailor-score.service';
 
 /**
  * The documents a discard is allowed to destroy: the ones this application

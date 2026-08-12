@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 import { Copy, Download, LucideAngularModule, Trash2 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import type { ExportFormat } from '../../../shared/document-export.service';
+import type { ExportFormat } from '@applye/application';
 
 /** The `<select>` hands back a `string`; this is the one place that decides
  * whether it is a format the app actually exports. An unknown value is

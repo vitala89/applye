@@ -49,15 +49,15 @@ import { CvPhotoPromptService } from './cv-photo-prompt.service';
 import { ToastService } from '@applye/application';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
 import { FinalCheckInputs, FinalChecksService } from '@applye/application';
-import { DocumentExportService } from '../../shared/document-export.service';
+import { DocumentExportService } from '@applye/application';
 import { TailorContext, TailoringService } from '@applye/application';
 import { JobScoringService, ScoreContext } from '@applye/application';
 import { WizardNavService, WizardRestore } from '@applye/application';
 import { scrollOnTick } from '../../core/scroll-to-top';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
-import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
+import { DocumentReviewStatusService } from '@applye/application';
 import { DocumentReviewTargetsService } from '@applye/application';
-import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
+import { TailoringDiscardService } from '@applye/application';
 import { JobGapFillService, jobDocLabel } from '@applye/application';
 import {
   coverLetterStaleInput,

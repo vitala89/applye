@@ -7,7 +7,7 @@ import { DocumentGenService, ReviewDocumentKind } from '@applye/application';
 import { CvGapDialogService } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
-import { DocumentReviewStatusService } from '../../../shared/document-review-status.service';
+import { DocumentReviewStatusService } from '@applye/application';
 import { documentCardStatus, documentStatusKey } from '@applye/application';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 

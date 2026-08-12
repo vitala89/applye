@@ -7,7 +7,7 @@ import { DocumentGenService } from '@applye/application';
 import { CvGapDialogService } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
-import { DocumentReviewStatusService } from '../../../shared/document-review-status.service';
+import { DocumentReviewStatusService } from '@applye/application';
 
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;
 const CV = { id: 11, label: 'Tailored CV' } as DocumentLibraryItem;

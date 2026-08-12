@@ -6,7 +6,7 @@ import { JobDocumentsStepComponent } from './job-documents-step.component';
 import { CvGapDialogService } from '@applye/application';
 import { DocumentReviewTargetsService } from '@applye/application';
 import { DocumentGenService } from '@applye/application';
-import { DocumentReviewStatusService } from '../../../shared/document-review-status.service';
+import { DocumentReviewStatusService } from '@applye/application';
 import { DocumentRegionTag } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';

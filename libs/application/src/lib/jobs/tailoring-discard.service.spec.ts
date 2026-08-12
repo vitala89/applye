@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { DbService } from '@applye/data';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
-import { LinkedDocumentsService } from '@applye/application';
-import { TailorScoreService } from '@applye/application';
+import { LinkedDocumentsService } from '../documents/linked-documents.service';
+import { TailorScoreService } from './tailor-score.service';
 import { TailoringDiscardService, applicationDrafts } from './tailoring-discard.service';
 
 describe('applicationDrafts', () => {

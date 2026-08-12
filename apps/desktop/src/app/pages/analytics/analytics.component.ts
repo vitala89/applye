@@ -14,7 +14,7 @@ import { RouterLink } from '@angular/router';
 import { TranslateService } from '@applye/i18n';
 import { AnalyticsStore, areaPoints, polylinePoints } from '@applye/application';
 import { AnalyticsKpi, AnalyticsPeriod } from '@applye/core';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 const PERIODS: AnalyticsPeriod[] = ['30d', '90d', 'all'];
 

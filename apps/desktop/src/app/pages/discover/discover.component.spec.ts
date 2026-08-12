@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { DiscoverComponent } from './discover.component';
 
 /** Sources is the only way to turn a feed on. It used to live in the filter

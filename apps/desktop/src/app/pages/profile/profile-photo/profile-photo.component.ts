@@ -9,7 +9,7 @@ import {
 import { ChevronDown, LucideAngularModule, Plus } from 'lucide-angular';
 import { ProfilePhotoStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { CvPhotoCropComponent } from '../../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
 
 /**

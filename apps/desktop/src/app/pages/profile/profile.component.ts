@@ -19,7 +19,7 @@ import {
 import { TranslateService } from '@applye/i18n';
 import { LucideAngularModule, Info, Save, Check, RotateCcw, CircleDot } from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { CompletenessHeroComponent } from './completeness-hero.component';
 import { ProfilePhotoComponent } from './profile-photo/profile-photo.component';
 import { ProfileArchetypesComponent } from './profile-archetypes/profile-archetypes.component';

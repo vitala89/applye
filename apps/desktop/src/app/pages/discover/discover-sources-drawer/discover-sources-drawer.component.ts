@@ -20,7 +20,7 @@ import {
   narrowBuiltinsByMarkets,
   toggled,
 } from '@applye/application';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { ChevronDown, Info, Plus, Trash2, X } from 'lucide-angular';
 
 /**

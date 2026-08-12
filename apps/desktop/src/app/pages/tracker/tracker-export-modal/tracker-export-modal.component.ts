@@ -4,7 +4,7 @@ import { FileCheck2, FileDown, Info, LucideAngularModule, Table, X } from 'lucid
 import { TrackerColumnsStore, TrackerReportStore, TrackerRowsStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { trackerColumnLabel } from '../tracker-column-label';
 import { TrackerReportComponent } from '../tracker-report.component';
 

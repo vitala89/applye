@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { TrackerColumnsStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { TrackerColumnDrawerComponent } from './tracker-column-drawer.component';
 
 describe('TrackerColumnDrawerComponent', () => {

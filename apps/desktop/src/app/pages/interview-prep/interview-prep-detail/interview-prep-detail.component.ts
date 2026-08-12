@@ -15,7 +15,7 @@ import { InterviewStage, InterviewStageStatus, StageType, SupportedLanguage } fr
 import { InterviewStagesStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { InterviewStageActionsComponent } from './interview-stage-actions/interview-stage-actions.component';
 
 const STAGE_TYPES: StageType[] = [

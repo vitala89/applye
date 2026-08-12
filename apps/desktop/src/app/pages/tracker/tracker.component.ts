@@ -23,7 +23,7 @@ import {
   trackerCellValue,
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { trackerColumnLabel } from './tracker-column-label';
 import { TrackerColumnDrawerComponent } from './tracker-column-drawer/tracker-column-drawer.component';
 import { TrackerRowActionsComponent } from './tracker-row-actions/tracker-row-actions.component';

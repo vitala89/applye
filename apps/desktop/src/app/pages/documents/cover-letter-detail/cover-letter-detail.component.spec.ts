@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { CoverLetterDetailComponent } from './cover-letter-detail.component';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
 

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { LucideAngularModule, CircleX, CircleCheck, TriangleAlert, Info, X } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
-import { Toast, ToastKind } from './toast.model';
-import { ToastService } from './toast.service';
+import { Toast, ToastKind } from '@applye/application';
+import { ToastService } from '@applye/application';
 
 const KIND_ICON = {
   error: CircleX,

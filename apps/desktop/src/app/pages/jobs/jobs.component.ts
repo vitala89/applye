@@ -44,7 +44,7 @@ import { JobDiscardConfirmComponent } from './job-discard-confirm/job-discard-co
 import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.component';
 import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
 import { FinalCheckInputs, FinalChecksService } from '@applye/application';
 import { DocumentExportService } from '../../shared/document-export.service';

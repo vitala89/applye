@@ -11,7 +11,7 @@ import { STAGE_TYPES, StageQuickAddStore } from '@applye/application';
 import { InterviewStage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 // One write path allowed outside Interview Prep: right after an
 // application's status changes TO interview (dropdown or drag-and-drop),

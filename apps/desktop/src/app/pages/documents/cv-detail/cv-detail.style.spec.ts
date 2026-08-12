@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CvPhotoStore } from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 import { CvDetailComponent } from './cv-detail.component';
 

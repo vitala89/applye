@@ -26,7 +26,7 @@ import { AboutUpdateComponent } from './about-update.component';
 import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ThemeService, Theme } from '../../core/theme.service';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { SettingsAiProviderComponent } from './settings-ai-provider/settings-ai-provider.component';
 import { SettingsApiKeyComponent } from './settings-api-key/settings-api-key.component';
 import { SettingsCliStatusComponent } from './settings-cli-status/settings-cli-status.component';

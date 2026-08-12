@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@applye/i18n';
 import { ToastErrorHandler } from './toast-error.handler';
-import { ToastService } from './toast.service';
+import { ToastService } from '@applye/application';
 
 describe('ToastErrorHandler', () => {
   let handler: ToastErrorHandler;

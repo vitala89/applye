@@ -3,7 +3,7 @@ import { signal } from '@angular/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PortalAnswersService } from './portal-answers.service';
-import { ToastService } from '../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 /**
  * Covers the behaviour that used to live inline in `JobsComponent`. The service

@@ -2688,13 +2688,22 @@ otherwise hide inside 43 mechanical import edits.
 
 Sub-step two, and the payoff for the split in amendment forty-nine. 1287 pure lines leave
 `apps/desktop/src/app/pages/documents/` for `libs/core/src/lib/cv/`, with their specs. **Six of the
-seventeen gateway-injecting services are now unblocked, and the nine pass-in workarounds in
+seventeen gateway-injecting services are now unblocked, and the pass-in workarounds in
 `libs/application` are now removable** - in their own pull request, as decided.
 
+**Correction, made in amendment fifty-one: this amendment said "nine" workarounds, and nine is
+wrong in both directions.** The number came from grepping for the explanatory comment, which finds
+eight files, and one of those eight - `tracker-report.ts` - is a false positive whose comment is
+about why it lives here rather than in `libs/core`. Counting the files that actually take a
+parameter gives **eleven**: the comment-grep misses `cv-import.store.ts`, `cv-generate.store.ts`,
+`cv-document.store.ts` and `onboarding-finish.store.ts`, which consume the same interfaces without
+repeating the explanation. A twelfth file, `cv-style.store.ts`, carries the stale sentence and no
+parameter at all.
+
 **Seven files, not six.** `cv-style-scope.util.ts` was not in the plan. It is imported by
-`libs/application/src/lib/documents/cv-style.store.ts`, which is one of the nine files carrying a
-documented workaround for this family being unreachable - so it was always part of the same wall, and
-counting the workarounds is what found it.
+`libs/application/src/lib/documents/cv-style.store.ts`, one of the files carrying a documented
+workaround for this family being unreachable - so it was always part of the same wall, and counting
+the workarounds is what found it.
 
 **Inside `libs/core` these files cannot import `@applye/core`, and that is not a style rule.**
 `cv-parse.util` imports `splitDisplayName`, a **value**; a self-referential path alias would resolve
@@ -2733,8 +2742,78 @@ system" into the style panel's sample, and a `scope: 'element'` change routed th
 `cv-style-scope.util` in `libs/core` and `cv-style.store` in `libs/application` moves that one leaf
 from Calibri 400 to Georgia 700 and nothing else. No console errors.
 
-**Next:** retire the nine pass-in workarounds, then the 22 unblocked files, then the four
+**Next:** retire the pass-in workarounds, then the 22 unblocked files, then the four
 `toast.service` couplings.
+
+## Amendment fifty-one: the pass-in seam goes, and takes two fictional tests with it
+
+Sub-step three. Eleven files in `libs/application` took a codec object or a callback whose
+documented reason was that the pure function "lives in `apps/desktop`, which this layer may not
+import". Amendment fifty made that false for the CV family. The parameters and the comments go
+together.
+
+**The seam was wider than its own documentation.** Grepping for the explanation finds eight files;
+four more consume the same interfaces without repeating it. That is how a number written from a grep
+became canon and then had to be corrected twice - see the correction in amendment fifty. The rule it
+suggests: count the type's consumers, not the comment's occurrences.
+
+**The cover-letter parse had to be written before it could be moved.** `CoverLetterCodec.parse` was
+not a function anywhere - it was an inline lambda in `cover-letter-detail.component.ts`,
+`JSON.parse(cleanJsonText(text))`. It became `parseCoverLetterResponse` in `libs/core` in its own PR
+(#419), because a new public export in the bottom layer should not arrive buried in a mechanical
+parameter sweep. Writing it surfaced a defect the cast had been hiding: an answer that parsed into a
+**array** or a bare scalar satisfied `JSON.parse` and the `as Partial<CoverLetterContent>` cast, and
+reached the editor as a letter with no fields - indistinguishable on screen from a model that had
+nothing to say, when `CoverLetterGenerateStore` already had a `bad-json` outcome built for exactly
+this and could not reach it because the parse never threw.
+
+**CodeQL then found a second defect, and it was the new export that exposed it.**
+`js/polynomial-redos`, high severity, against `cleanJsonText` - already open on `main`, but a third
+exported caller made it new-in-PR, which is the correct call rather than noise. `/\s*```\s*$/i` puts
+an unbounded `\s*` in front of a literal the engine still has to find, so whitespace is rescanned
+from every start position: quadratic in the length of a whole model reply, which is both
+attacker-influenced (a posting's text reaches the prompt) and routinely thousands of characters.
+`endsWith` plus `trimEnd` does it in one pass.
+
+**Removing a test seam is the interesting part, not removing a parameter.** The codec was also the
+injection point four spec files used, and running the real functions showed that four expectations
+had been describing behaviour the application never had:
+
+- `cv-document` and `cv-print` each had a test whose entire subject was "the normalizer was called".
+  Both now assert what `normalizeCvContent` actually contributes - a legacy `items[]` skills section
+  migrated into a group, the repair that keeps a pre-groups CV from rendering empty and being saved
+  back emptied. The count holds because they were replaced, not deleted.
+- The identity stubs those specs passed were also hiding the `personal_details` section
+  `normalizeCvContent` inserts at order 0. Three expectations described a load path that existed
+  only inside the tests; every real load has always run the normalizer.
+- `cv-regeneration`'s fake `mergeSection` **appended** a section. The real one rewrites in place.
+  The test asserted the fake's behaviour and would have passed against a merge that appended
+  forever.
+
+That is the argument for the removal, and it was the maintainer's call rather than this session's:
+a mock that agrees with the test by construction proves the test, not the code.
+
+**`cv-style.store` keeps its shape and gets an honest comment.** Its `CvStyle` transforms are in
+`libs/core` now, so the "may not depend on the app" clause is false - but the design it justified
+still holds for a different reason: the panel and the cover-letter editor compose styles without
+going through this store at all. Folding composition in rewrites two files already over budget, so
+it is deliberately not this change. The comment now says the true reason and records that the old
+one expired.
+
+**Verified on a rendered screen**, which remains the only instrument that has caught anything in
+this campaign: the CV editor loads through `CvDocumentStore.load(id)` with no normalizer argument, a
+legacy `items[]` skills section renders as a group (so the normalizer ran), the preview renders,
+selecting the name and setting Semibold moves it 700 -> 600 through `routeCvStyleChange` in
+`libs/core` and `applyStyle` in `libs/application`, and `/print/cv/1` renders the same migrated
+document through `CvPrintStore.load(id)`. No console errors.
+
+**The desktop suite's flakiness was measured rather than assumed.** Three specs
+(`cover-letter-print`, `profile`, `cv-detail`, plus `discover` once) time out under `nx run-many`
+CPU contention and pass in isolation. It reproduces on `main` at the same base commit - 1 of 3 full
+runs failed there, 3 of 3 on the branch - so it is debt twelve resurfacing, not this change. Debt
+twelve is no longer "not reproducing".
+
+**Next:** the 22 unblocked files, then the four `toast.service` couplings.
 
 ## References
 
@@ -2833,10 +2912,12 @@ from Calibri 400 to Georgia 700 and nothing else. No console errors.
           `cv-selection.util.ts` 155 and `cv-page.util.ts` 116 (amendment forty-nine). Forced first
           by the size gate, which reads a moved file as added and refuses a new file over budget
     - [x] Move the `cv-content` family to `libs/core` - done in amendment fifty. **Seven files, not
-          six**: `cv-style-scope.util.ts` is consumed by `cv-style.store.ts`, one of the nine
+          six**: `cv-style-scope.util.ts` is consumed by `cv-style.store.ts`, one of the
           workaround files, so it is part of the same wall. 53 import sites across 31 files
-    - [ ] Retire the nine pass-in workarounds in `libs/application` that exist only because that
-          family was unreachable, in their own pull request - it changes nine store signatures
+    - [x] Retire the pass-in workarounds in `libs/application` that exist only because that family
+          was unreachable - done in amendment fifty-one, as PR #419 (`parseCoverLetterResponse` in
+          `libs/core`, the one parse with no existing function) and the seam removal on top of it.
+          **Eleven files took a parameter, not nine**; a twelfth carried only the stale comment
     - [ ] Move the 22 unblocked files
     - [ ] The four `toast.service` couplings, which need the outcome pattern rather than a move
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too

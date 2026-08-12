@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, ADR-0005: the app loses its data-layer allowlist, and the blocker count was wrong by thirty
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5, re-triage 8/10 (radius 2 · ambiguity 2 · risk 1 · verify 2 · unknowns 1). Grilling gate run - one round, three decisions. No subagents; none were asked for.
+- **Branch:** `refactor/drop-type-data-from-app`, `refactor/profile-import-store`
+- **Commits:** one code commit per branch, plus one documentation commit
+- **Pull request:** #432, #433
+- **Objective:** Remove `type:data` from `type:app`'s `onlyDependOnLibsWithTags` in `eslint.config.mjs`.
+- **Completed:** The flip itself, plus everything it turned out to require. #432: `cv-photo-prompt` -> `libs/application/src/lib/jobs/`, `followup-draft` -> `lib/pipeline/`, `CliStatus` -> `libs/core/src/lib/ai/`, dead `AiService` injection deleted from `jobs.component.ts` (979 -> 977), `followup-no-transmit.spec.ts` repointed. #433: `ProfileImportStore` and `PasteJobStore` extracted, `paste-job-modal.component.ts` 245 -> 128, the tag dropped, and a scoped exemption added for `**/*.spec.ts` and `**/*.harness.ts`. ADR-0005 amendment fifty-five, checklist item ticked, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** The fate of the `GATEWAY_INJECTION` component rule is still open, and is now sharper than before: it names `DbService` only, while this session found `AiService` and `JobSourceService` doing the same job unguarded.
+- **Files or packages changed:** `eslint.config.mjs`, `apps/desktop`, `libs/application`, `libs/core`, `libs/data`.
+- **Validation:** Per PR: `nx run-many --target=type-check` (7 projects), `nx run-many --target=lint --skip-nx-cache` (7 projects), `nx run-many --target=test --skip-nx-cache`, `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`. All observed passing. Counts 260/3033 -> 262/3043, reconciled per file: `profile-raw-editor` 11 -> 4 + 10, `paste-job-modal` 6 -> 3 + 10, the surplus being ten tests of behaviour that had none. **The boundary rule was verified in both directions** with a throwaway `boundary-probe.ts`, deleted in the same command. Rendered checks on both PRs.
+- **Privacy/security impact:** Two privacy-relevant surfaces were touched and both were preserved deliberately. The clipboard read and its open-modal guard stayed in the component; `PasteJobStore` only judges text it is handed. `followup-no-transmit.spec.ts`, which asserts the follow-up drafter contains no transmit path, identifies its subject by file path - the move made it fail loudly (`ENOENT`) and its path was corrected, so the guard still scans the real file.
+- **Decisions and assumptions:** (1) Exempt specs and harnesses from the `type:data` constraint rather than rewrite 25 specs to fake a store's collaborator graph. (2) Do the two component-to-store migrations in their own PR, with the tag flip landing beside them. (3) `CliStatus` to `libs/core` rather than re-exported from `libs/application`. (4) `Router` in `cv-photo-prompt` accepted as navigation state, not view.
+- **Risks or compatibility impact:** The exemption is a hole a production file named `*.spec.ts` could hide in; nothing else prevents that either, and it is documented in the config. A template regex briefly rewrote `role="tab"` to `role="store.tab"` while rebinding `paste-job-modal.component.html`; caught by type-check plus a targeted re-read of every substitution, and both ARIA roles were confirmed intact on a rendered screen.
+- **Open issues or blockers:** `GATEWAY_INJECTION` guards one of three data services. Debt twelve unchanged.
+- **Next first action:** Decide `GATEWAY_INJECTION`'s fate - widen it to `AiService` and `JobSourceService`, or retire it now that `@nx/enforce-module-boundaries` catches the same class repository-wide. Do not leave it describing a third of the problem.
+- **Evidence:** PRs #432 and #433, ADR-0005 amendment fifty-five, `docs/product/CURRENT_STATE.md`.
+
 ### 2026-08-12, ADR-0005 sub-step 5: the toast wall was a store in the wrong folder, and `shared/` empties
 
 - **Status:** complete

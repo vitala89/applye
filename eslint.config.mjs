@@ -67,13 +67,58 @@ export default tseslint.config(
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              // `type:data` stays here, and it is **not** the rule that keeps a
-              // component away from the gateway - see
-              // `COMPONENTS_STILL_USING_THE_GATEWAY` above, which is. This
-              // constraint keys on the project tag, so removing `type:data`
-              // would also ban the gateway from the app's own `shared/*`
-              // services; it leaves only when those have moved into
-              // `libs/application` too (ADR-0005, amendment four).
+              // `type:data` is gone from this list: no production file in the
+              // app reaches the gateway any more, which is what amendment four
+              // said this flip was waiting for. Tests are exempted separately
+              // below - a spec provides fakes for its unit's collaborators, and
+              // that is not a dependency direction.
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: ['type:application', 'type:ui', 'type:util', 'type:domain'],
+            },
+            {
+              // Page state and orchestration. Depends on the gateway and the
+              // domain; deliberately cannot depend on `type:ui`, so a store can
+              // never start reaching for a component.
+              sourceTag: 'type:application',
+              onlyDependOnLibsWithTags: ['type:data', 'type:domain', 'type:util'],
+            },
+            { sourceTag: 'type:data', onlyDependOnLibsWithTags: ['type:domain', 'type:util'] },
+            { sourceTag: 'type:ui', onlyDependOnLibsWithTags: ['type:domain', 'type:util'] },
+            { sourceTag: 'type:util', onlyDependOnLibsWithTags: ['type:domain', 'type:util'] },
+            { sourceTag: 'type:domain', onlyDependOnLibsWithTags: ['type:domain'] },
+            {
+              sourceTag: 'scope:desktop',
+              onlyDependOnLibsWithTags: ['scope:desktop', 'scope:shared'],
+            },
+            { sourceTag: 'scope:web', onlyDependOnLibsWithTags: ['scope:web', 'scope:shared'] },
+            { sourceTag: 'scope:shared', onlyDependOnLibsWithTags: ['scope:shared'] },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Tests are exempt from the `type:data` half of the rule above, and only
+    // from that half. A spec provides fakes for the collaborators of the unit
+    // it tests - an app component's store reaches the gateway, so its spec has
+    // to be able to name `DbService` to stub it. That is test wiring, not a
+    // dependency direction, and rewriting 25 specs to fake a store's own
+    // collaborator graph instead would test less while changing more.
+    //
+    // `*.harness.ts` is here for the same reason: `onboarding.harness.ts`
+    // imports `TestBed` and is a spec in everything but its filename.
+    //
+    // The hole this leaves is a production file named `*.spec.ts`, which
+    // nothing else prevents either (ADR-0005, amendment fifty-five).
+    files: ['**/*.spec.ts', '**/*.harness.ts'],
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'error',
+        {
+          enforceBuildableLibDependency: true,
+          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          depConstraints: [
+            {
               sourceTag: 'type:app',
               onlyDependOnLibsWithTags: [
                 'type:application',
@@ -84,9 +129,6 @@ export default tseslint.config(
               ],
             },
             {
-              // Page state and orchestration. Depends on the gateway and the
-              // domain; deliberately cannot depend on `type:ui`, so a store can
-              // never start reaching for a component.
               sourceTag: 'type:application',
               onlyDependOnLibsWithTags: ['type:data', 'type:domain', 'type:util'],
             },

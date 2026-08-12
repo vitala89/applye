@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -10,48 +10,11 @@ import {
   LucideAngularModule,
   X,
 } from 'lucide-angular';
-import { JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { readText } from '@tauri-apps/plugin-clipboard-manager';
 import { PasteJobModalService } from './paste-job-modal.service';
-import { JobIdentityResolverService } from '@applye/application';
-
-type PasteTab = 'link' | 'text';
-
-// Clipboard heuristic (0 tokens): a plausible job description is long and
-// contains at least two job-posting-shaped keywords. Never reads more than
-// this one clipboard check, never auto-submits - the user reviews and
-// clicks "Paste copied description" themselves.
-const CLIPBOARD_MIN_LENGTH = 300;
-const CLIPBOARD_KEYWORDS = [
-  'responsibilities',
-  'requirements',
-  'qualifications',
-  'experience',
-  'we are looking for',
-  "we're looking for",
-  'apply',
-  'salary',
-  'skills',
-  'about the role',
-  "what you'll do",
-  'what you will do',
-  'benefits',
-  'about you',
-  'your profile',
-  'aufgaben',
-  'anforderungen',
-  'qualifikation',
-];
-
-function looksLikeJobDescription(text: string): boolean {
-  const trimmed = text.trim();
-  if (trimmed.length < CLIPBOARD_MIN_LENGTH) return false;
-  const lower = trimmed.toLowerCase();
-  const matches = CLIPBOARD_KEYWORDS.reduce((n, k) => (lower.includes(k) ? n + 1 : n), 0);
-  return matches >= 2;
-}
+import { PasteJobStore, PasteTab } from '@applye/application';
 
 // Single shared "Paste Job" modal (topbar + My Jobs both open this same
 // instance via PasteJobModalService). Two modes: fetch from an allowed
@@ -66,10 +29,10 @@ function looksLikeJobDescription(text: string): boolean {
   styleUrl: './paste-job-modal.component.scss',
 })
 export class PasteJobModalComponent {
-  private readonly source = inject(JobSourceService);
   private readonly router = inject(Router);
-  private readonly identity = inject(JobIdentityResolverService);
   private readonly i18n = inject(TranslateService);
+  /** Root-provided: the modal is a single shared instance, so its state is too. */
+  protected readonly store = inject(PasteJobStore);
   protected readonly modal = inject(PasteJobModalService);
   protected readonly t = this.i18n.t;
 
@@ -82,26 +45,9 @@ export class PasteJobModalComponent {
     close: X,
   };
 
-  protected readonly tab = signal<PasteTab>('link');
-
-  // From link
-  protected readonly linkUrl = signal('');
-  protected readonly linkBusy = signal(false);
-  protected readonly linkError = signal('');
-  protected readonly closedBoardName = signal<string | null>(null);
-  protected readonly isUnknownDomain = signal(false);
-
-  // Paste text
-  protected readonly textValue = signal('');
-  protected readonly textBusy = signal(false);
-  protected readonly textError = signal('');
-
-  // Clipboard helper - never auto-fills, only offers.
-  protected readonly clipboardOffer = signal('');
-
   protected close(): void {
     this.modal.close();
-    this.resetState();
+    this.store.reset();
   }
 
   // Only close when the backdrop itself is clicked, not bubbled clicks from
@@ -112,78 +58,29 @@ export class PasteJobModalComponent {
     }
   }
 
-  private resetState(): void {
-    this.tab.set('link');
-    this.linkUrl.set('');
-    this.linkBusy.set(false);
-    this.linkError.set('');
-    this.closedBoardName.set(null);
-    this.isUnknownDomain.set(false);
-    this.textValue.set('');
-    this.textBusy.set(false);
-    this.textError.set('');
-    this.clipboardOffer.set('');
-  }
-
   protected setTab(next: PasteTab): void {
-    this.tab.set(next);
+    this.store.setTab(next);
   }
 
   protected closedWarningTitle(): string {
-    const board = this.closedBoardName();
+    const board = this.store.closedBoardName();
     return board ? this.t()('pasteModal.closed_title').replace('{board}', board) : '';
   }
 
   protected closedWarningBody(): string {
-    const board = this.closedBoardName();
+    const board = this.store.closedBoardName();
     return board
       ? this.t()('pasteModal.closed_body').replace('{board}', board)
       : this.t()('pasteModal.unknown_body');
   }
 
   protected async submitLink(): Promise<void> {
-    const url = this.linkUrl().trim();
-    if (!url || this.linkBusy()) return;
-    this.linkBusy.set(true);
-    this.linkError.set('');
-    this.closedBoardName.set(null);
-    this.isUnknownDomain.set(false);
-    try {
-      const classification = await this.source.classifyJobUrl(url);
-      if (classification.kind === 'allowed') {
-        const fetched = await this.source.fetchJobFromUrl(url);
-        // `authoritative` (the default): these came back as structured fields
-        // from the board, which beats anything parsed out of the prose.
-        const job = await this.source.jobPaste(
-          fetched.jdText,
-          fetched.title,
-          fetched.company,
-          'authoritative',
-        );
-        this.identity.start(job);
-        this.close();
-        void this.router.navigate(['/jobs', job.id]);
-        return;
-      }
-      // Stay on the link tab. The explanation of why this URL cannot be fetched
-      // - and the "Open in browser" button that is the way forward - are
-      // rendered on this tab, so switching away hid the answer on the tab the
-      // user had just been moved off. They can reach "Paste text" themselves,
-      // and now they can read why they would want to.
-      if (classification.kind === 'closed') {
-        this.closedBoardName.set(classification.boardName);
-      } else {
-        this.isUnknownDomain.set(true);
-      }
-    } catch (e) {
-      this.linkError.set(String(e));
-    } finally {
-      this.linkBusy.set(false);
-    }
+    const jobId = await this.store.submitLink();
+    if (jobId != null) this.openJob(jobId);
   }
 
   protected async openInBrowser(): Promise<void> {
-    const url = this.linkUrl().trim();
+    const url = this.store.linkUrl().trim();
     if (!url) return;
     try {
       await openUrl(url);
@@ -194,24 +91,15 @@ export class PasteJobModalComponent {
   }
 
   protected async submitText(): Promise<void> {
-    const text = this.textValue().trim();
-    if (!text || this.textBusy()) return;
-    this.textBusy.set(true);
-    this.textError.set('');
-    try {
-      const job = await this.source.jobPaste(text);
-      // Same chain as Parse & filter, for the same reason: this is the other
-      // way a job is made out of raw text, and a user who pasted a posting the
-      // rules could not read should not have to find a second button and press
-      // it to be asked. The job page they land on raises the dialog.
-      this.identity.start(job);
-      this.close();
-      void this.router.navigate(['/jobs', job.id]);
-    } catch (e) {
-      this.textError.set(String(e));
-    } finally {
-      this.textBusy.set(false);
-    }
+    const jobId = await this.store.submitText();
+    if (jobId != null) this.openJob(jobId);
+  }
+
+  /** Closing and navigating stay here: the modal is the shell's, not the
+   * store's. */
+  private openJob(jobId: number): void {
+    this.close();
+    void this.router.navigate(['/jobs', jobId]);
   }
 
   // Window focus is the practical proxy for "user switched back from their
@@ -227,19 +115,14 @@ export class PasteJobModalComponent {
 
   protected async checkClipboard(): Promise<void> {
     try {
-      const text = await readText();
-      this.clipboardOffer.set(text && looksLikeJobDescription(text) ? text : '');
+      this.store.offerClipboardText(await readText());
     } catch {
       // No text on the clipboard (e.g. an image) - nothing to offer.
-      this.clipboardOffer.set('');
+      this.store.offerClipboardText(null);
     }
   }
 
   protected useClipboardText(): void {
-    const text = this.clipboardOffer();
-    if (!text) return;
-    this.textValue.set(text);
-    this.tab.set('text');
-    this.clipboardOffer.set('');
+    this.store.useClipboardText();
   }
 }

@@ -24,8 +24,8 @@
           type="button"
           role="tab"
           class="pastemodal__tab"
-          [class.is-active]="tab() === 'link'"
-          [attr.aria-selected]="tab() === 'link'"
+          [class.is-active]="store.tab() === 'link'"
+          [attr.aria-selected]="store.tab() === 'link'"
           (click)="setTab('link')"
         >
           <lucide-icon [img]="icons.link" [size]="14" aria-hidden="true" />
@@ -35,8 +35,8 @@
           type="button"
           role="tab"
           class="pastemodal__tab"
-          [class.is-active]="tab() === 'text'"
-          [attr.aria-selected]="tab() === 'text'"
+          [class.is-active]="store.tab() === 'text'"
+          [attr.aria-selected]="store.tab() === 'text'"
           (click)="setTab('text')"
         >
           <lucide-icon [img]="icons.text" [size]="14" aria-hidden="true" />
@@ -44,7 +44,7 @@
         </button>
       </div>
 
-      @if (tab() === 'link') {
+      @if (store.tab() === 'link') {
         <div class="pastemodal__panel">
           <label class="pastemodal__label" for="paste-job-url">{{
             t()('pasteModal.link_label')
@@ -52,16 +52,16 @@
           <input
             id="paste-job-url"
             type="url"
-            [ngModel]="linkUrl()"
-            (ngModelChange)="linkUrl.set($event)"
+            [ngModel]="store.linkUrl()"
+            (ngModelChange)="store.linkUrl.set($event)"
             [placeholder]="t()('pasteModal.link_placeholder')"
             (keydown.enter)="submitLink()"
           />
           <p class="modal__hint">{{ t()('pasteModal.link_hint') }}</p>
 
-          @if (closedBoardName() || isUnknownDomain()) {
+          @if (store.closedBoardName() || store.isUnknownDomain()) {
             <div class="pastemodal__warning">
-              @if (closedBoardName()) {
+              @if (store.closedBoardName()) {
                 <p class="pastemodal__warning-title">{{ closedWarningTitle() }}</p>
               }
               <p>{{ closedWarningBody() }}</p>
@@ -72,18 +72,20 @@
             </div>
           }
 
-          @if (linkError()) {
-            <p class="modal__error">{{ linkError() }}</p>
+          @if (store.linkError()) {
+            <p class="modal__error">{{ store.linkError() }}</p>
           }
 
           <div class="modal__actions">
             <button class="btn-ghost" (click)="close()">{{ t()('actions.cancel') }}</button>
             <button
               class="btn-primary"
-              [disabled]="linkBusy() || !linkUrl().trim()"
+              [disabled]="store.linkBusy() || !store.linkUrl().trim()"
               (click)="submitLink()"
             >
-              {{ linkBusy() ? t()('pasteModal.link_fetching') : t()('pasteModal.link_submit') }}
+              {{
+                store.linkBusy() ? t()('pasteModal.link_fetching') : t()('pasteModal.link_submit')
+              }}
             </button>
           </div>
         </div>
@@ -91,7 +93,7 @@
         <div class="pastemodal__panel">
           <p class="modal__hint">{{ t()('pasteModal.text_hint') }}</p>
 
-          @if (clipboardOffer()) {
+          @if (store.clipboardOffer()) {
             <button type="button" class="pastemodal__clipboard-offer" (click)="useClipboardText()">
               <lucide-icon [img]="icons.clipboardPaste" [size]="14" aria-hidden="true" />
               {{ t()('pasteModal.clipboard_found') }}
@@ -108,23 +110,23 @@
 
           <textarea
             rows="12"
-            [ngModel]="textValue()"
-            (ngModelChange)="textValue.set($event)"
+            [ngModel]="store.textValue()"
+            (ngModelChange)="store.textValue.set($event)"
             [placeholder]="t()('pasteModal.text_placeholder')"
           ></textarea>
 
-          @if (textError()) {
-            <p class="modal__error">{{ textError() }}</p>
+          @if (store.textError()) {
+            <p class="modal__error">{{ store.textError() }}</p>
           }
 
           <div class="modal__actions">
             <button class="btn-ghost" (click)="close()">{{ t()('actions.cancel') }}</button>
             <button
               class="btn-primary"
-              [disabled]="textBusy() || !textValue().trim()"
+              [disabled]="store.textBusy() || !store.textValue().trim()"
               (click)="submitText()"
             >
-              {{ textBusy() ? t()('pasteModal.submitting') : t()('pasteModal.submit') }}
+              {{ store.textBusy() ? t()('pasteModal.submitting') : t()('pasteModal.submit') }}
             </button>
           </div>
         </div>

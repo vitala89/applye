@@ -42,6 +42,32 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **Sixteen files left `apps/desktop/src/app/shared/` for `libs/application`. Level two, item three,
+  sub-step four is closed - and the "22" it was written around was never a count.** The figure came
+  from a table that says "seventeen services" and then lists 6 + 4 + 22, and it counted direct
+  blockers only, so everything blocked transitively sat on the wrong side of it. Every one of the 26
+  non-spec files was read and classified on its real import list plus the transitive closure:
+  **15 movable, 11 blocked**. Two the canon called blocked were not - `job-identity-resolver` imports
+  the _service_ in `shared/job-identity-prompt/`, not a component, and `job-intake` sat behind it; the
+  prompt service moved with them, so the count that shipped is sixteen files. Shipped as three PRs
+  because the size gate forces split-before-move and the two families have zero import edges between
+  them: **#421** split `tailoring.service` 305 -> 226 into a pure `tailoring-pass.ts`, **#422** moved
+  ten document-generation modules, **#423** moved seven jobs and wizard modules. **The 250 budget
+  covers every non-spec file in `libs/application`, not only `*.store.ts`** - that is what forced the
+  split first, and `job-identity-resolver` landed at 245 with three lines of margin.
+  `coverLetterHashInput` collided on arrival with the editor's per-block hash of the same name and
+  became `coverLetterDraftHashInput`, symmetrical with `cvDraftHashInput`. Counts reconciled on every
+  step, totals never moved: `application` 85/1096 -> **100/1276**, `desktop` 127/1287 -> **113/1123**,
+  `core` **25/461**. **The rendered check found a defect the gates did not, and it is not ours:**
+  generating a CV draft links the row correctly and its card still renders `Missing` -
+  `cvReviewStatus()` computes `'linked'` while the DOM badge is `badge--doc-missing`, so the view
+  never re-rendered. It reproduces identically on `main` at 17e6bbf and is filed separately.
+  **Next first action:** sub-step 4b - rewrite the `sessionStorage` seam in `final-checks` and
+  `wizard-progress` to `globalThis.sessionStorage?.` (the ruling already made in ADR-0005 amendment
+  thirty-three), which unblocks `document-review-targets` and `job-scoring` behind them; `job-scoring`
+  at 319 needs its own split first, and `wizard-nav` never moves because `querySelector` and
+  `scrollingElement` are view. Then sub-step five, the four `toast.service` couplings (ADR-0005,
+  amendment fifty-two).
 - **The pass-in seam is gone. Level two, item three, sub-step three is closed.** Eleven files in
   `libs/application` took a codec object or a callback justified by a boundary that no longer exists;
   all eleven now import from `@applye/core` directly. `CvCodec`, `CvGenerateCodec`,
@@ -56,8 +82,7 @@
   removed the mocks with it, and four expectations turned out to describe behaviour the app never
   had** - an identity normalizer was hiding the `personal_details` section every real load inserts,
   and a fake `mergeSection` appended where the real one rewrites in place. Counts hold: `core`
-  25/453 -> **25/461**, `application` **85/1096**, `desktop` **127/1287**. **Next first action:** move
-  the 22 unblocked files, then the four `toast.service` couplings (ADR-0005, amendment fifty-one).
+  25/453 -> **25/461**, `application` **85/1096**, `desktop` **127/1287**.
 - **The `cv-content` family is in `libs/core`. Six of the seventeen blocked services are unblocked.**
   Seven files - not six; `cv-style-scope.util.ts` turned out to be consumed by `cv-style.store.ts`,
   one of the workaround files - moved to `libs/core/src/lib/cv/` with their specs, 53 import

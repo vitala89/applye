@@ -44,6 +44,35 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, ADR-0005 level two sub-step four: the unblocked files move, and "22" is corrected to fifteen
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5, triage 9/10 (radius 2 · ambiguity 2 · risk 1 · verify 2 · unknowns 2), grilling gate run before any edit
+- **Branch:** `refactor/split-tailoring-service`, `refactor/move-documents-family-to-application`, `refactor/move-jobs-family-to-application`
+- **Commits:** `c155359` (#421, squashed), `05a211b` (#422, squashed), `ccf03a1` plus this docs commit (#423)
+- **Pull request:** #421 merged, #422 merged, #423 open
+- **Objective:** move the unblocked files out of `apps/desktop/src/app/shared/` into `libs/application`, and verify the canonical count of them rather than inheriting it.
+- **Completed:**
+  - Recounted `shared/` **by reading all 26 non-spec files**, classifying each on its real import list plus the transitive closure over its local imports. Result: **26 files, 3649 lines, 15 movable, 11 blocked**. The method is recorded in ADR-0005 amendment fifty-two alongside the number, so the next session does not re-derive it.
+  - Corrected the canonical "22". It came from a table that says "seventeen services" and then lists 6 + 4 + 22 = 32, and it counted **direct blockers only**, so every transitively blocked file was on the wrong side. Corrected in the ADR checklist and `CURRENT_STATE.md`; the historical sentence in amendment fifty is annotated rather than rewritten, following the precedent amendment fifty-one set.
+  - Corrected a second canon error: `job-identity-resolver` was listed as blocked by a **component**. It imports that folder's _service_ - 94 non-empty lines of signals, no component, no DOM, no toast. It and `job-intake` behind it moved, and the prompt service with them, so sixteen files shipped against fifteen classified movable.
+  - #421 split `tailoring.service.ts` 305 -> 226 into a pure `tailoring-pass.ts`, with 16 new tests over the extracted half.
+  - #422 moved ten document-generation modules and nine specs to `libs/application/src/lib/documents/`.
+  - #423 moved seven jobs and wizard modules and six specs to `libs/application/src/lib/jobs/`.
+- **Not completed:** sub-step 4b (the `sessionStorage` seam) and sub-step five (the four `toast.service` couplings), both deliberately out of scope - see decisions.
+- **Files or packages changed:** 26 files moved or split from `apps/desktop/src/app/shared/` into `libs/application/src/lib/{documents,jobs}/`; `libs/application/src/index.ts`; about 30 call-site files in `apps/desktop`; `ADR-0005`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** all run and observed, on each PR, with the full set re-run after the hand-resolved rebase conflict in #423: `nx run-many --target=type-check --all` (7 projects), `--target=lint --all --skip-nx-cache` (7 projects, 0 errors, 17 pre-existing warnings), `--target=test --all` (7 projects), `nx build desktop`, `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npm run format:check` (passed), `git diff --check` (clean). Rendered checks run on all three PRs.
+- **Test counts, reconciled at every step:** #421 desktop 127 suites/1287 -> 128/1303, exactly the +16 of the new spec, `tailoring.service.spec.ts` keeping all 22. #422 application 85/1096 -> 94/1198 and desktop 127/1287 -> 118/1185, total unchanged at 2383. #423 application 94/1198 -> 100/1276 and desktop 119/1201 -> 113/1123, total unchanged at 2399. Baselines taken from `git checkout main`, not from memory.
+- **File sizes near or above budget:** `tailoring.service.ts` 305 -> **226**/250. `job-identity-resolver.service.ts` **245**/250 on arrival - three lines of margin, recorded rather than quietly accepted. `cv-draft.service.ts` 201/250. `jobs.component.ts` unchanged at 980/400, pre-existing, base 980.
+- **Privacy/security impact:** none. No data flow, storage, provider call or IPC surface changed; every moved file is byte-identical except its import lines.
+- **Decisions and assumptions:** taken to the maintainer through `aif-grilling`, two rounds, all five settled before any edit. (1) Scope stays a **pure move** - the `inject(DOCUMENT)` to `globalThis.sessionStorage?.` rewrite that would unblock four more files becomes sub-step 4b, because rewriting a DI seam is behaviour-touching and drags `job-scoring` at 319 in. (2) `tailoring.service` splits by extracting a **pure module**, not by splitting the class. (3) **Two destination folders, filenames unchanged**, so each diff is a rename git can follow; this knowingly introduces the layer's first `*.service.ts` files. (4) The identity trio moves now. (5) **Three PRs**, split then move then move.
+- **Risks or compatibility impact:** none user-visible. The `coverLetterHashInput` to `coverLetterDraftHashInput` rename touches a symbol with two consumers, both moved with it; the library's existing `coverLetterHashInput` in `cover-letter-generation.ts` is untouched and keeps its name and its meaning.
+- **Open issues or blockers:**
+  - **A real defect found by the rendered check, reproducing on `main` at 17e6bbf and therefore not this work.** Generating a CV draft in the wizard's Review Documents step writes and links the row correctly, and the card still renders `Missing`. Measured in the live component, not inferred: `linkedDocs.cv()` holds the new document and `cvReviewStatus()` computes `'linked'`, while the DOM badge is `badge--doc-missing`. The signal and the computed are both right; the view never re-rendered. Filed separately with its reproduction.
+  - Debt twelve did not reproduce this session: the desktop suite ran clean on every full run, including four `nx run-many --target=test --all` sweeps. Not a claim that it is fixed - it was not touched.
+- **Next first action:** sub-step 4b. Rewrite `final-checks.service.ts` and `wizard-progress.service.ts` from `inject(DOCUMENT)` plus `document.defaultView?.sessionStorage` to `globalThis.sessionStorage?.`, the form ADR-0005 amendment thirty-three already ruled on for `sidebarCollapsed`, then move them plus `document-review-targets` and `job-scoring` behind them - splitting `job-scoring` under 250 first, in its own PR, as `tailoring.service` needed. `wizard-nav.service.ts` never moves: `querySelector` and `scrollingElement` are view.
+- **Evidence:** #421, #422, #423; ADR-0005 amendment fifty-two; `tools/check-file-size-budgets.mjs` lines 24-31 for the 250 budget covering all of `libs/application`; the rendered runs recorded in each PR body.
+
 ### 2026-08-12, the pass-in codec seam is retired
 
 - **Status:** complete - sub-step three of five in level two item three

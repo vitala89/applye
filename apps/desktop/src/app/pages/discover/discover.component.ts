@@ -64,7 +64,7 @@ import {
   formatScanTime,
   toggled,
 } from '@applye/application';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
 type WorkType = 'remote' | 'hybrid' | 'onsite';

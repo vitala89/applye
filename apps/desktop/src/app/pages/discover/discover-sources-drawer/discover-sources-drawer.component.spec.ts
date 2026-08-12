@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { DiscoverSourcesStore, SourceWriteResult } from '@applye/application';
 import type { DiscoverSource } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer.component';
 
 /**

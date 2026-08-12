@@ -16,7 +16,7 @@ import { ANALYSED_STATUS, MyJobsStore, TracklistImportStore, rowStatus } from '@
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 // My Jobs: the full job database as a sortable/filterable table. Read-only,
 // 0 tokens. Sort/filter/search run client-side over the local overview list.

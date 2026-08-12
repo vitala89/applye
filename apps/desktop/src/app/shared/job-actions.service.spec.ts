@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { JobActionsService } from './job-actions.service';
 import { JobIdentityResolverService } from '@applye/application';
 

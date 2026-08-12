@@ -50,7 +50,7 @@ import { OnboardingReviewStepComponent } from './onboarding-review-step/onboardi
 import { OnboardingResumeStepComponent } from './onboarding-resume-step/onboarding-resume-step.component';
 import { OnboardingTargetingStepComponent } from './onboarding-targeting-step/onboarding-targeting-step.component';
 import { ThemeService } from '../theme.service';
-import { ToastService } from '../toast/toast.service';
+import { ToastService } from '@applye/application';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
  * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:

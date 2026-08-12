@@ -4,7 +4,7 @@ import { LucideAngularModule, Plus, Sparkles, Trash2, X } from 'lucide-angular';
 import { TrackerColumnDef, TrackerColumnsStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { trackerColumnLabel } from '../tracker-column-label';
 
 /**

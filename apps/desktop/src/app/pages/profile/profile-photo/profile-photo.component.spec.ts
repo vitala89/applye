@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProfilePhotoStore } from '@applye/application';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { ProfilePhotoComponent } from './profile-photo.component';
 
 const DATA_URI = 'data:image/png;base64,AAA';

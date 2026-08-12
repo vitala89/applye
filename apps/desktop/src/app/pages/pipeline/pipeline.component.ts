@@ -37,7 +37,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { QuickViewModalComponent } from './quick-view-modal/quick-view-modal.component';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 interface KanbanCol {
   status: ApplicationStatus;

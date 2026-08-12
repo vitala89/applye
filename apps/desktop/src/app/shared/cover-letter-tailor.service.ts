@@ -18,7 +18,7 @@ import {
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 
-import { ToastService } from '../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 /** Everything the tailored copy is built from. The page still owns the library
  * list, because the choose-existing dropdown reads the same letters. */

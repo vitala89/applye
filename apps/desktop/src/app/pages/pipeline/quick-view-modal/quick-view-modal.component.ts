@@ -30,7 +30,7 @@ import {
   stageIsCurrent,
   stageReached,
 } from '@applye/application';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import {
   Application,
   ApplicationStatus,

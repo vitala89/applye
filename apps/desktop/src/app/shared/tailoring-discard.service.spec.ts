@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DbService } from '@applye/data';
-import { ToastService } from '../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { LinkedDocumentsService } from '@applye/application';
 import { TailorScoreService } from '@applye/application';

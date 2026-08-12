@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Settings } from '@applye/core';
 import { AiService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { ParsedProfile } from '@applye/application';
 import { ProfileRawEditorComponent } from './profile-raw-editor.component';
 

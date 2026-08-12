@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { ToastService } from '../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { ReviewDocumentKind } from '@applye/application';
 
 /**

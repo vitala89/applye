@@ -3,7 +3,7 @@ import { serializeProfileForm, parseProfileMd, EMPTY_FORM } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { ProfileStore } from '@applye/application';
 import { ProfileComponent } from './profile.component';
 

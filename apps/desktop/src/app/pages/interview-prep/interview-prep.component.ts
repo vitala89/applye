@@ -4,7 +4,7 @@ import { ListOrdered, MoreHorizontal, LucideAngularModule, Target, Trash2 } from
 import { InterviewPrepStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { ToastService } from '../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 
 // Interview Prep list: every application that has at least one stage,
 // sorted soonest-upcoming first. CRUD home for stages - the Pipeline board

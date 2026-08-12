@@ -14,7 +14,7 @@ import {
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
 
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';

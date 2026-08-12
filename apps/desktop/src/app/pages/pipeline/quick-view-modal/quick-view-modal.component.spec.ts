@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { QuickViewModalComponent } from './quick-view-modal.component';
 
 /**

@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Application } from '@applye/core';
 import { DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { JobIdentityResolverService } from '@applye/application';
 
 /**

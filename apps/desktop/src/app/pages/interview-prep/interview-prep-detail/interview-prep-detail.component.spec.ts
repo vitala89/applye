@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { InterviewStage } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { InterviewStagesStore } from '@applye/application';
 import { InterviewPrepDetailComponent } from './interview-prep-detail.component';
 

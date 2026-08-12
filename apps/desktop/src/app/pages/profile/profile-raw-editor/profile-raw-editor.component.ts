@@ -5,7 +5,7 @@ import { ButtonDirective } from '@applye/ui';
 import { AiService } from '@applye/data';
 import { Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../../core/toast/toast.service';
+import { ToastService } from '@applye/application';
 import { ParsedProfile } from '@applye/application';
 
 /**

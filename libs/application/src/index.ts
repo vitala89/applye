@@ -97,6 +97,8 @@ export * from './lib/profile/profile-parse.util';
 export * from './lib/profile/profile-photo.store';
 export * from './lib/profile/profile.store';
 export * from './lib/shell/shell.store';
+export * from './lib/shell/toast.model';
+export * from './lib/shell/toast.service';
 export * from './lib/tracker/tracker-columns';
 export * from './lib/tracker/tracker-columns.store';
 export * from './lib/tracker/tracker-print.store';

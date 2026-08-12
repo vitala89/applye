@@ -1,14 +1,14 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
-import { CvPreviewComponent } from './cv-preview.component';
+import { CvPreviewStyleService } from './cv-preview-style.service';
 import { createCvPreview } from './cv-preview.harness';
 
 describe('CvPreviewComponent themes', () => {
-  let component: CvPreviewComponent;
+  let styles: CvPreviewStyleService;
   let fixture: ComponentFixture<CvPreviewComponent>;
 
   beforeEach(async () => {
-    ({ component, fixture } = await createCvPreview());
+    ({ fixture, styles } = await createCvPreview());
   });
 
   it('titleBorderCss applies the user line size (pt) and colour over the theme default', () => {
@@ -21,12 +21,12 @@ describe('CvPreviewComponent themes', () => {
       { key: 'skills', order: 0, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
     ]);
     fixture.detectChanges();
-    const css = component.titleBorderCss('skills');
+    const css = styles.titleBorderCss('skills');
     expect(css).toContain('3pt');
     expect(css).toContain('solid');
     expect(css).toContain('#112233');
     // A section without its own override doesn't pick up skills' rule.
-    expect(component.titleBorderCss('summary')).not.toContain('#112233');
+    expect(styles.titleBorderCss('summary')).not.toContain('#112233');
   });
 
   it("bodyBorder 'none' zeroes the rule width so a themed divider cannot draw", () => {
@@ -35,7 +35,7 @@ describe('CvPreviewComponent themes', () => {
       sectionStyles: { personal_details: { bodyBorder: 'none', bodyRuleWidthPt: 2 } },
     });
     fixture.detectChanges();
-    const css = component.bodyCss('personal_details');
+    const css = styles.bodyCss('personal_details');
     expect(css['--cv-header-rule-width']).toBe('0');
     expect(css['--cv-entry-rule-width']).toBe('0');
   });
@@ -48,7 +48,7 @@ describe('CvPreviewComponent themes', () => {
       ...CV_STYLE_DEFAULT,
       accentColorHex: '#1B7464',
     });
-    const css = component.bodyCss('summary');
+    const css = styles.bodyCss('summary');
     expect(css['color']).toBeUndefined();
     expect(css['--cv-section-body-color']).toBeUndefined();
   });
@@ -59,12 +59,12 @@ describe('CvPreviewComponent themes', () => {
       accentColorHex: '#1B7464',
       sectionStyles: { summary: { colorHex: '#1b7464' } },
     });
-    expect(component.bodyCss('summary')).toMatchObject({
+    expect(styles.bodyCss('summary')).toMatchObject({
       color: '#1b7464',
       '--cv-section-body-color': '#1b7464',
     });
     // A sibling section without its own override stays uncoloured.
-    const skillsCss = component.bodyCss('skills');
+    const skillsCss = styles.bodyCss('skills');
     expect(skillsCss['color']).toBeUndefined();
     expect(skillsCss['--cv-section-body-color']).toBeUndefined();
   });
@@ -75,11 +75,11 @@ describe('CvPreviewComponent themes', () => {
       accentColorHex: '#1B7464',
       bodyColorHex: '#204060',
     });
-    expect(component.bodyCss('summary')).toMatchObject({
+    expect(styles.bodyCss('summary')).toMatchObject({
       color: '#204060',
       '--cv-section-body-color': '#204060',
     });
-    expect(component.bodyCss('skills')).toMatchObject({
+    expect(styles.bodyCss('skills')).toMatchObject({
       color: '#204060',
       '--cv-section-body-color': '#204060',
     });
@@ -91,13 +91,13 @@ describe('CvPreviewComponent themes', () => {
       bodyColorHex: '#204060',
       sectionStyles: { summary: { colorHex: '#0a5' } },
     });
-    expect(component.bodyCss('summary')).toMatchObject({
+    expect(styles.bodyCss('summary')).toMatchObject({
       color: '#0a5',
       '--cv-section-body-color': '#0a5',
     });
     // The sibling section falls through to the document colour, not to
     // accentColorHex and not to no-colour.
-    expect(component.bodyCss('skills')).toMatchObject({
+    expect(styles.bodyCss('skills')).toMatchObject({
       color: '#204060',
       '--cv-section-body-color': '#204060',
     });
@@ -131,7 +131,7 @@ describe('CvPreviewComponent themes', () => {
   it("an explicit titleBorder changes the dashes only - the Aurora theme's weight and colour stay", () => {
     fixture.componentRef.setInput('themeId', 2);
     fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleBorder: 'dotted' });
-    const css = component.titleBorderCss('summary');
+    const css = styles.titleBorderCss('summary');
     // Picking a style must not silently thin the line to the neutral 1px grey:
     // the theme's rule is what the panel shows as the line's size/colour.
     expect(css).toBe('0.8pt dotted #1B7464');
@@ -140,7 +140,7 @@ describe('CvPreviewComponent themes', () => {
   it('a theme that draws no rule (Classic) still falls back to the neutral CSS default', () => {
     fixture.componentRef.setInput('themeId', 1);
     fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleBorder: 'solid' });
-    const css = component.titleBorderCss('summary');
+    const css = styles.titleBorderCss('summary');
     expect(css).toBe('var(--border-width) solid var(--border-subtle)');
   });
 
@@ -152,6 +152,6 @@ describe('CvPreviewComponent themes', () => {
       titleRuleWidthPt: 3,
       titleRuleColorHex: '#ff0000',
     });
-    expect(component.titleBorderCss('summary')).toBe('3pt solid #ff0000');
+    expect(styles.titleBorderCss('summary')).toBe('3pt solid #ff0000');
   });
 });

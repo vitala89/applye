@@ -1,20 +1,22 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { CvPreviewComponent } from './cv-preview.component';
+import { CvPreviewStyleService } from './cv-preview-style.service';
 import { createCvPreview } from './cv-preview.harness';
 
 describe('CvPreviewComponent styling', () => {
   let component: CvPreviewComponent;
+  let styles: CvPreviewStyleService;
   let fixture: ComponentFixture<CvPreviewComponent>;
 
   beforeEach(async () => {
-    ({ component, fixture } = await createCvPreview());
+    ({ component, fixture, styles } = await createCvPreview());
   });
 
   describe('leafCss - per-element style override (Phase D.2)', () => {
     it('returns an empty style object for a leaf with no elementStyles override', () => {
-      expect(component.leafCss('summary')).toEqual({});
-      expect(component.leafCss('pd.fullName')).toEqual({});
+      expect(styles.leafCss('summary')).toEqual({});
+      expect(styles.leafCss('pd.fullName')).toEqual({});
     });
 
     it('an empty-string path returns no leaf-level style, even when an UNRELATED path has an override (T1 review minor)', () => {
@@ -22,7 +24,7 @@ describe('CvPreviewComponent styling', () => {
         ...CV_STYLE_DEFAULT,
         elementStyles: { summary: { fontFamily: 'Georgia', fontSizePt: 16 } },
       });
-      expect(component.leafCss('')).toEqual({});
+      expect(styles.leafCss('')).toEqual({});
     });
 
     it('returns only the CSS properties actually set on the element override - not the full resolved cascade', () => {
@@ -33,7 +35,7 @@ describe('CvPreviewComponent styling', () => {
       // fontWeight/colorHex/lineHeight were never set on the override, so they
       // must be absent here even though the section/document cascade has
       // concrete values for them (effectiveLeafStyle would fill them in).
-      expect(component.leafCss('summary')).toEqual({
+      expect(styles.leafCss('summary')).toEqual({
         'font-family': 'Georgia',
         'font-size': '14pt',
       });
@@ -52,7 +54,7 @@ describe('CvPreviewComponent styling', () => {
           },
         },
       });
-      expect(component.leafCss('exp.0.role')).toEqual({
+      expect(styles.leafCss('exp.0.role')).toEqual({
         'font-family': 'Arial',
         'font-size': '12pt',
         'font-weight': '700',
@@ -66,7 +68,7 @@ describe('CvPreviewComponent styling', () => {
         ...CV_STYLE_DEFAULT,
         elementStyles: { 'exp.0': { borderStyle: 'solid', colorHex: '#123456' } },
       });
-      const css = component.entryCss('exp.0');
+      const css = styles.entryCss('exp.0');
       expect(css['border-bottom']).toBeUndefined();
       expect(css['padding-bottom']).toBeUndefined();
       // Non-line element styling on the entry still applies.
@@ -79,7 +81,7 @@ describe('CvPreviewComponent styling', () => {
         ...CV_STYLE_DEFAULT,
         elementStyles: { 'pd.name': { borderStyle: 'solid' } },
       });
-      const css = component.leafCss('pd.name');
+      const css = styles.leafCss('pd.name');
       expect(css['border-bottom-left-radius']).toBe('0');
       expect(css['border-bottom-right-radius']).toBe('0');
     });
@@ -90,7 +92,7 @@ describe('CvPreviewComponent styling', () => {
         accentColorHex: '#1B7464',
         elementStyles: { 'pd.name': { borderStyle: 'dotted' } },
       });
-      expect(component.leafCss('pd.name')['border-bottom']).toBe('1pt dotted #1B7464');
+      expect(styles.leafCss('pd.name')['border-bottom']).toBe('1pt dotted #1B7464');
     });
 
     it("draws no border-bottom when borderStyle is 'none'", () => {
@@ -98,7 +100,7 @@ describe('CvPreviewComponent styling', () => {
         ...CV_STYLE_DEFAULT,
         elementStyles: { 'pd.name': { borderStyle: 'none', ruleWidthPt: 2 } },
       });
-      expect(component.leafCss('pd.name')['border-bottom']).toBeUndefined();
+      expect(styles.leafCss('pd.name')['border-bottom']).toBeUndefined();
     });
 
     it('never falls back to the section or document accent colour - only an explicit element colorHex appears', () => {
@@ -108,7 +110,7 @@ describe('CvPreviewComponent styling', () => {
         sectionStyles: { summary: { colorHex: '#111111' } },
         elementStyles: { summary: { fontSizePt: 13 } },
       });
-      expect(component.leafCss('summary')['color']).toBeUndefined();
+      expect(styles.leafCss('summary')['color']).toBeUndefined();
     });
 
     it('renders the element override as inline style on the summary leaf in BOTH the page card and the hidden measurement mirror (typography parity for pagination)', () => {
@@ -357,7 +359,7 @@ describe('CvPreviewComponent styling', () => {
           'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3, ruleColorHex: '#0000ff' },
         },
       });
-      const css = component.entryCss('exp.0');
+      const css = styles.entryCss('exp.0');
       expect(css['--cv-entry-rule-style']).toBe('dashed');
       expect(css['--cv-entry-rule-width']).toBe('3pt');
       expect(css['--cv-entry-rule-color']).toBe('#0000ff');
@@ -369,7 +371,7 @@ describe('CvPreviewComponent styling', () => {
         sectionStyles: { experience: { bodyRuleWidthPt: 1.5 } },
         elementStyles: { 'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3 } },
       });
-      expect(component.entryCss('exp.1')['--cv-entry-rule-width']).toBeUndefined();
+      expect(styles.entryCss('exp.1')['--cv-entry-rule-width']).toBeUndefined();
     });
 
     it('turns just this entry\'s rule off with an explicit "none"', () => {
@@ -380,7 +382,7 @@ describe('CvPreviewComponent styling', () => {
       });
       // Zeroing the WIDTH is what turns a themed rule off - `border-style: none`
       // alone would leave the inherited width drawing.
-      expect(component.entryCss('exp.0')['--cv-entry-rule-width']).toBe('0pt');
+      expect(styles.entryCss('exp.0')['--cv-entry-rule-width']).toBe('0pt');
     });
 
     it('still never puts a border on the entry container itself (it would land under the bullets)', () => {
@@ -388,7 +390,7 @@ describe('CvPreviewComponent styling', () => {
         ...CV_STYLE_DEFAULT,
         elementStyles: { 'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3 } },
       });
-      const css = component.entryCss('exp.0');
+      const css = styles.entryCss('exp.0');
       expect(css['border-bottom']).toBeUndefined();
       expect(css['padding-bottom']).toBeUndefined();
     });
@@ -399,7 +401,7 @@ describe('CvPreviewComponent styling', () => {
         sectionStyles: { experience: { bodyBorder: 'dotted', bodyRuleWidthPt: 1 } },
         elementStyles: { 'exp.0': { ruleWidthPt: 4 } },
       });
-      const css = component.entryCss('exp.0');
+      const css = styles.entryCss('exp.0');
       expect(css['--cv-entry-rule-width']).toBe('4pt');
       expect(css['--cv-entry-rule-style']).toBeUndefined();
     });
@@ -474,12 +476,12 @@ describe('CvPreviewComponent styling', () => {
       { key: 'personal_details', order: 0, visible: true, fullName: 'V' },
     ]);
     fixture.detectChanges();
-    const css = component.bodyCss('personal_details');
+    const css = styles.bodyCss('personal_details');
     expect(css['--cv-header-rule-width']).toBe('2pt');
     expect(css['--cv-header-rule-color']).toBe('#123456');
     expect(css['--cv-entry-rule-width']).toBe('2pt');
     // A section without its own override emits no rule vars.
-    expect(component.bodyCss('summary')['--cv-header-rule-width']).toBeUndefined();
+    expect(styles.bodyCss('summary')['--cv-header-rule-width']).toBeUndefined();
   });
 
   it('entryCss mirrors the entry colour into --cv-entry-color (head), and bullets stay bodyCss-only', () => {
@@ -522,11 +524,11 @@ describe('CvPreviewComponent styling', () => {
       },
     ]);
     fixture.detectChanges();
-    const css = component.bulletCss('experience');
+    const css = styles.bulletCss('experience');
     expect(css['color']).toBe('#abcdef');
     expect(css['font-size']).toBe('11pt');
     // Empty for a section with no shared bullet style.
-    expect(component.bulletCss('education')).toEqual({});
+    expect(styles.bulletCss('education')).toEqual({});
   });
 
   it('bulletListCss ignores the section-body ("All experiences") colour - bullets stay independent', () => {
@@ -544,7 +546,7 @@ describe('CvPreviewComponent styling', () => {
       },
     ]);
     fixture.detectChanges();
-    const css = component.bulletListCss('experience');
+    const css = styles.bulletListCss('experience');
     // Bullets carry no colour and no --cv-section-body-color from the section
     // scope - only "All achievements" / per-bullet overrides colour them.
     expect(css['color']).toBeUndefined();
@@ -560,7 +562,7 @@ describe('CvPreviewComponent styling', () => {
       { key: 'languages', order: 0, visible: true, items: [{ language: 'English', level: '' }] },
     ]);
     fixture.detectChanges();
-    const css = component.bodyCss('languages');
+    const css = styles.bodyCss('languages');
     expect(css['--cv-sep-color']).toBe('#abcdef');
     expect(css['--cv-sep-size']).toBe('12pt');
   });
@@ -572,21 +574,21 @@ describe('CvPreviewComponent styling', () => {
       titleStyle: { fontFamily: 'Georgia' },
       titleBorder: 'dotted',
     });
-    expect(component.bodyCss('summary')['font-family']).toBe('Calibri');
-    expect(component.titleCss('summary')['font-family']).toBe('Georgia');
-    expect(component.titleBorderCss('summary')).toContain('dotted');
+    expect(styles.bodyCss('summary')['font-family']).toBe('Calibri');
+    expect(styles.titleCss('summary')['font-family']).toBe('Georgia');
+    expect(styles.titleBorderCss('summary')).toContain('dotted');
 
     fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleBorder: 'none' });
-    expect(component.titleBorderCss('summary')).toBe('none');
+    expect(styles.titleBorderCss('summary')).toBe('none');
   });
 
   it('bodyCss applies explicit section colour and line height without imposing a baseline', () => {
-    expect(component.bodyCss('summary')['line-height']).toBeUndefined();
+    expect(styles.bodyCss('summary')['line-height']).toBeUndefined();
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,
       sectionStyles: { summary: { colorHex: '#1b7464', lineHeight: 1.6 } },
     });
-    expect(component.bodyCss('summary')).toMatchObject({
+    expect(styles.bodyCss('summary')).toMatchObject({
       color: '#1b7464',
       'line-height': '1.6',
     });

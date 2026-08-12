@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
-import { WizardNavService } from '../../../shared/wizard-nav.service';
+import { WizardNavService } from '@applye/application';
 
 /**
  * "You have unfinished tailoring on another job" - the gate that stops opening

@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { DbService } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -10,10 +9,15 @@ import { FinalCheckInputs, FinalChecksService } from './final-checks.service';
  * Covers the behaviour that used to live inline in `JobsComponent`. The rules
  * are token-free text analysis, so they are fully testable without a provider;
  * these are the first tests they have ever had.
+ *
+ * The storage tests run against **jsdom's real `sessionStorage`** rather than a
+ * two-method fake behind a stub `DOCUMENT`. The fake implemented `getItem` and
+ * `setItem` and nothing else, which is exactly as much of `Storage` as the
+ * service happened to use - so it could only ever confirm the calls the service
+ * already made, never that they add up to a working round trip.
  */
 describe('FinalChecksService', () => {
   let db: { hashText: jest.Mock };
-  let store: Record<string, string>;
 
   /** Long enough to clear the 900-character "reasonable CV" floor, and built
    * from the job keywords so the overlap rule is satisfied too. */
@@ -52,9 +56,12 @@ describe('FinalChecksService', () => {
     };
   }
 
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
   function make(): FinalChecksService {
     db = { hashText: jest.fn(async (s: string) => `hash:${s.length}`) };
-    store = {};
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -62,19 +69,6 @@ describe('FinalChecksService', () => {
         FinalChecksService,
         { provide: DbService, useValue: db },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
-        {
-          provide: DOCUMENT,
-          useValue: {
-            defaultView: {
-              sessionStorage: {
-                getItem: (k: string) => store[k] ?? null,
-                setItem: (k: string, v: string) => {
-                  store[k] = v;
-                },
-              },
-            },
-          },
-        },
       ],
     });
     return TestBed.inject(FinalChecksService);
@@ -234,14 +228,14 @@ describe('FinalChecksService', () => {
     const s = make();
     expect(s.restoreAfterReturn('missing')).toBeNull();
 
-    store['applye:wizardFinalChecks:corrupt'] = '{not json';
+    sessionStorage.setItem('applye:wizardFinalChecks:corrupt', '{not json');
     expect(s.restoreAfterReturn('corrupt')).toBeNull();
   });
 
   it('stores nothing when there is no result to park', () => {
     const s = make();
     s.storeForReturn('rh');
-    expect(store).toEqual({});
+    expect(sessionStorage.length).toBe(0);
   });
 
   it('reset clears both signals', async () => {

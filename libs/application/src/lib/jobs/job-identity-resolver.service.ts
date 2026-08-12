@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Job } from '@applye/core';
 import { AiService, DbService, JobSourceService, KeysService } from '@applye/data';
-import { JobIdentityPromptService } from './job-identity-prompt/job-identity-prompt.service';
+import { JobIdentityPromptService } from './job-identity-prompt.service';
 
 /** How an identify call ended, for the dialog to report honestly. */
 export type AiOutcome = 'answered' | 'no-provider' | 'failed';

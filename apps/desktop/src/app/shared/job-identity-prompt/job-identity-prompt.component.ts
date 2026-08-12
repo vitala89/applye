@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { HelpCircle, LucideAngularModule } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
-import { JobIdentityPromptService } from './job-identity-prompt.service';
+import { JobIdentityPromptService } from '@applye/application';
 
 /**
  * Asks the user to name a job the rules and the AI step both failed to name.

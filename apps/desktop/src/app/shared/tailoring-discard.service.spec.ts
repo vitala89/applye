@@ -3,7 +3,7 @@ import { DbService } from '@applye/data';
 import { ToastService } from '../core/toast/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { LinkedDocumentsService } from '@applye/application';
-import { TailorScoreService } from './tailor-score.service';
+import { TailorScoreService } from '@applye/application';
 import { TailoringDiscardService, applicationDrafts } from './tailoring-discard.service';
 
 describe('applicationDrafts', () => {

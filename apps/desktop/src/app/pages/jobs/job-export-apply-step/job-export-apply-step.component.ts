@@ -6,7 +6,7 @@ import { DocumentExportService, ExportFormat } from '../../../shared/document-ex
 import { ReviewDocumentKind } from '@applye/application';
 import { JobActionsService } from '../../../shared/job-actions.service';
 import { LinkedDocumentsService } from '@applye/application';
-import { WizardActivityService } from '../../../shared/wizard-activity.service';
+import { WizardActivityService } from '@applye/application';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 
 /**

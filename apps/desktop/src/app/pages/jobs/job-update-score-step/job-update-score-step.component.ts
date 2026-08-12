@@ -4,7 +4,7 @@ import { Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
 import { JobScoringService } from '../../../shared/job-scoring.service';
-import { TailorScoreService } from '../../../shared/tailor-score.service';
+import { TailorScoreService } from '@applye/application';
 import { UpdatedScoreView } from '../updated-score-view.component';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 

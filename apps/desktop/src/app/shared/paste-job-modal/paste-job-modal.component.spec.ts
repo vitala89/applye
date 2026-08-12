@@ -4,7 +4,7 @@ import { UrlClassification } from '@applye/core';
 import { DbService, JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PasteJobModalComponent } from './paste-job-modal.component';
-import { JobIdentityResolverService } from '../job-identity-resolver.service';
+import { JobIdentityResolverService } from '@applye/application';
 
 /** The protected signals the tests read. TypeScript's `protected` is a
  * compile-time rule; the component's own behaviour is what is under test. */

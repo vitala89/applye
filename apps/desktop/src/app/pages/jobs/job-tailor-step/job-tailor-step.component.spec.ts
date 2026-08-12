@@ -3,8 +3,8 @@ import { signal } from '@angular/core';
 import { Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { JobTailorStepComponent } from './job-tailor-step.component';
-import { TailoringService } from '../../../shared/tailoring.service';
-import { WizardActivityService } from '../../../shared/wizard-activity.service';
+import { TailoringService } from '@applye/application';
+import { WizardActivityService } from '@applye/application';
 
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;
 

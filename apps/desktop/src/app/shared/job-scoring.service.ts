@@ -1,8 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AiService, AtsService, DbService, JobsStore } from '@applye/data';
 import { AtsReport, Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
-import { TailorScoreService } from './tailor-score.service';
-import { WizardActivityService } from './wizard-activity.service';
+import { TailorScoreService } from '@applye/application';
+import { WizardActivityService } from '@applye/application';
 import { FinalChecksService } from './final-checks.service';
 
 /** The shape the `job-scoring` skill is contracted to return. */

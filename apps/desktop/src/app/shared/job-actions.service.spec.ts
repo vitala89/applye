@@ -3,7 +3,7 @@ import { DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../core/toast/toast.service';
 import { JobActionsService } from './job-actions.service';
-import { JobIdentityResolverService } from './job-identity-resolver.service';
+import { JobIdentityResolverService } from '@applye/application';
 
 describe('JobActionsService', () => {
   let svc: JobActionsService;

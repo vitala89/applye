@@ -15,6 +15,10 @@ export * from './lib/types/common.types';
 
 // Pure utilities
 export * from './lib/profile/profile-markdown';
+export * from './lib/profile/profile-education';
+export * from './lib/profile/profile-experience';
+export * from './lib/profile/compensation-target';
+export * from './lib/profile/profile-languages';
 export * from './lib/profile/split-display-name';
 export * from './lib/profile/compensation';
 export * from './lib/profile/archetype';
@@ -25,6 +29,7 @@ export * from './lib/text/inline-emphasis';
 export * from './lib/text/signature';
 export * from './lib/text/letter-format';
 export * from './lib/analytics/analytics';
+export * from './lib/analytics/analytics.model';
 export * from './lib/geo/geo-scope';
 export * from './lib/geo/local-market';
 export * from './lib/ai/api-models';

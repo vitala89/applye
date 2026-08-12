@@ -3,12 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Application, DocumentLibraryItem, Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { DocumentGenService, ReviewDocumentKind } from '../../../shared/document-gen.service';
-import { CvGapDialogService } from '../../../shared/cv-gap-dialog.service';
+import { DocumentGenService, ReviewDocumentKind } from '@applye/application';
+import { CvGapDialogService } from '@applye/application';
 import { FinalChecksService } from '../../../shared/final-checks.service';
-import { LinkedDocumentsService } from '../../../shared/linked-documents.service';
+import { LinkedDocumentsService } from '@applye/application';
 import { DocumentReviewStatusService } from '../../../shared/document-review-status.service';
-import { documentCardStatus, documentStatusKey } from '../../../shared/doc-card-status';
+import { documentCardStatus, documentStatusKey } from '@applye/application';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 
 /** What the choose-existing selects ask the page to link. */

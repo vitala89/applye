@@ -10,7 +10,7 @@ import {
   type CvGapAnswer,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { CvGapDialogService } from '../../../shared/cv-gap-dialog.service';
+import { CvGapDialogService } from '@applye/application';
 import { DocumentReviewTargetsService } from '../../../shared/document-review-targets.service';
 import { DocumentRegionTag } from '@applye/application';
 

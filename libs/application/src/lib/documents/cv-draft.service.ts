@@ -18,7 +18,7 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
-import { DocumentRegionTag } from '@applye/application';
+import { DocumentRegionTag } from '../jobs/job-document-defaults';
 
 type ParsedCv = ReturnType<typeof parseCvSkillResponse>;
 

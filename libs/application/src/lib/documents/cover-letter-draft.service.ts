@@ -15,7 +15,7 @@ import { AiService, DbService } from '@applye/data';
 
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
-import { DocumentRegionTag } from '@applye/application';
+import { DocumentRegionTag } from '../jobs/job-document-defaults';
 import { GapFillHooks, foldInGapAnswers } from './gap-fill';
 
 /** Everything the cover letter is built from, plus the hand-offs the page still
@@ -41,8 +41,16 @@ export interface CoverLetterDraftContext extends GapFillHooks {
  * The exact input a cover letter's `inputHash` is computed from. Exported for
  * the same reason as `cvDraftHashInput`: the staleness check must ask the same
  * question the draft answered.
+ *
+ * **`Draft` is load-bearing, not decoration.** `cover-letter-generation.ts`
+ * owns a different `coverLetterHashInput` - the editor's per-block cache, keyed
+ * on section, tone, length and the availability answers. This one keys the one
+ * letter an application owns, on the job and the profile. Two hashes that
+ * answer different questions must not converge on one name; the collision only
+ * became visible when both landed in the same library, and the CV side was
+ * already `cvDraftHashInput`.
  */
-export function coverLetterHashInput(
+export function coverLetterDraftHashInput(
   jobId: number,
   profileMd: string,
   jdText: string,
@@ -129,7 +137,7 @@ export class CoverLetterDraftService {
     // answering the dialog does not make an otherwise identical run look like a
     // different input - the same rule the CV draft follows.
     const inputHash = await this.db.hashText(
-      coverLetterHashInput(
+      coverLetterDraftHashInput(
         ctx.job.id as number,
         ctx.profile.fullMd,
         jdText,

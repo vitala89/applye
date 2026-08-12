@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 import { FormsModule } from '@angular/forms';
 import { DocumentLibraryItem, SUPPORTED_LANGUAGES } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { CoverLetterTailorService } from '../../../shared/cover-letter-tailor.service';
+import { CoverLetterTailorService } from '@applye/application';
 
 /**
  * "Tailor an existing cover letter to this job": pick one from the library,

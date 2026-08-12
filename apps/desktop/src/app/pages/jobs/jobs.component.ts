@@ -54,7 +54,7 @@ import { TailorContext, TailoringService } from '@applye/application';
 import { JobScoringService, ScoreContext } from '@applye/application';
 import { WizardNavService, WizardRestore } from '@applye/application';
 import { scrollOnTick } from '../../core/scroll-to-top';
-import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
+import { CoverLetterTailorService } from '@applye/application';
 import { DocumentReviewStatusService } from '@applye/application';
 import { DocumentReviewTargetsService } from '@applye/application';
 import { TailoringDiscardService } from '@applye/application';

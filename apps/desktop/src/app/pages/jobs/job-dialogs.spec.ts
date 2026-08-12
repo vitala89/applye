@@ -7,7 +7,7 @@ import { JobDeleteConfirmComponent } from './job-delete-confirm/job-delete-confi
 import { JobDiscardConfirmComponent } from './job-discard-confirm/job-discard-confirm.component';
 import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.component';
 import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
-import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
+import { CoverLetterTailorService } from '@applye/application';
 import { JobActionsService } from '@applye/application';
 import { TailoringDiscardService } from '@applye/application';
 import { WizardNavService } from '@applye/application';

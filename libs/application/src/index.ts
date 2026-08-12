@@ -21,6 +21,7 @@ export * from './lib/documents/gap-fill';
 export * from './lib/documents/job-gap-fill.service';
 export * from './lib/documents/linked-documents.service';
 export * from './lib/documents/cv-photo-sections';
+export * from './lib/documents/cover-letter-tailor.service';
 export * from './lib/documents/cover-letter-content';
 export * from './lib/documents/cover-letter-filename';
 export * from './lib/documents/cover-letter-generate.store';

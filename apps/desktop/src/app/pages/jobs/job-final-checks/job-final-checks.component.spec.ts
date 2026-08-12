@@ -3,11 +3,7 @@ import { signal } from '@angular/core';
 import { DocumentLibraryItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { JobFinalChecksComponent } from './job-final-checks.component';
-import {
-  FinalCheckStatus,
-  FinalChecks,
-  FinalChecksService,
-} from '../../../shared/final-checks.service';
+import { FinalCheckStatus, FinalChecks, FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 
 const CV = { id: 3, docType: 'cv' } as DocumentLibraryItem;

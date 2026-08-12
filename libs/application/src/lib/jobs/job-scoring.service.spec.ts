@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { AiService, AtsService, DbService, JobsStore } from '@applye/data';
 import { JobScoringService, ScoreContext, parseScoreResponse } from './job-scoring.service';
-import { TailorScoreService } from '@applye/application';
-import { WizardActivityService } from '@applye/application';
+import { TailorScoreService } from './tailor-score.service';
+import { WizardActivityService } from './wizard-activity.service';
 import { FinalChecksService } from './final-checks.service';
 
 /**

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
-import { FinalCheckStatus, FinalChecksService } from '../../../shared/final-checks.service';
+import { FinalCheckStatus, FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 

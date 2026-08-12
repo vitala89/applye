@@ -1,7 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AiService, AtsService, DbService, JobsStore } from '@applye/data';
 import { AtsReport, ScoringCache, Settings } from '@applye/core';
-import { TailorScoreService, WizardActivityService } from '@applye/application';
+import { TailorScoreService } from './tailor-score.service';
+import { WizardActivityService } from './wizard-activity.service';
 import { FinalChecksService } from './final-checks.service';
 import {
   ScoreContext,

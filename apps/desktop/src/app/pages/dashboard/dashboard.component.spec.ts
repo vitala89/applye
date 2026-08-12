@@ -14,7 +14,7 @@ const storeOf = (fixture: {
   debugElement: { injector: { get: (t: unknown) => DashboardStore } };
 }): DashboardStore => fixture.debugElement.injector.get(DashboardStore);
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
-import { WizardProgressService } from '../../shared/wizard-progress.service';
+import { WizardProgressService } from '@applye/application';
 
 /**
  * The resume card must name the job it reopens.

@@ -42,6 +42,30 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`shared/` is down to seven blocked files, and every remaining one is blocked for a named reason.
+  Sub-step 4b is closed.** Five more modules moved to `libs/application/src/lib/jobs/`: the
+  final-checks step, the wizard progress record, the document review targets, job scoring and its
+  payload builders. It needed no new decision - only the application of one this ADR made twenty
+  amendments ago. `final-checks` and `wizard-progress` injected `DOCUMENT` for exactly one expression
+  each, `document.defaultView?.sessionStorage`, and **amendment thirty-three had already ruled that
+  browser storage is not a DOM exclusion** when `sidebarCollapsed` moved as `globalThis.localStorage?.`
+  and a storage token was refused. Both now read `globalThis.sessionStorage?.`; the other two were
+  blocked only behind `final-checks`. Shipped as three PRs: **#424** split `job-scoring` 300 -> 242 and
+  collapsed three hand-written copies of the same fourteen-field payload into
+  `scoreCacheSaveInput`/`tailoredScoringCache`/`postTailorSaveInput`, whose differing defaults are
+  deliberate and now documented; **#425** rewrote the storage seam; **#426** moved all five. Counts
+  reconciled at every step, totals never moved: `application` 100/1276 -> **104/1333**, `desktop`
+  114/1135 -> **110/1078**. **The fake that came out was honest, unlike the last one** - the stub
+  `DOCUMENT` in `final-checks.service.spec.ts` implemented only `getItem` and `setItem`, and all 19
+  tests pass unchanged against jsdom's real `sessionStorage`; it was replaced for better evidence, not
+  because it lied. Verified in a browser three times and compared against `main`: byte-identical
+  `applye:wizardProgress` and `applye:wizardFinalChecks:h599` on every run. **What is left in
+  `shared/`:** four files on `ToastService` (`cover-letter-tailor`, `document-review-status`,
+  `job-actions`, `portal-answers`) with `tailoring-discard` transitively behind them,
+  `document-export` on `@tauri-apps/plugin-dialog`, and `wizard-nav` on real layout DOM - **which
+  never moves**, since `querySelector` and `scrollingElement` are view. **Next first action:**
+  sub-step five, the four `toast.service` couplings, which need an outcome rather than a relocation
+  (ADR-0005, amendment fifty-three).
 - **Sixteen files left `apps/desktop/src/app/shared/` for `libs/application`. Level two, item three,
   sub-step four is closed - and the "22" it was written around was never a count.** The figure came
   from a table that says "seventeen services" and then lists 6 + 4 + 22, and it counted direct

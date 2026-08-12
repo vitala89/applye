@@ -44,6 +44,33 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, ADR-0005 sub-step 4b: the storage seam goes, and `shared/` reaches its blocked core
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5, re-triage 7/10 (radius 2 · ambiguity 1 · risk 1 · verify 2 · unknowns 1). No grilling gate: the one open reading from sub-step four was already settled by ADR-0005 amendment thirty-three.
+- **Branch:** `refactor/split-job-scoring-service`, `refactor/session-storage-seam`, `refactor/move-wizard-checks-to-application`
+- **Commits:** `debd4cd` (#424, squashed), `ffb23b8` (#425, squashed), `89a38cd` plus this docs commit (#426)
+- **Pull request:** #424 merged, #425 merged, #426 open
+- **Objective:** unblock and move the four files that reached `DOCUMENT` only for `sessionStorage`, plus the one blocked behind them.
+- **Completed:**
+  - #424 split `job-scoring.service.ts` 300 -> 242 non-empty into a pure `job-score-payload.ts`, with 12 new tests. The split exposed real duplication: the same fourteen fields were written three times by hand, now `scoreCacheSaveInput`, `tailoredScoringCache` and `postTailorSaveInput`, with their differing defaults documented as deliberate. `runSkill` now parses and returns a `ScoreRunResult`, so a non-JSON reply fails in one place and both paths carry the model that produced them.
+  - #425 rewrote the `inject(DOCUMENT)` + `document.defaultView?.sessionStorage` seam in `final-checks` and `wizard-progress` to `globalThis.sessionStorage?.`, the exact form amendment thirty-three ruled on for `sidebarCollapsed`.
+  - #426 moved all five modules and their four specs to `libs/application/src/lib/jobs/`.
+- **Not completed:** sub-step five, the four `toast.service` couplings. Out of scope by design.
+- **Files or packages changed:** 5 modules and 4 specs moved from `apps/desktop/src/app/shared/` to `libs/application/src/lib/jobs/`, plus `job-score-payload.ts` and its spec created; `libs/application/src/index.ts`; 14 call-site files in `apps/desktop`; `ADR-0005`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** all run and observed on each PR, with the affected set re-run after a format pass in #426: `nx run-many --target=type-check --all` (7 projects), `--target=lint --all --skip-nx-cache` (7 projects, 0 errors), `--target=test --all` (7 projects), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`. Rendered checks on all three PRs.
+- **Test counts, reconciled at every step:** #424 desktop 113 suites/1123 -> 114/1135, the exact +12 of the new spec, all 20 of `job-scoring.service.spec.ts` intact. #425 unchanged at 114/1135 - nothing added or removed, the same assertions now running against jsdom's real `sessionStorage`. #426 application 100/1276 -> 104/1333 and desktop 114/1135 -> 110/1078, total unchanged at 2411; the four moved specs carry all 57 tests, and five modules move four spec files because `document-review-targets.service.ts` has none.
+- **File sizes near or above budget:** `job-scoring.service.ts` 300 -> **242**, landing at **243**/250 in the library - seven lines of margin. `jobs.component.ts` unchanged at 980/400, pre-existing, base 980.
+- **Privacy/security impact:** none. The storage seam changes how the same `sessionStorage` is reached, not what is stored, where, or for how long. Keys, values and session lifetime are unchanged, verified byte for byte in a browser against `main`.
+- **Decisions and assumptions:** no grilling gate was run, and the reason is recorded rather than assumed - the one open reading sub-step four deferred ("may `libs/application` reach browser storage") was already decided in amendment thirty-three, so applying it is not a new decision. Three PRs by the same rule as sub-step four: split, then behaviour-touching rewrite, then move, keeping the rewrite apart from the move so a moved spec's fakes cannot quietly agree with themselves.
+- **Risks or compatibility impact:** none user-visible. `WizardProgressService` reads storage at construction of a root singleton, so its optional chain is load-bearing and was kept.
+- **Open issues or blockers:**
+  - Returning from the document editor via a synthetic `history.back()` lands on `/jobs/1` with the job detail unrendered. **It reproduces identically on `main`**, so it is not this work; recorded rather than chased, because `history.back()` is not necessarily the app's own return affordance and confirming that is its own task.
+  - The CV-card change-detection defect filed during sub-step four is unchanged and still open.
+  - Debt twelve did not reproduce across roughly eight full `nx run-many --target=test --all` sweeps this session. Not a claim that it is fixed - it was not touched.
+- **Next first action:** sub-step five. Give the four `ToastService` consumers an outcome instead of a toast - `cover-letter-tailor`, `document-review-status`, `job-actions`, `portal-answers` - which also frees `tailoring-discard` behind them. Start with `document-review-status`, the smallest at 89 lines and the one the other three route their failures through. It also has to decide what happens to `CoverLetterTailorService`, whose feature has been unreachable since `openTailorCoverLetterModal()` lost its last caller - a product decision, not a refactoring one.
+- **Evidence:** #424, #425, #426; ADR-0005 amendment fifty-three; the three rendered runs recorded in the PR bodies, including the `main` control.
+
 ### 2026-08-12, ADR-0005 level two sub-step four: the unblocked files move, and "22" is corrected to fifteen
 
 - **Status:** complete

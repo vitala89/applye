@@ -1,12 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { CoverLetterContent, DocumentLibraryItem, Job, SupportedLanguage } from '@applye/core';
+import { parseCoverLetterResponse } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import {
   COVER_LETTER_GENERIC_JD,
   COVER_LETTER_SECTION_ALL,
   COVER_LETTER_SKILL,
 } from './cover-letter-generation';
-import type { CoverLetterCodec } from './cover-letter-ai.store';
 
 /**
  * What one generation attempt did. Each is a different sentence on screen, and
@@ -37,10 +37,6 @@ export interface GenerateLabels {
  * is that a store answers rather than raises, and a missing profile is a
  * refusal rather than a failure - the user has not done something yet, which is
  * not an error to be caught (ADR-0005, amendment thirty-nine).
- *
- * `cleanJsonText` lives in `apps/desktop`, which this layer may not import, so
- * the codec is passed in - the same device `CoverLetterAiStore` uses, for the
- * same reason (amendment six).
  */
 @Injectable()
 export class CoverLetterGenerateStore {
@@ -94,11 +90,7 @@ export class CoverLetterGenerateStore {
   }
 
   /** Never rejects; returns which of the five things happened. */
-  async generate(
-    jobs: Job[],
-    labels: GenerateLabels,
-    codec: CoverLetterCodec,
-  ): Promise<GenerateOutcome> {
+  async generate(jobs: Job[], labels: GenerateLabels): Promise<GenerateOutcome> {
     if (this.busy()) return 'busy';
     this.busy.set(true);
     this.error.set('');
@@ -124,7 +116,7 @@ export class CoverLetterGenerateStore {
 
       let content: Partial<CoverLetterContent>;
       try {
-        content = codec.parse(res.text);
+        content = parseCoverLetterResponse(res.text);
       } catch {
         // A truncated excerpt, because the whole answer can be thousands of
         // tokens and a failure with no sample of it is unactionable.

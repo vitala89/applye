@@ -13,8 +13,6 @@ import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { DocumentRowActionsComponent } from '../document-row-actions/document-row-actions.component';
 
-import { cleanJsonText } from '@applye/core';
-
 const REGION_TAGS = ['de', 'us', 'uk', 'generic'];
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -112,15 +110,13 @@ export class CoverLetterListComponent {
    * Reads the model's answer. `cleanJsonText` lives here in the app, so it is
    * handed to the store rather than imported by it (ADR-0005, amendment six).
    */
-  private readonly codec = { parse: (text: string) => JSON.parse(cleanJsonText(text)) };
-
   async confirmGenerate(): Promise<void> {
     const company = this.gen.selectedCompany(this.list.trackedJobs());
     const documentLabel = company
       ? `${company} - ${this.t()('documents.tab_cover_letter')}`
       : `${this.t()('documents.cover_letter_untitled')} - ${this.gen.regionTag().toUpperCase()}`;
 
-    const outcome = await this.gen.generate(this.list.trackedJobs(), { documentLabel }, this.codec);
+    const outcome = await this.gen.generate(this.list.trackedJobs(), { documentLabel });
     switch (outcome) {
       case 'busy':
         return;

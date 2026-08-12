@@ -41,9 +41,6 @@ import {
   REGENERATABLE_SECTION_KEYS,
   cvFieldAtsNoteKeys,
   cvLeafText,
-  mergeRegeneratedSection,
-  normalizeCvContent,
-  parseCvSkillResponse,
   patchCvSectionStyle,
   resetCvSectionStyle,
   resolvePageSettings,
@@ -56,7 +53,6 @@ import {
   CvDocumentStore,
   CvNoProfileError,
   CvPhotoStore,
-  type CvRegenerationCodec,
   CvRegenerationStore,
   CvStyleStore,
   isCvSectionLocked,
@@ -167,14 +163,8 @@ export class CvDetailComponent {
   readonly justSaved = signal(false);
 
   /** Regenerating a section from the profile, and pulling fresh personal
-   * details. Component-scoped; it writes through `CvDocumentStore`, and it
-   * takes the two app-local functions it needs mid-call from this page
-   * (ADR-0005, amendment six). */
+   * details. Component-scoped; it writes through `CvDocumentStore`. */
   private readonly regeneration = inject(CvRegenerationStore);
-  private readonly codec: CvRegenerationCodec = {
-    parse: parseCvSkillResponse,
-    mergeSection: mergeRegeneratedSection,
-  };
   readonly regeneratingKey = this.regeneration.regeneratingKey;
   readonly pullingProfile = this.regeneration.pullingProfile;
 
@@ -183,8 +173,8 @@ export class CvDetailComponent {
   /** The document's visual style, the theme it sits on, and the ATS safety
    * notes it produces. Component-scoped; the store owns the signal and the
    * debounced safety check, and this page composes the next style with the pure
-   * helpers in `cv-style.util.ts` / `cv-style-scope.util.ts`, which the
-   * application layer may not import. Aliased for the template. */
+   * helpers in `cv-style.util.ts` / `cv-style-scope.util.ts`, which the panel
+   * and the cover-letter editor compose with too. Aliased for the template. */
   private readonly styleStore = inject(CvStyleStore);
   readonly style = this.styleStore.style;
   readonly themeId = this.styleStore.themeId;
@@ -433,9 +423,7 @@ export class CvDetailComponent {
     if (this.route.snapshot.queryParamMap.get('preview') === '1') {
       this.previewMode.set(true);
     }
-    // `normalizeCvContent` is app-local, so the store takes it as an argument
-    // rather than importing it.
-    await this.document.load(Number(this.route.snapshot.paramMap.get('id')), normalizeCvContent);
+    await this.document.load(Number(this.route.snapshot.paramMap.get('id')));
   }
 
   back(): void {
@@ -503,7 +491,7 @@ export class CvDetailComponent {
    * so the wording of a missing-profile failure is chosen here. */
   async regenerateSection(key: CvSectionKey): Promise<void> {
     try {
-      await this.regeneration.regenerateSection(key, this.codec);
+      await this.regeneration.regenerateSection(key);
     } catch (e) {
       this.toast.error(this.regenerationMessage(e));
     }
@@ -511,7 +499,7 @@ export class CvDetailComponent {
 
   async pullFromProfile(): Promise<void> {
     try {
-      await this.regeneration.pullFromProfile(this.codec);
+      await this.regeneration.pullFromProfile();
     } catch (e) {
       this.toast.error(this.regenerationMessage(e));
     }

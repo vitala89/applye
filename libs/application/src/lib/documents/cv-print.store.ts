@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   CV_STYLE_DEFAULT,
   getBuiltinTheme,
+  normalizeCvContent,
   themeStyleSeed,
   type CvContent,
   type CvSection,
@@ -9,15 +10,10 @@ import {
   type PhotoPlacement,
 } from '@applye/core';
 import { DbService } from '@applye/data';
-import type { CvContentNormalizer } from './cv-document.store';
 
 /**
  * What the hidden print window renders for a CV, and the one call that tells
  * Rust the snapshot may be taken.
- *
- * `normalizeCvContent` arrives as an argument rather than an import, for the
- * reason `CvDocumentStore` already documents: it lives in `apps/desktop` and
- * this library may not depend on the app.
  *
  * **The settle sequence is not here** - waiting on `document.fonts` and marking
  * `document.body` printable is view timing, and this layer does not touch the
@@ -41,12 +37,12 @@ export class CvPrintStore {
    * Returns `false` when the row is missing, leaving `loaded` false and the
    * window blank - the Rust side times out and reports the failure.
    */
-  async load(id: number, normalize: CvContentNormalizer): Promise<boolean> {
+  async load(id: number): Promise<boolean> {
     const item = await this.db.documentLibraryGet(id);
     if (!item) return false;
 
     const raw: CvContent = item.contentJson ? JSON.parse(item.contentJson) : { sections: [] };
-    const ordered = [...normalize(raw).sections].sort((a, b) => a.order - b.order);
+    const ordered = [...normalizeCvContent(raw).sections].sort((a, b) => a.order - b.order);
     this.sections.set(ordered);
 
     const photo = ordered.find((s) => s.key === 'photo') as

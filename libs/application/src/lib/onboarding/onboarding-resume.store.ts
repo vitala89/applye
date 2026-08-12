@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import type { AiMode, AiProvider, CvParsedContent } from '@applye/core';
+import type { AiMode, AiProvider } from '@applye/core';
+import { parseCvSkillResponse } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { OnboardingReviewStore } from './onboarding-review.store';
 
@@ -105,16 +106,10 @@ export class OnboardingResumeStore {
    * step from it. `null` when there was nothing to parse - a refusal, not a
    * failure.
    *
-   * `parseAnswer` is `parseCvSkillResponse`, which lives in `apps/desktop` and
-   * has six importers there, so it is passed in rather than moved - the seam
-   * `CvCodec` already defines for the Documents stores (ADR-0005, amendment
-   * six). It throws on an answer that is not the shape asked for, which is
-   * caught below like any other failure.
+   * `parseCvSkillResponse` throws on an answer that is not the shape asked for,
+   * which is caught below like any other failure.
    */
-  async parse(
-    dispatch: OnboardingAiDispatch,
-    parseAnswer: (text: string) => CvParsedContent,
-  ): Promise<boolean | null> {
+  async parse(dispatch: OnboardingAiDispatch): Promise<boolean | null> {
     const text = this.text().trim();
     if (!text || this.parsing()) return null;
     this.parsing.set(true);
@@ -135,7 +130,7 @@ export class OnboardingResumeStore {
         // the answer comes back as unparseable JSON, which reads as a parse bug.
         maxTokens: 8192,
       });
-      this.review.parsedCv.set(parseAnswer(res.text));
+      this.review.parsedCv.set(parseCvSkillResponse(res.text));
       this.review.seedReviewFields();
       return true;
     } catch (e) {

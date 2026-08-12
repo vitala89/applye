@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import type { CoverLetterContent, Settings, SupportedLanguage } from '@applye/core';
+import type { Settings, SupportedLanguage } from '@applye/core';
+import { parseCoverLetterResponse } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { CoverLetterContentStore } from './cover-letter-content.store';
 import { CoverLetterDocumentStore } from './cover-letter-document.store';
@@ -15,15 +16,6 @@ import {
   currentBlockHash,
   resolveLetterLanguage,
 } from './cover-letter-generation';
-
-/**
- * Reading the model's answer. `cleanJsonText` lives in `apps/desktop`, which
- * `type:application` may not import, so it is passed in - the same device as
- * `CvRegenerationCodec` and for the same reason (ADR-0005, amendment six).
- */
-export interface CoverLetterCodec {
-  parse(text: string): Partial<CoverLetterContent>;
-}
 
 /**
  * Drafting a whole cover letter from the profile, and regenerating one block of
@@ -98,7 +90,7 @@ export class CoverLetterAiStore {
    * Returns `false` without calling the model when there is nothing to do - the
    * other path is running, or there is no document.
    */
-  async draftWithAI(codec: CoverLetterCodec): Promise<boolean> {
+  async draftWithAI(): Promise<boolean> {
     const doc = this.document.doc();
     if (this.busy() || !doc) return false;
     this.drafting.set(true);
@@ -112,7 +104,9 @@ export class CoverLetterAiStore {
         settings,
         this.context(doc.language, settings),
       );
-      this.letter.content.set(applyCoverLetterDraft(this.letter.content(), codec.parse(text)));
+      this.letter.content.set(
+        applyCoverLetterDraft(this.letter.content(), parseCoverLetterResponse(text)),
+      );
       return true;
     } finally {
       this.drafting.set(false);
@@ -126,11 +120,7 @@ export class CoverLetterAiStore {
    * which case the answer would be identical and the call is skipped rather
    * than paid for.
    */
-  async regenerateBlock(
-    blockKey: string,
-    index: number | undefined,
-    codec: CoverLetterCodec,
-  ): Promise<boolean> {
+  async regenerateBlock(blockKey: string, index: number | undefined): Promise<boolean> {
     const doc = this.document.doc();
     if (this.busy() || !doc) return false;
 
@@ -162,7 +152,7 @@ export class CoverLetterAiStore {
           this.letter.content(),
           blockKey,
           index,
-          codec.parse(text),
+          parseCoverLetterResponse(text),
           sourceHash,
         ),
       );

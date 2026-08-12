@@ -44,6 +44,62 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, the pass-in codec seam is retired
+
+- **Status:** complete - sub-step three of five in level two item three
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/cover-letter-parse-core`, then `refactor/remove-codec-seam`
+- **Commits:** `b534eec`, `5bbb729` (squashed to `446edeb` on main); `6c440fc` plus the docs commit
+- **Pull request:** #419 (merged), and the seam-removal PR opened from `refactor/remove-codec-seam`
+- **Objective:** remove the codec/callback parameters from `libs/application` now that the cv-*
+  utilities live in `libs/core`, and correct the file count that had entered the canon.
+- **Completed:**
+  - `parseCoverLetterResponse` added to `libs/core` with six tests (#419). It was the only parse in
+    the family with no existing function - an inline lambda on `cover-letter-detail.component.ts`.
+  - Eleven files in `libs/application` lost their parameter; `cv-codec.ts` deleted with its barrel
+    export; nine store methods and six `apps/desktop` call sites updated.
+  - `cv-style.store.ts` comment corrected only, by decision - its design stays until sub-step four.
+  - Four spec files rewritten to run the real functions; two seam-only tests replaced with behaviour
+    tests so the counts hold.
+  - The count corrected in ADR amendment fifty and `CURRENT_STATE.md`: **eleven** files took a
+    parameter, not nine and not eight.
+- **Not completed:** sub-steps four (22 file moves) and five (`toast.service` outcomes), deliberately
+  out of scope.
+- **Files or packages changed:** 26 source/spec files across `libs/core`, `libs/application`,
+  `apps/desktop`, plus `CHANGELOG.md`, `CURRENT_STATE.md`, `ADR-0005`, this log.
+- **Validation:** `nx run-many --target=type-check` (7 projects), `--target=lint` (7 projects),
+  `--target=test`, `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check` - all run and observed green after the last edit, twice,
+  because formatting touched five files after the first pass and that voids the run.
+  Counts: `core` 25/453 -> **25/461** (+6 for the new parse, +2 for the ReDoS fix), `application`
+  **85/1096** unchanged, `desktop` **127/1287** unchanged.
+  **Rendered check performed** on `/documents/cv/1` and `/print/cv/1`: editor loads with no
+  normalizer argument, a legacy `items[]` skills section renders as a group, preview renders,
+  selecting the name and choosing Semibold moves it 700 -> 600 through the real style route, print
+  route renders the same migrated document. No console errors.
+- **Privacy/security impact:** one security fix. CodeQL raised `js/polynomial-redos` (high) against
+  `cleanJsonText` when the new export gave it a third tainted entry point. Real: `/\s*```\s*$/i` is
+  quadratic in the length of a model reply, which is attacker-influenced through a posting's text.
+  Replaced with a single-pass `endsWith`/`trimEnd`. No data-handling change otherwise.
+- **Decisions and assumptions:** taken through the grilling gate, six questions across two rounds,
+  all answered by the maintainer: (1) remove the seam rather than only fix the comments,
+  accepting that specs now run real parsers; (2) write `parseCoverLetterResponse` in `libs/core`
+  rather than inline or defer; (3) replace the two seam-only tests with behaviour tests rather than
+  delete them; (4) delete `cv-codec.ts` and its public export; (5) `cv-style.store` gets a corrected
+  comment only; (6) two PRs, core export first.
+- **Risks or compatibility impact:** `libs/application` loses five exported types. Nothing outside the
+  campaign consumed them. One deliberate behaviour change, in #419: a cover-letter answer that is a
+  JSON array or scalar now raises `bad-json` instead of silently producing an empty letter.
+- **Open issues or blockers:** **debt twelve is reproducing again and is no longer "not
+  reproducing".** `cover-letter-print`, `profile`, `cv-detail` and sometimes `discover` time out
+  under `nx run-many` CPU contention and pass in isolation. Measured rather than assumed: it fails on
+  `main` at the same base commit (1 of 3 full runs) as well as on the branch (3 of 3), so it is not
+  this change. Worth its own PR - these specs take 22-50s each, which is the actual defect.
+- **Next first action:** sub-step four - move the 22 unblocked files from `apps/desktop` into
+  `libs/application`. Split them so no single PR both moves a file and edits it, and check
+  `npm run quality:file-size` **before** committing: the gate passes `--no-renames` and reads a moved
+  file as added, so any move of a file already over budget is a hard violation.
+
 ### 2026-08-11, the cv-content family crosses into libs/core
 
 - **Status:** partial - sub-step two of five in level two item three

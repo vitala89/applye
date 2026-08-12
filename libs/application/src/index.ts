@@ -24,7 +24,6 @@ export * from './lib/documents/cover-letter-record';
 export * from './lib/documents/cover-letter-style.store';
 export * from './lib/documents/document-record';
 export * from './lib/documents/document-style-safety';
-export * from './lib/documents/cv-codec';
 export * from './lib/documents/cv-document-record';
 export * from './lib/documents/cv-document.store';
 export * from './lib/documents/cv-filename';

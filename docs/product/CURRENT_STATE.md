@@ -42,15 +42,28 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **The pass-in seam is gone. Level two, item three, sub-step three is closed.** Eleven files in
+  `libs/application` took a codec object or a callback justified by a boundary that no longer exists;
+  all eleven now import from `@applye/core` directly. `CvCodec`, `CvGenerateCodec`,
+  `CvRegenerationCodec`, `CoverLetterCodec` and `CvContentNormalizer` are gone, `cv-codec.ts` is
+  deleted along with its barrel export, nine store methods lost an argument, and six call sites in
+  `apps/desktop` stopped building codec literals. **The count in the previous entry was wrong in both
+  directions** - it came from grepping the explanatory comment, which finds eight files, one of them
+  (`tracker-report.ts`) a false positive; four more files consumed the interfaces without repeating
+  the comment. A twelfth, `cv-style.store.ts`, carried only the stale sentence and keeps its design
+  with a corrected one. Shipped as two PRs: `parseCoverLetterResponse` into `libs/core` first (the one
+  parse that existed nowhere but as an inline lambda on a page), then the removal. **Removing the seam
+  removed the mocks with it, and four expectations turned out to describe behaviour the app never
+  had** - an identity normalizer was hiding the `personal_details` section every real load inserts,
+  and a fake `mergeSection` appended where the real one rewrites in place. Counts hold: `core`
+  25/453 -> **25/461**, `application` **85/1096**, `desktop` **127/1287**. **Next first action:** move
+  the 22 unblocked files, then the four `toast.service` couplings (ADR-0005, amendment fifty-one).
 - **The `cv-content` family is in `libs/core`. Six of the seventeen blocked services are unblocked.**
   Seven files - not six; `cv-style-scope.util.ts` turned out to be consumed by `cv-style.store.ts`,
-  one of the nine workaround files - moved to `libs/core/src/lib/cv/` with their specs, 53 import
+  one of the workaround files - moved to `libs/core/src/lib/cv/` with their specs, 53 import
   sites across 31 files rewritten to `@applye/core`. The barrel inside `cv-content.util` is gone;
-  `@applye/core` is the single specifier now. **The nine pass-in workarounds in `libs/application`
-  are removable, and that is the next PR** - it changes nine store signatures, so it is kept out of
-  the import rewrite. Counters reconciled both ways: `core` 18 suites/301 tests -> **25/453**,
-  `desktop` 134/1439 -> **127/1287**. **Next first action:** retire those nine workarounds, then move
-  the 22 unblocked files, then the four `toast.service` couplings (ADR-0005, amendment fifty).
+  `@applye/core` is the single specifier now. Counters reconciled both ways: `core` 18 suites/301
+  tests -> **25/453**, `desktop` 134/1439 -> **127/1287** (ADR-0005, amendment fifty).
 - **Level two item three is mapped, restated, and its first blocker is cleared.** The checklist said
   "move the app's `shared/*` services into `libs/application`". `shared/` is **34 files, 3886 lines**
   and holds four components plus `page-title.service`, none of which may go there - so the item is
@@ -58,12 +71,13 @@
   budget: `cover-letter-tailor` 305, `job-scoring` 300, `tailoring` 298), and they divide by blocker:
   6 behind `cv-content.util`, 4 behind `toast.service`, the rest free. **The highest-leverage move is
   not a service:** the `cv-content` family is 1287 pure lines importing only `@applye/core`, sitting
-  in `apps/desktop`, and **nine files in `libs/application` already carry documented workarounds for
-  its absence**. The size gate refuses to receive a moved file that is over budget - it reads a
+  in `apps/desktop`, and **files in `libs/application` already carry documented workarounds for
+  its absence** (eleven of them, once counted by consumer rather than by comment - see the entry
+  above). The size gate refuses to receive a moved file that is over budget - it reads a
   rename as an add - so `cv-content.util.ts` was split in place first: **596 -> 352**, plus
   `cv-selection.util.ts` 155 and `cv-page.util.ts` 116, barrel unchanged, all 43 consumers untouched.
   **Next first action:** move the six-file family to `libs/core` - now genuinely imports-only - then
-  retire the nine workarounds in a separate PR (ADR-0005, amendment forty-nine).
+  retire the workarounds in a separate PR (ADR-0005, amendment forty-nine).
 - **`app.ts` is migrated and the lint rule now covers it. Level two, item one is closed.** It held the
   last `inject(DbService)` in a component anywhere in the app, and the rule never fired on it - the
   pattern matched `*.component.ts` and that file is not named like one, so **the allowlist read 26

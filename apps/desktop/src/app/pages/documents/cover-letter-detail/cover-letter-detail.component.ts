@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArrowLeft, LucideAngularModule, Save, Check, Eye, Pencil, Sparkles } from 'lucide-angular';
-import type { CoverLetterContent } from '@applye/core';
-import { COVER_LETTER_BLOCK_KEYS, cleanJsonText, resolvePageSettings } from '@applye/core';
+import { COVER_LETTER_BLOCK_KEYS, resolvePageSettings } from '@applye/core';
 import {
   CoverLetterAiStore,
   CoverLetterContentStore,
@@ -124,15 +123,6 @@ export class CoverLetterDetailComponent {
   protected readonly ai = inject(CoverLetterAiStore);
   readonly drafting = this.ai.drafting;
   readonly regeneratingBlock = this.ai.regeneratingBlock;
-
-  /**
-   * How the model's answer is read. `cleanJsonText` lives in this app and
-   * `libs/application` may not import it, so the store takes it as a parameter
-   * (ADR-0005, amendment six) - the same device `CvRegenerationCodec` uses.
-   */
-  private readonly codec = {
-    parse: (text: string) => JSON.parse(cleanJsonText(text)) as Partial<CoverLetterContent>,
-  };
 
   /** Runs one AI path and reports its failure. The store raises a typed error
    * rather than a sentence (ADR-0005, amendment three), so the wording the user
@@ -259,11 +249,11 @@ export class CoverLetterDetailComponent {
    * tone + length. Populates the editor only; the user still reviews and Saves
    * (AI assists, the user decides - never auto-applied). */
   async draftWithAI(): Promise<void> {
-    await this.runAi(() => this.ai.draftWithAI(this.codec));
+    await this.runAi(() => this.ai.draftWithAI());
   }
 
   async regenerateBlock(blockKey: string, index?: number): Promise<void> {
-    await this.runAi(() => this.ai.regenerateBlock(blockKey, index, this.codec));
+    await this.runAi(() => this.ai.regenerateBlock(blockKey, index));
   }
 
   /**

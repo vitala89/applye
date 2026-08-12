@@ -1,8 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { CvTemplate, DocumentLibraryItem, Job, SupportedLanguage } from '@applye/core';
-import { archetypeNames, parseArchetypes } from '@applye/core';
+import {
+  archetypeNames,
+  buildCvContent,
+  cleanJsonText,
+  parseArchetypes,
+  parseCvSkillResponse,
+} from '@applye/core';
 import { AiService, DbService } from '@applye/data';
-import type { CvGenerateCodec } from './cv-codec';
 
 /**
  * What one generation attempt did. Each is a different fact, and none of them
@@ -106,7 +111,6 @@ export class CvGenerateStore {
     jobs: readonly Job[],
     templates: readonly CvTemplate[],
     labels: CvGenerateLabels,
-    codec: CvGenerateCodec,
   ): Promise<CvGenerateOutcome> {
     this.error.set('');
     if (this.busy()) return 'busy';
@@ -121,7 +125,7 @@ export class CvGenerateStore {
             targetJobTitle: job.title,
             targetCompany: job.company,
             jobDescription: job.jdText,
-            originalScoring: this.readScoring(profile.scoringJson, codec),
+            originalScoring: this.readScoring(profile.scoringJson),
           })
         : (profile.scoringJson ?? '{}');
 
@@ -146,7 +150,7 @@ export class CvGenerateStore {
       const template = templates.find((tpl) => tpl.id === this.templateId()) ?? null;
       let contentJson: string;
       try {
-        contentJson = JSON.stringify(codec.buildContent(codec.parse(res.text), template));
+        contentJson = JSON.stringify(buildCvContent(parseCvSkillResponse(res.text), template));
       } catch (e) {
         this.error.set(String(e));
         return 'bad-json';
@@ -185,9 +189,9 @@ export class CvGenerateStore {
    * a reason to refuse a CV - the skill is handed an empty object and writes
    * from the profile text alone.
    */
-  private readScoring(scoringJson: string | undefined, codec: CvGenerateCodec): unknown {
+  private readScoring(scoringJson: string | undefined): unknown {
     try {
-      return JSON.parse(codec.cleanScoring(scoringJson ?? '{}'));
+      return JSON.parse(cleanJsonText(scoringJson ?? '{}'));
     } catch {
       return {};
     }

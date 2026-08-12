@@ -1,5 +1,4 @@
 import type {
-  CvContent,
   CvParsedContent,
   CvParsedEducationEntry,
   CvParsedLanguageEntry,
@@ -7,7 +6,7 @@ import type {
   SupportedLanguage,
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
-import { serializeEducationEntries, serializeLanguageEntries } from '@applye/core';
+import { buildCvContent, serializeEducationEntries, serializeLanguageEntries } from '@applye/core';
 
 // structurally compatible subset of CvParsedContent
 export interface ParsedCv {
@@ -190,12 +189,6 @@ export interface OnboardingCvInputArgs {
   /** Present only for the upload path; the paste path has no source file to
    * hash. Drives the Documents import's duplicate guard. */
   inputHash?: string;
-  /** `buildCvContent` - lays the parsed fields out in the template's section
-   * order. It lives in `apps/desktop` (`cv-content.util.ts`, 630 lines against
-   * a 400 budget, 40 files touching it), which this layer may not import, so
-   * the caller passes it in - the same seam `CvCodec` already defines for the
-   * Documents stores (ADR-0005, amendment six). */
-  buildContent(parsed: CvParsedContent, template: CvTemplate | null): CvContent;
 }
 
 /** Turns the resume the wizard already parsed into a real CV document, so the
@@ -205,7 +198,6 @@ export function buildOnboardingCvInput(
   args: OnboardingCvInputArgs,
 ): UpsertDocumentLibraryItemInput {
   const { parsed, overrides, templates, regionTag, language, fallbackLabel, inputHash } = args;
-  const { buildContent } = args;
   const template = pickCvTemplate(templates, regionTag);
   const merged: CvParsedContent = {
     ...parsed,
@@ -215,7 +207,7 @@ export function buildOnboardingCvInput(
     docType: 'cv',
     source: 'uploaded',
     label: merged.personalDetails.fullName?.trim() || fallbackLabel,
-    contentJson: JSON.stringify(buildContent(merged, template)),
+    contentJson: JSON.stringify(buildCvContent(merged, template)),
     templateId: template?.id,
     // Follow the template actually chosen, not the one requested: when the
     // exact-region lookup misses, the row must not claim a region its template

@@ -1,54 +1,22 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AiService, AtsService, DbService, JobsStore } from '@applye/data';
-import { AtsReport, Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
-import { TailorScoreService } from '@applye/application';
-import { WizardActivityService } from '@applye/application';
+import { AtsReport, ScoringCache, Settings } from '@applye/core';
+import { TailorScoreService, WizardActivityService } from '@applye/application';
 import { FinalChecksService } from './final-checks.service';
+import {
+  ScoreContext,
+  ScoreRunResult,
+  parseScoreResponse,
+  postTailorSaveInput,
+  scoreCacheSaveInput,
+  tailoredScoringCache,
+} from './job-score-payload';
 
-/** The shape the `job-scoring` skill is contracted to return. */
-interface ScoreResponse {
-  score: number;
-  dimensions: ScoreDimension[];
-  missing_keywords: string[];
-  red_flags: string[];
-  ats_pass: boolean;
-  ats_notes: string;
-  summary: string;
-  before_you_submit?: string[];
-}
-
-/** Everything a scoring run reads. Owned by the caller and passed per call, so
- * there is no second copy of the job, profile or settings to keep in sync. */
-export interface ScoreContext {
-  job: Job | null;
-  profile: Profile | null;
-  settings: Settings | null;
-  jdText: string;
-  legitimacyNotes: string[];
-  /** The PASS-3 tailored resume. Empty for the baseline score, which is scored
-   * against the generic profile instead. */
-  tailoredResumeMd: string;
-  /** Region passed to the deterministic ATS check. */
-  reviewRegion: string;
-}
-
-/**
- * Strips the ```json fence some models wrap the reply in and parses it.
- * Pure, so the fence handling is testable without an AI call.
- *
- * @throws if the reply is not JSON once unwrapped.
- */
-export function parseScoreResponse(text: string): ScoreResponse {
-  const raw = text
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/i, '')
-    .trim();
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
-  }
-}
+// Re-exported so the scoring contract is still reached through the service that
+// applies it, exactly as it was before the split - the barrel rule
+// `cv-content.util.ts` kept for its 43 consumers.
+export { parseScoreResponse };
+export type { ScoreContext };
 
 /**
  * Job scoring, hoisted out of the jobs page component.
@@ -149,29 +117,15 @@ export class JobScoringService {
     this.fromCache.set(false);
     try {
       const lang = settings.defaultDocLanguage ?? 'en';
-      const res = await this.runSkill(ctx, profile.scoringJson, settings, lang, '');
-      const parsed = parseScoreResponse(res.text);
+      const run = await this.runSkill(ctx, profile.scoringJson, settings, lang, '');
 
-      const saved = await this.db.scoreCacheSave({
-        jobId,
-        profileHash: profile.scoringHash,
-        language: lang,
-        score: parsed.score,
-        dimensionsJson: JSON.stringify(parsed.dimensions),
-        missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
-        redFlagsJson: JSON.stringify(parsed.red_flags),
-        atsPass: parsed.ats_pass,
-        atsNotes: parsed.ats_notes,
-        summary: parsed.summary,
-        beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
-        modelUsed: settings.economyModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-      });
+      const saved = await this.db.scoreCacheSave(
+        scoreCacheSaveInput({ jobId, profileHash: profile.scoringHash, language: lang, run }),
+      );
       this.cache.set(saved);
       this.stale.set(false);
       this.jobsStore.patchOverviewRow(jobId, { score: saved.score });
-      this.status.set(`Scored - ${res.tokensInput} in / ${res.tokensOutput} out`);
+      this.status.set(`Scored - ${run.tokensInput} in / ${run.tokensOutput} out`);
     } catch (e) {
       this.status.set(`Scoring failed: ${String(e)}`);
       this.error.set(true);
@@ -211,30 +165,18 @@ export class JobScoringService {
 
     try {
       const lang = settings.defaultDocLanguage ?? 'en';
-      const res = await this.runSkill(ctx, profile.scoringJson, settings, lang, tailoredResumeMd);
-      const parsed = parseScoreResponse(res.text);
+      const run = await this.runSkill(ctx, profile.scoringJson, settings, lang, tailoredResumeMd);
 
       this.tailorScore.succeed(
         job.id,
-        {
-          id: -1,
+        tailoredScoringCache({
           jobId: job.id,
           profileHash: profile.scoringHash,
           jdHash: job.jdHash ?? '',
           language: lang,
-          score: parsed.score,
-          dimensionsJson: JSON.stringify(parsed.dimensions),
-          missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
-          redFlagsJson: JSON.stringify(parsed.red_flags),
-          atsPass: parsed.ats_pass,
-          atsNotes: parsed.ats_notes,
-          summary: parsed.summary,
-          beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
-          modelUsed: settings.economyModel,
-          tokensInput: res.tokensInput,
-          tokensOutput: res.tokensOutput,
-        },
-        `Updated - ${res.tokensInput} in / ${res.tokensOutput} out`,
+          run,
+        }),
+        `Updated - ${run.tokensInput} in / ${run.tokensOutput} out`,
       );
     } catch (e) {
       this.tailorScore.fail(job.id, `Update failed: ${String(e)}`);
@@ -255,37 +197,29 @@ export class JobScoringService {
     if (!post || !jobId || this.postTailorSaved()) return;
     this.postTailorSaved.set(true);
     try {
-      await this.db.scoreCacheSave({
-        jobId,
-        profileHash: post.profileHash,
-        language: post.language ?? 'en',
-        score: post.score,
-        dimensionsJson: post.dimensionsJson ?? '[]',
-        missingKeywordsJson: post.missingKeywordsJson ?? '[]',
-        redFlagsJson: post.redFlagsJson ?? '[]',
-        atsPass: post.atsPass ?? false,
-        atsNotes: post.atsNotes ?? '',
-        summary: post.summary ?? '',
-        beforeYouSubmitJson: post.beforeYouSubmitJson ?? '[]',
-        modelUsed: post.modelUsed ?? '',
-        tokensInput: post.tokensInput ?? 0,
-        tokensOutput: post.tokensOutput ?? 0,
-      });
+      await this.db.scoreCacheSave(postTailorSaveInput(post, jobId));
       this.jobsStore.patchOverviewRow(jobId, { score: post.score });
     } catch {
       this.postTailorSaved.set(false); // allow a retry on the next commit
     }
   }
 
-  /** The one AI call both scoring paths make. They differ only in whether a
-   * tailored resume is supplied. */
+  /**
+   * The one AI call both scoring paths make. They differ only in whether a
+   * tailored resume is supplied.
+   *
+   * Parsing belongs here rather than at the two call sites, so a reply that is
+   * not JSON fails in one place and both paths carry the model that produced it
+   * - the post-tailor save used to read `settings.economyModel` a second time to
+   * recover a value the call already knew.
+   */
   private async runSkill(
     ctx: ScoreContext,
     scoringJson: string,
     settings: Settings,
     language: string,
     tailoredResumeMd: string,
-  ) {
+  ): Promise<ScoreRunResult> {
     const rendered = await this.ai.renderSkill('job-scoring', {
       profile_json: scoringJson,
       job_description: ctx.jdText,
@@ -293,7 +227,7 @@ export class JobScoringService {
       legitimacy_notes: ctx.legitimacyNotes.join('\n'),
       tailored_resume_md: tailoredResumeMd,
     });
-    return this.ai.run({
+    const res = await this.ai.run({
       mode: settings.aiMode,
       provider: settings.provider,
       model: settings.economyModel,
@@ -301,6 +235,12 @@ export class JobScoringService {
       userPrompt: rendered.userPrompt,
       language,
     });
+    return {
+      parsed: parseScoreResponse(res.text),
+      modelUsed: settings.economyModel,
+      tokensInput: res.tokensInput,
+      tokensOutput: res.tokensOutput,
+    };
   }
 
   /**

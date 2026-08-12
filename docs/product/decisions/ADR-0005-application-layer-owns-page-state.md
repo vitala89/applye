@@ -3170,6 +3170,50 @@ fifty-five): the tool that reports success without doing the work is the expensi
 **Counts.** 262 suites / 3043 tests before, **265 / 3043** after - three new spec files, not one new
 or lost assertion. Over budget across the repository **25 -> 23**, TypeScript source **12 -> 10**.
 
+## Amendment fifty-eight: the worst file in the app loses its editing half
+
+Shipped as #436. `cv-preview.component.ts` was 1047/400 - the largest file in `apps/desktop` and one
+this campaign had never touched. It is now 816, and the cut was chosen by reading its **spec files
+rather than its code**: `cv-preview.editing.spec.ts` and `cv-preview.bullet-editor.spec.ts` had
+already drawn a line around seventeen handlers, which is a stronger signal about where a
+responsibility ends than any fresh reading of the class.
+
+**A service, not a store, and the reason is the one this ADR keeps arriving at.**
+`CvPreviewEditingService` types on `HTMLTextAreaElement` and keys its draft map by DOM id, so
+`libs/application` is closed to it - the same rule that sent `scrollToTop` back to the app in
+amendment fifty-four. It is provided by the component, so a draft cannot outlive the preview that
+holds it. **Level three will keep producing these**: a file over budget for doing three things is not
+a file in the wrong layer, and the destination is usually a sibling rather than a lower layer.
+
+**Two methods stayed behind on purpose.** `canBoldActiveEditor` and `applyBoldToActiveEditor` answer
+"which editor is on screen" - they read the selection and query the DOM for the mounted textarea on
+the visible page, then route into the service. That is a question about the rendered page, not about
+a draft, and moving it would have put a `querySelectorAll` inside the thing that owns text.
+
+**The component binds the emitter; the service does not reach for an output it does not own.** One
+`bind()` call in the constructor wires commits to `sectionChange`. The alternative - seventeen
+one-line wrapper methods on the component - would have given back most of the lines the cut saved.
+
+**The template cost two characters.** Prefixing its 70 bindings with `editor.` pushed three past 100
+columns, Prettier wrapped them, and the size gate refused the file at 903/895 - it may not grow while
+over budget, and a wrap is growth. The injected name is `edit`, and the template is byte-for-byte the
+same length it was. This is amendment fifty's lesson in the other direction, and the rule is the
+same: **whether a rename fits inside the print width is a fact to measure, not to assume.**
+
+**The rendered check earned its place again.** Selection, drafting and committing survive no test that
+would notice if the seam were mis-wired, because the specs call the methods directly. Driven on a real
+screen with real gestures: a click selects the summary body and reports `elementPath: 'summary'`, a
+double-click mounts the editor, typing puts the draft **in the service**, and blur emits a new
+`CvSummarySection` through the component's output.
+
+**Counts unchanged at 265 / 3043.** `cv-preview.identity.spec.ts` moved five assertions to read the
+draft where the draft now lives - that suite exists to pin the identity between the emitted
+`elementPath` and the draft key, and that identity now spans two files, which is exactly what it
+should be testing.
+
+Over budget across the repository: 23, unchanged - the file is smaller but still over. Selection
+comes out next, then the 895/300 template.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

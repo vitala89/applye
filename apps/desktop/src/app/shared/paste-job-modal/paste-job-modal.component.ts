@@ -15,7 +15,7 @@ import { TranslateService } from '@applye/i18n';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { readText } from '@tauri-apps/plugin-clipboard-manager';
 import { PasteJobModalService } from './paste-job-modal.service';
-import { JobIdentityResolverService } from '../job-identity-resolver.service';
+import { JobIdentityResolverService } from '@applye/application';
 
 type PasteTab = 'link' | 'text';
 

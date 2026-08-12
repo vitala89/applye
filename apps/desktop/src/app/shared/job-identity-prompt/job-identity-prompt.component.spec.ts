@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateService } from '@applye/i18n';
 import { JobIdentityPromptComponent } from './job-identity-prompt.component';
-import { JobIdentityPromptService } from './job-identity-prompt.service';
+import { JobIdentityPromptService } from '@applye/application';
 
 /**
  * These render the dialog for real.

@@ -6,7 +6,7 @@ import { JobExportApplyStepComponent } from './job-export-apply-step.component';
 import { DocumentExportService } from '../../../shared/document-export.service';
 import { JobActionsService } from '../../../shared/job-actions.service';
 import { LinkedDocumentsService } from '@applye/application';
-import { WizardActivityService } from '../../../shared/wizard-activity.service';
+import { WizardActivityService } from '@applye/application';
 
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;
 const CV = { id: 3, kind: 'cv' } as DocumentLibraryItem;

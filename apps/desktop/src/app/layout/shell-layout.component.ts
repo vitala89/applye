@@ -32,7 +32,7 @@ import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.
 import { UpdaterService } from '../core/updater.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
 import { WizardProgressService } from '../shared/wizard-progress.service';
-import { WizardActivity, WizardActivityService } from '../shared/wizard-activity.service';
+import { WizardActivity, WizardActivityService } from '@applye/application';
 import { DocumentGenService } from '@applye/application';
 import { ThemeService } from '../core/theme.service';
 

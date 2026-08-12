@@ -4,7 +4,7 @@ import { Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { JobUpdateScoreStepComponent } from './job-update-score-step.component';
 import { JobScoringService } from '../../../shared/job-scoring.service';
-import { TailorScoreService } from '../../../shared/tailor-score.service';
+import { TailorScoreService } from '@applye/application';
 
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;
 

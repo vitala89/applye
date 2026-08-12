@@ -6,7 +6,7 @@ import {
   JobIdentityOutcome,
   JobIdentityPromptService,
   JobIdentityRequest,
-} from './job-identity-prompt/job-identity-prompt.service';
+} from './job-identity-prompt.service';
 
 interface SetIdentityCall {
   jobId: number;

@@ -2745,6 +2745,11 @@ from Calibri 400 to Georgia 700 and nothing else. No console errors.
 **Next:** retire the pass-in workarounds, then the 22 unblocked files, then the four
 `toast.service` couplings.
 
+**Correction, made in amendment fifty-two: "22 unblocked files" is wrong here and everywhere it was
+repeated. It is fifteen.** The figure counted direct blockers only, so every transitively blocked file
+sat on the wrong side of it, and it came from a table that says "seventeen services" and then lists
+6 + 4 + 22.
+
 ## Amendment fifty-one: the pass-in seam goes, and takes two fictional tests with it
 
 Sub-step three. Eleven files in `libs/application` took a codec object or a callback whose
@@ -2813,7 +2818,95 @@ CPU contention and pass in isolation. It reproduces on `main` at the same base c
 runs failed there, 3 of 3 on the branch - so it is debt twelve resurfacing, not this change. Debt
 twelve is no longer "not reproducing".
 
-**Next:** the 22 unblocked files, then the four `toast.service` couplings.
+**Next:** the unblocked files, then the four `toast.service` couplings.
+
+## Amendment fifty-two: the unblocked files are fifteen, not twenty-two, and the count was never counted
+
+Substep four was written as "move the 22 unblocked files". **That number was wrong, and the table it
+came from disproves itself on its own line.** Amendment forty-nine says "seventeen services inject the
+gateway", then lists them as 6 behind `cv-content.util`, 4 behind `toast.service`, and 22 behind
+nothing. Six plus four plus twenty-two is thirty-two. The row was never a count of anything; it was an
+estimate written beside a real one and never reconciled.
+
+**This is the third count this substep has corrected, and the third was found the same way as the
+first two.** Amendment fifty corrected "nine" workarounds to eleven; that one had been produced by
+grepping for a comment rather than counting the consumers of a type. The fix here is the same fix:
+every one of the 26 non-spec files in `shared/` was **read**, and classified on its actual import list
+plus the transitive closure over its local imports. The transitive half is what the old table omitted
+entirely - it counted direct blockers only, which is why `job-scoring` appears in its "blocked by
+nothing" row while in fact it reaches `DOCUMENT` through `final-checks`.
+
+**The measured state of `apps/desktop/src/app/shared/`: 26 non-spec files, 3649 lines, 15 movable and
+11 blocked.**
+
+| blocked by                                 | count | files                                                                                           |
+| ------------------------------------------ | ----- | ----------------------------------------------------------------------------------------------- |
+| `ToastService`                             | 4     | `cover-letter-tailor` 327, `portal-answers` 251, `job-actions` 157, `document-review-status` 89 |
+| transitively, via `document-review-status` | 1     | `tailoring-discard` 87                                                                          |
+| `@tauri-apps/plugin-dialog`                | 1     | `document-export` 116                                                                           |
+| `inject(DOCUMENT)`, storage only           | 2     | `final-checks` 185, `wizard-progress` 57                                                        |
+| `inject(DOCUMENT)`, real layout            | 1     | `wizard-nav` 162 - `querySelector`, `scrollingElement`                                          |
+| transitively, via `final-checks`           | 2     | `job-scoring` 319, `document-review-targets` 42                                                 |
+
+**Two files the canon called blocked were not.** `job-identity-resolver` was recorded as blocked by a
+component in `shared/job-identity-prompt/`. What it imports from that folder is the _service_ - 94
+non-empty lines of signals and one promise, with no component, no DOM and no toast. It only lived
+beside two components. `job-intake`, blocked transitively behind it, unblocked with it. The prompt
+service moved as well, because it had to: the resolver imports it and a library cannot import the app.
+Its two components stayed in `apps/desktop` and import it downward.
+
+**The budget is 250 for the whole library, not 400, and not only for stores.**
+`check-file-size-budgets.mjs` matches `/^libs\/application\/.*\.[cm]?ts$/` under its
+`Application-layer store` entry, so every non-spec file in `libs/application` carries the tighter
+number. Combined with `--no-renames` - which makes a moved file read as added, and any new file over
+budget a hard violation - this constrained the order again, exactly as it did for `cv-content.util.ts`
+in amendment forty-nine. `tailoring.service.ts` at 305 had to be split **before** it could move, into
+a pure `tailoring-pass.ts` carrying the types, `parseJsonArray`, `buildPassResult`, `resultMdForPass`,
+`baselineFor` and `parsePassResult`, leaving the service at 226. `job-identity-resolver` landed at 245
+and is recorded here as having three lines of margin rather than being quietly accepted.
+
+**One collision, and it is the finding worth keeping.** `coverLetterHashInput` already existed in
+`libs/application`, in `cover-letter-generation.ts`, as the editor's per-block cache keyed on section,
+tone, length and the availability answers. The moved one keys the single letter an application owns,
+on the job and the profile. Two hashes answering different questions cannot share a name in one
+barrel - and a second copy of a hash formula is precisely how a regenerate silently stops firing, which
+the source comment already warned about. The moved function is now `coverLetterDraftHashInput`,
+symmetrical with the `cvDraftHashInput` beside it, and says why in its own comment. The asymmetry was
+always there; only the move made it visible.
+
+Shipped as three pull requests, because the size gate forces split-before-move and the two families
+have **zero import edges between them** - verified, which is what made #422 and #423 independent:
+#421 split `tailoring.service`, #422 moved the ten document-generation modules to
+`libs/application/src/lib/documents/`, #423 moved the seven jobs and wizard modules to
+`libs/application/src/lib/jobs/`. Filenames were kept so every diff is a rename git can follow. This
+introduces the layer's first `*.service.ts` files, accepted deliberately: renaming and moving at once
+would have made git see a delete and an add, and the size gate read every one as new.
+
+**Test counts were reconciled on every step, because a move that amputates the tail of a spec file
+leaves the suite green** - the trap amendment forty-nine hit. Across the three PRs the desktop and
+application totals never changed: 2383 before #421, then 2399 once #421 added its 16 new tests, and
+2399 after both moves, with 102 tests crossing in #422 and 78 in #423.
+
+**The rendered check found something the gates did not, again.** Generating a CV draft in the wizard's
+Review Documents step writes and links the row correctly, and the card keeps rendering `Missing`.
+Measured in the live component rather than inferred: `linkedDocs.cv()` holds the new document and
+`cvReviewStatus()` computes `'linked'`, while the DOM badge is `badge--doc-missing`. The signal and
+the computed are both right; the view never re-rendered. **It reproduces identically on `main` at
+17e6bbf**, so it is not this work, and it was left alone because substep four is a pure relocation.
+It is filed with its reproduction and its evidence.
+
+**Substep 4b is new, and it exists because of a ruling this ADR already made.** `final-checks` and
+`wizard-progress` reach `DOCUMENT` only for `sessionStorage`, and amendment thirty-three already
+settled that browser storage is **not** one of this layer's DOM exclusions: `sidebarCollapsed` moved
+into `shell.store.ts` as `globalThis.localStorage?.`, and a storage token was considered and refused
+as "a new symbol in the layer's public API to abstract one boolean". The same rewrite would unblock
+those two and, behind them, `document-review-targets` and `job-scoring`. It is deliberately **not**
+folded into substep four: rewriting a DI seam is a behaviour-touching change rather than a move, and
+it drags `job-scoring` at 319 in, which needs its own split first. `wizard-nav` stays blocked
+permanently - `querySelector` and `scrollingElement` are view, and this layer does not own view.
+
+**Next:** substep 4b, the `sessionStorage` seam and the four files behind it; then substep five, the
+four `toast.service` couplings, which need the outcome pattern rather than a move.
 
 ## References
 
@@ -2918,7 +3011,16 @@ twelve is no longer "not reproducing".
           was unreachable - done in amendment fifty-one, as PR #419 (`parseCoverLetterResponse` in
           `libs/core`, the one parse with no existing function) and the seam removal on top of it.
           **Eleven files took a parameter, not nine**; a twelfth carried only the stale comment
-    - [ ] Move the 22 unblocked files
+    - [x] Move the unblocked files - done in amendment fifty-two, as PRs #421, #422 and #423.
+          **Fifteen, not 22**: the old figure came from a table that also said "seventeen services"
+          and then listed 6 + 4 + 22, and it counted direct blockers only, so everything blocked
+          transitively was on the wrong side. `job-identity-resolver` and `job-intake` were listed as
+          blocked and were not. `tailoring.service` had to be split 305 -> 226 first, because the
+          250 budget covers every file in `libs/application`, not only `*.store.ts`
+    - [ ] Rewrite the `sessionStorage` seam in `final-checks` and `wizard-progress` to
+          `globalThis.sessionStorage?.` (the ruling in amendment thirty-three) and move them, with
+          `document-review-targets` and `job-scoring` behind them - `job-scoring` at 319 needs its own
+          split first. `wizard-nav` never moves: `querySelector` and `scrollingElement` are view
     - [ ] The four `toast.service` couplings, which need the outcome pattern rather than a move
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

@@ -4,7 +4,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { HelpCircle, Loader2, LucideAngularModule } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
-import { JobIdentityResolverService } from '../job-identity-resolver.service';
+import { JobIdentityResolverService } from '@applye/application';
 
 /**
  * Corner badge for the identification phase, in the shape the resume-tailor

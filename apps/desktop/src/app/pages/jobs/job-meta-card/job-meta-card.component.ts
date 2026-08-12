@@ -15,7 +15,7 @@ import {
   parseProfileMd,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { JobIdentityResolverService } from '../../../shared/job-identity-resolver.service';
+import { JobIdentityResolverService } from '@applye/application';
 
 /**
  * The parsed job's own header: who it is with, what the role is, its filter and

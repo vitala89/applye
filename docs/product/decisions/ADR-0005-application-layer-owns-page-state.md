@@ -3041,6 +3041,74 @@ translated "Saved to your jobs."; and the tailor modal rendering off the split s
 this sub-step deliberately - `cv-photo-prompt` (which injects `Router`) and `followup-draft` (settled
 above) - are what stands between it and a clean run.
 
+## Amendment fifty-five: the allowlist flip, and the twenty-five files nobody had counted
+
+Shipped as #432 and #433. It closes the item amendment four opened: `type:data` is out of
+`type:app`'s `onlyDependOnLibsWithTags`, and the architecture the ADR describes is now the
+architecture lint enforces, in both halves.
+
+**The checklist said two files were in the way. Flipping the tag and running lint said thirty-two.**
+Twenty-five of them are spec files, and the previous amendment's "blocked only by `cv-photo-prompt`
+and `followup-draft`" was written from an import grep of production code, which is the same mistake
+this campaign has now made four times: **a blocker list assembled by reading imports is a hypothesis,
+and the way to test it is to make the change and read the errors.** Flipping the constraint locally
+takes a minute and answers exactly.
+
+The seven production files divided into four kinds, and only two were the expected kind:
+
+- **`cv-photo-prompt` and `followup-draft`** injected `DbService` - the two that were known. Both
+  moved. `cv-photo-prompt` injects `Router`, which is new for this layer and deliberate: it is
+  navigation **state** rather than view, because the service decides which document to open and where
+  to return, so a render-only component would have to duplicate that decision to perform it.
+- **`AiService` in three files.** `GATEWAY_INJECTION` names `DbService` and nothing else, so
+  `profile-raw-editor`, `onboarding.harness` and `jobs.component` were never in its sight. **There
+  are two gateways and the rule only ever guarded one.**
+- **`JobSourceService` in `paste-job-modal`** - a third data service, same blind spot.
+- **A type-only import.** `settings-cli-status` imported `type { CliStatus }`, which has no runtime
+  dependency at all and which the boundary rule still counts. `CliStatus` moved to `libs/core` next
+  to `AiProvider`, which it already referenced; it describes a CLI binary's state rather than a
+  gateway concern.
+
+**`jobs.component.ts` injected `AiService` and never called it**, exactly as `paste-job-modal` did in
+amendment twenty-five. 979 -> 977. Two of this campaign's finds are now dead injections, which is
+worth stating as a pattern: an injection outlives the code that needed it, and nothing fails.
+
+**Tests are exempt, and only from this one constraint.** A spec provides fakes for the collaborators
+of the unit under test - an app component's store reaches the gateway, so its spec has to name
+`DbService` to stub it. That is wiring, not a dependency direction. The alternative, rewriting 25
+specs to fake a store's own collaborator graph, tests less while changing more. `*.harness.ts` is
+covered too, because `onboarding.harness.ts` imports `TestBed` and is a spec in everything but its
+filename. **The hole this leaves is a production file named `*.spec.ts`**, which nothing else
+prevents either; it is written into the config rather than left for a reader to notice.
+
+**Verified in both directions, because a rule that cannot fail is worse than no rule** (amendment
+four's own standard): a temporary `boundary-probe.ts` importing `DbService` errors under
+`nx run desktop:lint`, and all 25 specs pass. The probe was deleted in the same command that created
+it and never reached a commit.
+
+**Two stores came out of components, and both drew the line at the same place: state and I/O move,
+the shell stays.** `ProfileImportStore` took the `profile-import` parse - four signals, two AI calls,
+the tolerant JSON extraction - while `fullMd` stayed on the page, because the save path and the dirty
+check read it too, so it arrives as an argument. `PasteJobStore` took the Paste Job modal's ten
+signals and both ways it makes a job, and `submitLink`/`submitText` **return the new job's id and
+nothing else**: closing the modal and navigating stay in the component, because the modal is a single
+shared instance the shell owns. `paste-job-modal.component.ts` went **245 -> 128**.
+
+**The clipboard read stayed in the app on purpose.** `readText()` runs behind a guard that only fires
+while the modal is open - a privacy control added deliberately, and moving it would have moved the
+guard away from the `@HostListener` that makes it meaningful. The store is handed the text and only
+judges it, which is also what made the heuristic testable: `looksLikeJobDescription` had no tests at
+all before this, and has five now.
+
+**A privacy guard failed loudly, which is the outcome to want.** `followup-no-transmit.spec.ts` scans
+the follow-up sources for send/transmit APIs by **file path**, so moving the service made the path
+stale - and it threw `ENOENT` rather than passing vacuously over a file that was no longer there.
+Its path now points into `libs/application`.
+
+**Counts.** 260 suites / 3033 tests before, **262 / 3043** after. The ten new tests are coverage that
+did not exist: five for the clipboard heuristic, and the rest from splitting assertions that had been
+bundled. Every move was reconciled as a pair.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -3162,6 +3230,11 @@ above) - are what stands between it and a clean run.
           against the previous amendment's "never": only `scrollToTop()` could not, and it became a
           `scrollTick` signal the page satisfies. `cover-letter-tailor` split 305 -> 206 with its
           pure half to `libs/core`. **`shared/` now holds only its four component folders**
-  - [ ] Remove `type:data` from `type:app`'s allowlist - now blocked only by `cv-photo-prompt`
-        (injects `Router`) and `followup-draft`, both kept out of sub-step five deliberately
+  - [x] Remove `type:data` from `type:app`'s allowlist - done in amendment fifty-five, as PRs #432
+        and #433. **Thirty-two files were in the way, not two**: 25 specs, which are exempted
+        separately because a spec fakes its unit's collaborators, plus `AiService` in three files and
+        `JobSourceService` in one - a second gateway `GATEWAY_INJECTION` never guarded - and one
+        type-only import of `CliStatus`, which moved to `libs/core`. `ProfileImportStore` and
+        `PasteJobStore` took the last two components' state. Verified in both directions with a
+        throwaway probe file
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

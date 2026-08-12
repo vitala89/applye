@@ -42,6 +42,36 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **The app cannot reach `libs/data` any more. `type:data` is out of `type:app`'s allowlist, and the
+  item amendment four opened is closed.** Shipped as **#432** and **#433**. **Thirty-two files stood
+  in the way, not the two the checklist named** - the previous entry's blocker list came from an
+  import grep, and the way to test such a list is to flip the constraint and read the errors, which
+  takes a minute. Twenty-five were **spec files** stubbing the gateway their unit's store needs; they
+  are exempt from this one constraint through a scoped config block, because a spec fakes its unit's
+  collaborators and that is wiring rather than a dependency direction. `*.harness.ts` is covered too,
+  since `onboarding.harness.ts` imports `TestBed` and is a spec in everything but its name. Of the
+  seven production files, only two were the expected kind: `cv-photo-prompt` and `followup-draft`
+  moved to `libs/application` in #432. **Three injected `AiService` and one `JobSourceService` - a
+  second gateway `GATEWAY_INJECTION` never guarded**, since that rule names `DbService` alone. One
+  was a type-only import of `CliStatus`, which moved to `libs/core` next to `AiProvider`. And
+  `jobs.component.ts` injected `AiService` **without ever calling it** - the second dead injection
+  this campaign has found (979 -> 977). #433 took the last two components' state into stores:
+  `ProfileImportStore` (the `profile-import` parse; `fullMd` stays on the page and arrives as an
+  argument) and `PasteJobStore` (the modal's ten signals and both ways it makes a job; a submit
+  returns the new job's id and the component still closes and navigates, because the modal is the
+  shell's). `paste-job-modal.component.ts` **245 -> 128**. **The clipboard read stayed in the app on
+  purpose**, behind the guard that only fires while the modal is open; the store is handed the text
+  and only judges it, which is what finally made `looksLikeJobDescription` testable - it had no tests
+  and has five. **The rule was verified in both directions** (amendment four's own standard): a
+  throwaway `boundary-probe.ts` importing `DbService` errors, and all 25 specs pass; the probe was
+  deleted in the same command that created it. **A privacy guard failed loudly and correctly**:
+  `followup-no-transmit.spec.ts` identifies its subject by file path, so the move threw `ENOENT`
+  rather than passing over a file that was no longer there. Counts 260/3033 -> **262/3043**, the ten
+  new tests all coverage that did not exist. **Next first action:** decide the fate of the
+  `GATEWAY_INJECTION` component rule itself - it now guards one of the three data services, its
+  allowlist has been empty since amendment forty-seven, and the boundary rule catches the same class
+  repository-wide; either widen it to `AiService` and `JobSourceService` or retire it, but do not
+  leave it describing a third of the problem.
 - **`apps/desktop/src/app/shared/` holds no services at all. Level two, item three is closed.** All
   seven moved, in five PRs - **#427** the toast store, **#428** the wizard navigator, **#429** the
   document export, review status and discard services, **#430** the job actions and portal answers,

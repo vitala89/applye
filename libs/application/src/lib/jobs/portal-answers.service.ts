@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { AiService, DbService } from '@applye/data';
 import { Job, Profile, Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../shell/toast.service';
 
 export interface PortalAnswerDraft {
   question: string;

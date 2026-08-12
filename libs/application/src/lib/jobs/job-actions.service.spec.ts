@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../shell/toast.service';
 import { JobActionsService } from './job-actions.service';
-import { JobIdentityResolverService } from '@applye/application';
+import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 describe('JobActionsService', () => {
   let svc: JobActionsService;

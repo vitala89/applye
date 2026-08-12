@@ -47,7 +47,7 @@ import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.com
 import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
 import { ToastService } from '@applye/application';
-import { PortalAnswersService } from '../../shared/portal-answers.service';
+import { PortalAnswersService } from '@applye/application';
 import { FinalCheckInputs, FinalChecksService } from '@applye/application';
 import { DocumentExportService } from '@applye/application';
 import { TailorContext, TailoringService } from '@applye/application';
@@ -65,7 +65,7 @@ import {
   decideCoverLetterAction,
   decideCvAction,
 } from '@applye/application';
-import { JobActionsService } from '../../shared/job-actions.service';
+import { JobActionsService } from '@applye/application';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JobExportApplyStepComponent } from './job-export-apply-step/job-export-apply-step.component';
 import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.component';

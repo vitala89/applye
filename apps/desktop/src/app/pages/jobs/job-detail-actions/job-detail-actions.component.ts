@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 import { LucideAngularModule } from 'lucide-angular';
 import { Application } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { JobActionsService } from '../../../shared/job-actions.service';
+import { JobActionsService } from '@applye/application';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 import { applicationStatusBadgeClass } from '../scoring.utils';
 

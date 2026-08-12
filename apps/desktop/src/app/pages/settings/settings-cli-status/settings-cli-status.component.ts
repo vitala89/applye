@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { Check, LucideAngularModule, RefreshCw, TriangleAlert } from 'lucide-angular';
 import type { AiProvider } from '@applye/core';
-import type { CliStatus } from '@applye/data';
+import type { CliStatus } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 
 /**

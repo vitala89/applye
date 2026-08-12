@@ -11,7 +11,7 @@ import { CoverLetterTailorService } from '@applye/application';
 import { JobActionsService } from '@applye/application';
 import { TailoringDiscardService } from '@applye/application';
 import { WizardNavService } from '@applye/application';
-import { CvPhotoPromptService } from './cv-photo-prompt.service';
+import { CvPhotoPromptService } from '@applye/application';
 
 const translate = { provide: TranslateService, useValue: { t: () => (k: string) => k } };
 

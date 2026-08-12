@@ -15,7 +15,7 @@ import { DocumentReviewTargetsService } from '@applye/application';
 import { DocumentRegionTag } from '@applye/application';
 
 import { CvGapDialog } from '../cv-gap-dialog.component';
-import { CvPhotoPromptService } from '../cv-photo-prompt.service';
+import { CvPhotoPromptService } from '@applye/application';
 import {
   ChooseDocumentRequest,
   JobDocumentCardsComponent,

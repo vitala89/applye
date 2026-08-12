@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiProvider } from '@applye/core';
-import { AiService, CliStatus } from '@applye/data';
+import { AiService } from '@applye/data';
+import { CliStatus } from '@applye/core';
 import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
 import { CLI_SETUP_INFO, cardNameKey } from './onboarding-cli.util';
 

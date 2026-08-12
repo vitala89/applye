@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { Settings } from '@applye/core';
-import { AiService, type CliStatus } from '@applye/data';
+import { AiService } from '@applye/data';
+import type { CliStatus } from '@applye/core';
 import { CliBridgeStore } from './cli-bridge.store';
 import { CLI_MODEL_CUSTOM } from './cli-models';
 

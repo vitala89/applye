@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
-import { CvPhotoPromptService } from '../cv-photo-prompt.service';
+import { CvPhotoPromptService } from '@applye/application';
 
 /**
  * German-market photo prompt. A photo is conventional on a German CV and

@@ -10,7 +10,7 @@ import { DocumentReviewStatusService } from '@applye/application';
 import { DocumentRegionTag } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
-import { CvPhotoPromptService } from '../cv-photo-prompt.service';
+import { CvPhotoPromptService } from '@applye/application';
 
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;
 

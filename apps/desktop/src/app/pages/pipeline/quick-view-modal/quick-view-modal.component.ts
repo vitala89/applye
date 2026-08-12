@@ -41,7 +41,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { StageQuickAddComponent } from '../stage-quick-add/stage-quick-add.component';
-import { FOLLOWUP_LANGUAGES, FollowupDraftService } from './followup-draft.service';
+import { FOLLOWUP_LANGUAGES, FollowupDraftService } from '@applye/application';
 
 const STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected', 'cancelled'];
 const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];

@@ -1,28 +1,19 @@
-import { DOCUMENT } from '@angular/common';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DbService, JobsStore } from '@applye/data';
 import { WizardNavService } from './wizard-nav.service';
-import { WizardProgressService } from '@applye/application';
+import { WizardProgressService } from './wizard-progress.service';
 
 describe('WizardNavService', () => {
   let svc: WizardNavService;
   let progress: WizardProgressService;
-  let scrolled: number;
 
   const overview = signal<{ id: number; company?: string; title?: string }[]>([]);
   /** Jobs the overview does not carry - an analysed job the user never saved. */
   let unlistedJobs: Record<number, { company?: string; title?: string }>;
 
   beforeEach(() => {
-    scrolled = 0;
     unlistedJobs = {};
-    const doc = {
-      defaultView: null,
-      querySelector: () => ({ scrollTo: () => (scrolled += 1) }),
-      scrollingElement: null,
-      documentElement: null,
-    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -33,7 +24,6 @@ describe('WizardNavService', () => {
           provide: DbService,
           useValue: { getJob: (id: number) => Promise.resolve(unlistedJobs[id] ?? null) },
         },
-        { provide: DOCUMENT, useValue: doc },
       ],
     });
 
@@ -139,7 +129,8 @@ describe('WizardNavService', () => {
 
       expect(svc.initialStep()).toBe(3);
       expect(progress.progress()).toEqual({ jobId: 7, step: 3 });
-      expect(scrolled).toBe(1);
+      // The store asks for the scroll; the page performs it.
+      expect(svc.scrollTick()).toBe(1);
     });
 
     it('still moves the step for a job with no id, recording nothing', () => {

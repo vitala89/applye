@@ -10,7 +10,7 @@ import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-mo
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
-import { WizardNavService } from '../../shared/wizard-nav.service';
+import { WizardNavService } from '@applye/application';
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
 
 const translate = { provide: TranslateService, useValue: { t: () => (k: string) => k } };

@@ -54,6 +54,7 @@ export * from './lib/jobs/job-detail.store';
 export * from './lib/jobs/job-document-defaults';
 export * from './lib/jobs/job-score-payload';
 export * from './lib/jobs/job-scoring.service';
+export * from './lib/jobs/wizard-nav.service';
 export * from './lib/jobs/wizard-progress.service';
 export * from './lib/jobs/job-identity-prompt.service';
 export * from './lib/jobs/job-identity-resolver.service';

@@ -1,7 +1,6 @@
-import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 import { DbService, JobsStore } from '@applye/data';
-import { WizardProgressService } from '@applye/application';
+import { WizardProgressService } from './wizard-progress.service';
 
 /** What the caller still owes once the job has loaded, if anything. */
 export type WizardRestore = 'return' | 'restore-docs' | null;
@@ -26,7 +25,6 @@ export class WizardNavService {
   private readonly progressSvc = inject(WizardProgressService);
   private readonly jobsStore = inject(JobsStore);
   private readonly db = inject(DbService);
-  private readonly document = inject(DOCUMENT);
 
   /** Writable so the page component can alias it straight onto the template. */
   readonly open = signal(false);
@@ -46,6 +44,10 @@ export class WizardNavService {
    * lookup reaches the database.
    */
   readonly crossJobLabel = signal('');
+
+  private readonly _scrollTick = signal(0);
+  /** Bumped every time the user should be returned to the top of the page. */
+  readonly scrollTick = this._scrollTick.asReadonly();
 
   private async describeOtherJob(jobId: number): Promise<string> {
     const row = this.jobsStore.overview().find((r) => r.id === jobId);
@@ -95,7 +97,7 @@ export class WizardNavService {
   goTo(jobId: number | undefined, step: number): void {
     this.initialStep.set(step);
     if (jobId != null) this.progressSvc.set(jobId, step);
-    this.scrollToTop();
+    this.requestScrollTop();
   }
 
   /** Leaving the wizard for this job's summary ends the in-flight session, so
@@ -103,7 +105,7 @@ export class WizardNavService {
   close(jobId: number | undefined): void {
     this.open.set(false);
     this.progressSvc.clear(jobId);
-    this.scrollToTop();
+    this.requestScrollTop();
   }
 
   /** Drop the saved session without touching the open/step state - used when
@@ -138,25 +140,18 @@ export class WizardNavService {
     this.initialStep.set(0);
   }
 
-  /** Opening the wizard, changing step, or returning to the summary should
+  /**
+   * Opening the wizard, changing step, or returning to the summary should
    * always land the user at the top - the scoring view runs long, so the
-   * destination would otherwise open mid-scroll. */
-  scrollToTop(): void {
-    // Defer to the next frame so the step's new (shorter/taller) content has
-    // rendered before we scroll - otherwise the container clamps against the
-    // old scrollHeight and can land mid-page.
-    const view = this.document.defaultView;
-    const doScroll = (): void => {
-      const el =
-        this.document.querySelector('.content') ??
-        this.document.scrollingElement ??
-        this.document.documentElement;
-      el?.scrollTo?.({ top: 0, behavior: 'smooth' });
-    };
-    if (view?.requestAnimationFrame) {
-      view.requestAnimationFrame(doScroll);
-    } else {
-      doScroll();
-    }
+   * destination would otherwise open mid-scroll.
+   *
+   * The scroll itself belongs to the page, not here: this is a store, and a
+   * store does not reach the DOM (ADR-0005). It publishes the request as a
+   * counter instead, and the page component performs it. The two page-owned
+   * scrolls that no navigation triggers - after a discard, and after the
+   * delayed reload that follows an apply - call `requestScrollTop` directly.
+   */
+  requestScrollTop(): void {
+    this._scrollTick.update((n) => n + 1);
   }
 }

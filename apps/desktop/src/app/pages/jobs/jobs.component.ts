@@ -14,9 +14,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
-import { TailorScoreService } from '@applye/application';
+import { TailorScoreService, JobIntakeService } from '@applye/application';
 import { WizardActivity, WizardActivityService } from '@applye/application';
 import { DocumentGenService, ReviewDocumentKind } from '@applye/application';
+import { CvGapDialogService, CvDraftService, CoverLetterDraftService } from '@applye/application';
+import { GapFillHooks, LinkedDocumentsService } from '@applye/application';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { AiService } from '@applye/data';
@@ -49,26 +51,21 @@ import { PortalAnswersService } from '../../shared/portal-answers.service';
 import { FinalCheckInputs, FinalChecksService } from '@applye/application';
 import { DocumentExportService } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '@applye/application';
-import { CvGapDialogService } from '@applye/application';
 import { JobScoringService, ScoreContext } from '@applye/application';
-import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
-import { CvDraftService } from '@applye/application';
-import { CoverLetterDraftService } from '@applye/application';
+import { WizardNavService, WizardRestore } from '@applye/application';
+import { scrollOnTick } from '../../core/scroll-to-top';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
 import { DocumentReviewTargetsService } from '@applye/application';
 import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
 import { JobGapFillService, jobDocLabel } from '@applye/application';
-import { GapFillHooks } from '@applye/application';
 import {
   coverLetterStaleInput,
   cvStaleInput,
   decideCoverLetterAction,
   decideCvAction,
 } from '@applye/application';
-import { LinkedDocumentsService } from '@applye/application';
 import { JobActionsService } from '../../shared/job-actions.service';
-import { JobIntakeService } from '@applye/application';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JobExportApplyStepComponent } from './job-export-apply-step/job-export-apply-step.component';
 import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.component';
@@ -195,6 +192,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   });
   private readonly document = inject(DOCUMENT);
+  /** The store counts scroll requests; performing them is the page's job. */
+  private readonly wizardScrollEffect = scrollOnTick(this.wizardNav.scrollTick, this.document);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = JOB_DETAIL_ICONS;
@@ -875,7 +874,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (!discarded) return;
     this.resetJobScopedState();
     this.wizardNav.forget(this.job()?.id);
-    this.wizardNav.scrollToTop();
+    this.wizardNav.requestScrollTop();
   }
 
   closeWizard(): void {
@@ -979,7 +978,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.applyResult.set(null);
         this.actionBusy.set(false);
         await this.loadJob(jobId);
-        this.wizardNav.scrollToTop();
+        this.wizardNav.requestScrollTop();
       })();
     }, 2200);
   }

@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { CvPreviewComponent } from './cv-preview.component';
+import { CvPreviewStyleService } from './cv-preview-style.service';
 
 /**
  * The CV preview's test harness, shared by the four spec files that grew out of
@@ -15,6 +16,9 @@ import { CvPreviewComponent } from './cv-preview.component';
 export interface CvPreviewHarness {
   component: CvPreviewComponent;
   fixture: ComponentFixture<CvPreviewComponent>;
+  /** The CSS rules moved out of the component; the specs that assert on them
+   * ask the service directly rather than through a delegating method. */
+  styles: CvPreviewStyleService;
 }
 
 export async function createCvPreview(): Promise<CvPreviewHarness> {
@@ -32,5 +36,9 @@ export async function createCvPreview(): Promise<CvPreviewHarness> {
   fixture.componentRef.setInput('photoPlacement', 'above_left');
   fixture.componentRef.setInput('includeBirthdate', false);
   fixture.componentRef.setInput('includeMaritalStatus', false);
-  return { component: fixture.componentInstance, fixture };
+  return {
+    component: fixture.componentInstance,
+    fixture,
+    styles: fixture.debugElement.injector.get(CvPreviewStyleService),
+  };
 }

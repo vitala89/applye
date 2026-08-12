@@ -2,16 +2,18 @@ import { ComponentFixture } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 
 import { CvPreviewComponent } from './cv-preview.component';
+import { CvPreviewStyleService } from './cv-preview-style.service';
 import { createCvPreview } from './cv-preview.harness';
 
 import type { CvPreviewSelection } from '@applye/core';
 
 describe('CvPreviewComponent', () => {
   let component: CvPreviewComponent;
+  let styles: CvPreviewStyleService;
   let fixture: ComponentFixture<CvPreviewComponent>;
 
   beforeEach(async () => {
-    ({ component, fixture } = await createCvPreview());
+    ({ component, fixture, styles } = await createCvPreview());
   });
 
   it('exposes A4 sheet dimensions via geometry', () => {
@@ -136,7 +138,7 @@ describe('CvPreviewComponent', () => {
       sectionStyles: { experience: { bodyBorder: 'dashed' } },
     });
     fixture.detectChanges();
-    const css = component.bodyCss('experience');
+    const css = styles.bodyCss('experience');
     expect(css['--cv-entry-rule-style']).toBe('dashed');
     expect(css['--cv-header-rule-style']).toBe('dashed');
   });
@@ -274,9 +276,9 @@ describe('CvPreviewComponent', () => {
   });
 
   it('maps placement to a header modifier class', () => {
-    expect(component.headerPlacementClass('above_left')).toBe('cvpreview__header--left');
-    expect(component.headerPlacementClass('above_center')).toBe('cvpreview__header--center');
-    expect(component.headerPlacementClass('above_right')).toBe('cvpreview__header--right');
+    expect(styles.headerPlacementClass('above_left')).toBe('cvpreview__header--left');
+    expect(styles.headerPlacementClass('above_center')).toBe('cvpreview__header--center');
+    expect(styles.headerPlacementClass('above_right')).toBe('cvpreview__header--right');
   });
 
   it('per-section title override renders over the document title style', () => {

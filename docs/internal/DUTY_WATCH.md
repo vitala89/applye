@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, level three: the CV preview's atom flattening, and why selection could not move
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5. Re-grilled mid-plan - one round, one question - when measuring showed the agreed slice was blocked by the template's width budget. No subagents.
+- **Branch:** `refactor/cv-preview-selection` (named before the re-measure; it carries the atoms cut)
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #438
+- **Objective:** Continue cutting `cv-preview.component.ts`, 597/400 after #437.
+- **Completed:** `buildCvAtoms` extracted as a pure function with an explicit context, plus `cv-preview-atoms.spec.ts` (7 tests). Component 597 -> 535. ADR-0005 amendment sixty, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** Selection, which is blocked by the template's width budget rather than by effort, and the 895/300 template itself. The file remains over budget at 535/400 and the repository count stays at 23.
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/cv-detail/cv-preview/` only, plus documentation.
+- **Validation:** `nx run-many --target=type-check` (7 projects), `nx run-many --target=lint --skip-nx-cache` (7 projects), `nx run-many --target=test --skip-nx-cache` (266 suites / 3050 tests), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`. All observed passing. Counts rise by exactly the seven new tests. **Rendered check**: 33 atoms in the right order with both glue rules intact, and a genuine two-page CV paginating at `[40, 24]` with correct captions.
+- **Privacy/security impact:** None. Presentation only.
+- **Decisions and assumptions:** (1) Atoms instead of selection, because 239 template call sites and eighteen wrapping bindings close the prefix route while the template is over budget. (2) A pure function rather than a service: the block owns a calculation, not state. (3) The seven tests were written because the extraction's justification was testability - an untested claim of testability is not one.
+- **Risks or compatibility impact:** None to the template, which was not touched. The component pays about twenty lines at the call site to pass the context explicitly, which is counted in the 535.
+- **Open issues or blockers:** **The template is now the binding constraint on the class.** Debt twelve unchanged.
+- **Next first action:** Split `cv-preview.component.html`, 895/300, into child components - it blocks both its own budget and selection's extraction. Watch the host-element trap: a host between a flex parent and its child silently breaks layout, which has cost this campaign four regressions.
+- **Evidence:** PR #438, ADR-0005 amendment sixty, `docs/product/CURRENT_STATE.md`.
+
 ### 2026-08-12, level three: the CV preview loses its style rules, and the plan is re-measured
 
 - **Status:** complete

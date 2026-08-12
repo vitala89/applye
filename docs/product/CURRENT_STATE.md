@@ -42,6 +42,24 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`cv-preview.component.ts` 597 -> 535, and the template is now the constraint on the class.**
+  Shipped as **#438**. Selection re-measured largest (128 lines against the atom flattening's 96), but
+  it has **239 template call sites**, and prefixing them - the mechanism both earlier cuts used - would
+  have wrapped eighteen bindings past 100 columns in a template that is 895/300 and may not gain a
+  line. **Any block the template calls heavily cannot leave until the template itself is split.** The
+  cut therefore went to `buildCvAtoms`, which the template only consumes as `atoms()`. It is a **pure
+  function over an explicit context, not a service**: the block reads thirteen signals and owns no
+  state, so a `bind()` would have carried thirteen fields where a context object costs about twenty
+  lines at the call site. The rule this level has converged on is `bind()` when a block owns state, a
+  pure function when it owns a calculation. Seven new tests assert the flattening without mounting the
+  preview - photo folding into the header, empty sections skipped, section order, and the two glue
+  rules. **A rendered check first looked like a regression and was not**: two entries of fourteen
+  identical bullets drew one page and the tail read as if an entry had been dropped, but 33 atoms is
+  exactly 1+1+1+15+15 and the content fits one A4 page; with thirty bullets each it pages correctly at
+  `[40, 24]`, captioned "Page 1 of 2". Counts 265/3043 -> **266/3050**. **Next first action:** the
+  895/300 template - it now blocks the class as well as being the worst file by ratio. Split it into
+  child components, watching the host-element trap that has cost this campaign four regressions; then
+  selection becomes cuttable. 23 files remain over budget.
 - **`cv-preview.component.ts` 816 -> 597, and the slice taken was not the slice planned.** Shipped as
   **#437**. The agreed order was selection next, but that plan was made against the 1047-line file;
   after the editing cut the blocks measured differently - selection 120 non-empty lines, **styling

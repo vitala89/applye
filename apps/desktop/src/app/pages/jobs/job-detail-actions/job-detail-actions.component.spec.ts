@@ -3,7 +3,7 @@ import { signal } from '@angular/core';
 import { Application } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { JobDetailActionsComponent } from './job-detail-actions.component';
-import { JobActionsService } from '../../../shared/job-actions.service';
+import { JobActionsService } from '@applye/application';
 
 function stubs() {
   return {

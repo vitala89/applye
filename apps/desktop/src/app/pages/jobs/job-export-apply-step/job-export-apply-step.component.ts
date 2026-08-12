@@ -4,7 +4,7 @@ import { Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService, ExportFormat } from '@applye/application';
 import { ReviewDocumentKind } from '@applye/application';
-import { JobActionsService } from '../../../shared/job-actions.service';
+import { JobActionsService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 import { WizardActivityService } from '@applye/application';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';

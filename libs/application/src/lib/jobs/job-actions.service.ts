@@ -2,8 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Application } from '@applye/core';
 import { DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
-import { JobIdentityResolverService } from '@applye/application';
+import { ToastService } from '../shell/toast.service';
+import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 /**
  * The job-level actions that write a row and then tell the rest of the app:

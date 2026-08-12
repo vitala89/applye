@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
-import { JobActionsService } from '../../../shared/job-actions.service';
+import { JobActionsService } from '@applye/application';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 
 /**

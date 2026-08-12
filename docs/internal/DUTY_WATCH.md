@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, ADR-0005: the gateway rule keeps its job by changing what the job is
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5, re-triage 4/10 (radius 1 · ambiguity 2 · risk 0 · verify 1 · unknowns 0). Verdict named sonnet/medium; the session model could not be switched, and that was stated rather than ignored. Grilling gate run - one round, one decision, because ambiguity 2 forces it at any total. No subagents.
+- **Branch:** `chore/gateway-rule-decision`
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #434
+- **Objective:** Decide whether `GATEWAY_INJECTION` survives now that `@nx/enforce-module-boundaries` covers the same ground.
+- **Completed:** Kept and widened to `DbService`, `AiService` and `JobSourceService` through a `GATEWAY_SERVICES` list. `COMPONENTS_STILL_USING_THE_GATEWAY` and its conditional spread deleted. Preamble rewritten to say why the rule outlives the migration that created it. ADR-0005 amendment fifty-six, checklist item ticked, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** Nothing in scope. Level three - the file-size budgets - has not been started.
+- **Files or packages changed:** `eslint.config.mjs` only, plus documentation.
+- **Validation:** `nx run-many --target=lint --skip-nx-cache` (7 projects), `nx run-many --target=type-check` (7 projects), `nx run-many --target=test --skip-nx-cache` (262 suites / 3043 tests, unchanged - this is configuration), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`. All observed passing. **Verified in both directions:** a probe component injecting all three services errored once per injection with the new message and alongside the boundary rule; the probe was deleted in the same command that created it and never reached a commit.
+- **Privacy/security impact:** None. Lint configuration only.
+- **Decisions and assumptions:** Keep rather than retire, on two grounds recorded in the config itself - nx reports tags and takes no custom message, and a data service re-exported through `@applye/application` would pass the tag check with `inject()` as the only evidence. Deleting the empty allowlist was treated as part of the same decision rather than separate cleanup, since the preamble being rewritten was mostly about it.
+- **Risks or compatibility impact:** Two rules now cover one case; the config states why rather than leaving a reader to infer it. The glob remains a convention check, not a proof - a component named off convention still slips through, as `app.ts` did for the whole campaign.
+- **Open issues or blockers:** Debt twelve unchanged (`cv-detail.component.spec.ts` flakes under parallel load). Debt ten unchanged (the cover-letter tailor feature is still unreachable, still a product decision).
+- **Next first action:** Level three, file-size budgets. Start with `node tools/check-file-size-budgets.mjs --all` and decide the order; `cv-preview.component.ts` at 1047/400 is the worst file in the application and the campaign has never touched it.
+- **Evidence:** PR #434, ADR-0005 amendment fifty-six, `docs/product/CURRENT_STATE.md`.
+
 ### 2026-08-12, ADR-0005: the app loses its data-layer allowlist, and the blocker count was wrong by thirty
 
 - **Status:** complete

@@ -3109,6 +3109,35 @@ Its path now points into `libs/application`.
 did not exist: five for the clipboard heuristic, and the rest from splitting assertions that had been
 bundled. Every move was reconciled as a pair.
 
+## Amendment fifty-six: the gateway rule keeps its job by changing what the job is
+
+Shipped as #434. It answers the question amendment forty-eight deferred - "the rule can be deleted
+whenever it is judged to have served its purpose" - and the answer is **no, but not as it was**.
+
+**It named `DbService` alone, and that is how four files hid.** Three components injected `AiService`
+and one `JobSourceService`, and none of them was ever in this rule's sight; they surfaced only when
+amendment fifty-five flipped the boundary tag and read the errors. The selector is now built from a
+`GATEWAY_SERVICES` list, so a fourth service is one line rather than a second rule.
+
+**Retiring it was the serious alternative and was rejected for two stated reasons.**
+`@nx/enforce-module-boundaries` now covers strictly more: every app file rather than components
+alone, every service in `libs/data` rather than three, and it fired alongside this rule on a probe
+component. What it cannot do is talk. nx reports a list of tags and takes no custom message, while
+this rule names the ADR and says put the read in a store - the difference between an error a newcomer
+can act on and one they have to research. And a data service **re-exported through
+`@applye/application`** would satisfy the tag check, leaving `inject()` as the only remaining
+evidence. Nothing re-exports one today; this is what makes sure nothing starts.
+
+**`COMPONENTS_STILL_USING_THE_GATEWAY` is deleted.** It ran 26 -> 0 across the campaign and only ever
+shrank. An empty array, plus the conditional spread that existed because a flat-config entry with
+`files: []` does not mean "no files", is fifteen lines of configuration with no effect - and a reader
+finding an empty allowlist reasonably wonders what it is waiting for.
+
+**Verified in both directions, as every change to this rule has been:** a probe component injecting
+all three services errors once per injection with the new message, the existing tree lints clean
+across seven projects, and the probe was deleted in the same command that created it. No test counts
+move; this is configuration.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -3237,4 +3266,9 @@ bundled. Every move was reconciled as a pair.
         type-only import of `CliStatus`, which moved to `libs/core`. `ProfileImportStore` and
         `PasteJobStore` took the last two components' state. Verified in both directions with a
         throwaway probe file
+  - [x] Decide the fate of the gateway lint rule itself - done in amendment fifty-six, as PR #434.
+        **Kept, and widened to `AiService` and `JobSourceService`**, which is how four files hid
+        from it. Retiring it was rejected for two reasons: nx takes no custom message, and a data
+        service re-exported through `@applye/application` would satisfy the tag check with
+        `inject()` as the only evidence. `COMPONENTS_STILL_USING_THE_GATEWAY` deleted, 26 -> 0
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

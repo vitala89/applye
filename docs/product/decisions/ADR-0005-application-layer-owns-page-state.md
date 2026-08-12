@@ -3138,6 +3138,38 @@ all three services errors once per injection with the new message, the existing 
 across seven projects, and the probe was deleted in the same command that created it. No test counts
 move; this is configuration.
 
+## Amendment fifty-seven: level three opens on the two files nothing can see
+
+Shipped as #435. The first cut of the file-size level, and chosen for being the one that cannot go
+wrong invisibly: `analytics.ts` and `profile-markdown.ts` are pure functions with no Angular and no
+I/O, so a rendered check has nothing to add and the gates are the whole proof.
+
+**Level three is a different kind of work from level two, and saying so is the point.** Level two
+moved files whose _location_ was wrong, and the fix was always a relocation. Nothing here is in the
+wrong layer. `cv-preview.component.ts` injects nothing from `libs/data`; it is 1047 lines because one
+class renders, runs a selection state machine and hosts seventeen inline-editing handlers. That is
+**decomposition by responsibility**, and the cut lines are a design decision rather than a lookup.
+
+**Both files were already divided; the split only wrote it down.** `analytics.ts` went 665 -> 195 as
+model, metrics, buckets and the composition that calls them. `profile-markdown.ts` went 622 -> 320 by
+the entity each parser owns. Neither needed a new idea, which is exactly why they were chosen first:
+the level's mechanics - the size gate, the spec split, the count reconciliation - get proven on work
+where a mistake is cheap.
+
+**`compensation-target.ts` is named against a collision that would have implied a duplicate.**
+`compensation.ts` already sits in that folder reading a **job's** advertised salary; the new file is
+the applicant's own expectation, which the profile document carries. Complementary, and now named so.
+
+**Two failures worth recording, because both were silent.** A spec stopped _running_ mid-split - a
+stale type import - and the runner reported `445 passed, 0 failed` where the file holds 466. Twenty-one
+tests were absent and nothing was red. And a rewrite script matched an anchor Prettier had already
+reformatted, so it changed nothing and said nothing; it had no assertion. **A script that edits files
+asserts on its own anchors**, for the same reason a blocker list is a hypothesis (amendment
+fifty-five): the tool that reports success without doing the work is the expensive one.
+
+**Counts.** 262 suites / 3043 tests before, **265 / 3043** after - three new spec files, not one new
+or lost assertion. Over budget across the repository **25 -> 23**, TypeScript source **12 -> 10**.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

@@ -1,42 +1,23 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiService, DbService } from '@applye/data';
-import {
-  CvContent,
-  DocumentLibraryItem,
-  Job,
-  Profile,
-  ScoringCache,
-  Settings,
-  cvContentToMd,
-} from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { WizardActivityService } from './wizard-activity.service';
+import {
+  PASSES,
+  PassNumber,
+  PassResult,
+  PassResultInput,
+  TailorContext,
+  baselineFor,
+  buildPassResult,
+  parsePassResult,
+  resultMdForPass,
+} from './tailoring-pass';
 
-export interface PassResult {
-  pass: number;
-  resultMd: string;
-  changes: string[];
-  gaps: string[];
-  inputHash: string;
-  fromCache: boolean;
-  tokensIn: number;
-  tokensOut: number;
-}
-
-/** Everything a run reads. Owned by the caller and passed per call, so there is
- * no second copy of the job, profile or selected CV to keep in sync. */
-export interface TailorContext {
-  job: Job | null;
-  profile: Profile | null;
-  settings: Settings | null;
-  jdText: string;
-  scoring: ScoringCache | null;
-  baseCvId: number | null;
-  matchingCvs: DocumentLibraryItem[];
-}
-
-const PASSES = [1, 2, 3] as const;
-type PassNumber = (typeof PASSES)[number];
+// Re-exported so the pipeline's types are still reached through the service that
+// produces them, exactly as they were before the split - the same rule
+// `cv-content.util.ts` followed when it kept its barrel for 43 consumers.
+export type { PassResult, TailorContext };
 
 /**
  * The three-pass resume tailoring pipeline, hoisted out of the jobs page
@@ -148,16 +129,18 @@ export class TailoringService {
       const cached = await this.db.tailoringCacheGet(job.id, passNum, inputHash);
       // A miss means every later pass is keyed on a result we do not have.
       if (!cached) break;
-      restored.push({
-        pass: passNum,
-        resultMd: cached.resultMd,
-        inputHash,
-        fromCache: true,
-        tokensIn: 0,
-        tokensOut: 0,
-        changes: parseJsonArray(cached.changesJson),
-        gaps: parseJsonArray(cached.gapsJson),
-      });
+      restored.push(
+        buildPassResult({
+          pass: passNum,
+          resultMd: cached.resultMd,
+          changesJson: cached.changesJson,
+          gapsJson: cached.gapsJson,
+          inputHash,
+          fromCache: true,
+          tokensIn: 0,
+          tokensOut: 0,
+        }),
+      );
     }
     if (restored.length) this.results.set(restored);
   }
@@ -166,7 +149,7 @@ export class TailoringService {
     const { job, profile, settings } = ctx;
     if (!job?.id || (!profile?.fullMd && !ctx.baseCvId) || !settings) return;
 
-    const baselineMd = this.baselineFor(ctx);
+    const baselineMd = baselineFor(ctx);
     const lang = settings.defaultDocLanguage ?? 'en';
     const inputHash = await this.passInputHash(
       baselineMd,
@@ -198,8 +181,8 @@ export class TailoringService {
       scoring_json: ctx.scoring ? JSON.stringify(ctx.scoring) : '{}',
       pass: String(passNum),
       language: lang,
-      pass1_result: this.resultMdForPass(this.results(), 1),
-      pass2_result: this.resultMdForPass(this.results(), 2),
+      pass1_result: resultMdForPass(this.results(), 1),
+      pass2_result: resultMdForPass(this.results(), 2),
     });
 
     const res = await this.ai.run({
@@ -238,21 +221,6 @@ export class TailoringService {
     this.status.set(`Pass ${passNum} done - ${res.tokensInput} in / ${res.tokensOutput} out`);
   }
 
-  /** The text the passes rewrite: the chosen base CV when there is one, the
-   * profile markdown otherwise. An unparseable CV falls back to the profile
-   * rather than tailoring an empty document. */
-  private baselineFor(ctx: TailorContext): string {
-    const fallback = ctx.profile?.fullMd ?? '';
-    if (!ctx.baseCvId) return fallback;
-    const cvItem = ctx.matchingCvs.find((c) => c.id === ctx.baseCvId);
-    if (!cvItem?.contentJson) return fallback;
-    try {
-      return cvContentToMd(JSON.parse(cvItem.contentJson) as CvContent);
-    } catch {
-      return fallback;
-    }
-  }
-
   /** Covers every input to this pass, including the earlier passes it builds
    * on, so a change anywhere upstream invalidates the cache. */
   private passInputHash(
@@ -268,66 +236,13 @@ export class TailoringService {
         jdText,
         String(passNum),
         lang,
-        this.resultMdForPass(priorPasses, 1),
-        this.resultMdForPass(priorPasses, 2),
+        resultMdForPass(priorPasses, 1),
+        resultMdForPass(priorPasses, 2),
       ].join('\x00'),
     );
   }
 
-  private resultMdForPass(passes: readonly PassResult[], pass: number): string {
-    return passes.find((r) => r.pass === pass)?.resultMd ?? '';
-  }
-
-  private appendPassResult(input: {
-    pass: number;
-    resultMd: string;
-    changesJson: string | undefined;
-    gapsJson: string | undefined;
-    inputHash: string;
-    fromCache: boolean;
-    tokensIn: number;
-    tokensOut: number;
-  }): void {
-    this.results.update((r) => [
-      ...r,
-      {
-        pass: input.pass,
-        resultMd: input.resultMd,
-        inputHash: input.inputHash,
-        fromCache: input.fromCache,
-        tokensIn: input.tokensIn,
-        tokensOut: input.tokensOut,
-        changes: parseJsonArray(input.changesJson),
-        gaps: parseJsonArray(input.gapsJson),
-      },
-    ]);
-  }
-}
-
-function parseJsonArray(json: string | undefined): string[] {
-  try {
-    return JSON.parse(json ?? '[]');
-  } catch {
-    return [];
-  }
-}
-
-function parsePassResult(
-  text: string,
-  pass: number,
-): { result_md: string; changes: string[]; gaps: string[] } {
-  try {
-    const raw = text
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/\s*```\s*$/i, '')
-      .trim();
-    const parsed = JSON.parse(raw);
-    return {
-      result_md: String(parsed.result_md ?? ''),
-      changes: Array.isArray(parsed.changes) ? parsed.changes : [],
-      gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
-    };
-  } catch {
-    throw new Error(`Pass ${pass} returned invalid JSON: ${text.slice(0, 200)}`);
+  private appendPassResult(input: PassResultInput): void {
+    this.results.update((r) => [...r, buildPassResult(input)]);
   }
 }

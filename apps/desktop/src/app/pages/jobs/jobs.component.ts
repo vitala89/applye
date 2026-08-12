@@ -16,7 +16,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { TailorScoreService } from '../../shared/tailor-score.service';
 import { WizardActivity, WizardActivityService } from '../../shared/wizard-activity.service';
-import { DocumentGenService, ReviewDocumentKind } from '../../shared/document-gen.service';
+import { DocumentGenService, ReviewDocumentKind } from '@applye/application';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { AiService } from '@applye/data';
@@ -49,24 +49,24 @@ import { PortalAnswersService } from '../../shared/portal-answers.service';
 import { FinalCheckInputs, FinalChecksService } from '../../shared/final-checks.service';
 import { DocumentExportService } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
-import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
+import { CvGapDialogService } from '@applye/application';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
 import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
-import { CvDraftService } from '../../shared/cv-draft.service';
-import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service';
+import { CvDraftService } from '@applye/application';
+import { CoverLetterDraftService } from '@applye/application';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
 import { DocumentReviewTargetsService } from '../../shared/document-review-targets.service';
 import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
-import { JobGapFillService, jobDocLabel } from '../../shared/job-gap-fill.service';
-import { GapFillHooks } from '../../shared/gap-fill';
+import { JobGapFillService, jobDocLabel } from '@applye/application';
+import { GapFillHooks } from '@applye/application';
 import {
   coverLetterStaleInput,
   cvStaleInput,
   decideCoverLetterAction,
   decideCvAction,
-} from '../../shared/application-document-actions';
-import { LinkedDocumentsService } from '../../shared/linked-documents.service';
+} from '@applye/application';
+import { LinkedDocumentsService } from '@applye/application';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';

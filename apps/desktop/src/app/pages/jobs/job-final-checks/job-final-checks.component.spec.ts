@@ -8,7 +8,7 @@ import {
   FinalChecks,
   FinalChecksService,
 } from '../../../shared/final-checks.service';
-import { LinkedDocumentsService } from '../../../shared/linked-documents.service';
+import { LinkedDocumentsService } from '@applye/application';
 
 const CV = { id: 3, docType: 'cv' } as DocumentLibraryItem;
 

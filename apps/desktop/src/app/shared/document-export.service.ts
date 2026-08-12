@@ -1,9 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DbService } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
-import { exportFileName } from './export-filename';
+import { exportFileName } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
-import { ReviewDocumentKind } from './document-gen.service';
+import { ReviewDocumentKind } from '@applye/application';
 
 export type ExportFormat = 'docx' | 'pdf';
 

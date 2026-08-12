@@ -33,7 +33,7 @@ import { UpdaterService } from '../core/updater.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
 import { WizardProgressService } from '../shared/wizard-progress.service';
 import { WizardActivity, WizardActivityService } from '../shared/wizard-activity.service';
-import { DocumentGenService } from '../shared/document-gen.service';
+import { DocumentGenService } from '@applye/application';
 import { ThemeService } from '../core/theme.service';
 
 @Component({

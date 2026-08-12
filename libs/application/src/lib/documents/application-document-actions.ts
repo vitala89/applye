@@ -1,6 +1,6 @@
 import { Job, Profile } from '@applye/core';
 import { cvDraftHashInput } from './cv-draft.service';
-import { coverLetterHashInput } from './cover-letter-draft.service';
+import { coverLetterDraftHashInput } from './cover-letter-draft.service';
 
 /**
  * The exact input the linked CV's staleness is judged against, or null when
@@ -28,7 +28,7 @@ export function coverLetterStaleInput(
   region: string,
 ): string | null {
   if (!job?.id || !profile?.fullMd) return null;
-  return coverLetterHashInput(job.id, profile.fullMd, job.jdText ?? '', language, region);
+  return coverLetterDraftHashInput(job.id, profile.fullMd, job.jdText ?? '', language, region);
 }
 
 /**

@@ -3,10 +3,10 @@ import { signal } from '@angular/core';
 import { Application, DocumentLibraryItem, Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { JobDocumentCardsComponent } from './job-document-cards.component';
-import { DocumentGenService } from '../../../shared/document-gen.service';
-import { CvGapDialogService } from '../../../shared/cv-gap-dialog.service';
+import { DocumentGenService } from '@applye/application';
+import { CvGapDialogService } from '@applye/application';
 import { FinalChecksService } from '../../../shared/final-checks.service';
-import { LinkedDocumentsService } from '../../../shared/linked-documents.service';
+import { LinkedDocumentsService } from '@applye/application';
 import { DocumentReviewStatusService } from '../../../shared/document-review-status.service';
 
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;

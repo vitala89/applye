@@ -16,6 +16,7 @@ import {
 import { NgStyle } from '@angular/common';
 import { CvPreviewEditingService } from './cv-preview-editing.service';
 import { CvPreviewStyleService } from './cv-preview-style.service';
+import { buildCvAtoms } from './cv-preview-atoms';
 import type {
   CvExperienceSection,
   CvSection,
@@ -492,91 +493,27 @@ export class CvPreviewComponent {
     return orderedVisibleSections(live);
   });
 
-  /** Flattens `previewSections()` (in order) into ordered page atoms for
-   * `<lib-paginated-sheet>`. `photo` has no atom of its own - it folds into
-   * the header atom's render, mirroring the CSS float it always relied on. */
-  readonly atoms = computed<SheetAtom[]>(() => {
-    const out: SheetAtom[] = [];
-    const t = this.t();
-    const photoUri = this.includePhoto() ? this.photoDataUri() : null;
-
-    for (const section of this.previewSections()) {
-      switch (section.key) {
-        case 'personal_details':
-          out.push({
-            id: 'header',
-            tpl: this.headerTpl(),
-            ctx: { $implicit: section, photoUri, placement: this.photoPlacement() },
-          });
-          break;
-        case 'summary':
-          if (section.text) {
-            out.push({ id: 'summary', tpl: this.summaryTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'skills':
-          if (section.groups.length) {
-            out.push({ id: 'skills', tpl: this.skillsTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'languages':
-          if (section.items.length) {
-            out.push({ id: 'languages', tpl: this.languagesTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'experience': {
-          if (!section.entries.length) break;
-          const label = t(sectionLabelKey('experience'));
-          out.push({
-            id: 'sec:experience:title',
-            tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label, key: 'experience' },
-            glueToNext: true,
-          });
-          section.entries.forEach((entry, i) => {
-            const bullets = entry.bullets ?? [];
-            // Head glued to its first bullet so a heading never sits alone at a
-            // page bottom; the remaining bullets are free to flow to the next
-            // page, filling the current one instead of jumping the whole entry.
-            out.push({
-              id: `sec:experience:e${i}:head`,
-              tpl: this.expHeadTpl(),
-              ctx: { $implicit: entry, key: 'experience', first: i === 0, i, section },
-              glueToNext: bullets.length > 0,
-            });
-            bullets.forEach((bullet, b) =>
-              out.push({
-                id: `sec:experience:e${i}:b${b}`,
-                tpl: this.expBulletTpl(),
-                ctx: { $implicit: bullet, key: 'experience', i, b, section },
-              }),
-            );
-          });
-          break;
-        }
-        case 'education': {
-          if (!section.entries.length) break;
-          const label = t(sectionLabelKey('education'));
-          out.push({
-            id: 'sec:education:title',
-            tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label, key: 'education' },
-            glueToNext: true,
-          });
-          section.entries.forEach((entry, i) =>
-            out.push({
-              id: `sec:education:e${i}`,
-              tpl: this.eduEntryTpl(),
-              ctx: { $implicit: entry, key: 'education', i, section },
-            }),
-          );
-          break;
-        }
-        // 'photo' folds into the header render - no standalone atom.
-      }
-    }
-    return out;
-  });
+  /** Flattened page atoms for `<lib-paginated-sheet>`; the flattening itself
+   * is a pure function so it can be asserted without mounting the preview. */
+  readonly atoms = computed<SheetAtom[]>(() =>
+    buildCvAtoms({
+      sections: this.previewSections(),
+      includePhoto: this.includePhoto(),
+      photoDataUri: this.photoDataUri(),
+      photoPlacement: this.photoPlacement(),
+      t: this.t(),
+      tpl: {
+        headerTpl: this.headerTpl(),
+        summaryTpl: this.summaryTpl(),
+        sectionTitleTpl: this.sectionTitleTpl(),
+        skillsTpl: this.skillsTpl(),
+        expHeadTpl: this.expHeadTpl(),
+        expBulletTpl: this.expBulletTpl(),
+        eduEntryTpl: this.eduEntryTpl(),
+        languagesTpl: this.languagesTpl(),
+      },
+    }),
+  );
 
   /** `t()` has no interpolation support (see `TranslateService.t`), so page
    * captions substitute `{i}`/`{n}` manually - same pattern as

@@ -3256,6 +3256,46 @@ before the rewrite this time, rather than after (amendment fifty-eight).
 
 Over budget: still 23. The file is 597/400, with selection and the 895/300 template left.
 
+## Amendment sixty: the template is now the constraint, and it decides what can be cut
+
+Shipped as #438. `cv-preview.component.ts` 597 -> **535**, and the useful finding is not the cut - it
+is why the agreed cut was impossible.
+
+**Selection was the largest block and could not move.** Re-measured after amendment fifty-nine, it was
+128 non-empty lines against the atom flattening's 96 - so by size it was next. But it has **239
+template call sites**, and prefixing them with a service name is how the editing and styling cuts
+reached their services. Eighteen of those bindings would have wrapped past 100 columns, Prettier would
+have re-flowed them, and `cv-preview.component.html` is 895/300 and may not gain a line. **The
+template is now the binding constraint on the class**: any block the template calls heavily cannot
+leave until the template itself is split.
+
+**So the cut went to a block the template never calls.** `buildCvAtoms` flattens the visible sections
+into the page atoms `<lib-paginated-sheet>` paginates - a `computed()` the template only consumes as
+`atoms()`, so nothing needed renaming.
+
+**A pure function, not a service, and the reason is a measurement.** The block reads thirteen signals
+off the component. A `bind()` service would have carried thirteen fields; an explicit context object
+carries them at the call site for about twenty lines and needs no lifecycle at all. **The rule this
+level has converged on: `bind()` when the block owns state, a pure function when it owns a
+calculation.** Editing owns drafts and styling owns nothing but is called 57 times from the template;
+this owns neither.
+
+**The claim "testable without a fixture" is now tested.** Seven assertions cover the photo folding
+into the header rather than taking an atom of its own, empty sections being skipped, section order,
+and the two glue rules - a heading never alone at the foot of a page, an entry head never separated
+from its first bullet. None of them mounts the preview.
+
+**A rendered check that first looked like a regression, and was not.** With two experience entries of
+fourteen identical bullets the preview drew **one** page, and the visible tail read as if the second
+entry had been dropped. It had not: 33 atoms is exactly `1 + 1 + 1 + 15 + 15`, every one measured, and
+the content genuinely fits one A4 page - the identical bullet text made the tail ambiguous. Re-run with
+thirty bullets per entry it pages correctly: 64 atoms across `[40, 24]`, captioned "Page 1 of 2" and
+"Page 2 of 2". **The first reading of a rendered check can be wrong in the alarming direction too**,
+and the fix is to compute what the number should be rather than to trust the impression.
+
+Counts 265 -> **266 suites**, 3043 -> **3050 tests**, the seven new being the flattening's own. Over
+budget: still 23.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-12, ADR-0005 level three opens: the two pure modules in `libs/core`
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus 5, re-triage 8/10 (radius 2 · ambiguity 2 · risk 1 · verify 2 · unknowns 1). Grilling gate run - one round, four decisions: cheap `libs/core` modules first, cv-preview's editing family out before selection, a component-provided service as the destination, and the template as its own PR.
+- **Branch:** `refactor/split-core-oversized-modules`
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #435
+- **Objective:** Open level three - the file-size budgets - without touching a screen first.
+- **Completed:** `analytics.ts` 665 -> 195 across four files; `profile-markdown.ts` 622 -> 320 across five; specs split to follow their code. ADR-0005 amendment fifty-seven, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** The cv-preview cluster, which is the reason level three exists. Twenty-three files remain over budget.
+- **Files or packages changed:** `libs/core` only, plus documentation.
+- **Validation:** `nx run-many --target=type-check` (7 projects), `nx run-many --target=lint --skip-nx-cache` (7 projects), `nx run-many --target=test --skip-nx-cache`, `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`. All observed passing. Counts 262/3043 -> 265/3043, the three extra suites being the same assertions in new files. **No rendered check, and that is a decision rather than an omission**: both files are pure functions with no DOM, no framework and no I/O, so there is nothing on screen that the gates do not already cover.
+- **Privacy/security impact:** None. Pure computation, no data flow changed.
+- **Decisions and assumptions:** (1) Open on the cheap modules rather than the CV cluster, to prove the level's mechanics where a mistake is cheap. (2) Export the metrics' shared constants from the model rather than duplicate them. (3) `compensation-target.ts` named to stay distinct from `compensation.ts`, which reads a job's advertised salary.
+- **Risks or compatibility impact:** None known. Every consumer reaches these through the `libs/core` barrel, which re-exports all the new files.
+- **Open issues or blockers:** Debt twelve unchanged. Twenty-three files over budget, seven of them one screen.
+- **Next first action:** `cv-preview.component.ts` 1047/400 - extract the seventeen inline-editing handlers into a component-provided service in the same folder. Not `libs/application`: they type on `HTMLTextAreaElement`, which is the rule that sent `scrollToTop` back to the app in #428.
+- **Evidence:** PR #435, ADR-0005 amendment fifty-seven, `docs/product/CURRENT_STATE.md`.
+
 ### 2026-08-12, ADR-0005: the gateway rule keeps its job by changing what the job is
 
 - **Status:** complete

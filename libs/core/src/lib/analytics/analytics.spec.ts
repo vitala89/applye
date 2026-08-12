@@ -1,9 +1,5 @@
-import {
-  AnalyticsApplication,
-  AnalyticsFacts,
-  computeAnalytics,
-  LOW_DATA_APPLIED_MIN,
-} from './analytics';
+import { computeAnalytics } from './analytics';
+import { AnalyticsApplication, AnalyticsFacts, LOW_DATA_APPLIED_MIN } from './analytics.model';
 
 const NOW = new Date('2026-07-18T12:00:00Z');
 

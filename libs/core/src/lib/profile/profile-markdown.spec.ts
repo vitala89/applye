@@ -6,18 +6,18 @@ import {
   profileCompleteness,
   missingFields,
   parseScoringJson,
-  parseEducationEntries,
-  serializeEducationEntries,
-  parseExperienceEntries,
-  serializeExperienceEntries,
-  EMPTY_EXPERIENCE_ENTRY,
+} from './profile-markdown';
+import {
+  EMPTY_COMPENSATION,
+  parseCompensation,
+  serializeCompensation,
+} from './compensation-target';
+import { parseEducationEntries } from './profile-education';
+import {
   parseLanguageEntries,
   serializeLanguageEntries,
   EMPTY_LANGUAGE_ENTRY,
-  parseCompensation,
-  serializeCompensation,
-  EMPTY_COMPENSATION,
-} from './profile-markdown';
+} from './profile-languages';
 
 const fullForm: ProfileForm = {
   name: 'Vitalii Kasap',
@@ -42,143 +42,6 @@ const fullForm: ProfileForm = {
 };
 
 const blankContact = { location: '', email: '', phone: '', website: '', linkedin: '' };
-
-describe('education entries', () => {
-  it('serializes a full entry as "- Title, Institution (start - end)"', () => {
-    expect(
-      serializeEducationEntries([
-        { title: 'BSc Computer Science', institution: 'MIT', startDate: '2015', endDate: '2019' },
-      ]),
-    ).toBe('- BSc Computer Science, MIT (2015 - 2019)');
-  });
-
-  it('renders an empty end date as "Present"', () => {
-    expect(
-      serializeEducationEntries([
-        { title: 'MSc AI', institution: 'TUM', startDate: '2020', endDate: '' },
-      ]),
-    ).toBe('- MSc AI, TUM (2020 - Present)');
-  });
-
-  it('drops fully blank entries', () => {
-    expect(
-      serializeEducationEntries([{ title: '', institution: '', startDate: '', endDate: '' }]),
-    ).toBe('');
-  });
-
-  it('round-trips structured entries through serialize→parse', () => {
-    const entries = [
-      { title: 'BSc Computer Science', institution: 'MIT', startDate: '2015', endDate: '2019' },
-      { title: 'AWS Solutions Architect', institution: 'AWS', startDate: '2022', endDate: '' },
-    ];
-    expect(parseEducationEntries(serializeEducationEntries(entries))).toEqual(entries);
-  });
-
-  it('parses a legacy free-text line into a title-only entry', () => {
-    expect(parseEducationEntries('BSc Computer Science')).toEqual([
-      { title: 'BSc Computer Science', institution: '', startDate: '', endDate: '' },
-    ]);
-  });
-
-  it('treats a trailing "Present" in the range as an open end', () => {
-    expect(parseEducationEntries('- MSc AI, TUM (2020 - Present)')).toEqual([
-      { title: 'MSc AI', institution: 'TUM', startDate: '2020', endDate: '' },
-    ]);
-  });
-});
-
-describe('experience entries', () => {
-  it('round-trips a full entry', () => {
-    const md = [
-      '### Senior Engineer - Acme',
-      'Berlin · 2020 - 2023',
-      '- Shipped the thing',
-      '- Led the team',
-    ].join('\n');
-    const entries = parseExperienceEntries(md);
-    expect(entries).toEqual([
-      {
-        role: 'Senior Engineer',
-        company: 'Acme',
-        location: 'Berlin',
-        startDate: '2020',
-        endDate: '2023',
-        bullets: ['Shipped the thing', 'Led the team'],
-      },
-    ]);
-    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
-  });
-
-  it('treats an empty end date as ongoing', () => {
-    const entry = { ...EMPTY_EXPERIENCE_ENTRY, role: 'Dev', company: 'Now', startDate: '2024' };
-    const md = serializeExperienceEntries([entry]);
-    expect(md).toContain('2024 - Present');
-    // "Present" round-trips back to an empty endDate.
-    expect(parseExperienceEntries(md)[0].endDate).toBe('');
-  });
-
-  it('keeps a legacy free-text block as a single bullet entry', () => {
-    const entries = parseExperienceEntries('Did lots of things at various places.');
-    expect(entries).toHaveLength(1);
-    expect(entries[0].role).toBe('');
-    expect(entries[0].bullets).toEqual(['Did lots of things at various places.']);
-  });
-
-  it('parses a header with no company separator', () => {
-    const entries = parseExperienceEntries('### Freelance Consultant\n- Client work');
-    expect(entries[0]).toMatchObject({ role: 'Freelance Consultant', company: '' });
-  });
-
-  it('drops fully blank entries on serialize', () => {
-    expect(serializeExperienceEntries([{ ...EMPTY_EXPERIENCE_ENTRY }])).toBe('');
-  });
-
-  it('returns [] for empty input', () => {
-    expect(parseExperienceEntries('')).toEqual([]);
-  });
-
-  it('round-trips ISO year-month dates', () => {
-    const entries = [
-      {
-        role: 'Dev',
-        company: 'Acme',
-        location: 'Berlin',
-        startDate: '2020-01',
-        endDate: '2023-05',
-        bullets: ['x'],
-      },
-    ];
-    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
-  });
-
-  it('keeps a digit-bearing location as location, not a date', () => {
-    const entries = parseExperienceEntries('### Dev - Acme\nBerlin 10115 · 2020 - 2023\n- x');
-    expect(entries[0].location).toBe('Berlin 10115');
-    expect(entries[0].startDate).toBe('2020');
-    expect(entries[0].endDate).toBe('2023');
-  });
-
-  it('preserves multiple location tokens on the meta line (lossless round-trip)', () => {
-    const entries = [
-      {
-        role: 'Dev',
-        company: 'Acme',
-        location: 'Berlin · Germany',
-        startDate: '2020',
-        endDate: '2023',
-        bullets: ['x'],
-      },
-    ];
-    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
-  });
-
-  it('keeps a postal code containing a year substring as location', () => {
-    const entries = parseExperienceEntries('### Dev - Acme\nHamburg 20095 · 2020 - 2023\n- x');
-    expect(entries[0].location).toBe('Hamburg 20095');
-    expect(entries[0].startDate).toBe('2020');
-    expect(entries[0].endDate).toBe('2023');
-  });
-});
 
 describe('profile-markdown', () => {
   it('round-trips a full form through serialize→parse', () => {
@@ -611,21 +474,3 @@ describe('profile parsing is linear on pathological input', () => {
 // The trailing-"(...)" split is now string scanning rather than a regex; these
 // pin the unbalanced-input behaviour the regex had, so a future rewrite cannot
 // change it silently.
-describe('trailing bracket split, unbalanced input', () => {
-  it('takes the innermost group when an opening bracket is unclosed', () => {
-    expect(parseLanguageEntries(['Klingon (a(b)'])).toEqual([
-      { language: 'Klingon', level: 'a(b' },
-    ]);
-  });
-
-  it('leaves a nested group alone, since the body may not contain a bracket', () => {
-    const item = 'Klingon (2019 - (2020))';
-    expect(parseLanguageEntries([item])).toEqual([{ language: item, level: '' }]);
-  });
-
-  it('still splits a normal level, including with trailing spaces', () => {
-    expect(parseLanguageEntries(['English (C1)  '])).toEqual([
-      { language: 'English', level: 'C1' },
-    ]);
-  });
-});

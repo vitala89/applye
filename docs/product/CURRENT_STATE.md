@@ -42,6 +42,29 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **Level three is open: 25 files over budget became 23.** Shipped as **#435**, and the first cut was
+  chosen for being unable to fail invisibly - `analytics.ts` and `profile-markdown.ts` are pure
+  functions with no Angular and no I/O, so the gates are the whole proof and no rendered check
+  applies. `analytics.ts` **665 -> 195** as `analytics.model.ts` (234, view types and thresholds),
+  `analytics-metrics.ts` (208, the seven per-metric computations), `analytics-buckets.ts` (158, the
+  date and histogram arithmetic they share) and `computeAnalytics`, which composes them.
+  `profile-markdown.ts` **622 -> 320**, split by the entity each parser owns: education (103),
+  experience (154), languages (40) and the profile's own pay expectation to `compensation-target.ts`
+  (63) - **named against a collision**, since `compensation.ts` beside it reads a _job's_ advertised
+  salary and the two are complementary rather than duplicated. Specs followed their code, which also
+  took `profile-markdown.spec.ts` off the near-budget list at 559/600. Counts 262/3043 ->
+  **265/3043**: three new spec files, not one assertion gained or lost. TypeScript source over
+  budget **12 -> 10**. **Two silent failures were caught by counting rather than by reading a
+  summary**: a spec stopped _running_ on a stale type import and the runner said `445 passed, 0
+failed` where the file holds 466; and an edit script matched an anchor Prettier had reformatted,
+  so it changed nothing and reported nothing, because it carried no assertion. **Level three is not
+  level two**: nothing here is in the wrong layer, so there is nothing to relocate - the work is
+  decomposition by responsibility, and the cut lines are a design decision. **Next first action:**
+  `cv-preview.component.ts` at **1047/400**. Its seventeen inline-editing handlers (~270 lines,
+  covered by `cv-preview.editing.spec.ts` and `cv-preview.bullet-editor.spec.ts`) come out first,
+  into a component-provided service in the same folder - not `libs/application`, because they type on
+  `HTMLTextAreaElement` and key drafts by DOM id, which is the rule that sent `scrollToTop` back to
+  the app in #428. Selection follows in its own PR, then the 895/300 template.
 - **The gateway lint rule is kept and widened; `ADR-0005`'s enforcement questions are all now
   answered.** Shipped as **#434**. It named `DbService` alone, which is how three components
   injecting `AiService` and one injecting `JobSourceService` stayed invisible to it until #433. The

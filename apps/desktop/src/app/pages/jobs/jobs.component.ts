@@ -21,7 +21,6 @@ import { CvGapDialogService, CvDraftService, CoverLetterDraftService } from '@ap
 import { GapFillHooks, LinkedDocumentsService } from '@applye/application';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { AiService } from '@applye/data';
 import {
   JobDetailStore,
   documentReviewLanguageFor,
@@ -45,7 +44,7 @@ import { JobDetailActionsComponent } from './job-detail-actions/job-detail-actio
 import { JobDiscardConfirmComponent } from './job-discard-confirm/job-discard-confirm.component';
 import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.component';
 import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
-import { CvPhotoPromptService } from './cv-photo-prompt.service';
+import { CvPhotoPromptService } from '@applye/application';
 import { ToastService } from '@applye/application';
 import { PortalAnswersService } from '@applye/application';
 import { FinalCheckInputs, FinalChecksService } from '@applye/application';
@@ -124,7 +123,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   /** Everything this screen loads. The page renders and orchestrates; the
    * reads and the one write live in `libs/application` (ADR-0005). */
   private readonly store = inject(JobDetailStore);
-  private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);

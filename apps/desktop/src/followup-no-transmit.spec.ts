@@ -15,7 +15,7 @@ const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
 // not grow a transmit path of its own either.
 const FOLLOWUP_SERVICE = path.join(
   WORKSPACE_ROOT,
-  'apps/desktop/src/app/pages/pipeline/quick-view-modal/followup-draft.service.ts',
+  'libs/application/src/lib/pipeline/followup-draft.service.ts',
 );
 
 const FOLLOWUP_FILES = [

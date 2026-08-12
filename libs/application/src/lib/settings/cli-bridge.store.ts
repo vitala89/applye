@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { AiProvider, Settings } from '@applye/core';
-import { AiService, type CliStatus } from '@applye/data';
+import { AiService } from '@applye/data';
+import type { CliStatus } from '@applye/core';
 import { CLI_MODELS } from './cli-bridge';
 import { CLI_MODEL_CUSTOM, cliModelSelectValue } from './cli-models';
 

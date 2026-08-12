@@ -28,6 +28,7 @@ export * from './lib/analytics/analytics';
 export * from './lib/geo/geo-scope';
 export * from './lib/geo/local-market';
 export * from './lib/ai/api-models';
+export * from './lib/ai/cli-status';
 
 // CV content, style and layout - pure, and here rather than in the app because
 // nine files in `libs/application` were taking these functions as arguments to

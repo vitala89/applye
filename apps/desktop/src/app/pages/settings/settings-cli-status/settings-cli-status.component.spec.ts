@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { CliStatus } from '@applye/data';
+import type { CliStatus } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SettingsCliStatusComponent } from './settings-cli-status.component';
 

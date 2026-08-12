@@ -17,18 +17,18 @@
       appButton
       variant="secondary"
       size="md"
-      [disabled]="parsing() || !markdown().trim()"
+      [disabled]="store.parsing() || !markdown().trim()"
       (click)="parse()"
     >
       <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
-      {{ parsing() ? t()('profile.raw_parsing') : t()('profile.raw_parse_btn') }}
+      {{ store.parsing() ? t()('profile.raw_parsing') : t()('profile.raw_parse_btn') }}
     </button>
     <span class="field__hint">{{ t()('profile.raw_parse_desc') }}</span>
-    @if (status()) {
-      <span class="status" [class.status--error]="error()">{{ status() }}</span>
+    @if (store.status()) {
+      <span class="status" [class.status--error]="store.error()">{{ store.status() }}</span>
     }
   </div>
-  @if (preview(); as pv) {
+  @if (store.preview(); as pv) {
     <div class="parse-preview">
       <p class="parse-preview__title">{{ t()('profile.parse_preview_title') }}</p>
       <div class="parse-preview__grid">

@@ -1,6 +1,7 @@
 import { ComponentFixture } from '@angular/core/testing';
 
 import { CvPreviewComponent } from './cv-preview.component';
+import { CvPreviewEditingService } from './cv-preview-editing.service';
 import { createCvPreview } from './cv-preview.harness';
 
 import type { CvPreviewSelection } from '@applye/core';
@@ -12,6 +13,13 @@ describe('CvPreviewComponent selection identity', () => {
   beforeEach(async () => {
     ({ component, fixture } = await createCvPreview());
   });
+
+  /** The draft map moved to the editing service; the identity this suite pins
+   * is the one between the emitted `elementPath` and that map's key, so it
+   * reads the draft where the draft now lives. */
+  function draft(path: string, resting: string): string {
+    return fixture.debugElement.injector.get(CvPreviewEditingService).leafDraft(path, resting);
+  }
 
   describe('element-level selection identity (Phase D.2)', () => {
     it('clicking a section title never carries an elementPath', () => {
@@ -79,7 +87,7 @@ describe('CvPreviewComponent selection identity', () => {
       textarea.value = 'Edited';
       textarea.dispatchEvent(new Event('input'));
       fixture.detectChanges();
-      expect(component.leafDraft('summary', 'unused-resting-fallback')).toBe('Edited');
+      expect(draft('summary', 'unused-resting-fallback')).toBe('Edited');
     });
 
     it('exp.1.role - the emitted elementPath is the same key leafDraft uses', () => {
@@ -113,7 +121,7 @@ describe('CvPreviewComponent selection identity', () => {
       roleInput.value = 'Staff Engineer';
       roleInput.dispatchEvent(new Event('input'));
       fixture.detectChanges();
-      expect(component.leafDraft('exp.1.role', 'unused')).toBe('Staff Engineer');
+      expect(draft('exp.1.role', 'unused')).toBe('Staff Engineer');
     });
 
     it('exp.1.bullet.0 - the emitted elementPath is the same key leafDraft uses', () => {
@@ -149,7 +157,7 @@ describe('CvPreviewComponent selection identity', () => {
       textarea.value = 'Shipped X and Y';
       textarea.dispatchEvent(new Event('input'));
       fixture.detectChanges();
-      expect(component.leafDraft('exp.1.bullet.0', 'unused')).toBe('Shipped X and Y');
+      expect(draft('exp.1.bullet.0', 'unused')).toBe('Shipped X and Y');
     });
 
     it('skills.0.values - the emitted elementPath is the same key leafDraft uses', () => {
@@ -181,7 +189,7 @@ describe('CvPreviewComponent selection identity', () => {
       valuesInput.value = 'TypeScript, Go';
       valuesInput.dispatchEvent(new Event('input'));
       fixture.detectChanges();
-      expect(component.leafDraft('skills.0.values', 'unused')).toBe('TypeScript, Go');
+      expect(draft('skills.0.values', 'unused')).toBe('TypeScript, Go');
     });
 
     it('lang.0.language - the emitted elementPath is the same key leafDraft uses', () => {
@@ -216,7 +224,7 @@ describe('CvPreviewComponent selection identity', () => {
       inputs[0].value = 'Anglais';
       inputs[0].dispatchEvent(new Event('input'));
       fixture.detectChanges();
-      expect(component.leafDraft('lang.0.language', 'unused')).toBe('Anglais');
+      expect(draft('lang.0.language', 'unused')).toBe('Anglais');
     });
 
     it('only the selected leaf carries the element-selected highlight; siblings stay resting', () => {

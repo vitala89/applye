@@ -1,5 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 export interface WizardProgress {
   jobId: number;
@@ -16,14 +15,21 @@ const STORAGE_KEY = 'applye:wizardProgress';
  * Backed by `sessionStorage` so the progress survives navigation within one
  * app session; the floating "resume" button in the shell reads the same
  * signal. Session-scoped by design: a full app restart is a fresh start.
+ *
+ * Storage is reached through `globalThis` rather than through the injected
+ * `DOCUMENT`, which is what lets this live in `libs/application`. That is not a
+ * loosening of the layer's DOM rule but the rule as `ADR-0005` amendment
+ * thirty-three already settled it for `sidebarCollapsed`: browser storage is
+ * screen state that happens to outlive the session, not view. The optional
+ * chain is load-bearing - a non-browser environment falls through to "no
+ * progress" instead of throwing at construction.
  */
 @Injectable({ providedIn: 'root' })
 export class WizardProgressService {
-  private readonly document = inject(DOCUMENT);
   readonly progress = signal<WizardProgress | null>(this.read());
 
   private storage(): Storage | undefined {
-    return this.document.defaultView?.sessionStorage ?? undefined;
+    return globalThis.sessionStorage ?? undefined;
   }
 
   private read(): WizardProgress | null {

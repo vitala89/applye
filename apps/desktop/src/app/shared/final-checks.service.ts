@@ -1,5 +1,4 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { DbService } from '@applye/data';
 import {
   CoverLetterContent,
@@ -43,12 +42,17 @@ export interface FinalCheckInputs {
  *
  * The same hash doubles as the sessionStorage key that survives the round trip
  * into the document editor and back.
+ *
+ * That storage is reached through `globalThis` rather than through the injected
+ * `DOCUMENT`, which is what lets this live in `libs/application`. Not a
+ * loosening of the layer's DOM rule but the rule as `ADR-0005` amendment
+ * thirty-three already settled it for `sidebarCollapsed`: browser storage is
+ * screen state that happens to outlive the session, not view.
  */
 @Injectable()
 export class FinalChecksService {
   private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
-  private readonly document = inject(DOCUMENT);
 
   private readonly t = this.i18n.t;
 
@@ -148,13 +152,13 @@ export class FinalChecksService {
    * document editor, which destroys this page component. */
   storeForReturn(reviewHash: string): void {
     const checks = this.checks();
-    const storage = this.document.defaultView?.sessionStorage;
+    const storage = globalThis.sessionStorage;
     if (!checks || !storage) return;
     storage.setItem(`applye:wizardFinalChecks:${reviewHash}`, JSON.stringify(checks));
   }
 
   restoreAfterReturn(reviewHash: string): FinalChecks | null {
-    const storage = this.document.defaultView?.sessionStorage;
+    const storage = globalThis.sessionStorage;
     const raw = storage?.getItem(`applye:wizardFinalChecks:${reviewHash}`);
     if (!raw) return null;
     try {

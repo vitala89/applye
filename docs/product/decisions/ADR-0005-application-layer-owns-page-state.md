@@ -2967,6 +2967,80 @@ are view, and this layer does not own view.
 relocation, and which will also decide what happens to `CoverLetterTailorService`, whose feature has
 been unreachable since `openTailorCoverLetterModal()` lost its last caller.
 
+## Amendment fifty-four: the toast wall was a store in the wrong folder, and `shared/` empties
+
+Sub-step five, shipped as #427, #428, #429, #430 and #431. It closes level two item three. Four of the
+five sentences the previous amendment wrote about this step were wrong, and each was wrong in the same
+way: **the blockers were named by grepping imports, and never opened.**
+
+**`ToastService` was not a wall. It was a signal store filed next to its component.** 91 lines, and its
+only dependencies are Angular signals and `TranslateService`. So the plan - services return an outcome
+or a translation key, and components turn it into a sentence (the amendment forty-four shape, and debt
+six) - was solving a problem that did not exist. The store moved to `libs/application/src/lib/shell/`;
+`toast.component`, `toast-container.component` and `toast-error.handler` stayed in the app, because
+that half is UI. **Fifty import sites, every one a one-for-one path rewrite, so no file in `apps/`
+changed its line count.** The outcome pattern remains the right answer where a store must _decide_
+what to say; it was never required merely to _say_ it.
+
+**`TranslateService` was never a blocker at all.** `libs/i18n` is tagged `type:util`, which
+`type:application` may depend on, and twelve files in `libs/application` already imported it before
+this sub-step began. The handoff listed it as blocking five files. It blocked none, and
+`document-export` was listed as blocked by it alone.
+
+**A store may name `@tauri-apps`, and this is the ruling.** `document-export.service` calls
+`await import('@tauri-apps/plugin-dialog')` for the native save dialog - a dynamic import, which is
+why an import grep missed it twice. It is ratified rather than reverted: the save dialog is I/O, and
+this layer has always depended on Tauri through `DbService` and `AiService`, which are themselves
+`invoke` wrappers. `@nx/enforce-module-boundaries` constrains workspace libraries, not npm packages,
+so nothing was bypassed. **The same answer covers `followup-draft.service`** when it moves.
+
+**`wizard-nav` moves after all, and amendment fifty-three's "never" was too strong.** The reasoning
+was right - `querySelector` and `scrollingElement` are view, and this layer does not own view - but it
+concluded that the _file_ could not move, when only the _method_ could not. `scrollToTop()` also had
+four call sites, not the two a first reading found: `goTo()` and `close()` scroll internally. The
+store now counts scroll requests in a `scrollTick` signal and the page performs them through
+`scrollOnTick()` in `apps/desktop/src/app/core/scroll-to-top.ts`. **This is the general shape for a
+store that needs something done to the DOM: publish the request, let the page satisfy it** - and it
+cost the store three lines. `scrollOnTick` reads the starting count outside the effect, so mounting a
+page does not scroll it.
+
+**`cover-letter-tailor` was cut where it was already divided.** 305 non-empty lines against the 250
+budget, and the size gate reads a moved file as added, so carrying it whole was never possible.
+`BaseLetter`, `emptyBaseLetter`, `readBaseLetter` and `buildTailoredContent` are pure and total, and
+went to `libs/core`; the modal state, the AI pass and the two writes stayed together at **206/250** in
+`libs/application`. The feature is still unreachable - `openTailorCoverLetterModal()` still has no
+caller - and that stays a product decision, deliberately not made by a refactor.
+
+**`jobs.component.ts` went 980 -> 979 while gaining an effect.** It imported `@applye/application`
+through **seventeen separate statements**; six of the short ones merged into three, which paid for the
+scroll effect and its import with a line to spare. Amendment fifty recorded the opposite case, where
+merging two imports _cost_ two lines because Prettier wrapped the result - the difference is only
+whether the merged line clears 100 characters, and it is worth checking rather than assuming either
+way.
+
+**Counts, reconciled in both directions against a `main` baseline taken in a separate worktree**, because
+a suite can go green while losing tests (amendment fifty-one): 258 suites / 3028 tests before, 260 /
+3033 after. The five new tests are `scroll-to-top`'s own; the extra suite is the tailor spec becoming
+two. Every move was checked as a pair - what left `desktop` arrived in `application` or `core`, test
+for test.
+
+**One flake, reproduced and not introduced.** `cv-detail.component.spec.ts` failed once at 48.9s under
+seven-project parallel load, then passed three times in isolation at 1.7s. That is debt twelve, which
+had not been seen in fourteen pull requests.
+
+**Rendered check, since no gate can see a toast that stopped appearing.** Four of the five PRs were
+checked on a real screen: an unhandled error rendering a `toast--error` through the moved store; one
+scroll per tick on the real `.content` element and none on mount; `DocumentReviewStatusService.fail()`
+setting the status line _and_ raising a toast; **Save this job** clicked as a user, producing the
+translated "Saved to your jobs."; and the tailor modal rendering off the split service.
+
+`apps/desktop/src/app/shared/` now holds `job-identity-prompt/`, `page-title/`, `paste-job-modal/` and
+`unsaved-job-prompt/` - four component folders, which are UI and stay.
+
+**Next:** `type:data` can now leave `type:app`'s allowlist, and the two services that were kept out of
+this sub-step deliberately - `cv-photo-prompt` (which injects `Router`) and `followup-draft` (settled
+above) - are what stands between it and a clean run.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -3081,6 +3155,13 @@ been unreachable since `openTailorCoverLetterModal()` lost its last caller.
           `document-review-targets` and `job-scoring` behind them - done in amendment fifty-three, as
           PRs #424, #425 and #426. `job-scoring` split 300 -> 242 first. `wizard-nav` stays: its
           `querySelector` and `scrollingElement` are view, and this layer does not own view
-    - [ ] The four `toast.service` couplings, which need the outcome pattern rather than a move
-  - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
+    - [x] The `toast.service` couplings - done in amendment fifty-four, as PRs #427, #428, #429,
+          #430 and #431. **They needed no outcome pattern**: `ToastService` was a 91-line signal
+          store filed next to its component, and moving it unblocked all four at once.
+          `TranslateService` blocked nothing - `libs/i18n` is `type:util`. `wizard-nav` moved too,
+          against the previous amendment's "never": only `scrollToTop()` could not, and it became a
+          `scrollTick` signal the page satisfies. `cover-letter-tailor` split 305 -> 206 with its
+          pure half to `libs/core`. **`shared/` now holds only its four component folders**
+  - [ ] Remove `type:data` from `type:app`'s allowlist - now blocked only by `cv-photo-prompt`
+        (injects `Router`) and `followup-draft`, both kept out of sub-step five deliberately
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

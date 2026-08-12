@@ -34,6 +34,7 @@ export * from './lib/ai/api-models';
 // work around their being unreachable (ADR-0005, amendment fifty).
 export * from './lib/cv/cv-content.util';
 export * from './lib/cv/cv-entry.util';
+export * from './lib/documents/cover-letter-base.util';
 export * from './lib/cv/cv-page.util';
 export * from './lib/cv/cv-parse.util';
 export * from './lib/cv/cv-selection.util';

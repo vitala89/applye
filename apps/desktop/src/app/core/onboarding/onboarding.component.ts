@@ -26,7 +26,7 @@ import {
   Upload,
   Wallet,
 } from 'lucide-angular';
-import { AiMode, AiProvider, buildCvContent, parseCvSkillResponse } from '@applye/core';
+import { AiMode, AiProvider } from '@applye/core';
 import {
   ONBOARDING_CLI_PROVIDERS,
   OnboardingAiKeyStore,
@@ -61,8 +61,7 @@ import { ToastService } from '../toast/toast.service';
  * stores it provides, in `libs/application`; what stays here is where the wizard
  * is (`step` and its navigation), the sentences the Ready step assembles from
  * what the stores publish, the theme the overlay carries, the toast, and the
- * two things no store may do - open a Tauri file dialog, and reach the parsing
- * and layout helpers that still live in `apps/desktop` (see `CvCodec`). */
+ * one thing no store may do - open a Tauri file dialog. */
 @Component({
   selector: 'app-onboarding',
   standalone: true,
@@ -216,12 +215,9 @@ export class OnboardingComponent {
   }
 
   /** The parse itself belongs to the resume store; only advancing on success is
-   * the wizard's, because only the wizard knows where it is. `parseCvSkillResponse`
-   * is handed over because it lives in `apps/desktop` and cannot be imported
-   * from the layer below (see `CvCodec`). */
+   * the wizard's, because only the wizard knows where it is. */
   async parseResume(): Promise<void> {
-    if ((await this.resume.parse(this.aiSetup.dispatch(), parseCvSkillResponse)) === true)
-      this.next();
+    if ((await this.resume.parse(this.aiSetup.dispatch())) === true) this.next();
   }
 
   /** True while a footer-driven AI call is in flight. The Continue button binds
@@ -324,7 +320,6 @@ export class OnboardingComponent {
     await this.finishStore.saveProfile();
     const outcome = await this.finishStore.saveCvDocument({
       fallbackLabel: this.t()('documents.cv_untitled'),
-      buildContent: buildCvContent,
     });
     if (outcome === 'failed') this.toast.error(this.t()('onboarding.cv_save_failed'));
     await this.aiSetup.markSeen();

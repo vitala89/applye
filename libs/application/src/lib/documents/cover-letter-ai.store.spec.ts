@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { CoverLetterContent, DocumentLibraryItem } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
-import { CoverLetterAiStore, type CoverLetterCodec } from './cover-letter-ai.store';
+import { CoverLetterAiStore } from './cover-letter-ai.store';
 import { CoverLetterContentStore } from './cover-letter-content.store';
 import { CoverLetterDocumentStore } from './cover-letter-document.store';
 import { CoverLetterNoProfileError } from './cover-letter-generation';
@@ -20,10 +20,10 @@ function doc(over: Partial<DocumentLibraryItem> = {}): DocumentLibraryItem {
   } as DocumentLibraryItem;
 }
 
-/** The model's answer, already parsed - the codec stands in for the app-local
- * `cleanJsonText` + `JSON.parse` the page passes in. */
+/** What the model answers. It is serialised into `ai.run`'s reply and read back
+ * by the store's own `parseCoverLetterResponse`, so a test that sets a letter
+ * here is also exercising the real parse rather than agreeing with a stub. */
 let answer: Partial<CoverLetterContent> = {};
-const codec: CoverLetterCodec = { parse: () => answer };
 
 function createStore(over: Record<string, jest.Mock> = {}) {
   const db = {
@@ -43,7 +43,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   };
   const ai = {
     renderSkill: jest.fn().mockResolvedValue({ systemPrompt: 'sys', userPrompt: 'usr' }),
-    run: jest.fn().mockResolvedValue({ text: '{}' }),
+    run: jest.fn(() => Promise.resolve({ text: JSON.stringify(answer) })),
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -82,7 +82,7 @@ describe('CoverLetterAiStore', () => {
   describe('draftWithAI', () => {
     it('does nothing without a loaded document', async () => {
       const { store, ai } = createStore();
-      await expect(store.draftWithAI(codec)).resolves.toBe(false);
+      await expect(store.draftWithAI()).resolves.toBe(false);
       expect(ai.run).not.toHaveBeenCalled();
     });
 
@@ -92,7 +92,7 @@ describe('CoverLetterAiStore', () => {
       letter.setTone('Enthusiastic');
       letter.setLength('Detailed');
 
-      await expect(store.draftWithAI(codec)).resolves.toBe(true);
+      await expect(store.draftWithAI()).resolves.toBe(true);
 
       expect(ai.renderSkill).toHaveBeenCalledWith('cover-letter-generate', {
         profile_md: '# Profile',
@@ -111,7 +111,7 @@ describe('CoverLetterAiStore', () => {
     it("sends the document's language, not the user's default", async () => {
       const { store, document, ai } = createStore();
       await document.load(7);
-      await store.draftWithAI(codec);
+      await store.draftWithAI();
       expect(ai.run.mock.calls[0][0].language).toBe('de');
     });
 
@@ -120,7 +120,7 @@ describe('CoverLetterAiStore', () => {
         documentLibraryGet: jest.fn().mockResolvedValue(doc({ language: undefined })),
       });
       await document.load(7);
-      await store.draftWithAI(codec);
+      await store.draftWithAI();
       expect(ai.run.mock.calls[0][0].language).toBe('pl');
     });
 
@@ -128,7 +128,7 @@ describe('CoverLetterAiStore', () => {
       const { store, letter, document, ai } = createStore();
       await document.load(7);
       letter.updateField('jobDescription', 'Senior Angular dev');
-      await store.draftWithAI(codec);
+      await store.draftWithAI();
       expect(ai.renderSkill.mock.calls[0][1].job_description).toBe('Senior Angular dev');
     });
 
@@ -136,7 +136,7 @@ describe('CoverLetterAiStore', () => {
       const { store, letter, document } = createStore();
       await document.load(7);
       answer = { subject: 'Drafted', bodyParagraphs: ['One.'] };
-      await store.draftWithAI(codec);
+      await store.draftWithAI();
       expect(letter.content().subject).toBe('Drafted');
       expect(letter.content().bodyParagraphs).toEqual(['One.']);
     });
@@ -144,7 +144,7 @@ describe('CoverLetterAiStore', () => {
     it('never saves - the user reviews and decides', async () => {
       const { store, document, db } = createStore();
       await document.load(7);
-      await store.draftWithAI(codec);
+      await store.draftWithAI();
       expect(db.documentLibraryUpsert).not.toHaveBeenCalled();
     });
 
@@ -153,7 +153,7 @@ describe('CoverLetterAiStore', () => {
         getProfile: jest.fn().mockResolvedValue({ fullMd: '' }),
       });
       await document.load(7);
-      await expect(store.draftWithAI(codec)).rejects.toBeInstanceOf(CoverLetterNoProfileError);
+      await expect(store.draftWithAI()).rejects.toBeInstanceOf(CoverLetterNoProfileError);
       expect(ai.run).not.toHaveBeenCalled();
       expect(store.drafting()).toBe(false);
     });
@@ -163,31 +163,31 @@ describe('CoverLetterAiStore', () => {
         getProfile: jest.fn().mockResolvedValue(null),
       });
       await document.load(7);
-      await expect(store.draftWithAI(codec)).rejects.toBeInstanceOf(CoverLetterNoProfileError);
+      await expect(store.draftWithAI()).rejects.toBeInstanceOf(CoverLetterNoProfileError);
     });
 
     it('clears the flag when the model call fails', async () => {
       const { store, document, ai } = createStore();
       await document.load(7);
       ai.run.mockRejectedValueOnce(new Error('model offline'));
-      await expect(store.draftWithAI(codec)).rejects.toThrow('model offline');
+      await expect(store.draftWithAI()).rejects.toThrow('model offline');
       expect(store.drafting()).toBe(false);
     });
 
     it('refuses to start while a draft is already running', async () => {
       const { store, document } = createStore();
       await document.load(7);
-      const first = store.draftWithAI(codec);
+      const first = store.draftWithAI();
       expect(store.drafting()).toBe(true);
-      await expect(store.draftWithAI(codec)).resolves.toBe(false);
+      await expect(store.draftWithAI()).resolves.toBe(false);
       await first;
     });
 
     it('refuses to start while a block is regenerating', async () => {
       const { store, document } = createStore();
       await document.load(7);
-      const first = store.regenerateBlock('greeting', undefined, codec);
-      await expect(store.draftWithAI(codec)).resolves.toBe(false);
+      const first = store.regenerateBlock('greeting', undefined);
+      await expect(store.draftWithAI()).resolves.toBe(false);
       await first;
     });
   });
@@ -195,7 +195,7 @@ describe('CoverLetterAiStore', () => {
   describe('regenerateBlock', () => {
     it('does nothing without a loaded document', async () => {
       const { store, ai } = createStore();
-      await expect(store.regenerateBlock('greeting', undefined, codec)).resolves.toBe(false);
+      await expect(store.regenerateBlock('greeting', undefined)).resolves.toBe(false);
       expect(ai.run).not.toHaveBeenCalled();
     });
 
@@ -204,7 +204,7 @@ describe('CoverLetterAiStore', () => {
       await document.load(7);
       answer = { greeting: 'Sehr geehrte Damen und Herren,' };
 
-      await expect(store.regenerateBlock('greeting', undefined, codec)).resolves.toBe(true);
+      await expect(store.regenerateBlock('greeting', undefined)).resolves.toBe(true);
 
       expect(ai.renderSkill.mock.calls[0][1].section).toBe('greeting');
       expect(letter.content().greeting).toBe('Sehr geehrte Damen und Herren,');
@@ -220,7 +220,7 @@ describe('CoverLetterAiStore', () => {
         seen = store.regeneratingBlock();
         return Promise.resolve({ systemPrompt: 's', userPrompt: 'u' });
       });
-      await store.regenerateBlock('body', 1, codec);
+      await store.regenerateBlock('body', 1);
       expect(seen).toBe('body_1');
       expect(ai.renderSkill.mock.calls[0][1].section).toBe('body_1');
     });
@@ -230,7 +230,7 @@ describe('CoverLetterAiStore', () => {
       await document.load(7);
       letter.content.set({ ...letter.content(), hashes: { greeting: 'hash-1' } });
 
-      await expect(store.regenerateBlock('greeting', undefined, codec)).resolves.toBe(false);
+      await expect(store.regenerateBlock('greeting', undefined)).resolves.toBe(false);
 
       expect(ai.renderSkill).not.toHaveBeenCalled();
       expect(ai.run).not.toHaveBeenCalled();
@@ -241,7 +241,7 @@ describe('CoverLetterAiStore', () => {
       const { store, letter, document, ai } = createStore();
       await document.load(7);
       letter.content.set({ ...letter.content(), hashes: { greeting: 'stale' } });
-      await expect(store.regenerateBlock('greeting', undefined, codec)).resolves.toBe(true);
+      await expect(store.regenerateBlock('greeting', undefined)).resolves.toBe(true);
       expect(ai.run).toHaveBeenCalled();
     });
 
@@ -250,7 +250,7 @@ describe('CoverLetterAiStore', () => {
       await document.load(7);
       letter.setTone('Friendly');
       letter.updateField('earliestStart', 'ab sofort');
-      await store.regenerateBlock('greeting', undefined, codec);
+      await store.regenerateBlock('greeting', undefined);
 
       const hashed = db.hashText.mock.calls[0][0] as string;
       expect(hashed).toContain('Friendly');
@@ -261,7 +261,7 @@ describe('CoverLetterAiStore', () => {
     it('never saves', async () => {
       const { store, document, db } = createStore();
       await document.load(7);
-      await store.regenerateBlock('greeting', undefined, codec);
+      await store.regenerateBlock('greeting', undefined);
       expect(db.documentLibraryUpsert).not.toHaveBeenCalled();
     });
 
@@ -270,7 +270,7 @@ describe('CoverLetterAiStore', () => {
         getProfile: jest.fn().mockResolvedValue({ fullMd: '' }),
       });
       await document.load(7);
-      await expect(store.regenerateBlock('greeting', undefined, codec)).rejects.toBeInstanceOf(
+      await expect(store.regenerateBlock('greeting', undefined)).rejects.toBeInstanceOf(
         CoverLetterNoProfileError,
       );
       expect(ai.run).not.toHaveBeenCalled();
@@ -281,25 +281,23 @@ describe('CoverLetterAiStore', () => {
       const { store, document, ai } = createStore();
       await document.load(7);
       ai.run.mockRejectedValueOnce(new Error('model offline'));
-      await expect(store.regenerateBlock('greeting', undefined, codec)).rejects.toThrow(
-        'model offline',
-      );
+      await expect(store.regenerateBlock('greeting', undefined)).rejects.toThrow('model offline');
       expect(store.regeneratingBlock()).toBeNull();
     });
 
     it('refuses a second block while one is regenerating', async () => {
       const { store, document } = createStore();
       await document.load(7);
-      const first = store.regenerateBlock('greeting', undefined, codec);
-      await expect(store.regenerateBlock('closing', undefined, codec)).resolves.toBe(false);
+      const first = store.regenerateBlock('greeting', undefined);
+      await expect(store.regenerateBlock('closing', undefined)).resolves.toBe(false);
       await first;
     });
 
     it('refuses to start while a draft is running', async () => {
       const { store, document } = createStore();
       await document.load(7);
-      const first = store.draftWithAI(codec);
-      await expect(store.regenerateBlock('greeting', undefined, codec)).resolves.toBe(false);
+      const first = store.draftWithAI();
+      await expect(store.regenerateBlock('greeting', undefined)).resolves.toBe(false);
       await first;
     });
   });

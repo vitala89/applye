@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import type { Application, CvParsedContent, CvTemplate, Job } from '@applye/core';
+import type { Application, CvTemplate, Job } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { CvGenerateStore } from './cv-generate.store';
 
@@ -11,18 +11,11 @@ const TEMPLATES = [
 const APPS = [{ id: 3, jobId: 5 }] as Application[];
 const LABELS = { documentLabel: 'Engineer - Acme' };
 
-const PARSED = { personalDetails: {} } as unknown as CvParsedContent;
-
-const CODEC = {
-  parse: jest.fn(() => PARSED),
-  buildContent: jest.fn(() => ({ sections: [] })),
-  cleanScoring: jest.fn((text: string) => text),
-};
+/** What the `cv-generate-baseline` skill answers. The store reads it with the
+ * real `parseCvSkillResponse` and lays it out with the real `buildCvContent`. */
+const ANSWER = JSON.stringify({ personalDetails: { fullName: 'Anna Schmidt' } });
 
 function createStore(over: Record<string, jest.Mock> = {}) {
-  CODEC.parse.mockClear();
-  CODEC.buildContent.mockClear();
-  CODEC.cleanScoring.mockClear();
   const db = {
     getProfile: jest.fn().mockResolvedValue({
       fullMd: '# Anna',
@@ -42,7 +35,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   };
   const ai = {
     renderSkill: jest.fn().mockResolvedValue({ systemPrompt: 's', userPrompt: 'u' }),
-    run: jest.fn().mockResolvedValue({ text: '{}', tokensInput: 10, tokensOutput: 20 }),
+    run: jest.fn().mockResolvedValue({ text: ANSWER, tokensInput: 10, tokensOutput: 20 }),
     ...over,
   };
   TestBed.resetTestingModule();
@@ -108,7 +101,7 @@ describe('CvGenerateStore', () => {
       const { store, ai } = createStore();
       store.archetypeTag.set('backend');
 
-      await store.generate(JOBS, TEMPLATES, LABELS, CODEC);
+      await store.generate(JOBS, TEMPLATES, LABELS);
 
       expect(ai.renderSkill).toHaveBeenCalledWith(
         'cv-generate-baseline',
@@ -124,9 +117,8 @@ describe('CvGenerateStore', () => {
       const { store, ai } = createStore();
       store.selectedJobId.set(5);
 
-      await store.generate(JOBS, TEMPLATES, LABELS, CODEC);
+      await store.generate(JOBS, TEMPLATES, LABELS);
 
-      expect(CODEC.cleanScoring).toHaveBeenCalledWith('{"fit":8}');
       const args = ai.renderSkill.mock.calls[0][1] as { scoring_json: string };
       expect(JSON.parse(args.scoring_json)).toEqual({
         targetJobTitle: 'Engineer',
@@ -138,11 +130,18 @@ describe('CvGenerateStore', () => {
 
     /** A profile that never scored is not a reason to refuse a CV. */
     it('sends an empty scoring object when the stored scoring is unreadable', async () => {
-      const { store, ai } = createStore();
+      const { store, ai } = createStore({
+        getProfile: jest.fn().mockResolvedValue({
+          fullMd: '# Anna',
+          // Not repairable into JSON by `cleanJsonText`, which is the real
+          // reader now: no closing brace for it to bound the object with.
+          scoringJson: '{not json',
+          targetArchetypes: '["backend"]',
+        }),
+      });
       store.selectedJobId.set(5);
-      CODEC.cleanScoring.mockReturnValueOnce('{not json');
 
-      await store.generate(JOBS, TEMPLATES, LABELS, CODEC);
+      await store.generate(JOBS, TEMPLATES, LABELS);
 
       const args = ai.renderSkill.mock.calls[0][1] as { scoring_json: string };
       expect(JSON.parse(args.scoring_json).originalScoring).toEqual({});
@@ -152,7 +151,7 @@ describe('CvGenerateStore', () => {
       const { store, ai } = createStore();
       store.archetypeTag.set('');
 
-      await store.generate(JOBS, TEMPLATES, LABELS, CODEC);
+      await store.generate(JOBS, TEMPLATES, LABELS);
 
       expect(ai.renderSkill).toHaveBeenCalledWith(
         'cv-generate-baseline',
@@ -173,19 +172,20 @@ describe('CvGenerateStore', () => {
     it('reports no-profile without calling the model, and says nothing', async () => {
       const { store, ai } = createStore({ getProfile: jest.fn().mockResolvedValue(null) });
 
-      expect(await store.generate(JOBS, TEMPLATES, LABELS, CODEC)).toBe('no-profile');
+      expect(await store.generate(JOBS, TEMPLATES, LABELS)).toBe('no-profile');
       expect(ai.run).not.toHaveBeenCalled();
       expect(store.error()).toBe('');
     });
 
     it('reports bad-json and leaves the modal open', async () => {
-      CODEC.parse.mockImplementationOnce(() => {
-        throw new Error('AI returned invalid JSON');
+      const { store, db } = createStore({
+        run: jest
+          .fn()
+          .mockResolvedValue({ text: 'I cannot write that CV', tokensInput: 1, tokensOutput: 1 }),
       });
-      const { store, db } = createStore();
       store.open.set(true);
 
-      expect(await store.generate(JOBS, TEMPLATES, LABELS, CODEC)).toBe('bad-json');
+      expect(await store.generate(JOBS, TEMPLATES, LABELS)).toBe('bad-json');
 
       expect(store.error()).toContain('invalid JSON');
       expect(store.open()).toBe(true);
@@ -198,9 +198,13 @@ describe('CvGenerateStore', () => {
       store.templateId.set(7);
       store.archetypeTag.set('backend');
 
-      expect(await store.generate(JOBS, TEMPLATES, LABELS, CODEC)).toBe('generated');
+      expect(await store.generate(JOBS, TEMPLATES, LABELS)).toBe('generated');
 
-      expect(CODEC.buildContent).toHaveBeenCalledWith(PARSED, TEMPLATES[0]);
+      // The row carries the laid-out content, not the model's raw answer: what
+      // is asserted is that the real parse and the real layout both ran.
+      const written = JSON.parse(db.documentLibraryUpsert.mock.calls[0][0].contentJson);
+      const personal = written.sections.find((s: { key: string }) => s.key === 'personal_details');
+      expect(personal.fullName).toBe('Anna Schmidt');
       expect(db.documentLibraryUpsert).toHaveBeenCalledWith(
         expect.objectContaining({
           docType: 'cv',
@@ -224,7 +228,7 @@ describe('CvGenerateStore', () => {
       });
       store.open.set(true);
 
-      expect(await store.generate(JOBS, TEMPLATES, LABELS, CODEC)).toBe('failed');
+      expect(await store.generate(JOBS, TEMPLATES, LABELS)).toBe('failed');
       expect(store.error()).toContain('disk');
       expect(store.open()).toBe(true);
       expect(store.busy()).toBe(false);
@@ -235,7 +239,7 @@ describe('CvGenerateStore', () => {
       store.error.set('an older failure');
       store.busy.set(true);
 
-      expect(await store.generate(JOBS, TEMPLATES, LABELS, CODEC)).toBe('busy');
+      expect(await store.generate(JOBS, TEMPLATES, LABELS)).toBe('busy');
 
       expect(store.error()).toBe('');
       expect(ai.run).not.toHaveBeenCalled();
@@ -249,7 +253,7 @@ describe('CvGenerateStore', () => {
       const { store, db } = createStore();
       store.selectedJobId.set(5);
 
-      await store.generate(JOBS, TEMPLATES, LABELS, CODEC);
+      await store.generate(JOBS, TEMPLATES, LABELS);
 
       expect(db.upsertApplication).toHaveBeenCalledWith(
         expect.objectContaining({ id: 3, jobId: 5, cvDocumentId: 42 }),
@@ -259,7 +263,7 @@ describe('CvGenerateStore', () => {
     it('links nothing for a general CV', async () => {
       const { store, db } = createStore();
 
-      await store.generate(JOBS, TEMPLATES, LABELS, CODEC);
+      await store.generate(JOBS, TEMPLATES, LABELS);
 
       expect(db.listApplications).not.toHaveBeenCalled();
       expect(db.upsertApplication).not.toHaveBeenCalled();
@@ -269,7 +273,7 @@ describe('CvGenerateStore', () => {
       const { store, db } = createStore({ listApplications: jest.fn().mockResolvedValue([]) });
       store.selectedJobId.set(5);
 
-      expect(await store.generate(JOBS, TEMPLATES, LABELS, CODEC)).toBe('generated');
+      expect(await store.generate(JOBS, TEMPLATES, LABELS)).toBe('generated');
       expect(db.upsertApplication).not.toHaveBeenCalled();
     });
   });

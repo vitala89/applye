@@ -14,8 +14,6 @@ import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { DocumentRowActionsComponent } from '../document-row-actions/document-row-actions.component';
 
-import { buildCvContent, cleanJsonText, parseCvSkillResponse } from '@applye/core';
-
 const REGION_TAGS = ['de', 'us', 'uk', 'generic'];
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -47,17 +45,6 @@ export class CvListComponent {
 
   protected readonly regionTags = REGION_TAGS;
   protected readonly languages = LANGUAGES;
-
-  /**
-   * Reading a skill's answer and laying it out against a template live here in
-   * the app (`cv-parse.util.ts`, `cv-content.util.ts`), so they are handed to
-   * the stores rather than imported by them (ADR-0005, amendment six).
-   */
-  private readonly codec = {
-    parse: parseCvSkillResponse,
-    buildContent: buildCvContent,
-    cleanScoring: cleanJsonText,
-  };
 
   constructor() {
     void this.load();
@@ -129,13 +116,9 @@ export class CvListComponent {
     });
     if (!path || Array.isArray(path)) return;
 
-    const outcome = await this.imp.parseFile(
-      path,
-      this.list.cvs(),
-      this.list.templates(),
-      { untitled: this.t()('documents.cv_untitled') },
-      this.codec,
-    );
+    const outcome = await this.imp.parseFile(path, this.list.cvs(), this.list.templates(), {
+      untitled: this.t()('documents.cv_untitled'),
+    });
     switch (outcome) {
       case 'busy':
       case 'parsed':
@@ -151,7 +134,7 @@ export class CvListComponent {
   }
 
   async confirmImport(): Promise<void> {
-    const outcome = await this.imp.save(this.list.templates(), this.codec);
+    const outcome = await this.imp.save(this.list.templates());
     if (outcome === 'busy') return;
     if (outcome === 'failed') {
       this.toast.error(this.imp.error());
@@ -174,12 +157,9 @@ export class CvListComponent {
       ? `${job.title ?? untitled} - ${job.company ?? 'Job'}`
       : `${this.gen.archetypeTag() || untitled} - ${this.gen.regionTag().toUpperCase()}`;
 
-    const outcome = await this.gen.generate(
-      this.list.trackedJobs(),
-      this.list.templates(),
-      { documentLabel },
-      this.codec,
-    );
+    const outcome = await this.gen.generate(this.list.trackedJobs(), this.list.templates(), {
+      documentLabel,
+    });
     switch (outcome) {
       case 'busy':
         return;

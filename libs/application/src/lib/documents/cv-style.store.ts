@@ -25,13 +25,19 @@ import { STYLE_CHECK_DEBOUNCE_MS, dedupeStyleNotes } from './document-style-safe
  *
  * **It holds the style; it does not know how to edit one.** Every immutable
  * `CvStyle` transform - the per-section and per-element patches, and the
- * live-style panel's scope routing - lives in `apps/desktop`
- * (`cv-style.util.ts`, `cv-style-scope.util.ts`), because `type:application`
- * may not depend on the app and those helpers are shared with the cover-letter
- * editor and the panel component. The page composes a next style with them and
- * commits it through `applyStyle`; the store owns the signal, the theme
- * baseline and the debounced safety check. Page geometry stays on the page for
- * the same reason - clamping margins needs the app-local `resolvePageSettings`.
+ * live-style panel's scope routing - is a pure function in `libs/core`
+ * (`cv-style.util.ts`, `cv-style-scope.util.ts`), shared by this store's page,
+ * the cover-letter editor and the panel component. The page composes a next
+ * style with them and commits it through `applyStyle`; the store owns the
+ * signal, the theme baseline and the debounced safety check. Page geometry
+ * stays on the page for the same reason.
+ *
+ * The split is now a choice rather than a constraint. Until those helpers moved
+ * down in #418 this layer could not import them at all, and that is what the
+ * arrangement was originally justified by; the justification is gone but the
+ * shape is deliberate, because the panel and the cover-letter editor compose
+ * styles without going through this store at all. Folding the composition in
+ * here rewrites two files that are already over budget, and is its own change.
  * See ADR-0005, amendment five.
  */
 @Injectable()

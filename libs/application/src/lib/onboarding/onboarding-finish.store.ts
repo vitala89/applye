@@ -4,9 +4,6 @@ import {
   parseArchetypes,
   serializeArchetypes,
   serializeCompensation,
-  type CvContent,
-  type CvParsedContent,
-  type CvTemplate,
   type Profile,
 } from '@applye/core';
 import { DbService } from '@applye/data';
@@ -109,14 +106,10 @@ export class OnboardingFinishStore {
    * must never trap the user in onboarding or lose the profile - the Documents
    * import stays available either way, and the caller decides whether to say so.
    *
-   * `fallbackLabel` arrives translated and `buildContent` is `buildCvContent`,
-   * both for the same reason: this layer has neither a `TranslateService` nor
-   * access to `cv-content.util.ts`.
+   * `fallbackLabel` arrives translated because this layer has no
+   * `TranslateService`.
    */
-  async saveCvDocument(args: {
-    fallbackLabel: string;
-    buildContent(parsed: CvParsedContent, template: CvTemplate | null): CvContent;
-  }): Promise<OnboardingCvSaveOutcome> {
+  async saveCvDocument(args: { fallbackLabel: string }): Promise<OnboardingCvSaveOutcome> {
     const parsed = this.review.parsedCv();
     if (!parsed || this.resume.path() === 'skip') return 'skipped';
     try {
@@ -135,7 +128,6 @@ export class OnboardingFinishStore {
           language: settings.defaultDocLanguage ?? 'en',
           fallbackLabel: args.fallbackLabel,
           inputHash,
-          buildContent: args.buildContent,
         }),
       );
       return 'saved';

@@ -3,17 +3,16 @@ import { join } from 'node:path';
 import type { CvContent, CvParsedContent, CvTemplate } from '@applye/core';
 import { buildOnboardingCvInput, regionTagForUiLanguage } from '@applye/application';
 
-import { buildCvContent } from '@applye/core';
-
 /**
- * The half of `onboarding-content.util`'s coverage that cannot follow it into
- * `libs/application`.
+ * Coverage for `onboarding-content.util`, which lives in `libs/application`.
  *
- * `buildOnboardingCvInput` is pure and lives below now, but it lays the CV out
- * through `buildCvContent`, which stays in `apps/desktop` (630 lines, 40 files
- * touching it - see `cv-codec.ts`). Passing a stub in from the library spec
- * would leave every `contentJson` assertion here proving nothing, so these
- * tests stayed where the real layout function is importable, unchanged.
+ * These tests sit here for historical reasons: `buildCvContent` used to live in
+ * `apps/desktop`, so a spec next to the function could only have asserted
+ * against a stub, and every `contentJson` assertion would have proved nothing.
+ * That is no longer true - the layout function is in `libs/core` and importable
+ * from anywhere. The tests are unchanged and still real; only their address is
+ * now arbitrary, and moving them belongs with the rest of the file moves rather
+ * than here (ADR-0005, level two, item three).
  */
 function template(id: number, regionTag: string): CvTemplate {
   return {
@@ -65,7 +64,6 @@ describe('buildOnboardingCvInput', () => {
     regionTag: 'de',
     language: 'de' as const,
     fallbackLabel: 'Untitled CV',
-    buildContent: buildCvContent,
   };
 
   it('writes an uploaded CV document carrying the region template and hash', () => {

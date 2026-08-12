@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import type { CvContent, CvParsedContent, CvSectionKey, Settings } from '@applye/core';
+import type { CvSectionKey, Settings } from '@applye/core';
+import { mergeRegeneratedSection, parseCvSkillResponse } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import {
@@ -9,22 +10,6 @@ import {
   regenerationHashInput,
   resolveDocLanguage,
 } from './cv-regeneration';
-
-/**
- * The two app-local functions this store needs mid-call: reading the model's
- * answer, and folding a regenerated section back into the content. Both live in
- * `apps/desktop`, which `type:application` may not import, so they are passed in
- * (ADR-0005, amendment six).
- */
-export interface CvRegenerationCodec {
-  parse(text: string): CvParsedContent;
-  mergeSection(
-    content: CvContent,
-    key: CvSectionKey,
-    parsed: CvParsedContent,
-    sourceHash: string,
-  ): CvContent;
-}
 
 /** The skill both paths render, and the token ceiling both ask for. */
 const CV_SKILL = 'cv-generate-baseline';
@@ -87,7 +72,7 @@ export class CvRegenerationStore {
    * document, or the section's `sourceHash` already matches what this profile
    * and these settings would produce.
    */
-  async regenerateSection(key: CvSectionKey, codec: CvRegenerationCodec): Promise<boolean> {
+  async regenerateSection(key: CvSectionKey): Promise<boolean> {
     const doc = this.document.doc();
     if (this.regeneratingKey() || !doc) return false;
     this.regeneratingKey.set(key);
@@ -113,10 +98,10 @@ export class CvRegenerationStore {
         archetypeTag,
         language,
       });
-      const updated = codec.mergeSection(
+      const updated = mergeRegeneratedSection(
         { sections: this.document.sections() },
         key,
-        codec.parse(text),
+        parseCvSkillResponse(text),
         sourceHash,
       );
       this.document.setSections(updated.sections);
@@ -131,7 +116,7 @@ export class CvRegenerationStore {
    * without calling the model when a pull is already running or the document
    * has no personal-details section.
    */
-  async pullFromProfile(codec: CvRegenerationCodec): Promise<boolean> {
+  async pullFromProfile(): Promise<boolean> {
     const personal = this.document
       .sections()
       .find((s): s is PersonalDetailsSection => s.key === 'personal_details');
@@ -154,7 +139,7 @@ export class CvRegenerationStore {
         },
       );
       this.document.replaceSection(
-        mergePersonalDetails(personal, codec.parse(text).personalDetails),
+        mergePersonalDetails(personal, parseCvSkillResponse(text).personalDetails),
       );
       return true;
     } finally {

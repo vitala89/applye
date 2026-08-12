@@ -24,14 +24,15 @@ const PARSED = {
   lowConfidenceNotes: [],
 } as unknown as CvParsedContent;
 
-const CODEC = {
-  parse: jest.fn(() => PARSED),
-  buildContent: jest.fn(() => ({ sections: [] })),
-};
+/** What the `cv-import` skill answers. The store reads it with the real
+ * `parseCvSkillResponse`, so the tests hand it text a model could actually
+ * return rather than a stand-in that agrees with them by construction. */
+const ANSWER = JSON.stringify({ personalDetails: { fullName: 'Anna Schmidt' } });
+
+/** An answer the model could return for a CV with no name on it. */
+const NAMELESS_ANSWER = JSON.stringify({ personalDetails: {}, summary: 'Engineer' });
 
 function createStore(over: Record<string, jest.Mock> = {}) {
-  CODEC.parse.mockClear();
-  CODEC.buildContent.mockClear();
   const db = {
     cvImportReadFile: jest.fn().mockResolvedValue({ text: 'CV text', inputHash: 'fresh-hash' }),
     getSettings: jest.fn().mockResolvedValue({
@@ -46,7 +47,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   };
   const ai = {
     renderSkill: jest.fn().mockResolvedValue({ systemPrompt: 's', userPrompt: 'u' }),
-    run: jest.fn().mockResolvedValue({ text: '{}' }),
+    run: jest.fn().mockResolvedValue({ text: ANSWER }),
     ...over,
   };
   TestBed.resetTestingModule();
@@ -85,7 +86,7 @@ describe('CvImportStore', () => {
     it('parses into the preview step and adopts the configured defaults', async () => {
       const { store, ai } = createStore();
 
-      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS, CODEC)).toBe('parsed');
+      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS)).toBe('parsed');
 
       expect(ai.renderSkill).toHaveBeenCalledWith(
         'cv-import',
@@ -100,13 +101,11 @@ describe('CvImportStore', () => {
     });
 
     it('falls back to the page label when the CV carries no name', async () => {
-      CODEC.parse.mockReturnValueOnce({
-        ...PARSED,
-        personalDetails: {},
-      } as unknown as CvParsedContent);
-      const { store } = createStore();
+      const { store } = createStore({
+        run: jest.fn().mockResolvedValue({ text: NAMELESS_ANSWER }),
+      });
 
-      await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS, CODEC);
+      await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS);
 
       expect(store.label()).toBe('Untitled CV');
     });
@@ -119,7 +118,7 @@ describe('CvImportStore', () => {
       });
       store.open.set(true);
 
-      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS, CODEC)).toBe('existing');
+      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS)).toBe('existing');
 
       expect(ai.run).not.toHaveBeenCalled();
       expect(store.existingId()).toBe(1);
@@ -134,18 +133,20 @@ describe('CvImportStore', () => {
         cvImportReadFile: jest.fn().mockResolvedValue({ text: 'x', inputHash: 'generated-hash' }),
       });
 
-      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS, CODEC)).toBe('parsed');
+      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS)).toBe('parsed');
       expect(ai.run).toHaveBeenCalled();
     });
 
     it('reports an unreadable answer as a failure', async () => {
-      CODEC.parse.mockImplementationOnce(() => {
-        throw new Error('not JSON');
+      const { store } = createStore({
+        run: jest.fn().mockResolvedValue({ text: 'I could not read that CV' }),
       });
-      const { store } = createStore();
 
-      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS, CODEC)).toBe('failed');
-      expect(store.error()).toContain('not JSON');
+      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS)).toBe('failed');
+      // The real parser puts the model's own words in the message, which is what
+      // makes the failure actionable rather than "something went wrong".
+      expect(store.error()).toContain('invalid JSON');
+      expect(store.error()).toContain('I could not read that CV');
       expect(store.busy()).toBe(false);
     });
 
@@ -154,7 +155,7 @@ describe('CvImportStore', () => {
       store.error.set('an older failure');
       store.busy.set(true);
 
-      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS, CODEC)).toBe('busy');
+      expect(await store.parseFile('/tmp/cv.pdf', CVS, TEMPLATES, LABELS)).toBe('busy');
 
       expect(store.error()).toBe('');
       expect(db.cvImportReadFile).not.toHaveBeenCalled();
@@ -170,9 +171,13 @@ describe('CvImportStore', () => {
       store.regionTag.set('us');
       store.templateId.set(7);
 
-      expect(await store.save(TEMPLATES, CODEC)).toBe('saved');
+      expect(await store.save(TEMPLATES)).toBe('saved');
 
-      expect(CODEC.buildContent).toHaveBeenCalledWith(PARSED, TEMPLATES[0]);
+      // The row carries the laid-out content, not the parsed answer: what is
+      // asserted is that the real `buildCvContent` ran over what was previewed.
+      const written = JSON.parse(db.documentLibraryUpsert.mock.calls[0][0].contentJson);
+      const personal = written.sections.find((s: { key: string }) => s.key === 'personal_details');
+      expect(personal.fullName).toBe('Anna Schmidt');
       expect(db.documentLibraryUpsert).toHaveBeenCalledWith(
         expect.objectContaining({
           docType: 'cv',
@@ -190,7 +195,7 @@ describe('CvImportStore', () => {
       const { store, db } = createStore();
       store.error.set('an older failure');
 
-      expect(await store.save(TEMPLATES, CODEC)).toBe('busy');
+      expect(await store.save(TEMPLATES)).toBe('busy');
 
       expect(store.error()).toBe('');
       expect(db.documentLibraryUpsert).not.toHaveBeenCalled();
@@ -203,7 +208,7 @@ describe('CvImportStore', () => {
       store.parsed.set(PARSED);
       store.step.set('preview');
 
-      expect(await store.save(TEMPLATES, CODEC)).toBe('failed');
+      expect(await store.save(TEMPLATES)).toBe('failed');
       expect(store.error()).toContain('disk');
       expect(store.step()).toBe('preview');
       expect(store.busy()).toBe(false);

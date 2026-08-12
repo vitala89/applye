@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import type { CvContent, CvSection, DocumentLibraryItem } from '@applye/core';
+import type { CvSection, DocumentLibraryItem } from '@applye/core';
 import { DbService } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import { CvPhotoStore } from './cv-photo.store';
@@ -23,9 +23,6 @@ function row(over: Partial<DocumentLibraryItem> = {}): DocumentLibraryItem {
     ...over,
   } as DocumentLibraryItem;
 }
-
-/** The store takes the normalizer as an argument because it lives in the app. */
-const passthrough = (c: CvContent): CvContent => c;
 
 class DbStub {
   documentLibraryGet = jest.fn().mockResolvedValue(row());
@@ -58,57 +55,82 @@ describe('CvDocumentStore', () => {
 
   describe('load', () => {
     it('fills the row, sorts sections by order, and hydrates the other two stores', async () => {
-      await store.load(7, passthrough);
+      await store.load(7);
       expect(store.loading()).toBe(false);
       expect(store.loadError()).toBe(false);
       expect(store.label()).toBe('CV for Berlin');
       expect(store.regionTag()).toBe('de');
-      expect(store.sections().map((s) => s.key)).toEqual(['summary', 'experience']);
+      // `personal_details` leads because `normalizeCvContent` inserts it at
+      // order 0 when the stored row has none, which every real load already did.
+      expect(store.sections().map((s) => s.key)).toEqual([
+        'personal_details',
+        'summary',
+        'experience',
+      ]);
       expect(TestBed.inject(CvStyleStore).themeId()).toBe(2);
       expect(db.documentLibraryGet).toHaveBeenCalledWith(7);
     });
 
     it('defaults label and region when the row omits them', async () => {
       db.documentLibraryGet.mockResolvedValue(row({ label: undefined, regionTag: undefined }));
-      await store.load(7, passthrough);
+      await store.load(7);
       expect(store.label()).toBe('');
       expect(store.regionTag()).toBe('generic');
     });
 
-    it('starts from an empty section list when the row has no content', async () => {
+    /** A row with no content is not a failure - it opens as a blank CV with the
+     * one section every CV has, which is what the editor needs to render at
+     * all. */
+    it('opens a contentless row on a single empty personal-details section', async () => {
       db.documentLibraryGet.mockResolvedValue(row({ contentJson: undefined }));
-      await store.load(7, passthrough);
-      expect(store.sections()).toEqual([]);
+      await store.load(7);
+      expect(store.sections().map((s) => s.key)).toEqual(['personal_details']);
       expect(store.loadError()).toBe(false);
     });
 
     it('reports a missing document without throwing', async () => {
       db.documentLibraryGet.mockResolvedValue(null);
-      await store.load(7, passthrough);
+      await store.load(7);
       expect(store.loadError()).toBe(true);
       expect(store.loading()).toBe(false);
     });
 
     it('reports a gateway failure as a load error rather than rejecting', async () => {
       db.documentLibraryGet.mockRejectedValue(new Error('offline'));
-      await expect(store.load(7, passthrough)).resolves.toBeUndefined();
+      await expect(store.load(7)).resolves.toBeUndefined();
       expect(store.loadError()).toBe(true);
       expect(store.loading()).toBe(false);
     });
 
-    it('runs the caller-supplied normalizer over the parsed content', async () => {
-      const normalize = jest.fn((c: CvContent) => ({
-        sections: [...c.sections, sec('skills', 2)],
-      }));
-      await store.load(7, normalize);
-      expect(normalize).toHaveBeenCalledTimes(1);
-      expect(store.sections().map((s) => s.key)).toEqual(['summary', 'experience', 'skills']);
+    /**
+     * A CV saved before skills gained groups holds `items: string[]`. The
+     * editor binds to groups, so an unmigrated row would present the user with
+     * an empty skills section and silently drop their skills on the next save -
+     * which is what `normalizeCvContent` is run on every load to prevent.
+     */
+    it('migrates a legacy skills section into a group on load', async () => {
+      db.documentLibraryGet.mockResolvedValue(
+        row({
+          contentJson: JSON.stringify({
+            sections: [
+              sec('personal_details', 0),
+              { key: 'skills', order: 1, visible: true, items: ['TypeScript', 'Rust'] },
+            ],
+          }),
+        }),
+      );
+      await store.load(7);
+      const skills = store.sections().find((s) => s.key === 'skills') as Extract<
+        CvSection,
+        { key: 'skills' }
+      >;
+      expect(skills.groups).toEqual([{ label: 'Skills', values: ['TypeScript', 'Rust'] }]);
     });
   });
 
   describe('save', () => {
     beforeEach(async () => {
-      await store.load(7, passthrough);
+      await store.load(7);
     });
 
     it('writes the row once and keeps the saved document', async () => {
@@ -181,7 +203,7 @@ describe('CvDocumentStore', () => {
 
   describe('section editing', () => {
     beforeEach(async () => {
-      await store.load(7, passthrough);
+      await store.load(7);
     });
 
     it('reorder, moveSection and replaceSection all write the sections signal', () => {
@@ -206,7 +228,7 @@ describe('CvDocumentStore', () => {
 
   describe('save template', () => {
     beforeEach(async () => {
-      await store.load(7, passthrough);
+      await store.load(7);
     });
 
     it('opens with a cleared name and closes without writing', async () => {

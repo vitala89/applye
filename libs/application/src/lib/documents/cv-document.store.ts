@@ -6,16 +6,12 @@ import type {
   CvTemplate,
   DocumentLibraryItem,
 } from '@applye/core';
+import { normalizeCvContent } from '@applye/core';
 import { DbService } from '@applye/data';
 import { CvPhotoStore } from './cv-photo.store';
 import { CvStyleStore } from './cv-style.store';
 import { buildCvUpsert, cvSiblingsToUndefault } from './cv-document-record';
 import { moveCvSection, reorderCvSections, replaceCvSection } from './cv-section-order';
-
-/** Normalizes a raw `CvContent` into an order-sorted section list. Injected by
- * the page rather than imported, because `normalizeCvContent` lives in
- * `apps/desktop` and this library may not depend on the app. */
-export type CvContentNormalizer = (content: CvContent) => CvContent;
 
 /**
  * The CV row itself: what was loaded, what the editor has changed, and the one
@@ -58,7 +54,7 @@ export class CvDocumentStore {
    * photo and style stores. Never rejects: a failure sets `loadError`, because
    * the page renders an error state rather than catching.
    */
-  async load(id: number, normalize: CvContentNormalizer): Promise<void> {
+  async load(id: number): Promise<void> {
     this.loading.set(true);
     this.loadError.set(false);
     try {
@@ -80,7 +76,7 @@ export class CvDocumentStore {
       this.isDefault.set(item.isDefault);
 
       const raw: CvContent = item.contentJson ? JSON.parse(item.contentJson) : { sections: [] };
-      const ordered = [...normalize(raw).sections].sort((a, b) => a.order - b.order);
+      const ordered = [...normalizeCvContent(raw).sections].sort((a, b) => a.order - b.order);
       this.sections.set(ordered);
       this.photo.hydrate(ordered);
       await this.style.hydrate(item.themeId, item.styleJson);

@@ -5,8 +5,8 @@ import type {
   DocumentLibraryItem,
   SupportedLanguage,
 } from '@applye/core';
+import { buildCvContent, parseCvSkillResponse } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
-import type { CvCodec } from './cv-codec';
 
 /**
  * What reading the picked file produced. Each is a different thing on screen,
@@ -89,7 +89,6 @@ export class CvImportStore {
     cvs: readonly DocumentLibraryItem[],
     templates: readonly CvTemplate[],
     labels: CvImportLabels,
-    codec: CvCodec,
   ): Promise<CvImportOutcome> {
     this.error.set('');
     if (this.busy()) return 'busy';
@@ -120,7 +119,7 @@ export class CvImportStore {
         maxTokens: 8192,
       });
 
-      const parsed = codec.parse(res.text);
+      const parsed = parseCvSkillResponse(res.text);
       this.parsed.set(parsed);
       this.inputHash.set(file.inputHash);
       this.label.set(parsed.personalDetails.fullName ?? labels.untitled);
@@ -138,14 +137,14 @@ export class CvImportStore {
 
   /** Writes the previewed CV to the library. `busy` also covers "nothing was
    * parsed", because there is no preview to confirm without one. */
-  async save(templates: readonly CvTemplate[], codec: CvCodec): Promise<CvImportSaveOutcome> {
+  async save(templates: readonly CvTemplate[]): Promise<CvImportSaveOutcome> {
     this.error.set('');
     const parsed = this.parsed();
     if (!parsed || this.busy()) return 'busy';
     this.busy.set(true);
     try {
       const template = templates.find((tpl) => tpl.id === this.templateId()) ?? null;
-      const content = codec.buildContent(parsed, template);
+      const content = buildCvContent(parsed, template);
       await this.db.documentLibraryUpsert({
         docType: 'cv',
         source: 'uploaded',

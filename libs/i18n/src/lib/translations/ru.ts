@@ -299,6 +299,7 @@ export const ru: TranslationMap = stub(en, {
     loc_lowdata: 'Откликов с локацией пока слишком мало для сравнения.',
   },
   tracker: {
+    report_columns_unreadable: 'Не удалось прочитать колонки отчёта - ни одна не показана.',
     title: 'Трекер откликов',
     subtitle: 'Ваши задокументированные усилия по поиску работы. 0 токенов, с экспортом.',
     col_n: '№',
@@ -673,6 +674,15 @@ export const ru: TranslationMap = stub(en, {
     not_stated: 'Зарплата не указана',
   },
   jobs: {
+    load_partial_failed: 'Часть данных этой вакансии не загрузилась - оценку можно пересчитать.',
+    gap_analysis_unavailable: 'Анализ пробелов недоступен - документ создаётся без него.',
+    tailor_base_cv_missing:
+      'Базовое резюме {n} больше недоступно, поэтому был адаптирован профиль.',
+    tailor_base_cv_unreadable:
+      'Не удалось прочитать базовое резюме {n}, поэтому был адаптирован профиль.',
+    ats_check_unavailable: 'Проверка ATS недоступна - показана только рекомендательная оценка.',
+    detail_context_load_failed: 'Не удалось загрузить профиль и настройки.',
+    detail_load_failed: 'Эту вакансию не удалось загрузить полностью.',
     paste_title: 'Вставьте описание вакансии',
     paste_placeholder: 'Вставьте сюда полное описание вакансии…',
     parse_btn: 'Разобрать и отфильтровать',
@@ -1112,6 +1122,8 @@ export const ru: TranslationMap = stub(en, {
     qa_import: 'Импорт резюме',
   },
   documents: {
+    commit_cv_failed: 'Не удалось перевести резюме из черновика.',
+    commit_cover_letter_failed: 'Не удалось перевести сопроводительное письмо из черновика.',
     title: 'Документы',
     coming_soon: 'Редактор сопроводительных писем - скоро',
     tab_cv: 'Резюме',
@@ -1416,6 +1428,7 @@ export const ru: TranslationMap = stub(en, {
     preview_page_of: 'Страница {i} из {n}',
   },
   interview: {
+    quickview_stage_read_failed: 'Не удалось прочитать этапы собеседования.',
     title: 'Подготовка к интервью',
     list_empty: 'Отслеживаемых интервью нет',
     list_empty_sub:

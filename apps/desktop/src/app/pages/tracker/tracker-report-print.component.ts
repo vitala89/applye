@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute } from '@angular/router';
 import { ReportColumn, ReportMarket, ReportMode, TrackerPrintStore } from '@applye/application';
 import { TrackerReportComponent } from './tracker-report.component';
+import { TranslateService } from '@applye/i18n';
 
 /**
  * Print-only report route (`print/tracker-report`), loaded by a HIDDEN Tauri
@@ -26,11 +27,14 @@ import { TrackerReportComponent } from './tracker-report.component';
       <!-- Printed into the PDF on purpose. This window is hidden, so there is no
            toast and no console to fall back on, and a report whose columns were
            dropped is otherwise indistinguishable from one the user configured
-           that way - a blank sheet they would only question much later. -->
-      @if (columnsError()) {
-        <p class="report-error">{{ columnsError() }}</p>
-      }
+           that way - a blank sheet they would only question much later.
+
+           Passed INTO the sheet rather than rendered here: styles.scss hides
+           body.printing-report * and re-shows only app-tracker-report and its
+           descendants, so a line rendered at this level shows in a browser and
+           is invisible in the exported PDF. It was written for the PDF. -->
       <app-tracker-report
+        [notice]="columnsError() ?? ''"
         [rows]="print.rows()"
         [columns]="columns()"
         [applicant]="applicant()"
@@ -52,17 +56,13 @@ import { TrackerReportComponent } from './tracker-report.component';
         display: block;
         background: #fff;
       }
-      .report-error {
-        margin: 0 0 8px;
-        color: #b42318;
-        font-size: 12px;
-      }
     `,
   ],
 })
 export class TrackerReportPrintComponent {
   private readonly route = inject(ActivatedRoute);
   protected readonly print = inject(TrackerPrintStore);
+  private readonly t = inject(TranslateService).t;
 
   readonly loaded = signal(false);
   readonly columns = signal<ReportColumn[]>([]);
@@ -91,7 +91,7 @@ export class TrackerReportPrintComponent {
       this.columns.set(JSON.parse(q.get('columns') ?? '[]') as ReportColumn[]);
     } catch (e) {
       this.columns.set([]);
-      this.columnsError.set(`Report columns could not be read - showing none. ${String(e)}`);
+      this.columnsError.set(`${this.t()('tracker.report_columns_unreadable')} ${String(e)}`);
     }
 
     await this.print.load(q.get('period') ?? 'all');

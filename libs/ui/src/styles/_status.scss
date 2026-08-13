@@ -1,0 +1,30 @@
+/**
+ * Text that reports a failure, as one global utility.
+ *
+ * Five stylesheets currently declare their own `.status--error`, all of them
+ * `color: var(--danger)`: the jobs page, the updated-score step, the profile
+ * shell and two profile components. This file does not claim that name.
+ * `_profile-shell.scss` records why - `status`, `status--error`, `muted`,
+ * `eyebrow` and three more are generic names already defined **with different
+ * values** across eight stylesheets, which is exactly why that partial nests
+ * itself under `.profile`. A global rule on a contested name hands every one of
+ * those pages a property they may never have set.
+ *
+ * `ui-error-text` cannot collide, so it can live in the global layer, which is
+ * the whole point: a component whose own stylesheet is over its size budget can
+ * still say that something failed. That is the case it was added for -
+ * `quick-view-modal.component.scss` is 537 lines against a budget of 400 and
+ * may not grow.
+ *
+ * Component styles beat this one on specificity (Angular's emulated
+ * encapsulation adds an attribute selector), so adopting it never overrides a
+ * page's own decision.
+ *
+ * Folding the five existing copies into this utility is a separate change, and
+ * deliberately not done here: it touches five files across two features to save
+ * ten lines, and it would ride along inside a change about something else.
+ */
+
+.ui-error-text {
+  color: var(--danger);
+}

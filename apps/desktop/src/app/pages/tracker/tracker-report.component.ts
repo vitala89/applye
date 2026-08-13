@@ -15,6 +15,9 @@ import { ReportColumn, ReportMarket, ReportMode, reportFit } from '@applye/appli
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="paper" [class.paper--print]="print()" [class.paper--landscape]="landscape()">
+      @if (notice()) {
+        <p class="paper__notice">{{ notice() }}</p>
+      }
       <div class="paper__head">
         <div>
           <div class="paper__title">{{ txt().title }}</div>
@@ -99,6 +102,18 @@ export class TrackerReportComponent {
   readonly rate = input<number>(0);
   readonly avg = input<number>(0);
   readonly print = input<boolean>(false);
+
+  /**
+   * A line printed at the top of the sheet when the report was built from
+   * something the caller could not fully read.
+   *
+   * It lives on the SHEET rather than on the print route around it, and that is
+   * the whole point. `styles.scss` hides `body.printing-report *` and re-shows
+   * only `app-tracker-report` and its descendants, so a notice rendered by the
+   * parent route is visible in a browser and invisible in the exported PDF -
+   * which is the one place it was written for. Found by opening the route.
+   */
+  readonly notice = input<string>('');
 
   private readonly fitResult = computed(() => reportFit(this.columns(), this.landscape()));
   readonly fitCols = computed(() => this.fitResult().fit);

@@ -298,6 +298,8 @@ export const es: TranslationMap = stub(en, {
     loc_lowdata: 'Todavía hay muy pocas candidaturas con ubicación para comparar.',
   },
   tracker: {
+    report_columns_unreadable:
+      'No se pudieron leer las columnas del informe - no se muestra ninguna.',
     title: 'Seguimiento de candidaturas',
     subtitle: 'Tus esfuerzos de búsqueda documentados. 0 tokens, exportable.',
     col_n: 'N.º',
@@ -673,6 +675,16 @@ export const es: TranslationMap = stub(en, {
     not_stated: 'Salario no indicado',
   },
   jobs: {
+    load_partial_failed: 'Parte de este empleo no se pudo cargar - puedes volver a puntuar.',
+    gap_analysis_unavailable: 'Análisis de carencias no disponible - se generará sin él.',
+    tailor_base_cv_missing:
+      'El CV base {n} ya no está disponible, así que se adaptó el perfil en su lugar.',
+    tailor_base_cv_unreadable:
+      'No se pudo leer el CV base {n}, así que se adaptó el perfil en su lugar.',
+    ats_check_unavailable:
+      'Comprobación ATS no disponible - solo se muestra el veredicto orientativo.',
+    detail_context_load_failed: 'No se pudieron cargar el perfil ni los ajustes.',
+    detail_load_failed: 'Este empleo no se pudo cargar por completo.',
     paste_title: 'Pega la descripción del puesto',
     paste_placeholder: 'Pega aquí la descripción completa del puesto…',
     parse_btn: 'Analizar y filtrar',
@@ -1116,6 +1128,8 @@ export const es: TranslationMap = stub(en, {
     qa_import: 'Importar CV',
   },
   documents: {
+    commit_cv_failed: 'El CV no se pudo confirmar desde el borrador.',
+    commit_cover_letter_failed: 'La carta de presentación no se pudo confirmar desde el borrador.',
     title: 'Documentos',
     coming_soon: 'Editor de cartas de presentación - próximamente',
     tab_cv: 'CV',
@@ -1420,6 +1434,7 @@ export const es: TranslationMap = stub(en, {
     preview_page_of: 'Página {i} de {n}',
   },
   interview: {
+    quickview_stage_read_failed: 'No se pudieron leer las fases de la entrevista.',
     title: 'Preparación de entrevistas',
     list_empty: 'No hay entrevistas en seguimiento',
     list_empty_sub:

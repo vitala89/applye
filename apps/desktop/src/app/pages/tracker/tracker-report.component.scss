@@ -32,6 +32,13 @@
   padding-bottom: 16px;
   margin-bottom: 22px;
 }
+/* Printed onto the sheet, so it uses the sheet's ink rather than a theme token:
+   this component renders on white paper in an export as well as on screen. */
+.paper__notice {
+  margin: 0 0 12px;
+  color: #b42318;
+  font-size: 12px;
+}
 .paper__title {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 19px;

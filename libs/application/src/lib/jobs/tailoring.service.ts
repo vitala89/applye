@@ -159,13 +159,17 @@ export class TailoringService {
     const { job, profile, settings } = ctx;
     if (!job?.id || (!profile?.fullMd && !ctx.baseCvId) || !settings) return;
 
-    // A chosen base CV that cannot be read still falls back to the profile, but
-    // the user is told which document the passes actually ran on - the result
-    // otherwise looks like a tailored version of a CV that was never opened.
-    // Guarded on the current value because `runPass` runs once per pass and the
-    // same warning would otherwise be raised three times for one run.
+    // Falls back to the profile but says so, or the result reads as a tailored
+    // version of a CV nobody opened. Guarded: `runPass` runs once per pass. Both
+    // keys are whole sentences - the six locales do not share word order.
     const baseline = baselineFor(ctx);
-    const warning = baseline.ok ? null : `${baseline.reason} - tailoring the profile instead.`;
+    const warning = baseline.ok
+      ? null
+      : this.t()(
+          baseline.reason === 'missing'
+            ? 'jobs.tailor_base_cv_missing'
+            : 'jobs.tailor_base_cv_unreadable',
+        ).replace('{n}', String(baseline.cvId));
     if (warning && this.baselineWarning() !== warning) {
       this.baselineWarning.set(warning);
       this.toast.warning(warning);

@@ -129,17 +129,16 @@
           } @else if (quick.stagesError()) {
             <!-- Before the "no stages yet" branch on purpose: an empty list is
                  what a failed read leaves behind, and that branch would state
-                 as fact something this panel never managed to look up. Carries
-                 the error text itself rather than a translated key, like the
-                 other operational failures on this screen.
+                 as fact something this panel never managed to look up.
 
-                 `qv__hint--error` is DELIBERATELY UNSTYLED: this stylesheet is
-                 537 lines against a budget of 400, so it may not grow until a
-                 section is extracted out of it. The message is legible in the
-                 hint's own colour; the danger tone is owed once the extraction
-                 happens. The class stays as the seam for that rule and for the
-                 test that asserts this branch. -->
-            <p class="qv__hint qv__hint--error">{{ quick.stagesError() }}</p>
+                 `ui-error-text` is the global utility from `libs/ui`, not a
+                 rule in this component's stylesheet: that file is 537 lines
+                 against a budget of 400 and may not grow. The sentence is
+                 translated; the reason after it comes from the database and
+                 cannot be. -->
+            <p class="qv__hint ui-error-text">
+              {{ t()('interview.quickview_stage_read_failed') }} {{ quick.stagesError() }}
+            </p>
             <button type="button" class="qv__link" (click)="viewAllStages()">
               {{ t()('interview.quickview_view_all') }} →
             </button>

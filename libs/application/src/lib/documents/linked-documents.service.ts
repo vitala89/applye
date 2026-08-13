@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application, DocumentLibraryItem, SupportedLanguage } from '@applye/core';
 import { DbService } from '@applye/data';
+import { TranslateService } from '@applye/i18n';
 import { ReviewDocumentKind } from './document-gen.service';
 
 export interface LinkResult {
@@ -24,6 +25,7 @@ export interface LinkResult {
 @Injectable()
 export class LinkedDocumentsService {
   private readonly db = inject(DbService);
+  private readonly t = inject(TranslateService).t;
 
   /** Writable so the page can alias them straight onto the template. */
   readonly cv = signal<DocumentLibraryItem | null>(null);
@@ -106,7 +108,9 @@ export class LinkedDocumentsService {
       // Still swallowed: keep the draft, retry on the next export / mark-applied.
       // Recorded rather than discarded, so a commit that keeps failing is
       // visible instead of being inferred from a draft that never changes.
-      this.commitError.set(`The ${kind} could not be committed out of draft. ${String(e)}`);
+      const key =
+        kind === 'cv' ? 'documents.commit_cv_failed' : 'documents.commit_cover_letter_failed';
+      this.commitError.set(`${this.t()(key)} ${String(e)}`);
     }
   }
 

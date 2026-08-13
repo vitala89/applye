@@ -163,10 +163,23 @@ pub async fn db_reset_all_data(db: State<'_, Db>) -> Result<(), String> {
     }
 
     // Reset AUTOINCREMENT counters so ids start fresh (cosmetic but expected of
-    // a factory reset). No-op if the table has no AUTOINCREMENT columns.
-    let _ = sqlx::query("DELETE FROM sqlite_sequence")
+    // a factory reset).
+    //
+    // SQLite creates `sqlite_sequence` only once some table declares
+    // AUTOINCREMENT, so "no such table" is the expected answer on a schema that
+    // has none and is the reason this was written as `let _ =`. That blanket
+    // discard also swallowed every other error - a locked or corrupt database
+    // included - inside a transaction that goes on to commit and report a
+    // successful reset. The expected case is now named, and nothing else is
+    // silent.
+    match sqlx::query("DELETE FROM sqlite_sequence")
         .execute(&mut *tx)
-        .await;
+        .await
+    {
+        Ok(_) => {}
+        Err(e) if e.to_string().contains("no such table") => {}
+        Err(e) => log::warn!("db_reset_all_data: resetting AUTOINCREMENT counters failed: {e}"),
+    }
 
     // Re-seed the single settings row (mirrors migration 0002 defaults).
     sqlx::query(

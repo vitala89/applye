@@ -4,6 +4,7 @@ import { AtsReport, ScoringCache, Settings } from '@applye/core';
 import { TailorScoreService } from './tailor-score.service';
 import { WizardActivityService } from './wizard-activity.service';
 import { FinalChecksService } from './final-checks.service';
+import { TranslateService } from '@applye/i18n';
 import {
   ScoreContext,
   ScoreRunResult,
@@ -44,6 +45,7 @@ export class JobScoringService {
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly finalChecks = inject(FinalChecksService);
+  private readonly t = inject(TranslateService).t;
 
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
@@ -259,7 +261,7 @@ export class JobScoringService {
     try {
       this.atsReport.set(await this.ats.check(cvMarkdown, jdText, region));
     } catch (e) {
-      this.atsError.set(`ATS check unavailable - showing the advisory verdict only. ${String(e)}`);
+      this.atsError.set(`${this.t()('jobs.ats_check_unavailable')} ${String(e)}`);
     }
   }
 }

@@ -300,6 +300,8 @@ export const fr: TranslationMap = stub(en, {
     loc_lowdata: 'Trop peu de candidatures localisées pour comparer.',
   },
   tracker: {
+    report_columns_unreadable:
+      "Les colonnes du rapport n'ont pas pu être lues - aucune n'est affichée.",
     title: 'Suivi des candidatures',
     subtitle: 'Vos démarches de recherche documentées. 0 jeton, exportable.',
     col_n: 'N°',
@@ -676,6 +678,16 @@ export const fr: TranslationMap = stub(en, {
     not_stated: 'Salaire non indiqué',
   },
   jobs: {
+    load_partial_failed:
+      "Une partie de cette offre n'a pas pu être chargée - vous pouvez relancer le score.",
+    gap_analysis_unavailable: 'Analyse des écarts indisponible - génération sans elle.',
+    tailor_base_cv_missing:
+      "Le CV de base {n} n'est plus disponible, le profil a donc été adapté à la place.",
+    tailor_base_cv_unreadable:
+      "Le CV de base {n} n'a pas pu être lu, le profil a donc été adapté à la place.",
+    ats_check_unavailable: 'Vérification ATS indisponible - seul le verdict indicatif est affiché.',
+    detail_context_load_failed: "Le profil et les paramètres n'ont pas pu être chargés.",
+    detail_load_failed: "Cette offre n'a pas pu être entièrement chargée.",
     paste_title: 'Collez la description du poste',
     paste_placeholder: 'Collez ici la description complète du poste…',
     parse_btn: 'Analyser et filtrer',
@@ -1120,6 +1132,9 @@ export const fr: TranslationMap = stub(en, {
     qa_import: 'Importer un CV',
   },
   documents: {
+    commit_cv_failed: "Le CV n'a pas pu être validé depuis le brouillon.",
+    commit_cover_letter_failed:
+      "La lettre de motivation n'a pas pu être validée depuis le brouillon.",
     title: 'Documents',
     coming_soon: 'Éditeur de lettres de motivation - bientôt disponible',
     tab_cv: 'CV',
@@ -1424,6 +1439,7 @@ export const fr: TranslationMap = stub(en, {
     preview_page_of: 'Page {i} sur {n}',
   },
   interview: {
+    quickview_stage_read_failed: "Les étapes d'entretien n'ont pas pu être lues.",
     title: 'Préparation aux entretiens',
     list_empty: 'Aucun entretien suivi',
     list_empty_sub:

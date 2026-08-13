@@ -121,7 +121,7 @@ describe('QuickViewModalComponent stage read failure', () => {
   it('says the read failed instead of claiming the interview has no stages', async () => {
     const fixture = await createFixture({ ...CARD, status: 'interview' }, [], FAILED);
 
-    const hint = fixture.nativeElement.querySelector('.qv__hint--error') as HTMLElement;
+    const hint = fixture.nativeElement.querySelector('.ui-error-text') as HTMLElement;
     expect(hint).toBeTruthy();
     expect(hint.textContent).toContain('db gone');
     expect(fixture.nativeElement.textContent).not.toContain('quickview_stage_none');
@@ -132,7 +132,7 @@ describe('QuickViewModalComponent stage read failure', () => {
     const toasts = TestBed.inject(ToastService).toasts();
 
     expect(toasts.some((t) => t.kind === 'error' && t.message.includes('db gone'))).toBe(true);
-    expect(fixture.nativeElement.querySelector('.qv__hint--error')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.ui-error-text')).toBeTruthy();
   });
 
   /** The control case: a read that came back empty really does mean 0 stages,
@@ -141,6 +141,6 @@ describe('QuickViewModalComponent stage read failure', () => {
     const fixture = await createFixture({ ...CARD, status: 'interview' }, []);
 
     expect(fixture.nativeElement.querySelector('app-stage-quick-add')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.qv__hint--error')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.ui-error-text')).toBeNull();
   });
 });

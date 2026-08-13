@@ -183,7 +183,10 @@ describe('TailoringService', () => {
     await s.run(ctx({ baseCvId: 4, matchingCvs: [{ id: 4, contentJson: '{not json' } as never] }));
 
     expect(ai.renderSkill.mock.calls[0][1].profile_md).toBe('baseline profile');
-    expect(s.baselineWarning()).toContain('tailoring the profile instead');
+    // The stub `t` echoes the key, so this pins WHICH sentence was chosen and
+    // that the CV id was interpolated into it - not the English wording, which
+    // now lives in the locale files.
+    expect(s.baselineWarning()).toContain('jobs.tailor_base_cv_unreadable');
     expect(toast.warning).toHaveBeenCalledTimes(1);
   });
 

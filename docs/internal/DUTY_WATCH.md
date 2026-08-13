@@ -44,6 +44,33 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-13, the second half of the audit, and a correction to the entry below
+
+- **Status:** complete. Every automated gate observed passing. **No rendered check** - the same gap the entry below carries, and it is now two watches old.
+- **Agent/tool:** Claude Code, Opus 5. No grilling - no public API changed shape in a way with two readings. No subagents.
+- **Branch:** `fix/silent-fallbacks-visible`, the same branch and the same pull request as the entry below, because it is unmerged and this is the other half of one audit.
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #442, updated rather than superseded
+- **Objective:** the next action the entry below set - `?? []`, `|| ''` and `?? null` defaults standing in for values that were never fetched, plus un-awaited promises.
+- **Correction to the entry below.** That entry's next action asserted this class "hides the same failure as the eight fixed here". **That premise was wrong**, and checking it was the first thing this watch did: `apps/desktop/src/app/app.config.ts:8` installs `provideBrowserGlobalErrorListeners()`, which routes `unhandledrejection` to `ToastErrorHandler`, so a floating rejection raises a toast and writes to the console rather than disappearing. The class is real but far smaller than it was written up as, and the write-up should not have claimed equivalence without checking for a backstop.
+- **Completed:**
+  - The `?? []` / `|| []` / `(await …) ||` sweep over `libs` and `apps`: **one hit, benign** (`q.get('period') ?? 'all'`, a query-argument default).
+  - Every `void`-called async in the repository traced to its target. All of the `void this.load()` constructor calls are clean: `CvDocumentStore` and `CoverLetterDocumentStore` set `loadError`, never reject, and both detail templates render it; the two print routes leave the window blank on purpose and let Rust time out; `cv-list` and `loadComments` already toast; `refreshKeyStored` catches; `my-jobs` reaches `JobsStore.loadOverview`, which sets `loadErrorState`.
+  - All 17 `try`/`finally`-without-`catch` blocks classified. Sixteen are contracts - each documented as propagating to an awaiting caller (`tracker-row-editor`, both tracker exports, `cv-regeneration`, `cover-letter-ai`, `job-identity-resolver`, the two draft services).
+  - **The one real finding fixed:** `QuickViewStore.refreshStages` had no `catch` and was called as `void` from an effect, so a failed read left `stages` empty - which the stepper draws as "no stages yet" - while the global listener raised an unrelated-looking toast. Now returns a boolean with a `stagesError` signal, matching `loadComments` in the same store, and both call sites in the modal toast with context.
+- **Not completed:**
+  - **Still no rendered check.** Now three user-visible changes across two watches unverified on a real screen: the score-card status line, the error line in the exported tracker PDF, and this stage-read toast.
+  - `describeOtherJob`'s `.catch(() => null)` was **considered and deliberately left**. The cross-job confirm hides the name behind `@if (crossJobLabel())` and its doc comment already reasons about a job it cannot name, so an unnamed confirm is the designed degrade. Naming it would need a new translated string in seven locales for a dialog that already works.
+  - `settings.rs:167`'s `let _ = DELETE FROM sqlite_sequence` still untouched, as in the entry below.
+- **Files or packages changed:** `libs/application/src/lib/pipeline/quick-view.store.ts` (+ its spec), `apps/desktop/src/app/pages/pipeline/quick-view-modal/quick-view-modal.component.ts`, `CHANGELOG.md`, this file.
+- **Validation:** `nx test application` 1495/1495 in 116 suites (from 1493). `nx test desktop` 969/969 in 105 suites, unchanged. `tsc --noEmit` clean for both projects. `npm run quality:file-size` passed with no file in the report. `npm run quality:attribution`, `npm run format:check`, `nx run-many -t lint -p application desktop` (the one warning is pre-existing and untouched), `git diff --check` all clean. Rust untouched this watch, so no `cargo` run is claimed.
+- **Privacy/security impact:** none. One error string reaches a toast that already existed for the sibling read.
+- **Decisions and assumptions:** the work went onto the **existing unmerged branch and pull request** rather than a new one, because it is the other half of the same audit and splitting it would ask for two reviews of one question. `describeOtherJob` left alone on the standard this audit already applied to the JSON parsers: a documented, designed degrade is not a lie.
+- **Risks or compatibility impact:** `refreshStages` changed from `Promise<void>` to `Promise<boolean>` and is exported through the `libs/application` barrel. Both call sites are in this repository and updated; the widened return is additive for any caller that ignores it.
+- **Open issues or blockers:** none blocking.
+- **Next first action:** open the pipeline quick-view on an application at `interview` in a running app and confirm the stepper and the toast now agree when the stage read fails - `npm run desktop:dev`, then force the failure by pointing `listInterviewStages` at a missing table. This closes the rendered check that two watches have now deferred, and it is the only one of the three visible changes that can be driven from the UI without an export.
+- **Evidence:** the `provideBrowserGlobalErrorListeners` correction was read out of `app.config.ts` in this session, not recalled. Gate output above was observed.
+
 ### 2026-08-13, eight silent fallbacks are made to say what they did
 
 - **Status:** complete. Every automated gate observed passing. **No rendered check** - see Not completed.

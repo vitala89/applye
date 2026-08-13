@@ -111,6 +111,39 @@ describe('QuickViewStore', () => {
       expect(store.stagesLoading()).toBe(false);
     });
 
+    /**
+     * The stepper renders an empty `stages` as "no stages yet". That is true of
+     * an application that has none and false of one whose read failed, and this
+     * used to be a `try`/`finally` with no `catch` called as
+     * `void refreshStages(...)` from an effect - so the rejection surfaced as a
+     * bare global toast while the stepper went on claiming there were no
+     * stages. Reports like `loadComments` does now.
+     */
+    it('reports a failed stage read instead of leaving the stepper empty and silent', async () => {
+      const { store } = createStore({
+        listInterviewStages: jest.fn().mockRejectedValue(new Error('db gone')),
+      });
+
+      expect(await store.refreshStages(7, 'interview')).toBe(false);
+      expect(store.stagesError()).toContain('db gone');
+      expect(store.error()).toContain('db gone');
+      expect(store.stagesLoading()).toBe(false);
+    });
+
+    it('clears a previous stage error on the next successful read', async () => {
+      const { store } = createStore({
+        listInterviewStages: jest
+          .fn()
+          .mockRejectedValueOnce(new Error('db gone'))
+          .mockResolvedValue([stage({ id: 1, stageOrder: 1 })]),
+      });
+      await store.refreshStages(7, 'interview');
+      expect(store.stagesError()).not.toBe('');
+
+      expect(await store.refreshStages(7, 'interview')).toBe(true);
+      expect(store.stagesError()).toBe('');
+    });
+
     it('records a stage the quick-add form just created', () => {
       const { store } = createStore();
       store.noteStageAdded(stage({ id: 9, stageOrder: 1 }));

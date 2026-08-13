@@ -43,6 +43,10 @@ export class QuickViewStore {
   /** The full ordered list, for the segmented stepper. */
   readonly stages = signal<InterviewStage[]>([]);
   readonly stagesLoading = signal(true);
+  /** What a failed stage read reported. The stepper renders an empty `stages`
+   * as "no stages yet", which is a true statement about an application that has
+   * none and a false one about an application whose read failed. */
+  readonly stagesError = signal('');
 
   /** What a failed write reported, for the page to show. Empty after a refusal,
    * which is how the page tells "it failed" from "it declined to start". */
@@ -67,19 +71,32 @@ export class QuickViewStore {
    * An application that is not at `interview` has no stage state to show, and
    * asking for it would be a read that can only return nothing - so the lists
    * are cleared without a call.
+   *
+   * Reports like `loadComments` above, and for the same reason. This used to be
+   * a `try`/`finally` with no `catch`, called as `void refreshStages(...)` from
+   * an effect: the rejection reached the global listener as a bare toast, but
+   * `stages` was left empty, so the stepper said the interview had no stages
+   * while the message said something else entirely. The two halves of the same
+   * failure disagreed on screen.
    */
-  async refreshStages(applicationId: number, status: ApplicationStatus): Promise<void> {
+  async refreshStages(applicationId: number, status: ApplicationStatus): Promise<boolean> {
+    this.stagesError.set('');
     if (status !== 'interview') {
       this.stageSummary.set(null);
       this.stages.set([]);
       this.stagesLoading.set(false);
-      return;
+      return true;
     }
     this.stagesLoading.set(true);
     try {
       const stages = await this.db.listInterviewStages(applicationId);
       this.stages.set(sortStages(stages));
       this.stageSummary.set(pickCurrentStage(stages));
+      return true;
+    } catch (e) {
+      this.stagesError.set(String(e));
+      this.error.set(String(e));
+      return false;
     } finally {
       this.stagesLoading.set(false);
     }

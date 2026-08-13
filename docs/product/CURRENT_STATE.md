@@ -42,6 +42,27 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`cv-preview.component.ts` 535 -> 413, and the planned order was backwards.** The session opened on
+  the previous entry's next action - split the 895/300 template, starting with `#headerTpl` - and
+  stopped before editing anything, because a **decision recorded on 2026-08-04** had already forbidden
+  exactly that: every atom template shares one selection-and-editing protocol, so a child component
+  would thread ~20 members through its input boundary against a campaign precedent of **eleven**.
+  Measured against today's file, `#headerTpl` needs **sixteen** - the decision still binds. **But it had
+  aged in a way that inverts the order.** When it was written the protocol was one class; #436 and #437
+  turned `edit` and `css` into component-provided injectables a child resolves for free through the
+  `ng-template`'s declaration injector, leaving one family behind. **So selection is the prerequisite
+  for the template split, not its reward**, and it moved into `CvPreviewSelectionService` (provided
+  beside the other two, `bind()`-ed to `selection`/`interactive`/`t`/emit). **The template is untouched
+  by design**: the moved methods have **317** call sites there, up from #438's count of 239, and
+  amendment sixty's ruling stands - so the class keeps one one-line delegator per method, each of which
+  dies with the atom block that calls it. `@HostListener` stayed (a service cannot carry one) but
+  delegates to `clearOnBackgroundClick`; edit-mode and focus stayed as a separate concern. **Sixteen
+  new tests mount nothing** - that the spec can exist is the claim, being the same freedom the child
+  components will need. Counts 266/3050 -> **267/3066**. **Next first action:** the header pilot as
+  originally scoped - a thin `ng-template` wrapper delegating to `cv-preview-header/`, the child
+  injecting all three services and threading about six inputs, with `:host { display: contents }`
+  against the host-element trap that has cost this campaign four regressions, verified against **both**
+  the measure pass and the visible page card. 23 files remain over budget; this one is 413/400.
 - **`cv-preview.component.ts` 597 -> 535, and the template is now the constraint on the class.**
   Shipped as **#438**. Selection re-measured largest (128 lines against the atom flattening's 96), but
   it has **239 template call sites**, and prefixing them - the mechanism both earlier cuts used - would

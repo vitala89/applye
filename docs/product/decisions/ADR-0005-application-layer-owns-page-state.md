@@ -3296,6 +3296,51 @@ and the fix is to compute what the number should be rather than to trust the imp
 Counts 265 -> **266 suites**, 3043 -> **3050 tests**, the seven new being the flattening's own. Over
 budget: still 23.
 
+## Amendment sixty-one: the order was backwards, and a decision from August said so first
+
+`cv-preview.component.ts` 535 -> **413**. The cut is `CvPreviewSelectionService`. What is worth
+recording is that the plan this session started with was wrong, and the repository had already
+written down why.
+
+**A recorded decision beat the fresh measurement.** The agreed next step was to split
+`cv-preview.component.html` into child components, starting with `#headerTpl`. A decision from
+2026-08-04 - "cv-preview.component.html must NOT be split by ng-template atoms" - had already ruled
+that out: every atom shares one selection-and-editing protocol, so a child component would thread
+about twenty members through its input boundary, against a campaign precedent of **eleven** (Profile
+AI Tools). Reading `#headerTpl` against today's file confirmed it still bound: sixteen members, after
+the editing and styling services had already absorbed eight. **The grilling round that set the plan
+did not surface the decision, and that is the process failure, not the measurement.**
+
+**But the decision had aged, in a way that inverted the order.** When it was written the protocol was
+one class. Amendments fifty-eight and fifty-nine pulled `edit` and `css` out as component-provided
+injectables, and a child resolves those for free through the `ng-template`'s declaration injector
+without threading anything. What was left was almost entirely one family: selection. **So selection
+is not the reward for splitting the template, it is the prerequisite** - the exact opposite of the
+order amendment sixty left behind.
+
+**Amendment sixty's wall was about the old template, not about the code.** That amendment stopped
+selection because 239 call sites would have taken a `sel.` prefix and eighteen bindings would have
+re-flowed past 100 columns. Today the count is **317**, and the conclusion is unchanged - so the
+component keeps a one-line delegator per moved method and the template is not touched at all. The
+delegators cost about fifty lines and are deliberately temporary: **each one dies with the atom block
+that calls it**, as the blocks become children that inject the service directly. `readSelectedHostStyle`
+set the precedent in amendment fifty-nine.
+
+**Two things could not move, for the same reason in opposite directions.** The `@HostListener` stays
+on the component, because a service cannot carry one - but the question it answers, whether a click
+landed on empty space, is selection's, so the listener is one line delegating to
+`clearOnBackgroundClick`. Edit-mode and focus (`editing`, `focusKey`, `selKey`, `finishLeafEdit`, the
+focus effect) stayed put: they are a distinct concern and moving them would have made this a second
+extraction wearing one commit.
+
+**Sixteen tests that mount nothing.** They construct the service with plain signals and assert the
+measure pass can never emit, that a redundant re-emit is suppressed while an `elementPath`-only change
+is not, that a key bubbling out of an inline editor is ignored, and both accessible-name shapes.
+**That the file can exist at all is the claim being tested** - it is the same freedom the atom child
+components will need.
+
+Counts 266 -> **267 suites**, 3050 -> **3066 tests**. Over budget: still 23, at 413/400.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

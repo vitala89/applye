@@ -10,6 +10,7 @@ import {
 } from '@applye/core';
 
 import { ToastService } from '../shell/toast.service';
+import { TranslateService } from '@applye/i18n';
 import type { GapAnalysis } from './gap-fill';
 
 export interface CvGapResult {
@@ -37,6 +38,7 @@ export interface CvGapResult {
 export class CvGapDialogService {
   private readonly ai = inject(AiService);
   private readonly toast = inject(ToastService);
+  private readonly t = inject(TranslateService).t;
 
   readonly analyzing = signal(false);
   readonly open = signal(false);
@@ -103,7 +105,7 @@ export class CvGapDialogService {
     } catch (e) {
       const error = String(e);
       this.analyzeError.set(error);
-      this.toast.warning(`Gap analysis unavailable - generating without it. ${error}`);
+      this.toast.warning(`${this.t()('jobs.gap_analysis_unavailable')} ${error}`);
       return { ok: false, error };
     }
   }

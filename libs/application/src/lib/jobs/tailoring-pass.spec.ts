@@ -74,14 +74,16 @@ describe('tailoring-pass', () => {
       );
       expect(base.ok).toBe(false);
       expect(base.md).toBe('the profile');
-      expect(base.ok === false && base.reason).toContain('could not be read');
+      expect(base.ok === false && base.reason).toBe('unreadable');
+      expect(base.ok === false && base.cvId).toBe(4);
     });
 
     it('falls back when the selected id matches nothing in the list, and says so', () => {
       const base = baselineFor(ctx({ baseCvId: 99, matchingCvs: [CV] }));
       expect(base.ok).toBe(false);
       expect(base.md).toBe('the profile');
-      expect(base.ok === false && base.reason).toContain('no longer available');
+      expect(base.ok === false && base.reason).toBe('missing');
+      expect(base.ok === false && base.cvId).toBe(99);
     });
 
     it('yields an empty baseline rather than throwing when there is no profile', () => {

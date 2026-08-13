@@ -10,6 +10,7 @@ import type {
 import { DbService, JobsStore } from '@applye/data';
 import { baseCvChoices } from './job-document-defaults';
 import { ToastService } from '../shell/toast.service';
+import { TranslateService } from '@applye/i18n';
 
 /**
  * Everything the job-detail screen loads: the job itself, the profile and
@@ -38,6 +39,7 @@ export class JobDetailStore {
   private readonly db = inject(DbService);
   private readonly jobs = inject(JobsStore);
   private readonly toast = inject(ToastService);
+  private readonly t = inject(TranslateService).t;
 
   readonly job = signal<Job | null>(null);
   /** The pasted job description, seeded from the row and then edited in place
@@ -74,7 +76,7 @@ export class JobDetailStore {
       this.settings.set(settings);
       this.loadError.set(null);
     } catch (e) {
-      this.fail(`Profile and settings could not be loaded. ${String(e)}`);
+      this.fail(`${this.t()('jobs.detail_context_load_failed')} ${String(e)}`);
     }
   }
 
@@ -100,7 +102,7 @@ export class JobDetailStore {
     } catch (e) {
       // non-fatal - the detail still renders and the user can re-score, but the
       // half-loaded screen has to say so rather than pass for an empty one.
-      this.fail(`This job could not be fully loaded. ${String(e)}`);
+      this.fail(`${this.t()('jobs.detail_load_failed')} ${String(e)}`);
       return false;
     }
   }

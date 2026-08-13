@@ -96,21 +96,31 @@ export function resultMdForPass(passes: readonly PassResult[], pass: number): st
  * string made those two cases identical, and a corrupt row silently tailored
  * the profile under the name of the selected CV.
  */
-export type CvBaseline = { ok: true; md: string } | { ok: false; md: string; reason: string };
+export type CvBaselineFailure = 'missing' | 'unreadable';
 
-/** The text the passes rewrite: the chosen base CV when there is one, the
- * profile markdown otherwise. */
+export type CvBaseline =
+  { ok: true; md: string } | { ok: false; md: string; reason: CvBaselineFailure; cvId: number };
+
+/**
+ * The text the passes rewrite: the chosen base CV when there is one, the
+ * profile markdown otherwise.
+ *
+ * `reason` is a code and not a sentence. This function is pure - it has no
+ * injector and therefore no `TranslateService` - so a sentence built here could
+ * only ever be English, and it would reach the user through a service that does
+ * have one. The caller renders it.
+ */
 export function baselineFor(ctx: TailorContext): CvBaseline {
   const fallback = ctx.profile?.fullMd ?? '';
   if (!ctx.baseCvId) return { ok: true, md: fallback };
   const cvItem = ctx.matchingCvs.find((c) => c.id === ctx.baseCvId);
   if (!cvItem?.contentJson) {
-    return { ok: false, md: fallback, reason: `Base CV ${ctx.baseCvId} is no longer available` };
+    return { ok: false, md: fallback, reason: 'missing', cvId: ctx.baseCvId };
   }
   try {
     return { ok: true, md: cvContentToMd(JSON.parse(cvItem.contentJson) as CvContent) };
   } catch {
-    return { ok: false, md: fallback, reason: `Base CV ${ctx.baseCvId} could not be read` };
+    return { ok: false, md: fallback, reason: 'unreadable', cvId: ctx.baseCvId };
   }
 }
 

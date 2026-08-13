@@ -286,6 +286,7 @@ export const en: TranslationMap = {
     loc_lowdata: 'Not enough located applications to compare yet.',
   },
   tracker: {
+    report_columns_unreadable: 'Report columns could not be read - showing none.',
     title: 'Job Tracker',
     subtitle: 'Your documented application efforts. 0 tokens, exportable.',
     col_n: '#',
@@ -654,6 +655,15 @@ export const en: TranslationMap = {
     not_stated: 'Salary not stated',
   },
   jobs: {
+    load_partial_failed: 'Some of this job could not be loaded - you can re-score.',
+    gap_analysis_unavailable: 'Gap analysis unavailable - generating without it.',
+    tailor_base_cv_missing:
+      'Base CV {n} is no longer available, so the profile was tailored instead.',
+    tailor_base_cv_unreadable:
+      'Base CV {n} could not be read, so the profile was tailored instead.',
+    ats_check_unavailable: 'ATS check unavailable - showing the advisory verdict only.',
+    detail_context_load_failed: 'Profile and settings could not be loaded.',
+    detail_load_failed: 'This job could not be fully loaded.',
     paste_title: 'Paste job description',
     paste_placeholder: 'Paste the full job description here…',
     parse_btn: 'Parse & filter',
@@ -1084,6 +1094,8 @@ export const en: TranslationMap = {
     qa_import: 'Import CV',
   },
   documents: {
+    commit_cv_failed: 'The CV could not be committed out of draft.',
+    commit_cover_letter_failed: 'The cover letter could not be committed out of draft.',
     title: 'Documents',
     coming_soon: 'Cover letter editor - coming soon',
     tab_cv: 'CV',
@@ -1383,6 +1395,7 @@ export const en: TranslationMap = {
     preview_page_of: 'Page {i} of {n}',
   },
   interview: {
+    quickview_stage_read_failed: 'The interview stages could not be read.',
     title: 'Interview Prep',
     list_empty: 'No interviews being tracked',
     list_empty_sub:

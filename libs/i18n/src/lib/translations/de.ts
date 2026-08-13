@@ -289,6 +289,8 @@ export const de: TranslationMap = {
     loc_lowdata: 'Noch zu wenige verortete Bewerbungen für einen Vergleich.',
   },
   tracker: {
+    report_columns_unreadable:
+      'Die Berichtsspalten konnten nicht gelesen werden - es werden keine angezeigt.',
     title: 'Bewerbungs-Tracker',
     subtitle: 'Deine dokumentierten Bewerbungsbemühungen. 0 Tokens, exportierbar.',
     col_n: 'Nr.',
@@ -663,6 +665,17 @@ export const de: TranslationMap = {
     not_stated: 'Gehalt nicht angegeben',
   },
   jobs: {
+    load_partial_failed:
+      'Ein Teil dieses Jobs konnte nicht geladen werden - du kannst neu bewerten.',
+    gap_analysis_unavailable: 'Lückenanalyse nicht verfügbar - es wird ohne sie generiert.',
+    tailor_base_cv_missing:
+      'Basis-Lebenslauf {n} ist nicht mehr verfügbar, daher wurde stattdessen das Profil angepasst.',
+    tailor_base_cv_unreadable:
+      'Basis-Lebenslauf {n} konnte nicht gelesen werden, daher wurde stattdessen das Profil angepasst.',
+    ats_check_unavailable:
+      'ATS-Prüfung nicht verfügbar - es wird nur die beratende Einschätzung gezeigt.',
+    detail_context_load_failed: 'Profil und Einstellungen konnten nicht geladen werden.',
+    detail_load_failed: 'Dieser Job konnte nicht vollständig geladen werden.',
     paste_title: 'Stellenbeschreibung einfügen',
     paste_placeholder: 'Vollständige Stellenbeschreibung hier einfügen…',
     parse_btn: 'Analysieren & filtern',
@@ -1106,6 +1119,8 @@ export const de: TranslationMap = {
     qa_import: 'Lebenslauf importieren',
   },
   documents: {
+    commit_cv_failed: 'Der Lebenslauf konnte nicht aus dem Entwurf übernommen werden.',
+    commit_cover_letter_failed: 'Das Anschreiben konnte nicht aus dem Entwurf übernommen werden.',
     title: 'Dokumente',
     coming_soon: 'Anschreiben-Editor - demnächst',
     tab_cv: 'Lebenslauf',
@@ -1413,6 +1428,7 @@ export const de: TranslationMap = {
     preview_page_of: 'Seite {i} von {n}',
   },
   interview: {
+    quickview_stage_read_failed: 'Die Interviewphasen konnten nicht gelesen werden.',
     title: 'Interview-Vorbereitung',
     list_empty: 'Keine Interviews werden verfolgt',
     list_empty_sub:

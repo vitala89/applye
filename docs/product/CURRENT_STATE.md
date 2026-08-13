@@ -42,6 +42,31 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **The audit's four leftovers are closed, and the check that had been deferred three times paid for
+  itself the moment it ran.** `settings.rs`'s factory reset stopped discarding every error from
+  `DELETE FROM sqlite_sequence` - "no such table" is the expected answer on a schema with no
+  AUTOINCREMENT and is now matched by name, so a locked or corrupt database is no longer thrown away
+  inside a transaction that then reports success. The nine raw English strings are in i18n: **ten keys
+  across all seven locales**, each a whole sentence rather than a fragment glued to a tail, because the
+  six non-English locales do not share word order; `TranslateService` went into the five hosts that
+  lacked it, and `baselineFor` stays pure by returning a **code** (`'missing' | 'unreadable'`) plus the
+  CV id instead of a sentence it could only ever produce in English. The quick-view's error hint has its
+  colour through a new `ui-error-text` utility in `libs/ui`, deliberately **not** named `.status--error`:
+  five stylesheets already define that name, and `_profile-shell.scss` records it as one of seven generic
+  names carrying _different_ values across eight files. **The rendered check found a real defect on its
+  first run.** `styles.scss` hides `body.printing-report *` and re-shows only `app-tracker-report` and its
+  descendants, and the tracker report's "columns could not be read" line was rendered one level above that
+  subtree - visible on screen, **invisible in the exported PDF**, which is the only artifact it exists for.
+  The sheet takes a `notice` input now, confirmed in a live browser inside the sheet, in red, translated.
+  Separately, **`nx build desktop` caught a `null` passed into a `string` input that `tsc --noEmit`
+  accepted**: template type-checking runs only in the Angular compiler, so a type-check is not a
+  substitute for the build. **Two rendered checks are still open and the reason is mechanical**: synthetic
+  clicks do not reach the Tauri webview - hover produces a hover state, a click on the same coordinates
+  does nothing, reproduced against three targets including the theme toggle - and both surfaces need real
+  database rows, so the browser preview cannot stand in. **Next first action:** drive those two by hand,
+  starting with the stage panel, which is free; the ATS line costs a full tailoring run plus a rescore in
+  tokens, which is why this watch did not spend them unasked.
+
 - **Ten silent fallbacks were made to report what they did, and the last one found on the way out was a
   write path rather than a wording problem.** The maintainer asked for every place an agent had written
   a fallback that swallows a failure and substitutes a value the caller cannot tell from a real answer.

@@ -728,7 +728,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       await this.portal.loadFromCache(job, this.profile(), this.settings());
       await this.restoreTailoringFromCache();
     } catch (e) {
-      this.toast.error(`Some of this job could not be loaded - you can re-score. ${String(e)}`);
+      this.toast.error(`${this.t()('jobs.load_partial_failed')} ${String(e)}`);
     }
   }
 

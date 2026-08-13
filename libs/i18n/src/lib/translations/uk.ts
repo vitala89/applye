@@ -297,6 +297,7 @@ export const uk: TranslationMap = stub(en, {
     loc_lowdata: 'Відгуків з локацією поки замало для порівняння.',
   },
   tracker: {
+    report_columns_unreadable: 'Не вдалося прочитати колонки звіту - жодної не показано.',
     title: 'Трекер відгуків',
     subtitle: 'Ваші задокументовані зусилля з пошуку роботи. 0 токенів, з експортом.',
     col_n: '№',
@@ -670,6 +671,15 @@ export const uk: TranslationMap = stub(en, {
     not_stated: 'Зарплату не вказано',
   },
   jobs: {
+    load_partial_failed:
+      'Частину даних цієї вакансії не вдалося завантажити - оцінку можна перерахувати.',
+    gap_analysis_unavailable: 'Аналіз прогалин недоступний - документ створюється без нього.',
+    tailor_base_cv_missing: 'Базове резюме {n} більше недоступне, тому було адаптовано профіль.',
+    tailor_base_cv_unreadable:
+      'Не вдалося прочитати базове резюме {n}, тому було адаптовано профіль.',
+    ats_check_unavailable: 'Перевірка ATS недоступна - показано лише рекомендаційну оцінку.',
+    detail_context_load_failed: 'Не вдалося завантажити профіль і налаштування.',
+    detail_load_failed: 'Цю вакансію не вдалося завантажити повністю.',
     paste_title: 'Вставте опис вакансії',
     paste_placeholder: 'Вставте сюди повний опис вакансії…',
     parse_btn: 'Розібрати та відфільтрувати',
@@ -1109,6 +1119,8 @@ export const uk: TranslationMap = stub(en, {
     qa_import: 'Імпорт резюме',
   },
   documents: {
+    commit_cv_failed: 'Не вдалося перевести резюме з чернетки.',
+    commit_cover_letter_failed: 'Не вдалося перевести супровідний лист з чернетки.',
     title: 'Документи',
     coming_soon: 'Редактор супровідних листів - незабаром',
     tab_cv: 'Резюме',
@@ -1411,6 +1423,7 @@ export const uk: TranslationMap = stub(en, {
     preview_page_of: 'Сторінка {i} з {n}',
   },
   interview: {
+    quickview_stage_read_failed: 'Не вдалося прочитати етапи співбесіди.',
     title: 'Підготовка до співбесіди',
     list_empty: 'Відстежуваних співбесід немає',
     list_empty_sub:

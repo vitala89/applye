@@ -23,6 +23,13 @@ import { TrackerReportComponent } from './tracker-report.component';
   providers: [TrackerPrintStore],
   template: `
     @if (loaded()) {
+      <!-- Printed into the PDF on purpose. This window is hidden, so there is no
+           toast and no console to fall back on, and a report whose columns were
+           dropped is otherwise indistinguishable from one the user configured
+           that way - a blank sheet they would only question much later. -->
+      @if (columnsError()) {
+        <p class="report-error">{{ columnsError() }}</p>
+      }
       <app-tracker-report
         [rows]="print.rows()"
         [columns]="columns()"
@@ -45,6 +52,11 @@ import { TrackerReportComponent } from './tracker-report.component';
         display: block;
         background: #fff;
       }
+      .report-error {
+        margin: 0 0 8px;
+        color: #b42318;
+        font-size: 12px;
+      }
     `,
   ],
 })
@@ -54,6 +66,8 @@ export class TrackerReportPrintComponent {
 
   readonly loaded = signal(false);
   readonly columns = signal<ReportColumn[]>([]);
+  /** Set when the `columns` query argument could not be read. */
+  readonly columnsError = signal<string | null>(null);
   readonly applicant = signal('');
   readonly periodLabel = signal('');
   readonly market = signal<ReportMarket>('de');
@@ -75,8 +89,9 @@ export class TrackerReportPrintComponent {
     this.generatedOn.set(new Date().toISOString().slice(0, 10));
     try {
       this.columns.set(JSON.parse(q.get('columns') ?? '[]') as ReportColumn[]);
-    } catch {
+    } catch (e) {
       this.columns.set([]);
+      this.columnsError.set(`Report columns could not be read - showing none. ${String(e)}`);
     }
 
     await this.print.load(q.get('period') ?? 'all');

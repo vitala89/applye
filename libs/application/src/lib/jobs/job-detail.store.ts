@@ -9,6 +9,7 @@ import type {
 } from '@applye/core';
 import { DbService, JobsStore } from '@applye/data';
 import { baseCvChoices } from './job-document-defaults';
+import { ToastService } from '../shell/toast.service';
 
 /**
  * Everything the job-detail screen loads: the job itself, the profile and
@@ -36,6 +37,7 @@ import { baseCvChoices } from './job-document-defaults';
 export class JobDetailStore {
   private readonly db = inject(DbService);
   private readonly jobs = inject(JobsStore);
+  private readonly toast = inject(ToastService);
 
   readonly job = signal<Job | null>(null);
   /** The pasted job description, seeded from the row and then edited in place
@@ -51,6 +53,18 @@ export class JobDetailStore {
   readonly matchingCvs = signal<DocumentLibraryItem[]>([]);
   readonly selectedBaseCvId = signal<number | null>(null);
 
+  /**
+   * Why a fail-soft read gave up, when it did.
+   *
+   * Fail-soft is the right posture here - see the class note - but it left the
+   * screen indistinguishable from a genuinely empty one: a missing profile read
+   * as "no profile yet", and a job whose reads failed as "nothing scored yet".
+   * Raised as a toast as well as held here, because the page that renders this
+   * store is over its size budget and cannot take another alias; the signal is
+   * what the tests and any future panel read.
+   */
+  readonly loadError = signal<string | null>(null);
+
   /** The profile and settings the whole screen is judged against. Non-fatal:
    * without them the user can still paste a job description. */
   async loadContext(): Promise<void> {
@@ -58,8 +72,9 @@ export class JobDetailStore {
       const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
       this.profile.set(profile);
       this.settings.set(settings);
-    } catch {
-      // non-fatal - the user can still paste
+      this.loadError.set(null);
+    } catch (e) {
+      this.fail(`Profile and settings could not be loaded. ${String(e)}`);
     }
   }
 
@@ -80,11 +95,20 @@ export class JobDetailStore {
       this.application.set(application);
 
       await this.refreshLibrary();
+      this.loadError.set(null);
       return true;
-    } catch {
-      // non-fatal - the detail still renders and the user can re-score
+    } catch (e) {
+      // non-fatal - the detail still renders and the user can re-score, but the
+      // half-loaded screen has to say so rather than pass for an empty one.
+      this.fail(`This job could not be fully loaded. ${String(e)}`);
       return false;
     }
+  }
+
+  /** Records a fail-soft read failure and raises it once. */
+  private fail(message: string): void {
+    this.loadError.set(message);
+    this.toast.error(message);
   }
 
   /**

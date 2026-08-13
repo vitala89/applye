@@ -188,12 +188,24 @@ describe('JobScoringService', () => {
       expect(ats.check).not.toHaveBeenCalled();
     });
 
-    it('leaves the ATS report null when the local check throws', async () => {
+    /**
+     * The report stays null and the card still falls back to the AI's advisory
+     * verdict - that part is unchanged. What changed is that the reason is now
+     * readable: a null report meant both "not run" and "failed", and the only
+     * record of the failure was a console line no user will ever see.
+     */
+    it('leaves the ATS report null when the local check throws, and says why', async () => {
       const s = make();
       ats.check.mockRejectedValueOnce(new Error('nope'));
-      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
       await s.rescoreAfterTailor(ctx({ tailoredResumeMd: '# CV' }));
       expect(s.atsReport()).toBeNull();
+      expect(s.atsError()).toContain('nope');
+    });
+
+    it('carries no ATS error when the check succeeds', async () => {
+      const s = make();
+      await s.rescoreAfterTailor(ctx({ tailoredResumeMd: '# CV' }));
+      expect(s.atsError()).toBeNull();
     });
   });
 

@@ -44,6 +44,61 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-13, the second half of the audit, and a correction to the entry below
+
+- **Status:** complete. Every automated gate observed passing. **No rendered check** - the same gap the entry below carries, and it is now two watches old.
+- **Agent/tool:** Claude Code, Opus 5. No grilling - no public API changed shape in a way with two readings. No subagents.
+- **Branch:** `fix/silent-fallbacks-visible`, the same branch and the same pull request as the entry below, because it is unmerged and this is the other half of one audit.
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #442, updated rather than superseded
+- **Objective:** the next action the entry below set - `?? []`, `|| ''` and `?? null` defaults standing in for values that were never fetched, plus un-awaited promises.
+- **Correction to the entry below.** That entry's next action asserted this class "hides the same failure as the eight fixed here". **That premise was wrong**, and checking it was the first thing this watch did: `apps/desktop/src/app/app.config.ts:8` installs `provideBrowserGlobalErrorListeners()`, which routes `unhandledrejection` to `ToastErrorHandler`, so a floating rejection raises a toast and writes to the console rather than disappearing. The class is real but far smaller than it was written up as, and the write-up should not have claimed equivalence without checking for a backstop.
+- **Completed:**
+  - The `?? []` / `|| []` / `(await …) ||` sweep over `libs` and `apps`: **one hit, benign** (`q.get('period') ?? 'all'`, a query-argument default).
+  - Every `void`-called async in the repository traced to its target. All of the `void this.load()` constructor calls are clean: `CvDocumentStore` and `CoverLetterDocumentStore` set `loadError`, never reject, and both detail templates render it; the two print routes leave the window blank on purpose and let Rust time out; `cv-list` and `loadComments` already toast; `refreshKeyStored` catches; `my-jobs` reaches `JobsStore.loadOverview`, which sets `loadErrorState`.
+  - All 17 `try`/`finally`-without-`catch` blocks classified. Sixteen are contracts - each documented as propagating to an awaiting caller (`tracker-row-editor`, both tracker exports, `cv-regeneration`, `cover-letter-ai`, `job-identity-resolver`, the two draft services).
+  - **The one real finding fixed:** `QuickViewStore.refreshStages` had no `catch` and was called as `void` from an effect, so a failed read left `stages` empty - which the stepper draws as "no stages yet" - while the global listener raised an unrelated-looking toast. Now returns a boolean with a `stagesError` signal, matching `loadComments` in the same store, and both call sites in the modal toast with context.
+- **Not completed:**
+  - **Still no rendered check.** Now three user-visible changes across two watches unverified on a real screen: the score-card status line, the error line in the exported tracker PDF, and this stage-read toast.
+  - `describeOtherJob`'s `.catch(() => null)` was **considered and deliberately left**. The cross-job confirm hides the name behind `@if (crossJobLabel())` and its doc comment already reasons about a job it cannot name, so an unnamed confirm is the designed degrade. Naming it would need a new translated string in seven locales for a dialog that already works.
+  - `settings.rs:167`'s `let _ = DELETE FROM sqlite_sequence` still untouched, as in the entry below.
+- **Files or packages changed:** `libs/application/src/lib/pipeline/quick-view.store.ts` (+ its spec), `apps/desktop/src/app/pages/pipeline/quick-view-modal/quick-view-modal.component.ts`, `CHANGELOG.md`, this file.
+- **Validation:** `nx test application` 1495/1495 in 116 suites (from 1493). `nx test desktop` 969/969 in 105 suites, unchanged. `tsc --noEmit` clean for both projects. `npm run quality:file-size` passed with no file in the report. `npm run quality:attribution`, `npm run format:check`, `nx run-many -t lint -p application desktop` (the one warning is pre-existing and untouched), `git diff --check` all clean. Rust untouched this watch, so no `cargo` run is claimed.
+- **Privacy/security impact:** none. One error string reaches a toast that already existed for the sibling read.
+- **Decisions and assumptions:** the work went onto the **existing unmerged branch and pull request** rather than a new one, because it is the other half of the same audit and splitting it would ask for two reviews of one question. `describeOtherJob` left alone on the standard this audit already applied to the JSON parsers: a documented, designed degrade is not a lie.
+- **Risks or compatibility impact:** `refreshStages` changed from `Promise<void>` to `Promise<boolean>` and is exported through the `libs/application` barrel. Both call sites are in this repository and updated; the widened return is additive for any caller that ignores it.
+- **Open issues or blockers:** none blocking.
+- **Next first action:** open the pipeline quick-view on an application at `interview` in a running app and confirm the stepper and the toast now agree when the stage read fails - `npm run desktop:dev`, then force the failure by pointing `listInterviewStages` at a missing table. This closes the rendered check that two watches have now deferred, and it is the only one of the three visible changes that can be driven from the UI without an export.
+- **Evidence:** the `provideBrowserGlobalErrorListeners` correction was read out of `app.config.ts` in this session, not recalled. Gate output above was observed.
+
+### 2026-08-13, eight silent fallbacks are made to say what they did
+
+- **Status:** complete. Every automated gate observed passing. **No rendered check** - see Not completed.
+- **Agent/tool:** Claude Code, Opus 5. One `aif-grilling` round, three decisions, all answered "as recommended". No subagents.
+- **Branch:** `fix/silent-fallbacks-visible`
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** see the branch's PR
+- **Objective:** the maintainer asked for every place an agent had written a fallback that swallows a failure and substitutes a value the caller cannot tell from a real answer. Audit first, then fix what is genuinely a lie.
+- **Completed:**
+  - **The audit.** Every `catch`, `.catch(() =>`, `unwrap_or*`, `.ok()` and `let _ =` under `apps/` and `libs/`. Nine sites reported as real, and the rest explicitly cleared: a JSON parser over a stored TEXT column with a documented answer for bad input is not a lie, and `job-identity`, `archetype`, `geo-scope`, `cv-content`, the four `scoring.utils` parsers and the storage-disabled guards in `i18n`/`consent` are all that shape.
+  - **Three sites that produced wrong output** (`CvGapDialogService.analyze`, `FinalChecksService.documentText`, `baselineFor`) now separate "nothing to report" from "never reached". Two of them by a discriminated result, matching the `{ok}` idiom already in `discover-sources.store.ts` rather than a new `libs/core` type.
+  - **Four that were honestly empty but silent** (ATS check, `JobDetailStore`'s fail-soft reads, the jobs page's follow-up catch, the print report's `columns` argument) now carry a reason to a surface a user has.
+  - **One fire-and-forget write** (`LinkedDocumentsService.commit`) records why it failed. The swallow itself stays, as decided.
+  - **Two Rust `let _ =` bookkeeping writes** in `discover.rs` log instead of discarding.
+  - **A test that was green because of one of these bugs** was corrected: `final-checks.service.spec.ts` built its CV fixture as `{summary: text}`, which is not a `CvContent`; `cvContentToMd` threw, the old catch returned the raw JSON, and the checks passed over JSON syntax. Fixture is a real CV now, with the unreadable case asserted separately.
+- **Not completed:**
+  - **No rendered check.** Two of these changes are visible - a status line beside the updated-score card, and an error line printed into the exported tracker PDF - and neither has been seen on a real screen. This campaign has now twice found defects that no gate in this repository can see, and this watch did not close that loop.
+  - **The new operational strings are untranslated English**, consistent with `updateScoreStatus`, the toast call sites and `tailoring.service`'s own status lines, but they are user-visible text outside the i18n system. Deliberate, not overlooked: seven locale files for eight error strings is a separate decision.
+  - **Two reported sites were left as they are**, on purpose: `settings.rs:167`'s `let _ = DELETE FROM sqlite_sequence` and the `?? []` / `|| ''` defaults on values that were never fetched. The second is a whole second audit and is written up as the next action.
+- **Files or packages changed:** `libs/application` (10 files + 6 specs), `apps/desktop` (4 files + 2 specs, 1 new spec), `apps/desktop/src-tauri/src/commands/discover.rs`, `CHANGELOG.md`, this file.
+- **Validation:** `nx test application` 1493/1493 in 116 suites (from 1483). `nx test desktop` 969/969 in 105 suites (from 966). `tsc --noEmit` clean for `libs/application` and `apps/desktop`. `cargo check`, `cargo clippy --all-targets` (no warnings), `cargo fmt --check`, `cargo test` 360/360. `nx run-many -t lint -p application desktop core` passed - the one warning is pre-existing in a file this watch did not touch. `npm run quality:file-size` **passed after a fix**: `job-scoring.service.ts` crossed the 250-line store budget at 253 and was brought to 247 by compressing two comments. `npm run quality:attribution` passed. `npm run format:check` passed after `nx format:write`. `git diff --check` clean.
+- **Privacy/security impact:** none. No new data is stored, sent or logged beyond error strings already destined for the UI. The two Rust `log::warn!` lines carry a source id and a database error, no user content.
+- **Decisions and assumptions:** three, all put to the maintainer through `aif-grilling` because they change a `libs/application` public API, and all answered "as recommended". (1) `analyze` returns a result union and generation continues with a warning, rather than blocking or keeping `[]` plus a side-channel signal. (2) `baselineFor` returns a union that always carries a usable `md`, so no caller can tailor an empty document; the profile fallback stays and is announced. (3) `linked-documents` records the failure only - no retry machinery, which would have been a bigger change than the other seven combined. Assumed without asking: raw English operational strings follow the file's own convention (`tailoring.service` sets plain English into `status`), and `JobDetailStore` reports through a toast because the page that renders it is 977/400 and may not take another alias.
+- **Risks or compatibility impact:** `GapFillHooks.analyzeGaps` and `baselineFor` changed shape; both are exported from the `libs/application` barrel. All call sites in this repository are updated and the type-check is clean, so the risk is to anything outside it, of which there is nothing today. The print-report change puts an error line into an exported PDF - correct, but it is the first time that document carries anything but the report.
+- **Open issues or blockers:** none blocking.
+- **Next first action:** run the second half of the audit - `?? []`, `|| ''` and `?? null` defaults standing in for values that were never fetched, plus un-awaited promises - starting with `rg -n '\?\? \[\]|\|\| \[\]' libs apps --type ts`. That class hides the same failure as the eight fixed here and was explicitly out of scope for this watch.
+- **Evidence:** gate output quoted above was observed in this session, not recalled. The budget failure and its fix are both recorded rather than only the passing run.
+
 ### 2026-08-13, level three: the header becomes a component, and its styles do not follow it
 
 - **Status:** complete. Every automated gate observed passing, and the rendered check both **caught a regression** and confirmed the fix.

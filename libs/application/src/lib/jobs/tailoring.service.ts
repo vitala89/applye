@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { WizardActivityService } from './wizard-activity.service';
+import { ToastService } from '../shell/toast.service';
 import {
   PASSES,
   PassNumber,
@@ -39,6 +40,7 @@ export class TailoringService {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly activity = inject(WizardActivityService);
+  private readonly toast = inject(ToastService);
 
   private readonly t = this.i18n.t;
 
@@ -47,6 +49,13 @@ export class TailoringService {
   readonly error = signal(false);
   /** Set by `cancel()`; the loop checks it between passes. */
   readonly cancelled = signal(false);
+
+  /**
+   * Set when the passes ran on the profile because the chosen base CV could not
+   * be used. Separate from `status`, which every pass overwrites with its own
+   * progress line and would drop this within a second of showing it.
+   */
+  readonly baselineWarning = signal<string | null>(null);
 
   /** All three passes landed. Anything less is a partial or abandoned run. */
   readonly isTailored = computed(() => this.results().length === 3);
@@ -63,6 +72,7 @@ export class TailoringService {
     this.results.set([]);
     this.status.set('');
     this.error.set(false);
+    this.baselineWarning.set(null);
   }
 
   /**
@@ -149,7 +159,18 @@ export class TailoringService {
     const { job, profile, settings } = ctx;
     if (!job?.id || (!profile?.fullMd && !ctx.baseCvId) || !settings) return;
 
-    const baselineMd = baselineFor(ctx);
+    // A chosen base CV that cannot be read still falls back to the profile, but
+    // the user is told which document the passes actually ran on - the result
+    // otherwise looks like a tailored version of a CV that was never opened.
+    // Guarded on the current value because `runPass` runs once per pass and the
+    // same warning would otherwise be raised three times for one run.
+    const baseline = baselineFor(ctx);
+    const warning = baseline.ok ? null : `${baseline.reason} - tailoring the profile instead.`;
+    if (warning && this.baselineWarning() !== warning) {
+      this.baselineWarning.set(warning);
+      this.toast.warning(warning);
+    }
+    const baselineMd = baseline.md;
     const lang = settings.defaultDocLanguage ?? 'en';
     const inputHash = await this.passInputHash(
       baselineMd,

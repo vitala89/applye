@@ -265,21 +265,30 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
         }
 
         // Best-effort bookkeeping for the Sources UI; a failed update must not
-        // fail the scan itself.
-        let _ = sqlx::query(
+        // fail the scan itself. Logged rather than discarded: when this write
+        // fails the Sources list keeps showing an older "last scanned", which
+        // looks like a scan that never ran and is otherwise undiagnosable.
+        if let Err(e) = sqlx::query(
             "UPDATE sources SET last_scan_at = datetime('now'), last_scan_json = ? WHERE id = ?",
         )
         .bind(serde_json::to_string(&r).unwrap_or_default())
         .bind(src.id)
         .execute(&db.pool)
-        .await;
+        .await
+        {
+            log::warn!("scan bookkeeping update failed for source {}: {e}", src.id);
+        }
 
         results.push(r);
     }
 
     // Record the market this scan ran under so the Discover feed can prompt a
-    // refresh when the user later changes it. Best-effort: ignore any error.
-    let _ = record_scan_market(&db.pool, market_raw.as_deref()).await;
+    // refresh when the user later changes it. Best-effort, but not silent: a
+    // lost record means the feed stops prompting for a market change it should
+    // have caught.
+    if let Err(e) = record_scan_market(&db.pool, market_raw.as_deref()).await {
+        log::warn!("recording the scan market failed: {e}");
+    }
 
     Ok(ScanSummary {
         total_fetched: results.iter().map(|r| r.fetched).sum(),

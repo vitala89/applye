@@ -4,6 +4,7 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TailorContext, TailoringService } from './tailoring.service';
 import { WizardActivityService } from './wizard-activity.service';
+import { ToastService } from '../shell/toast.service';
 
 /**
  * Covers the behaviour that used to live inline in `JobsComponent`. The pass
@@ -14,6 +15,7 @@ import { WizardActivityService } from './wizard-activity.service';
 describe('TailoringService', () => {
   let db: { hashText: jest.Mock; tailoringCacheGet: jest.Mock; tailoringCacheSave: jest.Mock };
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
+  let toast: { warning: jest.Mock };
 
   const JOB_ID = 7;
 
@@ -55,6 +57,7 @@ describe('TailoringService', () => {
       tailoringCacheGet: jest.fn(async () => null),
       tailoringCacheSave: jest.fn(async () => undefined),
     };
+    toast = { warning: jest.fn() };
     let call = 0;
     ai = {
       renderSkill: jest.fn(async () => ({ systemPrompt: 'sys', userPrompt: 'usr' })),
@@ -69,6 +72,7 @@ describe('TailoringService', () => {
         { provide: DbService, useValue: db },
         { provide: AiService, useValue: ai },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
+        { provide: ToastService, useValue: toast },
       ],
     });
     return TestBed.inject(TailoringService);
@@ -168,11 +172,27 @@ describe('TailoringService', () => {
     expect(ai.renderSkill.mock.calls[0][1].profile_md).toContain('from the chosen CV');
   });
 
-  it('falls back to the profile when the selected CV will not parse', async () => {
+  /**
+   * The fallback stays - an unreadable base CV must not cost the user the run.
+   * The regression is that it used to be silent: three passes rewrote the
+   * profile while the wizard still named the selected CV, so the result was a
+   * tailored version of a document that was never opened.
+   */
+  it('falls back to the profile when the selected CV will not parse, and says so once', async () => {
     const s = make();
     await s.run(ctx({ baseCvId: 4, matchingCvs: [{ id: 4, contentJson: '{not json' } as never] }));
 
     expect(ai.renderSkill.mock.calls[0][1].profile_md).toBe('baseline profile');
+    expect(s.baselineWarning()).toContain('tailoring the profile instead');
+    expect(toast.warning).toHaveBeenCalledTimes(1);
+  });
+
+  it('raises no baseline warning when the selected CV reads', async () => {
+    const s = make();
+    await s.run(ctx());
+
+    expect(s.baselineWarning()).toBeNull();
+    expect(toast.warning).not.toHaveBeenCalled();
   });
 
   it('stops on a failing pass and reports it', async () => {

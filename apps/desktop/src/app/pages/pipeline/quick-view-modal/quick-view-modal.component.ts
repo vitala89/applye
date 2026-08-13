@@ -124,7 +124,7 @@ export class QuickViewModalComponent {
       const card = this.card();
       this.promptDismissed.set(false);
       void this.loadComments(card.id);
-      void this.quick.refreshStages(card.id, card.status);
+      void this.refreshStages(card.id, card.status);
       this.followup.resetFor(card);
     });
   }
@@ -156,6 +156,14 @@ export class QuickViewModalComponent {
   private async loadComments(applicationId: number): Promise<void> {
     if (!(await this.quick.loadComments(applicationId))) {
       this.toast.error(this.quick.commentsError());
+    }
+  }
+
+  /** Same shape as `loadComments`: an empty stage list means "no stages yet" to
+   * the stepper, so a failed read has to say it was a failed read. */
+  private async refreshStages(applicationId: number, status: ApplicationStatus): Promise<void> {
+    if (!(await this.quick.refreshStages(applicationId, status))) {
+      this.toast.error(this.quick.stagesError());
     }
   }
 
@@ -220,7 +228,7 @@ export class QuickViewModalComponent {
     // on the applied/interview transitions).
     this.statusChanged.emit(updated);
     this.promptDismissed.set(false);
-    await this.quick.refreshStages(card.id, updated.status);
+    await this.refreshStages(card.id, updated.status);
   }
 
   protected async onPrioritySelect(priority: Priority): Promise<void> {

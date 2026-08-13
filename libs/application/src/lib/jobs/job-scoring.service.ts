@@ -57,6 +57,10 @@ export class JobScoringService {
    * runs, or if the local check failed - the card then falls back to the
    * AI's advisory verdict. */
   readonly atsReport = signal<AtsReport | null>(null);
+
+  /** Why `atsReport` is null, when the reason is a failure rather than "not
+   * run". Read alongside the report by anything that renders it. */
+  readonly atsError = signal<string | null>(null);
   /** Guards `savePostTailor` against writing the same rescore twice. */
   readonly postTailorSaved = signal(false);
 
@@ -244,17 +248,18 @@ export class JobScoringService {
     };
   }
 
-  /**
-   * Runs the deterministic ATS check against the tailored CV. Failure is
-   * non-fatal and silent in the UI: the report simply stays null and the ATS
-   * card falls back to the AI's advisory verdict, exactly as before.
-   */
+  /** Runs the deterministic ATS check against the tailored CV. Failure is
+   * non-fatal - the report stays null and the card falls back to the AI's
+   * advisory verdict - but no longer silent: a null report meant both "not
+   * requested" and "failed", and the console was the only record of the
+   * difference, which is not a surface a user has. */
   private async runAtsCheck(cvMarkdown: string, jdText: string, region: string): Promise<void> {
     this.atsReport.set(null);
+    this.atsError.set(null);
     try {
       this.atsReport.set(await this.ats.check(cvMarkdown, jdText, region));
     } catch (e) {
-      console.warn('ats_check_run failed', e);
+      this.atsError.set(`ATS check unavailable - showing the advisory verdict only. ${String(e)}`);
     }
   }
 }

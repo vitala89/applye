@@ -92,13 +92,32 @@ describe('LinkedDocumentsService', () => {
       expect(committed).toEqual([]);
     });
 
-    it('keeps the draft when the commit throws, so the next attempt retries', async () => {
+    /**
+     * The swallow is deliberate - a failed commit must not break an export -
+     * but it used to leave nothing behind, so a document that never left draft
+     * was indistinguishable from one nobody had committed yet.
+     */
+    it('keeps the draft when the commit throws, so the next attempt retries, and records why', async () => {
       await svc.load(APP as never);
       commitFails = true;
 
       await svc.commit('cv');
 
       expect(svc.cv()?.isApplicationDraft).toBe(true);
+      expect(svc.commitError()).toContain('db down');
+    });
+
+    it('clears the recorded failure once a commit succeeds', async () => {
+      await svc.load(APP as never);
+      commitFails = true;
+      await svc.commit('cv');
+      expect(svc.commitError()).not.toBeNull();
+
+      commitFails = false;
+      await svc.commit('cv');
+
+      expect(svc.commitError()).toBeNull();
+      expect(svc.cv()?.isApplicationDraft).toBe(false);
     });
 
     it('keeps the draft when the commit returns nothing', async () => {

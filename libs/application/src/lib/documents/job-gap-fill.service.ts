@@ -67,8 +67,9 @@ export class JobGapFillService {
   /** The bundle a draft service expects, bound to one job and one language. */
   hooks(ctx: JobGapFillContext): GapFillHooks {
     return {
-      // Fail-open: the dialog service returns [] on any error, so a bad
-      // analysis never blocks generation.
+      // Fail-open: the dialog service reports its own failure and returns
+      // `ok: false`, so a bad analysis never blocks generation - and never
+      // passes for "no gaps found" either.
       analyzeGaps: (text) => this.gapSvc.analyze(text, ctx.job, ctx.settings, ctx.language),
       askGaps: (questions) => this.gapSvc.ask(questions),
       saveToProfile: (block) => this.appendToProfile(ctx.profile, block, ctx.applyProfile),

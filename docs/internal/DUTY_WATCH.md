@@ -44,6 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-13, level three: the header becomes a component, and its styles do not follow it
+
+- **Status:** complete. Every automated gate observed passing, and the rendered check both **caught a regression** and confirmed the fix.
+- **Agent/tool:** Claude Code, Opus 5. No new grilling - the shape was settled in this session's earlier rounds. No subagents.
+- **Branch:** `refactor/cv-preview-header-component`
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** pending at time of writing
+- **Objective:** The header pilot - `#headerTpl` out of `cv-preview.component.html` into a child component.
+- **Completed:** `cv-preview-header/` (component, template, stylesheet). `cv-preview.component.html` **895 -> 779/300**; `cv-preview.component.scss` **392 -> 211**; the class **355 -> 350** as the first two delegators died. `_cv-preview-atom.scss` added for rules every atom shares. ADR-0005 amendment sixty-three, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** The other seven blocks. Granularity for the sweep is still open and should be decided against this pilot's evidence rather than in advance.
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/cv-detail/cv-preview/` only, plus documentation.
+- **Validation:** `nx run-many --target=type-check` (7), `nx run-many --target=lint --skip-nx-cache` (7, 0 errors), `nx run-many --target=test --skip-nx-cache` (7; 966 desktop tests, count unchanged - the existing preview specs render the header through the child), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run quality:style-move --base main`, `npm run format:check`, `git diff --check`. All observed. **Rendered check on a real two-page CV, twice**: it failed the first time and passed after the fix.
+- **The regression, and why it matters more than the extraction:** the first rendered check showed the name as `Mira Halvorsen` where the design says `MIRA HALVORSEN`. Angular's emulated encapsulation binds a rule to the component that DECLARES the markup, so moving the header's markup into a child stopped every `.cvpreview__*` rule in the parent stylesheet from matching it - uppercase, letter-spacing, the photo float, the selection ring and the chip, all gone. **Every gate stayed green**, including `quality:style-move`, which reported "0 selectors lost declarations" and was right: nothing had been deleted, the rules had stopped applying. **A gate that compares stylesheet contents cannot see a selector that still exists and no longer matches.** Fifth regression in this campaign reachable only from a screen.
+- **Privacy/security impact:** None. Presentation only.
+- **Decisions and assumptions:** (1) **The declaration injector was verified, not assumed** - the child injects all four services and the evidence is that no spec threw `NullInjectorError`. (2) **Six inputs, all data**, against the ~20 the 2026-08-04 decision measured; that decision was right about its file and was discharged by #439 and #440. (3) **Rules split by ownership**: per-atom rules move with their atom, shared ones go to `_cv-preview-atom.scss` and are `@use`d by both, each copy carrying its own component's attribute - the duplication is the mechanism, not a cost. (4) `selectable()` is bound once on the child rather than at 30 call sites, for the same 100-column reason that shaped this whole family. (5) `@if (section().title; as title)` is required, not stylistic: the template type-checker cannot narrow across a signal call.
+- **Risks or compatibility impact:** **One limit is now recorded in the partial**, because the next seven blocks will meet it: `.cvpreview__selected:has(.cvpreview__element-selected)` needs the container and its leaves to share an encapsulation attribute, so an atom may not be split across two components. It would fail silently, on a screen only.
+- **Open issues or blockers:** The `quality:style-move` blind spot is real and now documented, but nothing was done about it - a gate that could catch this would have to compare RENDERED styles, which is a different kind of check.
+- **Next first action:** The second block, with the pattern proven. `#eduEntryTpl` (161) or `#skillsTpl` (113); `#expHeadTpl` (228) and `#expBulletTpl` (63) are one atom family and should be weighed together rather than split. Decide granularity - seven components or grouped - against this pilot rather than in advance, and carry each block's own rules out of `cv-preview.component.scss` with it.
+- **Evidence:** ADR-0005 amendment sixty-three.
+
 ### 2026-08-13, level three: the pilot's prerequisite closes the campaign's worst file
 
 - **Status:** complete. Every automated gate observed passing, **and the rendered check ran** - the tooling gap the previous watch left open is closed.

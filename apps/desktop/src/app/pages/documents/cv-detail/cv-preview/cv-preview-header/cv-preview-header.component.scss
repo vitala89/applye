@@ -1,0 +1,97 @@
+// Shared atom affordances - selection ring, chip, hover, leaf editors. `@use`d
+// rather than inherited: Angular's emulated encapsulation stamps this markup
+// with THIS component's attribute, so the parent's copy of these rules does not
+// match it. See the partial's own header for the regression that proved it.
+@use '../cv-preview-atom';
+
+// The host box must not exist. `.cvpreview__header` is laid out by the rules
+// below and `<lib-paginated-sheet>` measures each atom's NATURAL HEIGHT off the
+// wrapper it renders into (see `paginated-sheet.html`, the hidden measure
+// pass). An inline-by-default host would sit between the two, changing both the
+// layout and the measured height - and a wrong measurement re-paginates the
+// document silently, with no error anywhere.
+//
+// This is the trap that has cost this campaign four regressions, most recently
+// Profile's paired fields, where a host between a flex container and its child
+// left the `flex: 1` on an element whose parent was no longer the container.
+// `display: contents` removes the box from layout entirely, so the rules and
+// the measurement both see exactly what they saw before this component existed.
+:host {
+  display: contents;
+}
+
+.cvpreview__name {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 1.6rem;
+  font-weight: var(--weight-bold);
+  margin: 0;
+}
+.cvpreview__title {
+  font-weight: 600;
+  margin: 0.1rem 0 0.4rem;
+}
+.cvpreview__contact {
+  margin: 0 0 0.8rem;
+  font-size: 0.85em;
+  // Fall back through the section body-colour override so a "This section"
+  // colour recolours the contact line too (it had its own tertiary colour,
+  // which is why changing personal-details colour left it unchanged). An
+  // element-scope override on the contact leaf still wins via inline `color`.
+  color: var(--cv-section-body-color, var(--text-tertiary));
+}
+.cvpreview__photo {
+  width: 90px;
+  height: 120px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+}
+
+.cvpreview__header {
+  // The photo floats, so a sibling block's BORDER box still spans the full
+  // header width and runs behind it - only its line boxes shorten. That made
+  // the name/title/contact selection tint and any per-element rule paint over
+  // the photo. `flow-root` gives each a block formatting context, which by
+  // definition cannot overlap a float, so the box starts at the photo's edge.
+  // Not `overflow: hidden` (the other BFC trigger): that would clip the
+  // selection chip, which is a `::before` painted outside the box.
+  &--left,
+  &--right {
+    .cvpreview__name,
+    .cvpreview__title,
+    .cvpreview__contact {
+      display: flow-root;
+    }
+  }
+  &--left .cvpreview__photo {
+    float: left;
+    margin: 0 12px 8px 0;
+  }
+  &--right .cvpreview__photo {
+    float: right;
+    margin: 0 0 8px 12px;
+  }
+  &--center {
+    text-align: center;
+    .cvpreview__photo {
+      float: none;
+      margin: 0 auto 8px;
+      display: block;
+    }
+  }
+  &::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+  border-bottom: var(--cv-header-rule-width, 0pt) var(--cv-header-rule-style, solid)
+    var(--cv-header-rule-color, transparent);
+  // Same square-corner fix as the section title: keep the header rule ends
+  // straight despite the selectable/selected border-radius.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}

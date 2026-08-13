@@ -8,6 +8,11 @@
 // rules - moving them here from `cv-detail.component.scss` changes nothing
 // about the print seam.
 
+// Selection ring, chip, hover and leaf-editor resets, shared with every atom
+// child component. See the partial's header for why they cannot simply live
+// here: encapsulation binds a rule to the component that DECLARES the markup.
+@use './cv-preview-atom';
+
 .cvpreview-viewport {
   overflow: auto;
   // Centre the fixed-width page while keeping its LEFT edge reachable when the
@@ -23,73 +28,6 @@
   display: inline-flex;
   text-align: left;
   vertical-align: top;
-}
-// Click-to-select affordance for the live-style panel. `outline` (never
-// `border`/`margin`/`padding`) so a selectable/selected leaf keeps the exact
-// box metrics the hidden measurement pass computes - pagination is unaffected.
-// Only attached on the visible page render (`selectable()` gates the class).
-.cvpreview__selectable {
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background 100ms ease;
-}
-// Soft VS Code-style hover tint (not a boxed outline) so hovering a field reads
-// as a gentle highlight. Kept faint because nested selectables (a leaf inside
-// its section wrapper) can both match :hover.
-.cvpreview__selectable:hover {
-  background: color-mix(in srgb, var(--cv-accent, #157a5c) 6%, transparent);
-}
-// Keyboard focus ring: a selectable host reached by Tab must show the same
-// affordance a mouse hover does, so keyboard-only users can see what Enter or
-// Space will select. `:focus-visible` keeps mouse clicks from painting it.
-.cvpreview__selectable:focus-visible {
-  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
-}
-// Single-element selection highlight (design). `box-shadow` + `background`
-// (never border/margin/padding) so the box metrics the hidden measurement
-// pass computes are untouched - pagination is unaffected. The measure pass is
-// never selectable, so these classes never reach it. A `::before` chip labels
-// the field above the element, driven by `data-cv-chip`.
-.cvpreview__selected,
-.cvpreview__element-selected {
-  position: relative;
-  border-radius: 4px;
-  box-shadow: 0 0 0 2px var(--cv-accent, var(--accent, var(--border-strong)));
-  background: color-mix(in srgb, var(--cv-accent, #157a5c) 12%, transparent);
-}
-.cvpreview__selected[data-cv-chip]::before,
-.cvpreview__element-selected[data-cv-chip]::before {
-  content: attr(data-cv-chip);
-  position: absolute;
-  top: -11px;
-  left: 6px;
-  height: 18px;
-  padding: 0 7px;
-  display: inline-flex;
-  align-items: center;
-  background: var(--cv-accent, var(--accent));
-  color: var(--accent-fg, #fff);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  border-radius: 5px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
-  pointer-events: none;
-  z-index: 4;
-}
-// A selected CONTAINER (section+part wrapper) that holds a selected leaf shows
-// nothing itself - only the leaf's highlight + chip (design: one element at a
-// time). `:has()` keeps this in CSS, so no wrapper class binding is needed.
-.cvpreview__selected:has(.cvpreview__element-selected) {
-  box-shadow: none;
-  background: transparent;
-}
-.cvpreview__selected:has(.cvpreview__element-selected)::before {
-  content: none;
 }
 // Click-a-word-to-bold targets inside a selected summary/bullet (design). Only
 // rendered for the selected leaf, so they never reach the measurement pass.
@@ -161,35 +99,6 @@
   color: var(--warning-strong, #8a5a00);
   font-size: var(--text-sm);
 }
-.cvpreview__name {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 1.6rem;
-  font-weight: var(--weight-bold);
-  margin: 0;
-}
-.cvpreview__title {
-  font-weight: 600;
-  margin: 0.1rem 0 0.4rem;
-}
-.cvpreview__contact {
-  margin: 0 0 0.8rem;
-  font-size: 0.85em;
-  // Fall back through the section body-colour override so a "This section"
-  // colour recolours the contact line too (it had its own tertiary colour,
-  // which is why changing personal-details colour left it unchanged). An
-  // element-scope override on the contact leaf still wins via inline `color`.
-  color: var(--cv-section-body-color, var(--text-tertiary));
-}
-.cvpreview__contact--editor {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-}
-.cvpreview__contact-sep {
-  color: var(--text-tertiary);
-  white-space: pre;
-}
 // Native leaf editors: swapped in over the resting text/paragraph while a
 // leaf is selected (page render only - see `selectable()`). Reset to blend
 // with the surrounding typography instead of looking like a form control.
@@ -201,36 +110,6 @@
 // in `libs/ui/src/styles/global.scss` added a third, indigo, wherever the
 // selection ring was on an ancestor rather than on the editor itself. One
 // element, one ring - see `.cvpreview__element-selected`.
-.cvpreview__leaf-editor {
-  font: inherit;
-  color: inherit;
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  outline: none;
-}
-// The `:not()` matters: an editor that IS the selected element must keep the
-// selection ring, which is a `box-shadow` on the same class list.
-.cvpreview__leaf-editor:not(.cvpreview__element-selected) {
-  box-shadow: none;
-}
-input.cvpreview__leaf-editor {
-  width: 100%;
-}
-.cvpreview__contact-input.cvpreview__leaf-editor {
-  width: auto;
-  min-width: 4ch;
-  flex: 0 1 auto;
-}
-textarea.cvpreview__leaf-editor {
-  width: 100%;
-  resize: vertical;
-  line-height: var(--cv-section-line-height, var(--leading-normal));
-}
-// Wraps a bold-capable textarea (summary/bullet) with its visible Bold
-// button - the button only ever renders alongside an already-selected leaf
-// editor (page render only), so it never reaches the inert measurement pass.
 .cvpreview__skill-row {
   margin: 0.15rem 0;
 }
@@ -332,61 +211,6 @@ textarea.cvpreview__leaf-editor {
     var(--cv-entry-rule-color, transparent);
   // Same square-corner fix as the section title and header: the selectable/
   // selected 4px `border-radius` would curve this rule's ends inward.
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.cvpreview__photo {
-  width: 90px;
-  height: 120px;
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 4px;
-  }
-}
-
-.cvpreview__header {
-  // The photo floats, so a sibling block's BORDER box still spans the full
-  // header width and runs behind it - only its line boxes shorten. That made
-  // the name/title/contact selection tint and any per-element rule paint over
-  // the photo. `flow-root` gives each a block formatting context, which by
-  // definition cannot overlap a float, so the box starts at the photo's edge.
-  // Not `overflow: hidden` (the other BFC trigger): that would clip the
-  // selection chip, which is a `::before` painted outside the box.
-  &--left,
-  &--right {
-    .cvpreview__name,
-    .cvpreview__title,
-    .cvpreview__contact {
-      display: flow-root;
-    }
-  }
-  &--left .cvpreview__photo {
-    float: left;
-    margin: 0 12px 8px 0;
-  }
-  &--right .cvpreview__photo {
-    float: right;
-    margin: 0 0 8px 12px;
-  }
-  &--center {
-    text-align: center;
-    .cvpreview__photo {
-      float: none;
-      margin: 0 auto 8px;
-      display: block;
-    }
-  }
-  &::after {
-    content: '';
-    display: block;
-    clear: both;
-  }
-  border-bottom: var(--cv-header-rule-width, 0pt) var(--cv-header-rule-style, solid)
-    var(--cv-header-rule-color, transparent);
-  // Same square-corner fix as the section title: keep the header rule ends
-  // straight despite the selectable/selected border-radius.
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }

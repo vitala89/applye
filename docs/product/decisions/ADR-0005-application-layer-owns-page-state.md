@@ -3384,6 +3384,68 @@ of `main` and it is recorded as unverified rather than dismissed.
 
 Counts 267 -> **268 suites**, 3066 -> **3071 tests**.
 
+## Amendment sixty-three: the first atom leaves, and the decision from August is discharged
+
+`cv-preview.component.html` 895 -> **779/300**. The header is a child component. **This is the split
+the 2026-08-04 decision forbade**, and it went through unchanged in shape - what changed is the file it
+was attempted against.
+
+**The thing that was supposed to be hard was free.** The paginator renders atoms through
+`ngTemplateOutlet`, so the wrapper had to stay a `TemplateRef`; the open question was whether a
+component declared inside that `ng-template` would resolve `CvPreviewComponent`'s `providers` at its
+DECLARATION site or at the paginator's INSERTION site. Angular resolves embedded views through the
+declaration tree, so all four services resolve. **The evidence is that nothing broke**: had it gone the
+other way, every existing preview spec would have thrown `NullInjectorError` at once, and 966 tests
+passed untouched.
+
+**The boundary is six inputs, all data.** `section`, `photoUri`, `placement`, `renderMode`,
+`includeBirthdate`, `includeMaritalStatus`. The 2026-08-04 count of ~20 was correct for the file as it
+stood; #439 and #440 are what took it apart. **A recorded decision can be right about the code and
+wrong about the future**, and the way to tell is to re-measure rather than to re-read it.
+
+**Two costs paid at the boundary.** `section()` is a signal call, so the template type-checker cannot
+narrow `section().title` from `string | undefined` the way it narrowed the old context variable; the
+`@else` branch needs `@if (section().title; as title)` to carry the narrowing. And `selectable()` is
+bound once on the class rather than at 30 call sites, because `sel.selectable(renderMode())` is 26
+columns before anything else on the line - the same 100-column pressure that shaped every decision in
+this family.
+
+**Delegators die as predicted, and the first two are gone.** `isSectionSelected` and the
+`buildContactLine` re-export had exactly one caller between them, and it was the header. The class goes
+355 -> **350**. Seven blocks remain; `selectable` alone still has 135 template call sites, so most of
+the delegators outlive this PR by design.
+
+### The regression, which is the real finding
+
+**The first rendered check failed, and the name told the story: `Mira Halvorsen` where the design says
+`MIRA HALVORSEN`.** Angular's emulated encapsulation binds a rule to the component that DECLARES the
+markup, by stamping both with the same `_ngcontent` attribute. The instant the header markup moved into
+a child, every `.cvpreview__*` rule in `cv-preview.component.scss` stopped matching it. The header lost
+its uppercase, its letter-spacing, its float rules for the photo, its selection ring and its chip - and
+**every gate stayed green**. Type-check, lint, 3071 tests, both builds, all four quality scripts.
+
+**`quality:style-move` did not catch it either, and that is worth naming precisely.** That gate exists
+for exactly this class of mistake and it reported "0 selectors lost declarations", correctly: the
+declarations had not been lost from any stylesheet. They had stopped APPLYING. **A gate that compares
+stylesheet contents cannot see a selector that still exists and no longer matches** - only a rendered
+screen can, and this is the fifth regression in this campaign that no automated check could reach.
+
+**The fix separates rules by ownership, not by file.** Rules belonging to one atom go to that atom's
+own stylesheet; rules every atom needs - the selection ring, the chip, the hover tint, the leaf-editor
+resets - go in `_cv-preview-atom.scss`, `@use`d by the parent and by each child. Sass emits a copy into
+each consumer, and each copy carries its own component's attribute. That duplication is the mechanism,
+not a cost to be optimised away. `cv-preview.component.scss` 392 -> **211**; the header's stylesheet is
+new. Same shape as `_editor-shell.scss` and the `_ip-shared.scss` precedent.
+
+**One limit is now written into the partial**, because the next seven blocks will meet it:
+`.cvpreview__selected:has(.cvpreview__element-selected)` needs the container and its leaves to carry
+the same encapsulation attribute, so **an atom may not be split across two components**. It would fail
+the same way - silently, and only on a screen.
+
+The re-check after the fix: uppercase and letter-spacing restored, the selection ring and `FULL NAME`
+chip painting from the child's copy, and **"Page 1 of 2" unchanged**, which is what proves
+`display: contents` kept the measured height intact.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

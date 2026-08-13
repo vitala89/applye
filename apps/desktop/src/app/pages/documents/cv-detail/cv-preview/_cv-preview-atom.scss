@@ -1,0 +1,121 @@
+// Rules every CV-preview ATOM needs, wherever its markup happens to live.
+//
+// This partial exists because of a regression the header extraction caused and
+// no automated gate could see. Angular's emulated encapsulation stamps markup
+// with the `_ngcontent` attribute of the component that DECLARES it, so the
+// moment `#headerTpl`'s markup moved into `cv-preview-header`, every rule in
+// `cv-preview.component.scss` stopped matching it - the name lost its uppercase
+// and letter-spacing, and nothing failed. `npm run quality:style-move` did not
+// catch it either: the declarations had not been lost from the stylesheet, they
+// had merely stopped applying.
+//
+// So: rules that belong to ONE atom go in that atom's own stylesheet, and rules
+// shared by ALL atoms go here, `@use`d by each component that renders atom
+// markup. Sass emits a copy into each consumer, which is the point - each copy
+// carries its own component's attribute. Same shape as `_editor-shell.scss` and
+// the `_ip-shared.scss` precedent.
+//
+// Adding a rule here that only one atom uses is the mistake this file invites.
+
+// Hover/selection affordances paint with `box-shadow`/`background` only (never
+// `border`/`margin`/`padding`) so a selectable/selected leaf keeps the exact
+// box metrics the hidden measurement pass computes - pagination is unaffected.
+// Only attached on the visible page render (`selectable()` gates the class).
+.cvpreview__selectable {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 100ms ease;
+}
+// Soft VS Code-style hover tint (not a boxed outline) so hovering a field reads
+// as a gentle highlight. Kept faint because nested selectables (a leaf inside
+// its section wrapper) can both match :hover.
+.cvpreview__selectable:hover {
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 6%, transparent);
+}
+// Keyboard focus ring: a selectable host reached by Tab must show the same
+// affordance a mouse hover does, so keyboard-only users can see what Enter or
+// Space will select. `:focus-visible` keeps mouse clicks from painting it.
+.cvpreview__selectable:focus-visible {
+  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
+  outline-offset: 2px;
+}
+// Single-element selection highlight (design). `box-shadow` + `background`
+// (never border/margin/padding) so the box metrics the hidden measurement
+// pass computes are untouched - pagination is unaffected. The measure pass is
+// never selectable, so these classes never reach it. A `::before` chip labels
+// the field above the element, driven by `data-cv-chip`.
+.cvpreview__selected,
+.cvpreview__element-selected {
+  position: relative;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--cv-accent, var(--accent, var(--border-strong)));
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 12%, transparent);
+}
+.cvpreview__selected[data-cv-chip]::before,
+.cvpreview__element-selected[data-cv-chip]::before {
+  content: attr(data-cv-chip);
+  position: absolute;
+  top: -11px;
+  left: 6px;
+  height: 18px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--cv-accent, var(--accent));
+  color: var(--accent-fg, #fff);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 5px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  z-index: 4;
+}
+// A selected CONTAINER (section+part wrapper) that holds a selected leaf shows
+// nothing itself - only the leaf's highlight + chip (design: one element at a
+// time). `:has()` keeps this in CSS, so no wrapper class binding is needed.
+//
+// NOTE the encapsulation limit this now has: when the container and the leaf
+// are declared by DIFFERENT components, `:has()` still matches (it is one
+// element tree), but only if both selectors carry the same `_ngcontent`
+// attribute - which is exactly why an atom's container and its leaves must stay
+// in the SAME component. Splitting an atom across two components would break
+// this rule silently.
+.cvpreview__selected:has(.cvpreview__element-selected) {
+  box-shadow: none;
+  background: transparent;
+}
+.cvpreview__selected:has(.cvpreview__element-selected)::before {
+  content: none;
+}
+
+// Native leaf editors: swapped in over the resting text/paragraph while a
+// leaf is selected (page render only). Reset to blend with the surrounding
+// typography instead of looking like a form control. A mounted editor is by
+// definition inside the current selection, which is already ringed and chipped,
+// so the editor paints NO ring of its own - one element, one ring.
+.cvpreview__leaf-editor {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+}
+// The `:not()` matters: an editor that IS the selected element must keep the
+// selection ring, which is a `box-shadow` on the same class list.
+.cvpreview__leaf-editor:not(.cvpreview__element-selected) {
+  box-shadow: none;
+}
+input.cvpreview__leaf-editor {
+  width: 100%;
+}
+textarea.cvpreview__leaf-editor {
+  width: 100%;
+  resize: vertical;
+  line-height: var(--cv-section-line-height, var(--leading-normal));
+}

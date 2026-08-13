@@ -16,6 +16,7 @@ import { CvPreviewEditingService } from './cv-preview-editing.service';
 import { CvPreviewStyleService } from './cv-preview-style.service';
 import { CvPreviewSelectionService, type CvLeafFieldKey } from './cv-preview-selection.service';
 import { CvPreviewEditModeService } from './cv-preview-edit-mode.service';
+import { CvPreviewHeaderComponent } from './cv-preview-header/cv-preview-header.component';
 import { buildCvAtoms } from './cv-preview-atoms';
 import type {
   CvExperienceSection,
@@ -27,7 +28,6 @@ import type {
   PhotoPlacement,
 } from '@applye/core';
 import {
-  buildContactLine,
   getBuiltinTheme,
   leafPath,
   orderedVisibleSections,
@@ -56,7 +56,7 @@ import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@ap
   selector: 'app-cv-preview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgStyle, PaginatedSheetComponent],
+  imports: [NgStyle, PaginatedSheetComponent, CvPreviewHeaderComponent],
   templateUrl: './cv-preview.component.html',
   styleUrl: './cv-preview.component.scss',
   // Component-scoped: an in-progress draft belongs to this preview and must
@@ -96,10 +96,9 @@ export class CvPreviewComponent {
   readonly includePhoto = input.required<boolean>();
   readonly photoDataUri = input.required<string | null>();
   readonly photoPlacement = input.required<PhotoPlacement>();
-  /** Drives `buildContactLine`'s optional fields in `#headerTpl` - not in the
-   * original task brief's input list, but required: the header atom template
-   * (moved verbatim) reads these two signals directly. Without them the
-   * contact line's birthdate/marital-status inclusion would silently break. */
+  /** Forwarded to `<app-cv-preview-header>`, which builds the contact line.
+   * Required rather than optional: without them the birthdate and
+   * marital-status fields would silently drop out of that line. */
   readonly includeBirthdate = input.required<boolean>();
   readonly includeMaritalStatus = input.required<boolean>();
 
@@ -117,13 +116,13 @@ export class CvPreviewComponent {
    * committed leaf edit (see `commitSummary`/`commitPersonalField`). */
   readonly sectionChange = output<CvSection>();
 
-  // Selection lives in `CvPreviewSelectionService` (see its doc for why it was
-  // extracted before the template split). These delegators exist so the 317
-  // existing call sites in `cv-preview.component.html` keep their unprefixed
-  // names: adding `sel.` to each would push bindings past 100 columns, and
-  // prettier's reflow would GROW the template. Each one dies with the atom
-  // block that calls it, as those blocks become child components that inject
-  // the service directly.
+  // Selection lives in `CvPreviewSelectionService`. These delegators exist so
+  // the remaining call sites in `cv-preview.component.html` keep their
+  // unprefixed names: adding `sel.` to each would push bindings past 100
+  // columns, and prettier's reflow would GROW the template. **Each one dies
+  // with the last atom block that calls it** - `isSectionSelected` and the
+  // `buildContactLine` re-export went with the header, and the header's child
+  // reaches the services by injection instead.
 
   selectable(renderMode: unknown): boolean {
     return this.sel.selectable(renderMode);
@@ -131,10 +130,6 @@ export class CvPreviewComponent {
 
   isSelected(sectionKey: CvSectionKey, part: 'body' | 'title'): boolean {
     return this.sel.isSelected(sectionKey, part);
-  }
-
-  isSectionSelected(sectionKey: CvSectionKey): boolean {
-    return this.sel.isSectionSelected(sectionKey);
   }
 
   isElementSelected(path: string): boolean {
@@ -223,7 +218,6 @@ export class CvPreviewComponent {
   }
 
   protected readonly sectionLabelKey = sectionLabelKey;
-  protected readonly buildContactLine = buildContactLine;
   protected readonly visiblePersonalContactFields = visiblePersonalContactFields;
   /** Exposed for the template - see `leafPath`'s doc for why every leaf-id
    * template literal now goes through this single builder instead of a raw

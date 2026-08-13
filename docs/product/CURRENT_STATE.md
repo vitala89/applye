@@ -42,6 +42,33 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`cv-preview.component.html` 895 -> 779/300: the first atom is a child component, and the split the
+  2026-08-04 decision forbade is discharged.** `cv-preview-header/` renders the header;
+  `cv-preview.component.html` keeps a four-line `ng-template` wrapper, because
+  `<lib-paginated-sheet>` takes a `TemplateRef` and not a component. **The DI question resolved in our
+  favour**: Angular resolves an embedded view through its DECLARATION tree, so all four services reach
+  the child - and the proof is that nothing broke, since the other way would have thrown
+  `NullInjectorError` in every existing preview spec. The boundary is **six inputs, all data**, against
+  the ~20 the old decision measured; #439 and #440 are what took it apart. Delegators began dying as
+  designed: `isSectionSelected` and the `buildContactLine` re-export went with the header, class 355 ->
+  **350**. **The rendered check caught a regression no gate could see** - see below. Counts unchanged
+  at 268/3071. **Next first action:** the second block. `#eduEntryTpl` (161 lines) or `#skillsTpl`
+  (113) are the next largest after `#expHeadTpl` (228); the pattern is now proven, so the remaining
+  question is only granularity - seven separate components, or grouping. `#expHeadTpl` and
+  `#expBulletTpl` are one atom family and should be weighed together.
+- **The style-encapsulation trap, and the gate that cannot see it.** Moving the header's markup into a
+  child left every `.cvpreview__*` rule behind in the parent's stylesheet, where Angular's emulated
+  encapsulation stopped them matching: the name lost its uppercase and letter-spacing, the photo its
+  float, the selection its ring and chip. **Type-check, lint, 3071 tests, both builds and all four
+  quality scripts stayed green**, and `npm run quality:style-move` reported "0 selectors lost
+  declarations" - correctly, because nothing had been deleted; the rules had merely stopped applying.
+  **A gate that compares stylesheet contents cannot catch a selector that still exists and no longer
+  matches.** Fixed by splitting rules by ownership: per-atom rules move with their atom, shared ones
+  live in `_cv-preview-atom.scss` and are `@use`d by parent and child alike, each copy carrying its own
+  component's attribute. `cv-preview.component.scss` 392 -> **211**. One limit is recorded in that
+  partial for the next seven blocks: `.cvpreview__selected:has(.cvpreview__element-selected)` requires
+  the container and its leaves to share an encapsulation attribute, so **an atom may not be split
+  across two components**.
 - **`cv-preview.component.ts` 413 -> 355/400 - under budget, and the campaign's worst file is closed.**
   The repository count goes **23 -> 22**. `CvPreviewEditModeService` takes `editing`, `selKey`,
   `focusKey`, `isEditingLeaf`, `startEditing`, `finishLeafEdit`, `returnFocusTo` and the focus effect.

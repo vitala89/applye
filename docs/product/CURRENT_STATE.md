@@ -42,6 +42,45 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **Ten silent fallbacks were made to report what they did, and the last one found on the way out was a
+  write path rather than a wording problem.** The maintainer asked for every place an agent had written
+  a fallback that swallows a failure and substitutes a value the caller cannot tell from a real answer.
+  The audit covered every `catch`, `.catch(() =>`, `unwrap_or*`, `.ok()` and `let _ =` under `apps/` and
+  `libs/`, and **most of it is honest**: a JSON parser over a stored TEXT column with a documented answer
+  for bad input is a rule, not a lie, and `job-identity`, `archetype`, `geo-scope`, `cv-content`, the four
+  `scoring.utils` parsers and the storage-disabled guards were all explicitly cleared. Nine sites were
+  not. **Three produced wrong output rather than no output**: `CvGapDialogService.analyze` returned `[]`
+  for a missing key, a dead network and a spent quota alike; `FinalChecksService.documentText` returned
+  the **raw `contentJson`**, which is long and full of words, so a corrupt document cleared the length
+  floor and the keyword overlap and scored a confident `pass`; and `baselineFor` silently tailored the
+  profile while the wizard still named the selected CV. Four more were honestly empty but silent, one was
+  a fire-and-forget commit, and two Rust `let _ =` bookkeeping writes in `discover.rs` now log. **A test
+  was green because of one of these bugs** - `final-checks.service.spec.ts` built its CV fixture as
+  `{summary: text}`, which is not a `CvContent`, so `cvContentToMd` threw and the checks ran over the raw
+  JSON. **The second half of the audit** - `?? []` / `|| ''` defaults and un-awaited promises - came back
+  almost clean, and the reason is systemic and was checked rather than assumed:
+  `app.config.ts` installs `provideBrowserGlobalErrorListeners()`, so a floating rejection reaches
+  `ToastErrorHandler` instead of vanishing. Sixteen of the seventeen `try`/`finally`-without-`catch`
+  blocks are documented contracts that propagate to an awaiting caller. **The exception is the one that
+  mattered most.** `QuickViewStore.refreshStages` had no `catch` and was called as `void` from an effect,
+  and `showQuickAdd` gated on `stageSummary() === null` - which a failed read leaves null exactly as an
+  application with zero stages does. So a failed stage read did not merely draw a wrong empty state: it
+  offered the form that **writes a stage**, called it the first one, for an application whose stages it
+  had just failed to read, and accepting it would have written a duplicate. **An unknown is not a zero.**
+  Merged as `#442` (squashed to `c9bef930`); the quick-add fix is **`#443`, open, CI green**.
+  application 1483 -> 1495 tests, desktop 966 -> 973. **Three deferrals are open and none is a
+  discovery - each was a decision:** the danger colour on the new error hint is unstyled because
+  `quick-view-modal.component.scss` is 537/400 and the budget was obeyed rather than worked around; nine
+  operational strings are raw English by the convention of the files they sit in, and whether they earn
+  seven locale entries is the maintainer's call; and `settings.rs:167` was left alone. **Next first
+  action: the rendered check, which is now three watches deferred.** The score-card ATS status line, the
+  error line printed into the exported tracker PDF and this stage panel have **never been seen on a
+  screen** - screen-control access was requested for the last of them and declined, so the check became
+  jsdom assertions, and it was writing that weaker check that surfaced the quick-add defect one branch
+  away from the one being fixed. That is the argument for running it: open Pipeline, click a card at
+  status `interview`, stub `listInterviewStages` to reject, and expect no quick-add form, the reason in
+  the panel, and one toast carrying the same text.
+
 - **`cv-preview.component.html` 895 -> 779/300: the first atom is a child component, and the split the
   2026-08-04 decision forbade is discharged.** `cv-preview-header/` renders the header;
   `cv-preview.component.html` keeps a four-line `ng-template` wrapper, because

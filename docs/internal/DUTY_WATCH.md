@@ -44,6 +44,32 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-14, the rendered check was refused, and writing it found a worse bug
+
+- **Status:** complete for the code. **The rendered check is still not done** - see Not completed. It is now three watches deferred.
+- **Agent/tool:** Claude Code, Opus 5. No grilling. No subagents.
+- **Branch:** `fix/silent-fallbacks-visible`, same branch and pull request as the two entries below.
+- **Commits:** one code commit, one documentation commit
+- **Pull request:** #442
+- **Objective:** the next action the entry below set - open the pipeline quick-view in a running app and confirm the stepper and the toast agree when the stage read fails.
+- **What happened:** `npm run desktop:dev` came up and the Tauri binary was confirmed running (`target/debug/applye-desktop`, pid 83978). **The maintainer denied screen-control access**, so the app could not be driven. That is a decision, not an obstacle to work around, and it was not retried. The check was rewritten as jsdom assertions over the rendered branch, which is a weaker instrument and is labelled as such in the spec's own doc comment.
+- **Writing that weaker check is what found the real bug.** Asserting the empty state failed with the panel's actual text, which showed the **quick-add form** rather than the "no stages yet" hint. `showQuickAdd` is `card().status === 'interview' && !stagesLoading() && stageSummary() === null && !promptDismissed()`, and a failed read leaves `stageSummary` null exactly as an application with zero stages does. So on a failed stage read the quick-view offered the form that **writes a stage**, described as the first one, for an application whose stages it had just failed to read - and accepting it would have written a duplicate. The entry below described this site as a wording problem. It was a write-path problem.
+- **Completed:**
+  - `showQuickAdd` now also requires `!stagesError()`. The form's precondition is "0 stages", and the only evidence for that is a read that returned.
+  - The stage panel gained the branch that was missing under it: a failed read prints its reason, and the "no stages yet" hint is unreachable on a failure.
+  - Four component tests: no form on a failed read, the reason is shown, the toast and the panel agree, and the control case that a genuinely empty read still offers the form.
+- **Not completed:**
+  - **The rendered check.** Three user-visible changes across three watches remain unseen on a real screen: the score-card status line, the error line in the exported tracker PDF, and this stage panel. Every one of them was written blind, and this watch is direct evidence of what that costs - a real defect sat one branch away from the one being fixed and only surfaced because a test happened to print the DOM.
+  - **The danger colour on the new error hint.** `quick-view-modal.component.scss` is 537 lines against a budget of 400 and may not grow. `qv__hint--error` is in the template, deliberately unstyled, with the reason written beside it; the message is legible in the hint's own colour. Extracting a section out of that stylesheet is what unblocks it.
+- **Files or packages changed:** `apps/desktop/src/app/pages/pipeline/quick-view-modal/` (component, template, spec), `CHANGELOG.md`, this file. No `libs` change, no Rust change.
+- **Validation:** `nx test desktop` 973/973 in 105 suites (from 969). `nx test application` 1495/1495, unchanged. `tsc --noEmit` clean for `apps/desktop`. `npm run quality:file-size` **passed after a revert**: the stylesheet grew 537 to 542 and was refused, so the colour rule was removed rather than the budget worked around; the template is 274/300. `quality:attribution`, `format:check`, lint, `git diff --check` all clean. Rust untouched, so no `cargo` run is claimed.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** the denied screen access was accepted rather than retried or routed around. The file-size refusal was obeyed by dropping the styling, not by making room for it, and the omission is written into the template where the next person will see it rather than only here.
+- **Risks or compatibility impact:** `showQuickAdd` is stricter, so the quick-add form no longer appears while `stagesError` is set. A user whose stage read fails must now retry or open Interview Prep to add a stage. That is the intended trade: the alternative is a duplicate write on unknown state.
+- **Open issues or blockers:** the rendered check needs either screen access or the maintainer running it by hand.
+- **Next first action:** with the app already running from this watch, open Pipeline, click a card at status `interview`, and confirm the stage panel. To force the failure path, temporarily rename `interview_stages` in the dev database, or stub `listInterviewStages` to reject and let HMR reload. Expect: no quick-add form, the reason printed in the panel, and one toast carrying the same text - not the "no stages yet" hint.
+- **Evidence:** the `showQuickAdd` defect was found from a failing assertion's printed DOM in this session, quoted in the commit body. The budget refusal and the revert are both recorded.
+
 ### 2026-08-13, the second half of the audit, and a correction to the entry below
 
 - **Status:** complete. Every automated gate observed passing. **No rendered check** - the same gap the entry below carries, and it is now two watches old.

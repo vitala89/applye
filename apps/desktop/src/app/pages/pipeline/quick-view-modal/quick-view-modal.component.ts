@@ -97,10 +97,17 @@ export class QuickViewModalComponent {
   // ever shows right after a transition INTO interview when the application
   // has 0 stages yet.
   protected readonly promptDismissed = signal(false);
+  // `stagesError` is part of the gate, not decoration. The form's precondition
+  // is "this application has 0 stages", and the only evidence for that is a
+  // read that came back. A failed read also leaves `stageSummary` null, so
+  // without this the panel invited the user to log the FIRST interview stage
+  // for an application that may already have several - and accepting would
+  // write a duplicate. An unknown is not a zero.
   protected readonly showQuickAdd = computed(
     () =>
       this.card().status === 'interview' &&
       !this.quick.stagesLoading() &&
+      !this.quick.stagesError() &&
       this.quick.stageSummary() === null &&
       !this.promptDismissed(),
   );

@@ -126,6 +126,23 @@
                 </button>
               </div>
             </div>
+          } @else if (quick.stagesError()) {
+            <!-- Before the "no stages yet" branch on purpose: an empty list is
+                 what a failed read leaves behind, and that branch would state
+                 as fact something this panel never managed to look up. Carries
+                 the error text itself rather than a translated key, like the
+                 other operational failures on this screen.
+
+                 `qv__hint--error` is DELIBERATELY UNSTYLED: this stylesheet is
+                 537 lines against a budget of 400, so it may not grow until a
+                 section is extracted out of it. The message is legible in the
+                 hint's own colour; the danger tone is owed once the extraction
+                 happens. The class stays as the seam for that rule and for the
+                 test that asserts this branch. -->
+            <p class="qv__hint qv__hint--error">{{ quick.stagesError() }}</p>
+            <button type="button" class="qv__link" (click)="viewAllStages()">
+              {{ t()('interview.quickview_view_all') }} →
+            </button>
           } @else {
             <p class="qv__hint">{{ t()('interview.quickview_stage_none') }}</p>
             <button type="button" class="qv__link" (click)="viewAllStages()">

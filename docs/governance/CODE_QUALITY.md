@@ -175,17 +175,19 @@ shrank only while pure logic remained.
 for another reason** - the same trigger the file-size budgets use, and one stream of work with them:
 take the page, move its state into stores, and the budgets converge as a consequence.
 
-**The enforcement is switched on for components.** `eslint.config.mjs` carries a `no-restricted-syntax`
-rule over `*.component.ts`: injecting `DbService` is an **error** unless the file is named in
-`COMPONENTS_STILL_USING_THE_GATEWAY`, which lists the 26 that still do and **only ever shrinks**. A new
-component cannot join it, and each migrated page deletes its own line; when the list empties, the rule
-goes with it.
+**The enforcement is switched on for components, and the migration it ratcheted is finished.**
+`eslint.config.mjs` carries a `no-restricted-syntax` rule over `*.component.ts` and `app.ts`: injecting
+`DbService`, `AiService` or `JobSourceService` is an **error**, with no exceptions. The rule began as a
+ratchet with an allowlist of 26 components; every migrated page deleted its own line, `jobs` deleted the
+last one, and `COMPONENTS_STILL_USING_THE_GATEWAY` is gone with it (ADR-0005, amendment fifty-six).
 
-`type:data` is still in `type:app`'s allowlist, and that is **not** the rule that keeps a component away
-from the gateway. `depConstraints` keys on the project tag, so removing it would also ban the gateway
-from the app's 18 `shared/*` services - a different and much larger change, and the reason the flip was
-never reachable on its own terms. It leaves once those services have moved into `libs/application` too
-(ADR-0005, amendment four).
+`type:data` also left `type:app`'s allowlist (amendment fifty-five), so
+`@nx/enforce-module-boundaries` now catches **strictly more** than the component rule: every app file
+rather than only components, and every service in `libs/data` rather than those three. The
+`no-restricted-syntax` rule is kept anyway for two reasons stated in full at the top of
+`eslint.config.mjs`: nx cannot be given a custom message that names the ADR, and a data service
+re-exported through `@applye/application` would satisfy the tag check while the `inject()` call stayed
+the only evidence.
 
 **`db.service.ts` is internal to this layer.** It is over budget, it may not grow, and it is cut into
 per-domain gateways when the ratchet refuses the next method added to it. Do not inject it into a

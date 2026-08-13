@@ -53,11 +53,11 @@ Three things a new session must know before writing code:
 
 1. **The rule binds new code now.** An existing page migrates when it is touched for another reason -
    the same trigger as the file-size budgets, and one stream of work with them.
-2. **Lint enforces it now, for components.** A `*.component.ts` file that injects `DbService` fails the
-   build unless it is named in `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs` - a list of
-   1 that only ever shrinks. Never add an entry; delete yours when you migrate a page. `type:data`
-   stays in `type:app`'s allowlist and leaves only when the app's `shared/*` services have moved too,
-   which is a separate and larger job (ADR-0005, amendment four).
+2. **Lint enforces it now, with no exceptions left.** A `*.component.ts` file (or `app.ts`) that
+   injects `DbService`, `AiService` or `JobSourceService` fails the build. The
+   `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist is gone: `jobs` deleted its last entry
+   (ADR-0005, amendment fifty-six). `type:data` also left `type:app`'s allowlist (amendment
+   fifty-five), so `@nx/enforce-module-boundaries` now covers every app file, not just components.
 3. **Changing the shape of the layer goes through the `aif-grilling` skill**, like any other `libs/`
    public API.
 

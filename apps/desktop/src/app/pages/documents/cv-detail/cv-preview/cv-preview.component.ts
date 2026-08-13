@@ -2,12 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   ElementRef,
   HostListener,
   inject,
   input,
-  linkedSignal,
   output,
   signal,
   TemplateRef,
@@ -17,6 +15,7 @@ import { NgStyle } from '@angular/common';
 import { CvPreviewEditingService } from './cv-preview-editing.service';
 import { CvPreviewStyleService } from './cv-preview-style.service';
 import { CvPreviewSelectionService, type CvLeafFieldKey } from './cv-preview-selection.service';
+import { CvPreviewEditModeService } from './cv-preview-edit-mode.service';
 import { buildCvAtoms } from './cv-preview-atoms';
 import type {
   CvExperienceSection,
@@ -62,7 +61,12 @@ import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@ap
   styleUrl: './cv-preview.component.scss',
   // Component-scoped: an in-progress draft belongs to this preview and must
   // not outlive it.
-  providers: [CvPreviewEditingService, CvPreviewStyleService, CvPreviewSelectionService],
+  providers: [
+    CvPreviewEditingService,
+    CvPreviewStyleService,
+    CvPreviewSelectionService,
+    CvPreviewEditModeService,
+  ],
 })
 export class CvPreviewComponent {
   /** Drafting and committing; the component keeps only the question of which
@@ -78,6 +82,9 @@ export class CvPreviewComponent {
    * inputs (ADR-0005, level three). This component's own template still reaches
    * it through the one-line delegators below. */
   readonly sel = inject(CvPreviewSelectionService);
+  /** Whether the selected leaf's inline editor is mounted, and where focus goes
+   * when that changes. Public for the same reason as `sel`. */
+  readonly mode = inject(CvPreviewEditModeService);
 
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
@@ -166,68 +173,6 @@ export class CvPreviewComponent {
     return this.sel.leafAriaLabel(sectionKey, field);
   }
 
-  /** The selectable host to return keyboard focus to once a committing edit
-   * clears the selection and the resting markup re-renders (see the focus
-   * effect below). Keyed as `"<sectionKey>:<part>"` to match `data-cv-select`. */
-  private returnFocusTo: string | null = null;
-
-  /** `"<sectionKey>:<part>"` (or `null`) - deliberately ignores `elementPath`.
-   * A `computed()` memoizes on its OUTPUT value, so changing only
-   * `elementPath` (Phase D.2: clicking a different leaf inside the same
-   * already-selected section/part to move the style-scope target) produces
-   * the same string and does not re-notify the focus effect below. Without
-   * this the focus-trap fix (see the effect's doc) would regress: an
-   * elementPath-only change would still swap the `selection` input's object
-   * reference, re-running the effect and yanking focus to the section's
-   * first leaf editor mid-click - exactly the bug that fix exists to
-   * prevent, just triggered by an element change instead of a redundant
-   * whole-selection re-emit. */
-  private readonly focusKey = computed<string | null>(() => {
-    const s = this.selection();
-    return s ? `${s.sectionKey}:${s.part}` : null;
-  });
-
-  /** Full selection identity including `elementPath` - the reset basis for
-   * `editing` so moving to a DIFFERENT leaf (even within the same section+part)
-   * drops back to view mode. */
-  private readonly selKey = computed<string | null>(() => {
-    const s = this.selection();
-    return s ? `${s.sectionKey}:${s.part}:${s.elementPath ?? ''}` : null;
-  });
-
-  /** Whether the selected LEAF is in explicit text-EDIT mode (its own inline
-   * editor mounted). Selecting a leaf no longer auto-mounts editors - that
-   * turned every field in the section into an input at once. The user opts in
-   * per selection via the live-panel "Edit text" button (`startEditing`). A
-   * `linkedSignal` off `selKey` so moving the selection to any other element
-   * drops back to view mode. */
-  readonly editing = linkedSignal<boolean>(() => {
-    this.selKey();
-    return false;
-  });
-
-  /** True when THIS specific leaf is the one being text-edited - the per-field
-   * gate that replaced the old section-level editor branch, so "Edit text"
-   * mounts only the selected element's editor, not every field in its section. */
-  isEditingLeaf(path: string): boolean {
-    return this.editing() && this.isElementSelected(path);
-  }
-
-  /** Enter text-edit mode for the current selection (live-panel "Edit text").
-   * A no-op with nothing selected. */
-  startEditing(): void {
-    if (this.selection()) this.editing.set(true);
-  }
-
-  /**
-   * Focus management for the inline editors, in one place:
-   * - ENTERING edit mode (`editing()` true) moves focus INTO the mounted leaf
-   *   editor, so keyboard users don't need an extra tab;
-   * - leaving edit mode via Enter (`finishLeafEdit`) returns focus to the
-   *   now-restored selectable host.
-   * Both run in a microtask so the DOM has rendered the new state first. Keyed
-   * off `focusKey()` (section+part) + `editing()`, not the raw `selection()`
-   * object, so an elementPath-only change never re-triggers this. */
   constructor() {
     this.edit.bind((section) => this.sectionChange.emit(section));
     this.css.bind({
@@ -242,36 +187,31 @@ export class CvPreviewComponent {
       t: this.t,
       emit: (next) => this.selectionChange.emit(next),
     });
-    effect(() => {
-      const key = this.focusKey();
-      const editing = this.editing();
-      if (!this.interactive()) return;
-      if (key && editing) {
-        queueMicrotask(() =>
-          this.el.nativeElement
-            .querySelector<HTMLElement>('.page-card .cvpreview__leaf-editor')
-            ?.focus(),
-        );
-      } else if (this.returnFocusTo) {
-        const target = this.returnFocusTo;
-        this.returnFocusTo = null;
-        queueMicrotask(() =>
-          this.el.nativeElement
-            .querySelector<HTMLElement>(`.page-card [data-cv-select="${target}"]`)
-            ?.focus(),
-        );
-      }
+    this.mode.bind({
+      selection: this.selection,
+      interactive: this.interactive,
+      host: () => this.el.nativeElement,
     });
   }
 
-  /** Finish editing a single-line leaf via Enter: blur commits the draft (the
-   * element's own `(blur)` handler), then leave edit mode - the selection is
-   * KEPT (chip + outline stay, panel stays open) and focus returns to the
-   * now-restored selectable host. */
+  // Edit mode and editor focus live in `CvPreviewEditModeService`. Delegators,
+  // for the same reason as the selection ones above - and `editing` is read by
+  // `cv-detail` through this component, so it keeps its name here regardless.
+
+  get editing() {
+    return this.mode.editing;
+  }
+
+  isEditingLeaf(path: string): boolean {
+    return this.mode.isEditingLeaf(path);
+  }
+
+  startEditing(): void {
+    this.mode.startEditing();
+  }
+
   finishLeafEdit(el: HTMLElement, sectionKey: CvSectionKey, part: 'body' | 'title'): void {
-    el.blur();
-    this.returnFocusTo = `${sectionKey}:${part}`;
-    this.editing.set(false);
+    this.mode.finishLeafEdit(el, sectionKey, part);
   }
 
   /** The host listener has to live on the component - a service cannot carry

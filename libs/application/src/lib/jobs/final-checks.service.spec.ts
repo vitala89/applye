@@ -23,15 +23,33 @@ describe('FinalChecksService', () => {
    * from the job keywords so the overlap rule is satisfied too. */
   const goodCvText = 'engineering platform delivery kubernetes typescript '.repeat(20);
 
+  /**
+   * A readable CV.
+   *
+   * This used to be `{ summary: text }`, which is not a `CvContent` at all -
+   * `cvContentToMd` threw on it, and the service's catch handed the raw JSON
+   * back as the document's "text". The checks then ran over JSON syntax that
+   * happened to contain the words they were looking for, and passed. The
+   * fixture is a real CV now, so a passing check means a readable document was
+   * read; `documentText` returns `''` for anything else, and the unreadable
+   * case is asserted separately below.
+   */
   function cvItem(text = goodCvText): DocumentLibraryItem {
     return {
       id: 1,
       docType: 'cv',
       label: 'CV',
-      contentJson: JSON.stringify({ summary: text }),
+      contentJson: JSON.stringify({
+        sections: [{ key: 'summary', order: 0, visible: true, text }],
+      }),
       language: 'en',
       regionTag: 'generic',
     } as never;
+  }
+
+  /** A CV row whose stored content cannot be parsed at all. */
+  function unreadableCvItem(): DocumentLibraryItem {
+    return { ...cvItem(), contentJson: '{not json' } as never;
   }
 
   function letterItem(paragraph: string): DocumentLibraryItem {
@@ -147,6 +165,30 @@ describe('FinalChecksService', () => {
     expect(checks?.hr).toBe('strong');
     expect(checks?.notes).toEqual([]);
     expect(s.outdated()).toBe(false);
+    expect(s.unreadableDocuments()).toEqual([]);
+  });
+
+  /**
+   * The regression this suite exists to hold: an unreadable document used to be
+   * fed to the checks as its own raw JSON. That string is long and full of
+   * words, so the length floor and the keyword overlap both cleared it and the
+   * step reported a confident `pass` on a document it had never read.
+   */
+  it('does not pass a CV whose stored content cannot be read, and names it', async () => {
+    const s = make();
+    await s.run(inputs({ cv: unreadableCvItem(), coverLetter: letterItem('x'.repeat(600)) }));
+
+    expect(s.checks()?.ats).not.toBe('pass');
+    expect(s.unreadableDocuments()).toEqual(['cv']);
+  });
+
+  it('clears the unreadable list when a later run reads the document', async () => {
+    const s = make();
+    await s.run(inputs({ cv: unreadableCvItem() }));
+    expect(s.unreadableDocuments()).toEqual(['cv']);
+
+    await s.run(inputs({ cv: cvItem() }));
+    expect(s.unreadableDocuments()).toEqual([]);
   });
 
   it('records fit as rescore when the previous result was already outdated', async () => {

@@ -9,6 +9,9 @@ import {
   type CvGapQuestion,
 } from '@applye/core';
 
+import { ToastService } from '../shell/toast.service';
+import type { GapAnalysis } from './gap-fill';
+
 export interface CvGapResult {
   answers: CvGapAnswer[];
   saveToProfile: boolean;
@@ -33,10 +36,18 @@ export interface CvGapResult {
 @Injectable()
 export class CvGapDialogService {
   private readonly ai = inject(AiService);
+  private readonly toast = inject(ToastService);
 
   readonly analyzing = signal(false);
   readonly open = signal(false);
   readonly questions = signal<CvGapQuestion[]>([]);
+
+  /**
+   * Why the last analysis produced no questions, when the reason was a failure
+   * rather than an answer. Cleared at the start of every `analyze`, so it always
+   * describes the most recent attempt and never an older one.
+   */
+  readonly analyzeError = signal<string | null>(null);
 
   private resolver: ((result: CvGapResult | null) => void) | null = null;
 
@@ -60,16 +71,20 @@ export class CvGapDialogService {
 
   /**
    * Asks the model which gaps are worth raising. Never throws and never blocks
-   * generation: an empty list means "ask nothing", which is also what a failed
-   * or unparseable answer produces.
+   * generation, but it does distinguish its two silent outcomes: an empty
+   * `questions` list means "ask nothing", while `ok: false` means the model was
+   * never reached. Both continue to a document; only the second is a failure,
+   * and it is reported here rather than left for the caller to notice, because
+   * every caller treats gap-fill as optional and would otherwise drop it.
    */
   async analyze(
     cvText: string,
     job: Job | null,
     settings: Settings | null,
     language: SupportedLanguage,
-  ): Promise<CvGapQuestion[]> {
-    if (!job?.id || !settings) return [];
+  ): Promise<GapAnalysis> {
+    this.analyzeError.set(null);
+    if (!job?.id || !settings) return { ok: true, questions: [] };
     try {
       const rendered = await this.ai.renderSkill('cv-gap-analysis', {
         cv_text: cvText,
@@ -84,9 +99,12 @@ export class CvGapDialogService {
         userPrompt: rendered.userPrompt,
         language,
       });
-      return parseCvGapResponse(res.text);
-    } catch {
-      return [];
+      return { ok: true, questions: parseCvGapResponse(res.text) };
+    } catch (e) {
+      const error = String(e);
+      this.analyzeError.set(error);
+      this.toast.warning(`Gap analysis unavailable - generating without it. ${error}`);
+      return { ok: false, error };
     }
   }
 
@@ -128,6 +146,7 @@ export class CvGapDialogService {
     this.open.set(false);
     this.analyzing.set(false);
     this.questions.set([]);
+    this.analyzeError.set(null);
     this.settle(null);
   }
 

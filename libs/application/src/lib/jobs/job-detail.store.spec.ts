@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type { Application, DocumentLibraryItem, Job, Profile, Settings } from '@applye/core';
 import { DbService, JobsStore } from '@applye/data';
 import { JobDetailStore } from './job-detail.store';
+import { ToastService } from '../shell/toast.service';
 
 const JOB = { id: 5, company: 'Acme', title: 'Engineer', language: 'en', jdText: 'React' } as Job;
 const PROFILE = { fullMd: '# Me' } as Profile;
@@ -29,15 +30,17 @@ function createStore(over: Record<string, jest.Mock> = {}) {
     ...over,
   };
   const jobs = { patchOverviewRow: jest.fn() };
+  const toast = { error: jest.fn() };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       JobDetailStore,
       { provide: DbService, useValue: db },
       { provide: JobsStore, useValue: jobs },
+      { provide: ToastService, useValue: toast },
     ],
   });
-  return { store: TestBed.inject(JobDetailStore), db, jobs };
+  return { store: TestBed.inject(JobDetailStore), db, jobs, toast };
 }
 
 describe('JobDetailStore', () => {
@@ -185,6 +188,44 @@ describe('JobDetailStore', () => {
 
       expect(await store.ensureApplication('en')).toBeNull();
       expect(db.upsertApplication).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Every read here is fail-soft, and stays that way - a detail screen the user
+   * can still paste into beats one that renders an error. What it must not do
+   * is pass for a healthy screen: a failed profile read looked exactly like "no
+   * profile yet", and a job whose reads threw looked like "nothing scored yet".
+   */
+  describe('fail-soft reads', () => {
+    it('records and raises why the context could not be loaded', async () => {
+      const { store, toast } = createStore({
+        getProfile: jest.fn().mockRejectedValue(new Error('db gone')),
+      });
+
+      await store.loadContext();
+
+      expect(store.profile()).toBeNull();
+      expect(store.loadError()).toContain('db gone');
+      expect(toast.error).toHaveBeenCalledTimes(1);
+    });
+
+    it('records and raises why a job could not be fully loaded', async () => {
+      const { store, toast } = createStore({
+        listApplications: jest.fn().mockRejectedValue(new Error('read failed')),
+      });
+
+      expect(await store.loadJob(5)).toBe(false);
+      expect(store.loadError()).toContain('read failed');
+      expect(toast.error).toHaveBeenCalledTimes(1);
+    });
+
+    it('clears the error once a load succeeds', async () => {
+      const { store } = createStore();
+
+      await store.loadContext();
+
+      expect(store.loadError()).toBeNull();
     });
   });
 });

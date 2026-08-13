@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { AiService } from '@applye/data';
 import { CvGapDialogService } from './cv-gap-dialog.service';
+import { ToastService } from '../shell/toast.service';
 
 /**
  * The reported bug: starting a cover letter while a CV was still generating
@@ -10,6 +11,7 @@ import { CvGapDialogService } from './cv-gap-dialog.service';
  */
 describe('CvGapDialogService', () => {
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
+  let toast: { warning: jest.Mock };
 
   const job = { id: 7, jdText: 'a job' } as never;
   const settings = { aiMode: 'api', provider: 'claude', economyModel: 'm' } as never;
@@ -25,9 +27,14 @@ describe('CvGapDialogService', () => {
         tokensOutput: 1,
       })),
     };
+    toast = { warning: jest.fn() };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [CvGapDialogService, { provide: AiService, useValue: ai }],
+      providers: [
+        CvGapDialogService,
+        { provide: AiService, useValue: ai },
+        { provide: ToastService, useValue: toast },
+      ],
     });
     return TestBed.inject(CvGapDialogService);
   }
@@ -156,29 +163,63 @@ describe('CvGapDialogService', () => {
     expect(s.busy()).toBe(true);
   });
 
+  /**
+   * `analyze` has two ways to produce no questions, and they used to be the
+   * same value. "The model was asked and had nothing to raise" and "the model
+   * was never reached" both returned `[]`, so a dead key or a spent quota
+   * generated a document with no gap questions and told the user nothing. The
+   * tests below pin the distinction: `ok` separates them, and only the failure
+   * is reported.
+   */
   describe('analyze', () => {
     it('returns the parsed questions', async () => {
       const s = make();
-      await expect(s.analyze('cv text', job, settings, 'en')).resolves.toHaveLength(1);
+      const result = await s.analyze('cv text', job, settings, 'en');
+      expect(result).toEqual({ ok: true, questions: expect.any(Array) });
+      expect(result.ok === true && result.questions).toHaveLength(1);
       expect(ai.run).toHaveBeenCalledWith(expect.objectContaining({ model: 'm' }));
+      expect(s.analyzeError()).toBeNull();
+      expect(toast.warning).not.toHaveBeenCalled();
     });
 
-    it('asks nothing when the model fails - gap-fill never blocks generation', async () => {
+    it('reports the failure when the model cannot be reached, and still does not block', async () => {
       const s = make();
       ai.run.mockRejectedValue(new Error('provider down'));
-      await expect(s.analyze('cv text', job, settings, 'en')).resolves.toEqual([]);
+
+      const result = await s.analyze('cv text', job, settings, 'en');
+
+      expect(result.ok).toBe(false);
+      expect(result.ok === false && result.error).toContain('provider down');
+      expect(s.analyzeError()).toContain('provider down');
+      expect(toast.warning).toHaveBeenCalledTimes(1);
     });
 
-    it('asks nothing when the answer will not parse', async () => {
+    it('clears a previous failure when a later analysis succeeds', async () => {
+      const s = make();
+      ai.run.mockRejectedValueOnce(new Error('provider down'));
+      await s.analyze('cv text', job, settings, 'en');
+      expect(s.analyzeError()).not.toBeNull();
+
+      await s.analyze('cv text', job, settings, 'en');
+
+      expect(s.analyzeError()).toBeNull();
+    });
+
+    it('asks nothing, without reporting a failure, when the answer will not parse', async () => {
       const s = make();
       ai.run.mockResolvedValue({ text: 'not json', tokensInput: 1, tokensOutput: 1 });
-      await expect(s.analyze('cv text', job, settings, 'en')).resolves.toEqual([]);
+      await expect(s.analyze('cv text', job, settings, 'en')).resolves.toEqual({
+        ok: true,
+        questions: [],
+      });
+      expect(s.analyzeError()).toBeNull();
     });
 
     it('is a no-op without a job or settings', async () => {
       const s = make();
-      await expect(s.analyze('cv', null, settings, 'en')).resolves.toEqual([]);
-      await expect(s.analyze('cv', job, null, 'en')).resolves.toEqual([]);
+      const noJob = { ok: true, questions: [] };
+      await expect(s.analyze('cv', null, settings, 'en')).resolves.toEqual(noJob);
+      await expect(s.analyze('cv', job, null, 'en')).resolves.toEqual(noJob);
       expect(ai.run).not.toHaveBeenCalled();
     });
   });

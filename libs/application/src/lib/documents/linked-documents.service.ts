@@ -29,6 +29,14 @@ export class LinkedDocumentsService {
   readonly cv = signal<DocumentLibraryItem | null>(null);
   readonly coverLetter = signal<DocumentLibraryItem | null>(null);
 
+  /**
+   * Why the last commit-out-of-draft did not happen. The swallow below is
+   * deliberate and stays - a failed commit must not break an export - but it
+   * used to leave no trace at all, so a document that never left draft looked
+   * like one nobody had committed yet.
+   */
+  readonly commitError = signal<string | null>(null);
+
   current(kind: ReviewDocumentKind): DocumentLibraryItem | null {
     return kind === 'cv' ? this.cv() : this.coverLetter();
   }
@@ -89,12 +97,16 @@ export class LinkedDocumentsService {
   async commit(kind: ReviewDocumentKind): Promise<void> {
     const item = this.current(kind);
     if (!item || !item.isApplicationDraft) return;
+    this.commitError.set(null);
     try {
       const committed = await this.db.documentLibraryCommit(item.id);
       if (!committed) return;
       this.set(kind, committed);
-    } catch {
-      // Swallowed: keep the draft, retry on the next export / mark-applied.
+    } catch (e) {
+      // Still swallowed: keep the draft, retry on the next export / mark-applied.
+      // Recorded rather than discarded, so a commit that keeps failing is
+      // visible instead of being inferred from a draft that never changes.
+      this.commitError.set(`The ${kind} could not be committed out of draft. ${String(e)}`);
     }
   }
 

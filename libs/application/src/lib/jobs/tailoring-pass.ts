@@ -85,18 +85,32 @@ export function resultMdForPass(passes: readonly PassResult[], pass: number): st
   return passes.find((r) => r.pass === pass)?.resultMd ?? '';
 }
 
+/**
+ * The baseline the passes rewrite, and whether it is the one the user asked
+ * for.
+ *
+ * `md` is always usable, so no caller can end up tailoring an empty document.
+ * `ok` is false only when a base CV was chosen and could not be used - the
+ * fallback then still holds the profile markdown, and the caller is expected to
+ * say which document the result was actually built from. Returning a bare
+ * string made those two cases identical, and a corrupt row silently tailored
+ * the profile under the name of the selected CV.
+ */
+export type CvBaseline = { ok: true; md: string } | { ok: false; md: string; reason: string };
+
 /** The text the passes rewrite: the chosen base CV when there is one, the
- * profile markdown otherwise. An unparseable CV falls back to the profile
- * rather than tailoring an empty document. */
-export function baselineFor(ctx: TailorContext): string {
+ * profile markdown otherwise. */
+export function baselineFor(ctx: TailorContext): CvBaseline {
   const fallback = ctx.profile?.fullMd ?? '';
-  if (!ctx.baseCvId) return fallback;
+  if (!ctx.baseCvId) return { ok: true, md: fallback };
   const cvItem = ctx.matchingCvs.find((c) => c.id === ctx.baseCvId);
-  if (!cvItem?.contentJson) return fallback;
+  if (!cvItem?.contentJson) {
+    return { ok: false, md: fallback, reason: `Base CV ${ctx.baseCvId} is no longer available` };
+  }
   try {
-    return cvContentToMd(JSON.parse(cvItem.contentJson) as CvContent);
+    return { ok: true, md: cvContentToMd(JSON.parse(cvItem.contentJson) as CvContent) };
   } catch {
-    return fallback;
+    return { ok: false, md: fallback, reason: `Base CV ${ctx.baseCvId} could not be read` };
   }
 }
 

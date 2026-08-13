@@ -49,6 +49,10 @@ export class JobUpdateScoreStepComponent {
 
   protected readonly cache = this.scoreSvc.cache;
   protected readonly atsReport = this.scoreSvc.atsReport;
+  /** Rendered beside the card: a null report with a reason is a failed check,
+   * not a skipped one, and the card silently shows the advisory verdict for
+   * both. Carries its own English text, like `updateScoreStatus` above. */
+  protected readonly atsError = this.scoreSvc.atsError;
   protected readonly postTailorScore = computed(() => this.tailorScore.resultFor(this.jobId()));
   protected readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.jobId()));
   protected readonly updateScoreStatus = computed(() => this.tailorScore.statusFor(this.jobId()));

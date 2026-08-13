@@ -52,27 +52,40 @@ describe('tailoring-pass', () => {
 
   describe('baselineFor', () => {
     it('uses the profile when no base CV is selected', () => {
-      expect(baselineFor(ctx())).toBe('the profile');
+      expect(baselineFor(ctx())).toEqual({ ok: true, md: 'the profile' });
     });
 
     it('uses the selected base CV when there is one', () => {
-      expect(baselineFor(ctx({ baseCvId: 4, matchingCvs: [CV] }))).toContain('from the chosen CV');
+      const base = baselineFor(ctx({ baseCvId: 4, matchingCvs: [CV] }));
+      expect(base.ok).toBe(true);
+      expect(base.md).toContain('from the chosen CV');
     });
 
-    it('falls back to the profile when the selected CV will not parse', () => {
-      expect(
-        baselineFor(
-          ctx({ baseCvId: 4, matchingCvs: [{ id: 4, contentJson: '{not json' } as never] }),
-        ),
-      ).toBe('the profile');
+    /**
+     * The two fallbacks below still hand back the profile, so no caller can end
+     * up tailoring an empty document - but they now say that they did. While
+     * `baselineFor` returned a bare string, a selected-but-unreadable CV was
+     * indistinguishable from having selected nothing, and the passes rewrote
+     * the profile under the name of a CV that was never opened.
+     */
+    it('falls back to the profile when the selected CV will not parse, and says so', () => {
+      const base = baselineFor(
+        ctx({ baseCvId: 4, matchingCvs: [{ id: 4, contentJson: '{not json' } as never] }),
+      );
+      expect(base.ok).toBe(false);
+      expect(base.md).toBe('the profile');
+      expect(base.ok === false && base.reason).toContain('could not be read');
     });
 
-    it('falls back when the selected id matches nothing in the list', () => {
-      expect(baselineFor(ctx({ baseCvId: 99, matchingCvs: [CV] }))).toBe('the profile');
+    it('falls back when the selected id matches nothing in the list, and says so', () => {
+      const base = baselineFor(ctx({ baseCvId: 99, matchingCvs: [CV] }));
+      expect(base.ok).toBe(false);
+      expect(base.md).toBe('the profile');
+      expect(base.ok === false && base.reason).toContain('no longer available');
     });
 
     it('yields an empty baseline rather than throwing when there is no profile', () => {
-      expect(baselineFor(ctx({ profile: null }))).toBe('');
+      expect(baselineFor(ctx({ profile: null }))).toEqual({ ok: true, md: '' });
     });
   });
 

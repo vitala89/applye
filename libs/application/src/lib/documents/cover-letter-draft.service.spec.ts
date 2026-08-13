@@ -15,7 +15,7 @@ describe('foldInGapAnswers', () => {
     const text = await foldInGapAnswers(
       'SOURCE',
       {
-        analyzeGaps: () => Promise.resolve([]),
+        analyzeGaps: () => Promise.resolve({ ok: true as const, questions: [] }),
         askGaps: () => Promise.resolve(null),
         saveToProfile: () => Promise.resolve(),
       },
@@ -30,7 +30,11 @@ describe('foldInGapAnswers', () => {
     const text = await foldInGapAnswers(
       'SOURCE',
       {
-        analyzeGaps: () => Promise.resolve([{ id: 'q1', category: 'other', question: 'Q?' }]),
+        analyzeGaps: () =>
+          Promise.resolve({
+            ok: true as const,
+            questions: [{ id: 'q1', category: 'other' as const, question: 'Q?', hint: null }],
+          }),
         askGaps: () =>
           Promise.resolve({ answers: [{ id: 'q1', answer: 'ANSWERED' }], saveToProfile: false }),
         saveToProfile: () => Promise.resolve(),
@@ -42,11 +46,42 @@ describe('foldInGapAnswers', () => {
     expect(text).toContain('ANSWERED');
   });
 
+  /**
+   * A failed analysis and an empty one both continue to a document - that is
+   * the fail-open posture, and it stays. What changed is that they are no
+   * longer the same value: `ok: false` means the model was never reached, and
+   * whoever produced it has already told the user. The dialog must not open on
+   * that path, because there is nothing to ask.
+   */
+  it('continues without asking when the analysis failed', async () => {
+    let asked = 0;
+    const text = await foldInGapAnswers(
+      'SOURCE',
+      {
+        analyzeGaps: () => Promise.resolve({ ok: false as const, error: 'provider down' }),
+        askGaps: () => {
+          asked += 1;
+          return Promise.resolve(null);
+        },
+        saveToProfile: () => Promise.resolve(),
+      },
+      analyzing,
+    );
+
+    expect(text).toBe('SOURCE');
+    expect(asked).toBe(0);
+    expect(analyzing()).toBe(false);
+  });
+
   it('returns the source when the user cancels the dialog', async () => {
     const text = await foldInGapAnswers(
       'SOURCE',
       {
-        analyzeGaps: () => Promise.resolve([{ id: 'q1', category: 'other', question: 'Q?' }]),
+        analyzeGaps: () =>
+          Promise.resolve({
+            ok: true as const,
+            questions: [{ id: 'q1', category: 'other' as const, question: 'Q?', hint: null }],
+          }),
         askGaps: () => Promise.resolve(null),
         saveToProfile: () => Promise.resolve(),
       },
@@ -75,7 +110,11 @@ describe('foldInGapAnswers', () => {
     const text = await foldInGapAnswers(
       'SOURCE',
       {
-        analyzeGaps: () => Promise.resolve([{ id: 'q1', category: 'other', question: 'Q?' }]),
+        analyzeGaps: () =>
+          Promise.resolve({
+            ok: true as const,
+            questions: [{ id: 'q1', category: 'other' as const, question: 'Q?', hint: null }],
+          }),
         askGaps: () =>
           Promise.resolve({ answers: [{ id: 'q1', answer: 'ANSWERED' }], saveToProfile: true }),
         saveToProfile: () => Promise.reject(new Error('write failed')),
@@ -112,7 +151,10 @@ describe('CoverLetterDraftService', () => {
         Promise.resolve({ id: 1, jobId: 7, coverLetterDocumentId: null } as never),
       analyzeGaps: () => {
         analyzed += 1;
-        return Promise.resolve([{ id: 'q1', category: 'other', question: 'Q?' }]);
+        return Promise.resolve({
+          ok: true as const,
+          questions: [{ id: 'q1', category: 'other' as const, question: 'Q?', hint: null }],
+        });
       },
       askGaps: () =>
         Promise.resolve({ answers: [{ id: 'q1', answer: 'EXTRA' }], saveToProfile: false }),

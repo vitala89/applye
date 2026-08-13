@@ -59,10 +59,18 @@ export class FinalChecksService {
   readonly checks = signal<FinalChecks | null>(null);
   readonly outdated = signal(false);
 
-  /** Clears both signals - a fresh job, or a wizard reset. */
+  /**
+   * Set when a document's stored content could not be read, so the checks below
+   * ran on nothing rather than on its text. Without it a corrupt row produced a
+   * confident set of red ticks that looked like a verdict on the document.
+   */
+  readonly unreadableDocuments = signal<string[]>([]);
+
+  /** Clears the signals - a fresh job, or a wizard reset. */
   reset(): void {
     this.checks.set(null);
     this.outdated.set(false);
+    this.unreadableDocuments.set([]);
   }
 
   statusKey(status: FinalCheckStatus): string {
@@ -98,6 +106,8 @@ export class FinalChecksService {
 
   async run(inputs: FinalCheckInputs): Promise<void> {
     const hash = await this.documentsHash(inputs);
+    // Re-run from scratch: last run's unreadable documents may have been fixed.
+    this.unreadableDocuments.set([]);
     const cvText = this.documentText(inputs.cv);
     const letterText = this.documentText(inputs.coverLetter);
     const jobText = inputs.jdText.toLowerCase();
@@ -168,6 +178,15 @@ export class FinalChecksService {
     }
   }
 
+  /**
+   * The plain text of a stored document, or `''` when it cannot be read.
+   *
+   * Returning the raw `contentJson` on a parse failure was worse than returning
+   * nothing: the keyword overlap and the length check then ran against JSON
+   * syntax, which is long and full of words, so a corrupt document scored as a
+   * plausible one. An empty string fails those checks honestly, and the
+   * document is named in `unreadableDocuments` so the step can say why.
+   */
   private documentText(item: DocumentLibraryItem | null): string {
     if (!item?.contentJson) return '';
     try {
@@ -183,7 +202,10 @@ export class FinalChecksService {
         .filter(Boolean)
         .join('\n\n');
     } catch {
-      return item.contentJson;
+      this.unreadableDocuments.update((names) =>
+        names.includes(item.docType) ? names : [...names, item.docType],
+      );
+      return '';
     }
   }
 }

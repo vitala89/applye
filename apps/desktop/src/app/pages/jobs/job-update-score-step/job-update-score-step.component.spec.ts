@@ -19,6 +19,7 @@ function stubs() {
     scoreSvc: {
       cache: signal<{ total: number } | null>({ total: 40 }),
       atsReport: signal<{ verdict: string } | null>(null),
+      atsError: signal<string | null>(null),
     },
     tailorScore: {
       resultFor: (id: number) =>
@@ -94,5 +95,26 @@ describe('JobUpdateScoreStepComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('app-updated-score-view')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.status--error')).toBeNull();
+  });
+
+  /**
+   * A null ATS report means either "no ATS check was run" or "the ATS check
+   * failed", and the card shows the AI's advisory verdict for both. The failure
+   * used to reach the console only, so a permanently broken check looked like a
+   * deliberate design. The reason is rendered beside the card now.
+   */
+  it('shows why the ATS report is missing when the check failed', () => {
+    const s = stubs();
+    const fixture = setup(s);
+
+    s.scoreSvc.atsError.set('ATS check unavailable - showing the advisory verdict only. boom');
+    s.state.set({ jobId: 7, running: false, error: false, status: '' });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-updated-score-view')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.status--error').textContent).toContain(
+      'ATS check unavailable',
+    );
   });
 });

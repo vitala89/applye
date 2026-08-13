@@ -3341,6 +3341,49 @@ components will need.
 
 Counts 266 -> **267 suites**, 3050 -> **3066 tests**. Over budget: still 23, at 413/400.
 
+## Amendment sixty-two: the worst file in the app reaches its budget, and the pilot is what forced it
+
+`cv-preview.component.ts` 413 -> **355/400**. **Under budget**, for the first time since this campaign
+opened on it at 1047. Over budget across the repository: 23 -> **22**.
+
+**This extraction was not planned; the pilot demanded it.** The header child needs `isEditingLeaf` and
+`finishLeafEdit`, and amendment sixty-one had deliberately left edit mode and focus on the component to
+keep that commit single-purpose. Three ways to give a child two methods, and only one survives: passing
+bound methods as inputs is a smell each of the remaining seven blocks would repeat, and
+`inject(CvPreviewComponent)` re-couples exactly what four PRs have spent themselves decoupling. So
+`CvPreviewEditModeService` came out first - `editing`, `selKey`, `focusKey`, `isEditingLeaf`,
+`startEditing`, `finishLeafEdit`, `returnFocusTo` and the focus effect.
+
+**Reaching the budget was a side effect, not the goal**, which is worth stating plainly: the file was
+cut because a child component needed a seam, and the 400 line fell out of that. Every previous cut in
+this file aimed at the number and missed it. This one aimed at a dependency and cleared it by 45 lines.
+
+**Two mechanical findings worth keeping.** First, **a service that owns an `effect()` cannot create it
+in its constructor** when its inputs arrive through `bind()`: `focusKey` reads `deps`, which does not
+exist yet, so a constructor-time effect is a race against Angular's first change detection. It is
+created inside `bind()` instead, with an explicit `inject(Injector)` - the injection context is gone by
+then. Second, **`editing` became a getter** rather than a field, because `cv-detail` reads it through
+this component and the name had to survive the move.
+
+**One service injecting another, which is new here.** `CvPreviewEditModeService` injects
+`CvPreviewSelectionService` for `isElementSelected` rather than taking it as a dep, because both are
+provided on the same element injector by the same component. That is the first time this family has had
+an internal dependency, and it is the shape the atom children will use too.
+
+**The rendered check has a recipe now, and that is the durable part.** The previous watch could not run
+one: `nx serve` has no Tauri context so no CV loads, and `tauri dev` produces a bare `cargo` binary with
+no `.app`, which the screen-capture allowlist filters out because it matches on bundle id.
+`npx tauri build --debug --bundles app` produces a real bundle that it can see. Seen on a genuine
+two-page CV: selection outline, chip and panel scope; "Edit text" mounting the editor **and moving the
+caret into it**, which is this amendment's effect; Enter closing it with the text intact; empty space
+clearing the selection through the delegating `@HostListener`. **One thing was seen and not explained** -
+Enter bubbles out of the editor to the section host's `(keydown.enter)="selectPart(...)"`, which unlike
+`onSelectKey` has no editor guard, so the scope widens from the leaf to the section. Both the template
+and `selectPart` moved verbatim, so neither commit can have caused it, but that reasoning is not a build
+of `main` and it is recorded as unverified rather than dismissed.
+
+Counts 267 -> **268 suites**, 3066 -> **3071 tests**.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

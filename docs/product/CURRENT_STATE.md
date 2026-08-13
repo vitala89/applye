@@ -42,6 +42,23 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **`cv-preview.component.ts` 413 -> 355/400 - under budget, and the campaign's worst file is closed.**
+  The repository count goes **23 -> 22**. `CvPreviewEditModeService` takes `editing`, `selKey`,
+  `focusKey`, `isEditingLeaf`, `startEditing`, `finishLeafEdit`, `returnFocusTo` and the focus effect.
+  **It was not planned.** The header pilot needs `isEditingLeaf` and `finishLeafEdit`, which amendment
+  sixty-one had deliberately left behind; the alternatives were passing bound methods as inputs (a smell
+  the remaining seven blocks would each repeat) or `inject(CvPreviewComponent)` (re-coupling what four
+  PRs decoupled). **Reaching 400 was a side effect** - four earlier cuts aimed at the number and missed;
+  this one aimed at a dependency and cleared it by 45 lines. Two mechanics worth remembering: a service
+  whose inputs arrive through `bind()` **cannot create its `effect()` in the constructor** (`focusKey`
+  reads `deps`, which does not exist yet), so it is created inside `bind()` with an explicit
+  `inject(Injector)`; and `editing` became a **getter**, because `cv-detail` reads it through this
+  component and the name had to survive. `CvPreviewEditModeService` injects `CvPreviewSelectionService`
+  rather than taking it as a dep - both sit on the same element injector, and that is the shape the atom
+  children will use. Counts 267/3066 -> **268/3071**. **Next first action:** the header pilot itself,
+  now genuinely unblocked - a thin `ng-template` wrapper delegating to `cv-preview-header/`, the child
+  injecting all four services and threading `section`, `photoUri`, `placement`, `renderMode`,
+  `includeBirthdate`, `includeMaritalStatus`, with `:host { display: contents }`.
 - **`cv-preview.component.ts` 535 -> 413, and the planned order was backwards.** The session opened on
   the previous entry's next action - split the 895/300 template, starting with `#headerTpl` - and
   stopped before editing anything, because a **decision recorded on 2026-08-04** had already forbidden

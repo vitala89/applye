@@ -20,6 +20,11 @@
      Selectable hosts carry role="button" + tabindex, an aria-label, and both
      Enter and Space activation (native-button parity); `data-cv-select` marks
      the host so a committing edit can return keyboard focus to it. -->
+<!-- The first atom to become a child component. The wrapper stays because
+     `<lib-paginated-sheet>` renders a TemplateRef, not a component: it forwards
+     the outlet context to the child's inputs and nothing else. Seven blocks to
+     go; each one that leaves also retires the delegators on the class that only
+     it still calls. -->
 <ng-template
   #headerTpl
   let-section
@@ -27,135 +32,14 @@
   let-placement="placement"
   let-renderMode="$sheetRenderMode"
 >
-  <div
-    [class]="'cvpreview__header ' + css.headerPlacementClass(placement)"
-    [class.cvpreview__selectable]="selectable(renderMode)"
-    [class.cvpreview__selected]="isSectionSelected('personal_details') && selectable(renderMode)"
-    [attr.role]="selectable(renderMode) ? 'button' : null"
-    [attr.tabindex]="selectable(renderMode) ? 0 : null"
-    [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('personal_details', 'body') : null"
-    [attr.data-cv-select]="'personal_details:body'"
-    [attr.data-cv-chip]="t()(sectionLabelKey('personal_details'))"
-    (click)="selectPart('personal_details', 'body', renderMode, $event)"
-    (keydown.enter)="selectPart('personal_details', 'body', renderMode, $event)"
-    (keydown.space)="onSelectKey($event, 'personal_details', 'body', renderMode)"
-    [ngStyle]="css.bodyCss('personal_details')"
-  >
-    @if (photoUri) {
-      <div class="cvpreview__photo">
-        <img [src]="photoUri" alt="" />
-      </div>
-    }
-    @if (isEditingLeaf(leafPath('pd', 'fullName')) && selectable(renderMode)) {
-      <input
-        type="text"
-        class="cvpreview__name cvpreview__leaf-editor cvpreview__element-selected"
-        [ngStyle]="{
-          color: css.effStyle('personal_details').colorHex,
-          ...css.leafCss(leafPath('pd', 'fullName')),
-        }"
-        [value]="edit.leafDraft(leafPath('pd', 'fullName'), section.fullName)"
-        [placeholder]="t()('documents.cv_untitled')"
-        (input)="edit.onLeafInput(leafPath('pd', 'fullName'), $any($event.target).value)"
-        (blur)="edit.commitPersonalField(section, 'fullName', section.fullName)"
-        (keydown.escape)="edit.onLeafEscape(leafPath('pd', 'fullName'))"
-        (keydown.enter)="finishLeafEdit($any($event.target), 'personal_details', 'body')"
-      />
-    } @else {
-      <h2
-        class="cvpreview__name"
-        [ngStyle]="{
-          color: css.effStyle('personal_details').colorHex,
-          ...css.leafCss(leafPath('pd', 'fullName')),
-        }"
-        [class.cvpreview__selectable]="selectable(renderMode)"
-        [class.cvpreview__element-selected]="
-          isElementSelected(leafPath('pd', 'fullName')) && selectable(renderMode)
-        "
-        [attr.role]="selectable(renderMode) ? 'button' : null"
-        [attr.tabindex]="selectable(renderMode) ? 0 : null"
-        [attr.aria-label]="
-          selectable(renderMode) ? leafAriaLabel('personal_details', 'fullName') : null
-        "
-        [attr.data-cv-chip]="leafChipLabel('fullName')"
-        (click)="selectLeaf('personal_details', leafPath('pd', 'fullName'), renderMode, $event)"
-        (keydown.enter)="
-          selectLeaf('personal_details', leafPath('pd', 'fullName'), renderMode, $event)
-        "
-        (keydown.space)="
-          onSelectKey($event, 'personal_details', 'body', renderMode, leafPath('pd', 'fullName'))
-        "
-      >
-        {{ section.fullName || t()('documents.cv_untitled') }}
-      </h2>
-    }
-    @if (section.title) {
-      @if (isEditingLeaf(leafPath('pd', 'title')) && selectable(renderMode)) {
-        <input
-          type="text"
-          class="cvpreview__title cvpreview__leaf-editor cvpreview__element-selected"
-          [ngStyle]="css.leafCss(leafPath('pd', 'title'))"
-          [value]="edit.leafDraft(leafPath('pd', 'title'), section.title)"
-          (input)="edit.onLeafInput(leafPath('pd', 'title'), $any($event.target).value)"
-          (blur)="edit.commitPersonalField(section, 'title', section.title)"
-          (keydown.escape)="edit.onLeafEscape(leafPath('pd', 'title'))"
-          (keydown.enter)="finishLeafEdit($any($event.target), 'personal_details', 'body')"
-        />
-      } @else {
-        <p
-          class="cvpreview__title"
-          [ngStyle]="css.leafCss(leafPath('pd', 'title'))"
-          [class.cvpreview__selectable]="selectable(renderMode)"
-          [class.cvpreview__element-selected]="
-            isElementSelected(leafPath('pd', 'title')) && selectable(renderMode)
-          "
-          [attr.role]="selectable(renderMode) ? 'button' : null"
-          [attr.tabindex]="selectable(renderMode) ? 0 : null"
-          [attr.aria-label]="
-            selectable(renderMode) ? leafAriaLabel('personal_details', 'title') : null
-          "
-          [attr.data-cv-chip]="leafChipLabel('title')"
-          (click)="selectLeaf('personal_details', leafPath('pd', 'title'), renderMode, $event)"
-          (keydown.enter)="
-            selectLeaf('personal_details', leafPath('pd', 'title'), renderMode, $event)
-          "
-          (keydown.space)="
-            onSelectKey($event, 'personal_details', 'body', renderMode, leafPath('pd', 'title'))
-          "
-        >
-          {{ section.title }}
-        </p>
-      }
-    }
-    <p
-      class="cvpreview__contact"
-      [ngStyle]="css.leafCss(leafPath('pd', 'contact'))"
-      [class.cvpreview__selectable]="selectable(renderMode)"
-      [class.cvpreview__element-selected]="
-        isElementSelected(leafPath('pd', 'contact')) && selectable(renderMode)
-      "
-      [attr.role]="selectable(renderMode) ? 'button' : null"
-      [attr.tabindex]="selectable(renderMode) ? 0 : null"
-      [attr.aria-label]="
-        selectable(renderMode) ? leafAriaLabel('personal_details', 'contact') : null
-      "
-      [attr.data-cv-chip]="leafChipLabel('contact')"
-      (click)="selectLeaf('personal_details', leafPath('pd', 'contact'), renderMode, $event)"
-      (keydown.enter)="
-        selectLeaf('personal_details', leafPath('pd', 'contact'), renderMode, $event)
-      "
-      (keydown.space)="
-        onSelectKey($event, 'personal_details', 'body', renderMode, leafPath('pd', 'contact'))
-      "
-    >
-      {{
-        buildContactLine(section, {
-          includeBirthdate: includeBirthdate(),
-          includeMaritalStatus: includeMaritalStatus(),
-        })
-      }}
-    </p>
-  </div>
+  <app-cv-preview-header
+    [section]="section"
+    [photoUri]="photoUri"
+    [placement]="placement"
+    [renderMode]="renderMode"
+    [includeBirthdate]="includeBirthdate()"
+    [includeMaritalStatus]="includeMaritalStatus()"
+  />
 </ng-template>
 
 <ng-template #summaryTpl let-section let-renderMode="$sheetRenderMode">

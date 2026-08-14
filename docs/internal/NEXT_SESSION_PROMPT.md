@@ -1,400 +1,213 @@
-# Next session prompt - Applye architecture migration
+# Next session prompt - Applye
 
 Paste everything below the line into a fresh Claude Code session.
 
 ---
 
-Continue the Applye architecture migration. **The plan changed on 2026-08-06** - read `ADR-0005`
-first, because it supersedes how the previous eight sessions worked.
-
-Short version: the file-size campaign was treating a symptom. Page classes reach 700 to 1000 lines
-because a page is view, state and orchestration at once, and extracting pure helpers does not bring
-them back - Profile stopped at 445/400 by decision, Discover shrank only while pure logic remained
-and then stopped too. So there is now an **application layer**: `libs/application`, page state in
-signal stores, budget 250. The size campaign and the migration are **one stream of work** - take a
-page, move its state into stores, and the budgets converge as a consequence.
+Continue work on Applye. **The application-layer migration that drove the last two months is
+finished** - do not restart it. `ADR-0005` is now a rule the linter enforces rather than a campaign
+with a backlog: `COMPONENTS_STILL_USING_THE_GATEWAY` is gone, `type:data` has left `type:app`'s
+allowlist, and no component in the repository injects `DbService`, `AiService` or `JobSourceService`.
+What is left is the debt that migration did not reach.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
-`docs/product/CURRENT_STATE.md`, and the recent `docs/internal/DUTY_WATCH.md` entries. Then read, in
-this order and in full:
-
-1. **`docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`** - the decision, the four
-   rejected options and the reasons. Everything below is downstream of it.
-2. **`docs/governance/CODE_QUALITY.md`**, section "Layers, and which one owns what".
-3. **`libs/data/src/lib/stores/jobs.store.ts`** - 66 lines, the only existing store, and the shape to
-   copy. Its header records why this is not an NgRx SignalStore; that reasoning is now layer-wide.
-
-Four Duty Watch entries are still worth reading, because each records something that cost real time:
-
-- **"three dead Discover row rules removed, and the `.dv-row` seam turns out not to need a hoist"** -
-  how an inherited plan was wrong, and how that was settled by looking rather than by asking.
-- **"Discover's feed row becomes a component, and the separator moves to the host"** - the
-  host-element trap, headed off rather than hit.
-- **"Discover's filter-toolbar controls are hoisted, and `.dv-geomenu` turns out to be three
-  menus"** - the descendant-selector form of the same trap, and the audit that shrank a 35-symbol
-  boundary to two inputs.
-- **"Discover's deterministic scoring leaves the page, and two of its own comments turn out to be
-  wrong"** - what writing tests for untested logic actually turns up.
+`docs/product/CURRENT_STATE.md`, the recent `docs/internal/DUTY_WATCH.md` entries,
+`docs/governance/CODE_QUALITY.md` and `docs/governance/VALIDATION_MATRIX.md`. Read
+`docs/product/decisions/ADR-0005-application-layer-owns-page-state.md` before touching any page -
+everything below is downstream of it.
 
 ## Where things stand
 
-`main` is at `3f6232b`, clean, **no open PRs.** Thirteen merged last session (#349-#361).
+`main` is at `b987d882`, clean, **no open pull requests.** The last three merged are #444 (docs
+sync), #445 (silent-failure audit leftovers) and #446 (dead scaffolds and the gateway-doc
+correction).
 
-Measure with `npm run quality:file-size:all` - **not** the plain `quality:file-size`, which is
-diff-scoped. A file missing from the diff-scoped report means "not changed", **not** "now under
-budget".
+The architecture is a **single Nx monorepo with enforced layer boundaries** - `apps/{desktop,web,
+mobile}` plus six `libs/`, five `@applye/*` aliases, and `@nx/enforce-module-boundaries` deciding
+every arrow rather than convention. That is the intended end state, and it was re-confirmed on
+2026-08-14 against the usual "split into multiple repos / adopt microfrontends" progression:
 
-### What the last session moved
+- **Multi-repo is rejected** because its trigger is several business lines with separate teams,
+  roadmaps and pipelines. Applye has one product and one maintainer.
+- **Microfrontends are rejected on a technical ground, not a taste one.** `tauri.conf.json` sets
+  `script-src 'self'`, so a Module Federation remote entry cannot load without weakening the CSP of
+  an application holding API keys in the OS keychain and the user's database on disk. The app is
+  local-first and must work offline. And there is no independent deploy target for a fragment: a
+  release is a signed installer plus `latest.json`, so the role "ship part of the app without
+  rebuilding the shell" is already played by the updater. The 18 `loadComponent` routes provide the
+  part of the benefit that does apply here.
 
-| file set   |                       before |           after |
-| ---------- | ---------------------------: | --------------: |
-| `discover` | html 636 / ts 884 / scss 938 | **484/618/704** |
+**Do not reopen either decision without new facts.** If a task seems to need one, that is a grilling
+gate, not an implementation detail.
 
-Across the whole Discover phase, eight PRs: **808 / 890 / 1464 -> 484 / 802 / 704**. Tests 1397 -> 1442. Repository count 41 -> 41, which as always understates the work: every new child component and
-util is within budget and never appears.
-
-## Profile is finished. Do not reopen it.
-
-The class stops at **445/400** and that is a **settled decision through the grilling gate**, not an
-omission. The remaining lines are one coherent lump of page state - `ngOnInit`, `save`,
-`persistProfile`, `refreshSavedMdHash`, the form and its three section mirrors - that no further
-pure-function extraction reaches. The maintainer chose this over building a `ProfileFormStore`.
-
-No ratchet exclusion was added: the file stays listed OVER and can never grow, which is the
-enforcement that matters.
-
-Two seams were audited and **rejected**, with reasons that still hold:
-
-- **The compensation block.** Template is under budget at 270/300, so a template-only move buys
-  nothing and still adds two lines to an over-budget class.
-- **The section-mirror collapse.** A shared `syncSections()` called from any one change handler
-  would re-serialize the other two, and `serialize(parse(x))` is **not identity** for text the user
-  typed by hand in raw mode.
-
-## Rules that are enforced, not optional
-
-**1. Prove a stylesheet move by declarations, not selectors.**
+## Measure before planning
 
 ```bash
-npm run quality:style-move -- --base origin/main <every stylesheet the rules may have moved between>
+npm run quality:file-size:all
 ```
 
-Four ways to run this wrongly, all hit for real:
+**Use `:all`, not the plain `quality:file-size`, which is diff-scoped.** A file missing from the
+diff-scoped report means "not changed", **not** "under budget" - the 2026-08-14 Duty Watch entry
+calls `jobs.component.ts` "the only file the size gate reports", and that was the diff-scoped gate
+speaking. The full audit reads **22 files over budget and 42 near it.**
 
-- **Leaving a stylesheet off the list.** List the page, the partial, and every child from every
-  earlier cut.
-- **`--base main` uses the _local_ ref, which `git fetch` does not move.** Use `origin/main`.
-- **`--page-scope` is for a base that predates a wrapper.** It strips an ancestor from the **after**
-  side only. Equal numbers lost and gained is the signature of passing it wrongly.
-- **It does not apply at all when you deliberately change declarations.** A contrast fix, a dead-rule
-  removal, or moving a separator onto a host is not a move; say so rather than running it and
-  explaining the noise.
+## The plan, in priority order
 
-**2. Shared page styles go to a page-scoped partial, emitted once from `styles.scss`.** Five exist:
-`_editor-shell.scss`, `_discover-controls.scss`, `_onboarding-shell.scss`,
-`_cover-letter-controls.scss`, `_profile-shell.scss`.
+### 1. `jobs.component.ts`, 977/400 - the last page-level ADR-0005 violation
 
-**3. A page whose class names are generic wraps its partial in the page root; a page whose names are
-already distinctive does not.** Profile needed `.profile { ... }` because seven of its shared names
-collide with eight other stylesheets. **Discover needs no wrapper** - 33 of its 34 top-level
-selectors already carry `dv-`. Count before assuming.
+The single largest file in the repository and the only page still shaped like the pre-ADR-0005 era:
+view, state and orchestration in one class. Move its screen state into stores under
+`libs/application/src/lib/jobs/` - that directory already holds `tailoring.service.ts`,
+`job-scoring.service.ts`, `job-actions.service.ts` and `final-checks.service.ts`, so the precedents
+and the fakes exist. **The store budget is 250 and two of those files are at 249 and 250**, so a new
+responsibility gets a new store rather than a line added to an existing one.
 
-**4. When a class moves, its modifiers move with it** - but know why. The rule bites on
-**same-specificity** modifiers, where source order decides while they share a file and
-style-injection order decides once they do not. A **contextual descendant** like
-`.dv-detail__heromain .dv-arch-badge` at (0,2,0) against a base at (0,1,0) is decided by specificity
-and is safe either way. Check the specificity rather than applying the rule blindly.
+Expect the budgets to converge as a consequence rather than as a separate exercise - that is the
+whole finding behind ADR-0005.
 
-## The method, which has held for every cut
+### 2. The Rust command layer, which has the disease the frontend just cured
 
-1. **Consumer audit before choosing a seam.** For each candidate block, list the symbols and classes
-   its markup names and count their uses elsewhere. Zero elsewhere means it can move.
-2. **Then audit the _class_ side, and let ownership pick the boundary.**
-   - The **page** owns state the child only edits -> **inputs and outputs**.
-   - The **child** owns state nothing else reads -> **the child owns the whole pipeline** (Profile's
-     raw editor took `parsing`, the status pair, the preview and the AI call; the filter menu took
-     three `*MenuOpen` signals whose only readers were the markup that moved).
-3. **Measure the block before writing the child - template _and_ stylesheet.** A new file born over
-   budget is refused: Discover's whole detail screen was 458 stylesheet lines and had to be cut in
-   two (sidebar, then hero).
-4. **Diff backwards.** Substitute each input back and check it reproduces the original
-   token-for-token. Normalise whitespace and comments; **BSD `sed` on macOS has no `\b`**, which
-   silently makes half your substitutions no-ops. **Prettier will move a `>` onto the previous line**
-   when a shorter binding now fits the print width - that delta is expected and is not a change.
-5. **Mutation-test the moved logic**, choosing mutations invisible to the eye: crossing two
-   near-identical branches, addressing the wrong one of a pair, inverting a tri-state, keeping four
-   labels distinct while swapping two of them. Print `MUTATED` from the script, **assert each pattern
-   matched exactly once before applying**, restore from a backup, and `diff` to prove byte-exactness.
-   **A mutation that fails to apply proves nothing** - one perl replacement mangled itself into
-   `-e -e`, the tests failed on garbage, and it was nearly counted as a kill.
-6. Gates before commit: `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop`,
-   `nx test desktop`, **`nx build desktop`**, `npm run quality:file-size`,
-   `npm run quality:attribution`, `npx nx format:check`, `git diff --check`.
-7. Branch from `main`, one seam per PR, update `CHANGELOG.md` and `DUTY_WATCH.md`, open against
-   `main`.
+`AGENTS.md` says Tauri commands stay thin and Rust domains split into command, validation, parsing,
+domain, persistence and provider modules. Ten modules under `apps/desktop/src-tauri/src/commands/`
+run **598 to 851 non-empty lines against a budget of 500**, with the IPC handler and the domain logic
+in the same file: `documents.rs` 851, `applications.rs` 809, `tailoring.rs` 738, `interview.rs` 695,
+`job_paste.rs` 688, `job_identity_source.rs` 656, `discover_filter.rs` 639, `import.rs` 608,
+`legitimacy.rs` 599, `job_identity.rs` 598.
 
-## The host-element trap, which has now fired three times
+Take one module, not all ten. The seam is the same each time: the `#[tauri::command]` function parses
+arguments and calls a function in a sibling domain module that knows nothing about Tauri - which is
+also what makes the domain logic testable without a `tauri::test` harness. Use the `applye-rust`
+skill.
 
-**A component host between a rule and its target breaks the rule, and no gate sees it.** Three
-distinct shapes so far, all real:
+### 3. `libs/skills` is invisible to the build graph
 
-1. **`flex: 1` on a child** (PR #341). Extraction put a host between `.field-row` and `.field`, so
-   the flex item became the host while `flex: 1` stayed inert on the element inside. Paired fields
-   collapsed to content width - 173.5px each in an 846px row.
-2. **`.dv-feed > :last-child { border-bottom: none }`** (PR #350). The host absorbs the match while
-   the border sits on `.dv-row` inside the child, drawing a stray line under the last row. Fixed by
-   moving the separator to the child's `:host`. **`quality:style-move` would not have caught it** -
-   no declaration would have been lost.
-3. **`.dv-filters .dv-btn { height: 30px; ... }`** (PR #351). A **descendant** selector: emulated
-   encapsulation stamps the page's `_ngcontent` attribute on the selector's **subject**, so a button
-   rendered by a child keeps `.dv-btn`'s defaults and the toolbar silently splits into three heights.
-   Fixed by hoisting the rule, as its own PR, before the cut.
+`apps/desktop/src-tauri/src/ai/skills.rs` reads 23 prompt files through
+`include_str!("../../../../../libs/skills/src/<name>/<name>.md")`, and `libs/skills` has **no
+`project.json`**. It is therefore not an nx project: editing a prompt does not invalidate any cache,
+does not appear in the graph, and is not covered by the boundary rules. It also means a renamed file
+fails at Rust compile time with a path error rather than anywhere useful.
 
-**And the mirror image, from PR #352:** markup that is **projected** keeps the _page's_ encapsulation
-attribute, so its rules must **stay** on the page. `__item`, `__expand`, `__region` and `__hint` are
-still in `discover.component.scss` for exactly that reason. Markup that moves needs its rules global;
-markup that is projected needs them to stay.
+Either give it a `project.json` tagged `type:domain` / `scope:shared`, or write the coupling down
+somewhere a reader will find it. This is a small change with a real decision inside it, so settle the
+shape before writing code.
 
-**Before any cut, list every rule whose target is about to sit inside a component host** - anything
-setting `flex`, `grid-column`, `align-self`, a direct-child width, or matching by descendant or by
-`>`.
+### 4. `apps/mobile` is a placeholder
 
-## Traps from the store migration specifically
+One `README.md`, and `package.json` carries `"mobile:dev": "echo 'Mobile not scaffolded yet…'"`.
+Tauri 2 supports mobile targets. Either scaffold it or delete both the directory and the script - an
+`apps/` entry that builds nothing is a false signal in every architecture review that follows.
 
-- **The lint gate can pass on a stale cache.** `nx run-many --target=lint` reported "0 errors" while
-  an unused parameter sat in a spec written minutes earlier; Nx had cached that project's lint from
-  **before the file existed**, and the pre-commit hook caught what the gate missed. **Run lint and
-  tests with `--skip-nx-cache`** - `AGENTS.md` now requires it.
-- **A new export needs its barrel entry, and the failure names neither.** Forgetting
-  `export * from './lib/.../x.store'` in `libs/application/src/index.ts` makes the class resolve to
-  `undefined` inside a component's `providers`, which fails as
-  `Cannot read properties of undefined (reading 'provide')` in seven unrelated tests.
-- **Open the parser before writing the fixture.** Three fixtures in a row were wrong from assuming a
-  shape: `ScanSummary` (per-source fields are `sourceName`/`fetched`/`filteredOut`/`newJobs`),
-  `parseLocalMarkets` (a JSON array of five known codes, not a comma list), `parseCompensation`
-  (**positional** - it takes the first two numbers and ignores the labels). Each cost a failing run,
-  and the last one also meant a test was asserting a state the parser cannot produce.
-- **Renaming a page member to a store path can grow the template past the ratchet.**
-  `feedStore.displayCount()` pushed one binding past the print width and Prettier wrapped it into
-  five lines. Alias on the page, as `jobs.component.ts` already does.
-- **A mutation killed by an unhandled rejection is not a kill.** It shows the suite is unhappy, not
-  that a test caught it - the same category as a mutation that fails to apply. Add the assertion and
-  verify it against that mutation in isolation.
+### 5. Two documentation debts left deliberately by #446
 
-## Other traps that have actually fired
+- **The CSP rationale is nowhere.** `style-src 'unsafe-inline'` is required by Angular's inline
+  styles and is a real weakening of an otherwise strict policy, with no note saying so.
+  `tauri.conf.json` is JSON and takes no comments, so it belongs in `docs/architecture.md`. Inventing
+  a `_comment` key in a Tauri config is worse than leaving it.
+- **`dragDropEnabled` is unset** in the window config. If file drag-and-drop into the window is not a
+  feature, `"dragDropEnabled": false` stops the webview intercepting it. Check whether anything
+  depends on it first.
 
-- **The ratchet refuses a template-only cut** on an over-budget class, because the import and the
-  `imports:` entry still add lines. Extract something real alongside it - the feed row paid for its
-  import by deleting the four page icons it took with it - or find that the import block itself is
-  the problem: `type X` pushed one import past the print width into four lines, and letting the
-  helper type its own return (TypeScript is structural) collapsed it back to one.
-- **Never write a lucide icon identity from memory.** The page states it. Two were wrong in one
-  session (`Rss` not `Radio`, `ChevronLeft` not `ArrowLeft`) and one nearly was (`Check` not
-  `CheckCircle2`). Nothing fails - the wrong glyph just renders.
-- **A helper you add to the page while extracting a child is as untested as anything else new.**
-- **Calling a TestBed fixture factory twice in one test** reconfigures an already-created TestBed and
-  throws. Put `TestBed.resetTestingModule()` at the **top of the factory** rather than making each
-  caller remember it.
-- **`@angular-eslint` rejects a bare `<label>` in a test host** (`label-has-associated-control`). Use
-  a `div` when the projected node is only a marker.
-- **A CSS extraction script can corrupt silently.** One scanner reset its skip flag at `depth === 1`
-  - true immediately after a rule's opening brace - and captured each rule's opening line while
-    leaving the body behind. Verify brace balance before writing, and let `quality:style-move` be the
-    proof.
-- **`[ngModel]` writes in a microtask.** `await fixture.whenStable()` before asserting on
-  `input.value`. Separately, an async `ngOnInit` is not tracked under zoneless: `whenStable()` can
-  resolve while the page is still on its loading branch. Flush a macrotask
-  (`await new Promise(r => setTimeout(r, 0))`).
-- **Commit before switching branches.** `git checkout -B <branch> origin/main` destroyed a full cut
-  once. And **do not rebase a branch whose commits are already squashed into `main`** - it conflicts
-  on `CHANGELOG.md` every time. Branch fresh from `origin/main` and `git stash pop` instead.
-- `npm run web:build` regenerates `apps/web/public/sitemap.xml`. Use `nx build web`.
-- The correct format command is `npx nx format:write`. New untracked files sometimes need
-  `npx prettier --write <path>` directly. **`nx format:check` prints the offending file and still
-  exits 0 inside a `&&` chain** - read its output, do not trust the exit code alone.
-- A long-running branch always conflicts in `CHANGELOG.md` and `DUTY_WATCH.md`. Pure additions both
-  sides: keep both, newest on top, and check for two `### Changed` headings in one release section.
+### 6. Carried over from #445
 
-## Verification - know what it can and cannot reach
+- **Five `.status--error` declarations** across five stylesheets, with different values, could fold
+  into the `ui-error-text` utility in `libs/ui/src/styles/_status.scss`. The reason they were not
+  folded then is written into that file: `_profile-shell.scss` records that `status`,
+  `status--error`, `muted` and four more are generic names defined **with different values** across
+  eight files, so claiming the name globally would hand those pages a property they never set.
+- **Two rendered checks were never driven**: the ATS status line and the quick-view stage panel. Both
+  need real database rows, so a browser preview cannot substitute - outside Tauri every `invoke`
+  rejects. And **synthetic clicks do not reach the Tauri webview**: hover produces the hover state,
+  a click at the same coordinates does nothing, confirmed against three targets including the theme
+  toggle. These need a human at the keyboard. Say so rather than reporting them as covered.
 
-**Profile is routed and can be driven.** `preview_start` with
-`{url: "http://localhost:4200/profile"}`, then `javascript_tool` to click, type
-(`dispatchEvent(new Event('input', {bubbles: true}))`) and read `getComputedStyle`. The strongest
-check is the **round trip through the markdown**: edit a field, switch to raw mode, read the
-`<textarea>`; leaving raw mode parses it back.
+## What is explicitly not in the plan
 
-**The browser has no Tauri IPC**, and that is a hard limit, not a gap to apologise for:
-
-- Profile never loads, so `fullMd` starts empty and both AI buttons are correctly disabled.
-- **Discover has no sources, so the feed is empty.** Neither the detail screen nor the filter row
-  (which lives inside `view() === 'feed'`) can be reached at all. Every Discover cut has therefore
-  been verified by the declaration check and the backwards diff rather than by walking. For a pure
-  move those are the stronger evidence anyway - say that plainly instead of implying a walk happened.
-- Onboarding is gated in `app.ts` rather than routed, so the browser never opens it.
-
-**jsdom resolves `display` from a `:host` rule but returns empty strings for every border longhand.**
-So a separator moved onto a host cannot be unit-tested; the block-level host can, and is.
-
-Measure computed styles on a **fresh element query**; one captured before a re-render silently
-returns empty strings. And if `window.innerWidth` is 0, the pane is backgrounded - take a screenshot
-to force it visible before trusting any geometry.
-
-## The plan
-
-### The rules you are working to
-
-- **A page component renders and delegates.** It does not hold the state of its own screen and does
-  not inject `DbService`. Screen state goes to a signal store in `libs/application`.
-- **Plain `signal()` and `computed()`.** Never NgRx - `jobs.store.ts` records why.
-- **A store's budget is 250 lines**, its own category in `tools/check-file-size-budgets.mjs`, and the
-  ratchet **refuses a new file born over budget**. This is the single most important planning fact:
-  `jobs.component.ts` at 1050 lines cannot move into one store. It decomposes into several, by
-  responsibility. That is the goal, not a side effect.
-- **A store must be testable without a `TestBed`.** If it is not, its dependencies are wrong.
-- **A store orchestrates; it does not calculate.** Pure rules stay in `libs/core` or in a page-local
-  pure module - `discover-location-selection.ts` and `discover-detail-scoring.ts` are the pattern.
-- **Lint does not enforce the boundary yet.** `type:data` is still in `type:app`'s allowlist. Do not
-  add a new direct `DbService` injection because lint stayed quiet.
-- **Changing the shape of the layer goes through `aif-grilling`.** The layer is a `libs/` public API.
-
-### Step 1 is done. `libs/application` exists, with four stores.
-
-All of Discover, in four pull requests:
-
-| store                         | owns                                                             | lines |
-| ----------------------------- | ---------------------------------------------------------------- | ----: |
-| `DiscoverDetailStore`         | the open job: blocks, skills, score, salary, verdict             |   110 |
-| `DiscoverScanStore`           | the scan and the console that narrates it                        |    81 |
-| `DiscoverFeedStore`           | the rows, the render window, and the four writes                 |   109 |
-| `DiscoverProfileContextStore` | target roles, pay and geography - what a posting is read against |    97 |
-
-All component-scoped, all under the 250 budget, 78 tests between them.
-**`discover.component.ts` no longer injects `DbService`.**
-
-### Step 1b - the decision that blocks every page, and it is first
-
-**Discover still is not free of the gateway, and neither can any page be until this is settled.**
-The count went 46 -> 45, not to 44, because `DiscoverSourcesService` still injects `DbService`.
-
-It **cannot move to `libs/application` as it stands: it raises seven toasts.** Every store written so
-far returns its failure and lets the page decide, because telling the user is the app's job. This
-service does not.
-
-This is not a Discover quirk - it is the shape of the last mile on every page, and the `type:data`
-allowlist flip is unreachable until it has an answer. **Take it through `aif-grilling` before writing
-anything.** The facts are already gathered:
-
-- `discover-sources.service.ts` is 173 lines, component-scoped, provided by the page.
-- Seven `this.toast` calls: three successes (source added twice, source removed) and four errors.
-- It also injects `TranslateService`, which is `type:util` and therefore fine for the layer.
-- `ToastService` lives in `apps/desktop/src/app/core/toast/`, so it is app-level by construction.
-
-Readings that lead to different work: the service returns failures like every other store and the
-page toasts; or the toast concern moves somewhere the layer may depend on; or services that notify
-stay in the app by rule and the allowlist flip is abandoned as a goal. Do not choose.
-
-### Step 2 onwards - one page per pull request, in this order
-
-Ranked by what the migration buys, not by raw line count:
-
-| page                  |   ts | html | scss | why here                                         |
-| --------------------- | ---: | ---: | ---: | ------------------------------------------------ |
-| `discover`            |  730 |  484 |  704 | half-migrated, pure logic already out            |
-| `jobs`                | 1050 |  686 |  493 | worst class in the repo; needs several stores    |
-| `cv-detail`           | 1019 |  492 |  665 | pairs with `cv-preview` below                    |
-| `tracker`             |  667 |  557 |  893 | stylesheet is the worst part, cut it the old way |
-| `onboarding`          |  738 |  514 |  642 | four wizard steps still inline                   |
-| `cv-live-style-panel` |  704 |  467 |  336 |                                                  |
-| `settings`            |  575 |  580 |  362 |                                                  |
-
-Each pull request: **one page, its stores, its tests, and the budgets it moves.** Stylesheets and
-templates keep being cut by the existing method, which is unrelated to the layer and can travel in
-the same pull request or its own.
-
-### Step 3 - close the boundary
-
-When **no component injects `DbService`**, remove `type:data` from `type:app`'s allowlist in
-`eslint.config.mjs`. From that point the rule fails the build instead of the review.
-
-```bash
-grep -rln "inject(DbService)" apps/desktop/src --include="*.ts" | grep -v spec | wc -l
-```
-
-**45 at the time of writing**, down from 46. That number is a poor per-pull-request metric and a fine
-end-state one: it only falls when a page's data access moves **in full**, and Discover's four stores
-moved everything except the one service Step 1b is about.
-
-### What is explicitly not in the plan
-
-- **`db.service.ts` (461/400, ~79 methods) stays as it is** and becomes internal to the layer. Six
-  lines per method is a mechanical mapping onto IPC, not complexity, and splitting it would touch
-  imports in 46 files the migration will rewrite anyway. It cannot grow. It is cut into per-domain
+- **`cv-preview.component.html`, 779/300, is blocked by decision.** It looks like nine `ng-template`
+  atoms and is not: all speak one inline-editing protocol repeated per field. The real seam is the
+  17 near-identical `@if (isEditingLeaf(...)) { <input> } @else { <element> }` pairs - one
+  editable-leaf component or directive owning that protocol. A design change needing its own
+  decision, and **not** something the application layer solves. The header block was extracted in
+  #441 and the file went 895 to 779; that is the shape further work would take.
+- **`db.service.ts`, 461/400, stays as it is** and is internal to `libs/data`. Roughly six lines per
+  method is a mechanical mapping onto IPC, not complexity. It may not grow. It is cut into per-domain
   gateways **when the ratchet refuses the next method added to it**, and not before.
-- **`libs/core/.../analytics.ts` (665/400)** is the only `libs/` file over budget. Changing its shape
-  is a public API decision and goes through the grilling gate.
-- **`cv-preview.component.html` (895/300) is blocked by decision.** It looks like nine `ng-template`
-  atoms and is not: all of them speak one inline-editing protocol (`isEditingLeaf`, `leafPath`,
-  `leafDraft`, `onLeafInput`, `finishLeafEdit`, `selectLeaf`, …) repeated per field. The real seam is
-  **17 near-identical `@if (isEditingLeaf(...)) { <input> } @else { <element> }` pairs** - one
-  editable-leaf component or directive owning the protocol. That is a design change needing its own
-  decision, and it is **not** what the application layer solves.
-- **Profile is finished at 445/400.** Settled through the grilling gate; the remaining lines are one
-  lump of page state. **It is now a migration candidate rather than a closed file** - a
-  `ProfileFormStore` is exactly what `ADR-0005` sanctions - but it is not urgent and it is not first.
-  Two seams inside it stay rejected on their own merits: the compensation block (template already
-  under budget, so a move only grows the class) and the section-mirror collapse (a shared
-  `syncSections()` re-serializes the other two, and `serialize(parse(x))` is not identity for
+- **`libs/core/.../analytics.ts`** changing shape is a `libs/` public API decision and goes through
+  the grilling gate.
+- **Profile is finished at 445/400.** Settled through the grilling gate. A `ProfileFormStore` is what
+  ADR-0005 sanctions and it is legitimate, but it is not urgent and not first. Two seams inside it
+  stay rejected on their own merits: the compensation block (template already under budget, so a move
+  only grows the class) and the section-mirror collapse (`serialize(parse(x))` is not identity for
   hand-typed raw markdown).
 
-### Calibration carried over from the component work
+## Traps that have actually fired
 
-Profile's AI Tools shipped with **eleven** inputs, accepted because they are flat scalars read once
-each. **Content projection changes that arithmetic entirely** - Discover's filter menu replaced three
-dropdowns whose combined markup named 35 symbols with a component taking **two inputs and one
-output**, because projected markup compiles in the page's own template scope and its symbols never
-cross the boundary. Before declaring a boundary too wide, ask whether the wide part can be projected.
+Each of these cost a real session. They are not hypothetical.
+
+- **The host-element trap, three times.** Markup moved into a child component leaves behind any rule
+  that positions it: `flex`, `grid-column`, `align-self`, a direct-child width, or anything matching
+  by descendant or `>`. The new host element sits between the container and the target, and the rule
+  goes inert. Profile's paired fields fell to 173.5px in an 846px row this way. `quality:style-move`
+  **does not catch it** - no declaration was deleted. Use `display: contents` on the host when the
+  child must not become the flex item.
+- **Directives do not move with markup either.** Discover's `routerLink` stayed in the page's
+  `imports` when the markup moved into the drawer, so the attribute became literal: no `href`, no
+  navigation, and type-check, lint and the whole suite passed on it.
+- **A stylesheet only applies to markup its own component declares.** The CV preview header shipped
+  with none of its styling for exactly this reason, and `quality:style-move` correctly reported that
+  no rule had been deleted.
+- **`nx build` catches template type errors that `tsc --noEmit` misses.** `[notice]="columnsError()"`
+  passing `null` into a `string` input only fails in the Angular compiler. A type-check is not a
+  substitute for the build.
+- **The lint gate can pass on a stale cache.** Use `--skip-nx-cache` when the result matters.
+- **An unknown is not a zero.** A failed read that leaves a signal `null` looks exactly like an empty
+  result, and a form gated on `=== null` will then offer to write a first record over existing ones.
+  Gate on `!error() && empty()`, never on `empty()` alone.
+- **`npm run web:build` regenerates `apps/web/public/sitemap.xml`.** Use `nx build web`.
+
+## Verification, and what it cannot reach
+
+jsdom performs no layout, so widths, overlaps and computed colours cannot be asserted in a unit test -
+the _shape_ can. Print CSS hides everything outside `app-tracker-report`, so anything rendered above
+that subtree is invisible in the exported PDF while looking correct on screen. Six non-English
+locales do not share English word order, so an i18n key must be a whole sentence, never a fragment
+concatenated with a tail.
+
+Gates before commit: `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop
+--skip-nx-cache`, `nx test desktop`, **`nx build desktop`**, `cargo check` in `src-tauri` when
+anything under it or in `capabilities/` changed, `npm run quality:file-size`,
+`npm run quality:attribution`, `npm run format:check`, `git diff --check`.
 
 ## When to stop and ask
 
 `CLAUDE.md` puts a decision behind the `aif-grilling` skill when it changes a `libs/` public API, a
 database schema, the privacy or security posture, or when the task has two readings leading to
-different work. That gate has fired once and was worth it: looking up the facts first produced an
-option nobody had listed (Profile was no longer among the worst files, so "stop here and go where the
-lines actually are" beat both "build a store" and "grant an exception").
+different work. Items 3 and 4 above are both in that category.
 
-**Settle facts yourself before asking.** The ratchet's exclusion mechanism, existing store
-precedents, Discover's prefix count, and - the clearest case - whether `.dv-geomenu` was one menu or
-three were all lookups, not questions. The inherited plan said it needed a service-owned boundary;
-reading the template showed it was the same dropdown three times, and the answer became a shell with
-`<ng-content>`.
+**Settle facts yourself before asking.** Whether `dialog:default` already grants `allow-open` was a
+lookup in the plugin's `permissions/default.toml`, not a question. Whether the three scaffold
+components had consumers was a search, not a question. The gate is for decisions, not for facts.
 
-## Open follow-ups, not part of the campaign
+## Open follow-ups, not part of the plan
 
-- **Audit the earlier extractions for the host-element trap.** PR #341 fixed one live regression;
-  PRs #350 and #351 headed off two more. Only Profile's rows and Discover's feed row and filter row
-  have been checked. Every other cut this campaign has made deserves the same look: any rule setting
-  `flex`, `grid-column`, `align-self` or a direct-child width, and any rule matching by descendant or
-  `>`, whose target is now inside a component host.
-- **Projected content is created with the page's view even while it is hidden.** Measured on the
-  filter menu: zero `.dv-geomenu__item` elements in the DOM while closed, but the bodies' bindings
-  evaluating anyway. Harmless there - every one is a pure read over a feed-bounded list - but worth
-  knowing before projecting anything expensive.
 - **A CV that finishes generating after its page was replaced does not appear until reopened.**
   `LinkedDocumentsService` is component-scoped, so the result lands on the destroyed page's signals.
-  The document is written correctly; only the view is stale. **Relevant if the Discover detail path
-  becomes a component-scoped service.**
-- **A database newer than the running app aborts instead of explaining itself.** The unwrap in
-  `lib.rs:36` runs inside tao's `did_finish_launching`, a non-unwinding context, so it becomes an
-  abort with a macOS crash dialog. Real for a user who reinstalls an older release.
-- **Dependabot: 1 open alert** (moderate), `glib` RUSTSEC-2024-0429. Not fixable here - it arrives
-  through the gtk-rs 0.18 stack under `wry`/`webkit2gtk`, which Tauri pins, and it is Linux-only. It
-  has an entry in `.cargo/audit.toml` and is **deliberately left open rather than dismissed**,
-  because it is the thing that will tell us Tauri moved.
+  The document is written correctly; only the view is stale.
+- **A database newer than the running app aborts instead of explaining itself.** The
+  `.expect("initialize database")` in `lib.rs`'s `setup` runs inside tao's `did_finish_launching`, a
+  non-unwinding context, so a panic becomes an abort with a macOS crash dialog rather than a message.
+  Real for a user who reinstalls an older release.
+- **Projected content is created with the page's view even while hidden.** Measured on Discover's
+  filter menu: zero `.dv-geomenu__item` elements in the DOM while closed, but the bodies' bindings
+  evaluating anyway. Harmless there; worth knowing before projecting anything expensive.
+- **Dependabot: 1 open Rust alert**, `glib` RUSTSEC-2024-0429. Not fixable here - it arrives through
+  the gtk-rs 0.18 stack under `wry`/`webkit2gtk`, which Tauri pins, and it is Linux-only. It is
+  **deliberately left open rather than dismissed**, because it is what will tell us Tauri moved -
+  that reasoning is recorded in `DUTY_WATCH.md`, not in a suppression file, and there is no
+  `.cargo/audit.toml` in this repository. GitHub also reports npm advisories on the default branch; the last
+  audit found every one of them development-scope, with `npm audit --omit=dev` at 0.
 
 ## Housekeeping
 
-A `npm run desktop:dev` process has been running across several sessions (PID 43739 at last check).
-It holds the nx `desktop:serve` lock, so `preview_start` on another port blocks behind it - but it
-also serves `localhost:4200` from whatever branch the working tree is on, which is what makes every
-walk-through possible. Check with `pgrep -fl "tauri dev"`. If you stop it, start your own server
-before trying to verify anything in the browser.
+No `npm run desktop:dev` process is running as of this handoff - check with `pgrep -fl "tauri dev"`.
+Start one before trying to verify anything that needs Tauri IPC, SQLite, the keychain, native
+dialogs, printing or the updater.

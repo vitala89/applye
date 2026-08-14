@@ -44,6 +44,31 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-14, the handoff prompt is rewritten, and three of its inherited facts were wrong
+
+- **Status:** complete.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. No grilling round - a handoff document is not a `libs/` API, a schema, or a posture change.
+- **Branch:** `docs/next-session-handoff`, cut from `main` after #446 merged.
+- **Objective:** replace `docs/internal/NEXT_SESSION_PROMPT.md`, which still briefed the next agent on a campaign that finished.
+- **Completed:**
+  - **The document is current.** It opened with "`main` is at `3f6232b`, no open PRs, thirteen merged last session (#349-#361)" and spent its middle third planning the application-layer migration page by page. That migration is over - the allowlist is gone, `type:data` has left `type:app`, and no component injects a gateway. 400 lines to 213: the finished plan is out, the durable traps are kept and condensed, and the remaining work is ordered.
+  - **The architecture decision is written down where the next agent will hit it**, with its reasoning rather than its conclusion: one Nx monorepo with enforced boundaries, multi-repo rejected because its trigger is several business lines with separate teams, microfrontends rejected because `script-src 'self'` would have to be weakened in an app holding keys in the keychain, because the app is offline-first, and because a fragment has no deploy target - a release is a signed installer plus `latest.json`, so the updater already plays that role. Recorded so the question is not re-litigated from scratch each session.
+  - **Six items ordered**, each with the reason it sits where it does: `jobs.component.ts` 977/400; ten Rust `commands/*.rs` at 598-851 against a budget of 500; `libs/skills` with no `project.json` behind an `include_str!`; the `apps/mobile` placeholder; the two documentation debts #446 left deliberately; and the two carried-over items from #445. Plus the four things explicitly **not** in the plan, with their existing decisions attached.
+- **Corrections to earlier entries, per this file's own rule:**
+  - **The entry above says `jobs.component.ts` is "the only file the size gate reports as over budget".** That was `npm run quality:file-size`, which is **diff-scoped** - it reported the only over-budget file _in that diff_. `npm run quality:file-size:all` reads **22 files over budget and 42 near**. The sentence is true of the run it describes and misleading about the repository; the new handoff states both numbers and names the trap.
+  - **The count of `loadComponent` routes is 18, not 17**, as stated verbally during the same review.
+  - **The inherited prompt claimed `glib` RUSTSEC-2024-0429 "has an entry in `.cargo/audit.toml`".** There is no `.cargo/audit.toml` in this repository. The advisory is left open deliberately, and the reasoning lives in this file. Corrected rather than carried forward.
+  - **`lib.rs` uses `.expect("initialize database")`, not an `unwrap`**, and it is in `setup`, not at line 36. The consequence described - a non-unwinding context turning a panic into an abort with a crash dialog - is unchanged.
+- **Not completed:** nothing in scope. The six planned items are handed off, not started.
+- **Files or packages changed:** `docs/internal/NEXT_SESSION_PROMPT.md`; this file.
+- **Validation:** `npm run format:check` - exit 0. `git diff --check` - clean. `npm run quality:attribution` - passed. `npm run quality:file-size` - passed. No code changed, so no lint, test, build or `cargo` run applies; the claims in the document were each checked against the repository rather than copied forward, which is what produced the four corrections above.
+- **Privacy/security impact:** none. Documentation only.
+- **Decisions and assumptions:** the old document's "traps that have actually fired" and "open follow-ups" sections were **kept and compressed rather than deleted**. They record failures that cost real sessions - the host-element trap, directives not moving with markup, a stylesheet not reaching markup its component does not declare - and none of that expired with the campaign that discovered it.
+- **Risks or compatibility impact:** none.
+- **Open issues or blockers:** none.
+- **Next first action:** decompose `apps/desktop/src/app/pages/jobs/jobs.component.ts`, 977/400, per ADR-0005, into stores under `libs/application/src/lib/jobs/`. Unchanged from the entry below, and now item 1 of the handoff.
+- **Evidence:** `npm run quality:file-size:all` for the 22/42 counts; `apps/desktop/src/app/app.routes.ts` for the route count; `ls .cargo/audit.toml` for the missing file; `apps/desktop/src-tauri/src/lib.rs` for the `expect`. `docs/product/CURRENT_STATE.md` deliberately untouched - a handoff document is not operational state.
+
 ### 2026-08-14, an architecture review that found the dead scaffolding and three lying documents
 
 - **Status:** complete.

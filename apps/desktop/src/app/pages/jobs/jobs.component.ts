@@ -16,9 +16,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { TailorScoreService, JobIntakeService } from '@applye/application';
 import { WizardActivity, WizardActivityService } from '@applye/application';
-import { DocumentGenService, ReviewDocumentKind } from '@applye/application';
 import { CvGapDialogService, CvDraftService, CoverLetterDraftService } from '@applye/application';
-import { GapFillHooks, LinkedDocumentsService } from '@applye/application';
+import { LinkedDocumentsService } from '@applye/application';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import {
@@ -26,14 +25,7 @@ import {
   documentReviewLanguageFor,
   inferDocumentRegion,
 } from '@applye/application';
-import {
-  Application,
-  Job,
-  jobHeaderTitle,
-  parseArchetypes,
-  parseLegitimacyNotes,
-  type CvGapAnswer,
-} from '@applye/core';
+import { jobHeaderTitle, parseArchetypes, parseLegitimacyNotes } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
@@ -47,7 +39,7 @@ import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-mo
 import { CvPhotoPromptService } from '@applye/application';
 import { ToastService } from '@applye/application';
 import { PortalAnswersService } from '@applye/application';
-import { FinalCheckInputs, FinalChecksService } from '@applye/application';
+import { FinalChecksService } from '@applye/application';
 import { DocumentExportService } from '@applye/application';
 import { TailorContext, TailoringService } from '@applye/application';
 import { JobScoringService, ScoreContext } from '@applye/application';
@@ -57,14 +49,13 @@ import { CoverLetterTailorService } from '@applye/application';
 import { DocumentReviewStatusService } from '@applye/application';
 import { DocumentReviewTargetsService } from '@applye/application';
 import { TailoringDiscardService } from '@applye/application';
-import { JobGapFillService, jobDocLabel } from '@applye/application';
-import {
-  coverLetterStaleInput,
-  cvStaleInput,
-  decideCoverLetterAction,
-  decideCvAction,
-} from '@applye/application';
+import { JobGapFillService } from '@applye/application';
 import { JobActionsService } from '@applye/application';
+import {
+  JobDocumentDraftsStore,
+  JobDocumentsStore,
+  JobFinalChecksStore,
+} from '@applye/application';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JobExportApplyStepComponent } from './job-export-apply-step/job-export-apply-step.component';
 import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.component';
@@ -117,33 +108,38 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     JobActionsService,
     CvPhotoPromptService,
     JobIntakeService,
+    // The document blocks of this screen. Same lifetime as the services above,
+    // for the same reason: they describe the job open on this page.
+    JobFinalChecksStore,
+    JobDocumentDraftsStore,
+    JobDocumentsStore,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   /** Everything this screen loads. The page renders and orchestrates; the
    * reads and the one write live in `libs/application` (ADR-0005). */
   private readonly store = inject(JobDetailStore);
+  /** Which documents this application is linked to, and how they are reached. */
+  protected readonly docs = inject(JobDocumentsStore);
+  /** Generating one of them. */
+  protected readonly drafts = inject(JobDocumentDraftsStore);
+  /** The review step's token-free checks over both. */
+  protected readonly checks = inject(JobFinalChecksStore);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardNav = inject(WizardNavService);
-  private readonly cvDraftSvc = inject(CvDraftService);
-  private readonly coverLetterSvc = inject(CoverLetterDraftService);
-  private readonly coverLetterTailor = inject(CoverLetterTailorService);
   private readonly reviewStatus = inject(DocumentReviewStatusService);
   /** The market and language the wizard's documents are written for; the
    * review step's two selects write through it. */
   private readonly targets = inject(DocumentReviewTargetsService);
   private readonly discardSvc = inject(TailoringDiscardService);
-  private readonly gapFill = inject(JobGapFillService);
-  private readonly linkedDocs = inject(LinkedDocumentsService);
   protected readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
-  private readonly docGen = inject(DocumentGenService);
   /** Draft-portal-answers state and AI calls. */
   protected readonly portal = inject(PortalAnswersService);
   /** The wizard's token-free final-checks step. */
@@ -181,12 +177,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   // "Create", even if the run completed while the page was closed.
   private prevDocPreparing = false;
   private readonly docCompletionEffect = effect(() => {
-    const jobId = this.job()?.id ?? -1;
-    const preparing = this.docGen.anyPreparing(jobId);
+    const preparing = this.drafts.anyPreparing();
     const prev = this.prevDocPreparing;
     this.prevDocPreparing = preparing;
     if (prev && !preparing) {
-      untracked(() => void this.loadLinkedDocuments());
+      untracked(() => void this.docs.loadLinked());
     }
   });
   private readonly document = inject(DOCUMENT);
@@ -283,260 +278,26 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly profilePhoto = computed(() => this.profile()?.photoDataUri ?? null);
 
   async acceptPhotoPrompt(): Promise<void> {
-    const doc = await this.photoPrompt.accept(this.profilePhoto(), this.linkedCv());
+    const doc = await this.photoPrompt.accept(this.profilePhoto(), this.docs.cv());
     if (doc) {
-      this.linkedCv.set(doc);
-      this.finalChecksOutdated.set(!!this.finalChecks());
+      this.docs.cv.set(doc);
+      this.checks.markOutdated();
     }
     const status = this.photoPrompt.status();
     if (status) this.reviewStatus.status.set(status);
-  }
-
-  /** Aliases onto `LinkedDocumentsService`'s writable signals. */
-  readonly linkedCv = this.linkedDocs.cv;
-  readonly linkedCoverLetter = this.linkedDocs.coverLetter;
-  // Which document drafts are generating - read from DocumentGenService (a root
-  // singleton) so an in-flight run survives leaving this page and CV + cover
-  // letter can generate independently.
-  readonly preparingCv = computed(() => this.docGen.isPreparing(this.job()?.id ?? -1, 'cv'));
-  readonly preparingCoverLetter = computed(() =>
-    this.docGen.isPreparing(this.job()?.id ?? -1, 'cover_letter'),
-  );
-  readonly anyDocPreparing = computed(() => this.docGen.anyPreparing(this.job()?.id ?? -1));
-  /** Aliases onto `FinalChecksService`. The template writes `finalChecksOutdated`
-   * directly, so these stay the same writable signals rather than views of them. */
-  readonly finalChecks = this.finalChecksSvc.checks;
-  readonly finalChecksOutdated = this.finalChecksSvc.outdated;
-  async openCv(id: number, returnToWizard = false): Promise<void> {
-    if (!returnToWizard) {
-      await this.openDocumentEditorWithReturnToJob('cv', id);
-      return;
-    }
-    await this.openDocumentEditorWithReturn('cv', id);
-  }
-
-  async openCoverLetter(id: number, returnToWizard = false): Promise<void> {
-    if (!returnToWizard) {
-      await this.openDocumentEditorWithReturnToJob('cover_letter', id);
-      return;
-    }
-    await this.openDocumentEditorWithReturn('cover_letter', id);
-  }
-
-  /** Opens a linked doc from the My Jobs detail's badges - its back arrow
-   * returns here (this job), not the Documents list. */
-  private async openDocumentEditorWithReturnToJob(
-    kind: ReviewDocumentKind,
-    id: number,
-  ): Promise<void> {
-    const job = this.job();
-    if (!job?.id) return;
-    const path = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
-    await this.router.navigate(path, {
-      queryParams: { returnTo: 'myJobs', jobId: job.id, jobLabel: job.company || job.title || '' },
-    });
-  }
-
-  private async openDocumentEditorWithReturn(kind: ReviewDocumentKind, id: number): Promise<void> {
-    const job = this.job();
-    if (!job?.id) return;
-    const reviewHash = await this.currentDocumentsHash();
-    this.finalChecksSvc.storeForReturn(reviewHash);
-    const path = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
-    await this.router.navigate(path, {
-      queryParams: {
-        returnTo: 'applyWizard',
-        jobId: job.id,
-        documentType: kind,
-        documentId: id,
-        reviewHash,
-        // Open the editor showing the rendered result first (Review = look at
-        // it), not the raw section editor.
-        preview: '1',
-      },
-    });
-  }
-
-  /** The store answers with null rather than a translated throw, because the
-   * message is presentation and the store has no `TranslateService`. */
-  async ensureApplicationDraft(): Promise<Application> {
-    const app = await this.store.ensureApplication(this.targets.language());
-    if (!app) throw new Error(this.t()('jobs.not_found_label'));
-    return app;
-  }
-
-  private async loadLinkedDocuments(): Promise<void> {
-    await this.linkedDocs.load(this.application());
-    await this.refreshFinalChecksFreshness();
-  }
-
-  /** True when the linked CV was generated from a different tailoring than the
-   * one now in hand, so committing the application should refresh it first. */
-  private cvDocStale(tailoredMd: string): Promise<boolean> {
-    const input = cvStaleInput(
-      this.job(),
-      tailoredMd,
-      this.targets.language(),
-      this.targets.region(),
-    );
-    return input ? this.linkedDocs.isStale('cv', input) : Promise.resolve(false);
-  }
-
-  /** True when the linked cover letter was built from a different profile / JD
-   * than the current one. */
-  private coverLetterDocStale(): Promise<boolean> {
-    const input = coverLetterStaleInput(
-      this.job(),
-      this.profile(),
-      this.targets.language(),
-      this.targets.region(),
-    );
-    return input ? this.linkedDocs.isStale('cover_letter', input) : Promise.resolve(false);
-  }
-
-  /**
-   * Ensures the application's CV + cover letter exist and (when
-   * `regenerateStale`) match the latest tailoring, then commits both into the
-   * library. Generation reuses the Review-documents path (createCvDraft /
-   * createCoverLetterDraft), so it is fail-soft - those set an error status
-   * instead of throwing, and the CV path is skipped when there is no tailored
-   * source to build from. This is the "Create / Update application" action:
-   * nothing is written to the Documents library until it runs.
-   */
-  private async commitApplicationDocuments(regenerateStale: boolean): Promise<void> {
-    const tailoredMd = this.finalTailoredCvMd();
-
-    const cv = await decideCvAction({
-      linked: !!this.linkedCv(),
-      tailoredMd,
-      regenerateStale,
-      isStale: () => this.cvDocStale(tailoredMd),
-    });
-    if (cv !== 'keep') await this.createCvDraft();
-    await this.linkedDocs.commit('cv');
-
-    const coverLetter = await decideCoverLetterAction({
-      linked: !!this.linkedCoverLetter(),
-      regenerateStale,
-      isStale: () => this.coverLetterDocStale(),
-    });
-    if (coverLetter !== 'keep') await this.createCoverLetterDraft();
-    await this.linkedDocs.commit('cover_letter');
-  }
-
-  async prepareDocumentsStep(): Promise<void> {
-    await this.reviewStatus.run(async () => {
-      await this.store.refreshLibrary();
-      await this.ensureApplicationDraft();
-      await this.loadLinkedDocuments();
-      // Do not auto-create the CV on entering this step. The document is
-      // written only when the user explicitly clicks Create/Regenerate,
-      // so nothing is generated (or spends tokens) behind their back.
-    });
   }
 
   protected finalTailoredCvMd(): string {
     return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
   }
 
-  /** The gap-fill callbacks both document flows hand to their draft service. */
-  private gapFillHooks(job: Job): GapFillHooks {
-    return this.gapFill.hooks({
-      job,
-      settings: this.settings(),
-      language: this.targets.language(),
-      profile: this.profile(),
-      applyProfile: (profile) => this.profile.set(profile),
-    });
-  }
-
-  onGapSubmit(result: { answers: CvGapAnswer[]; saveToProfile: boolean }): void {
-    this.gapSvc.submit(result);
-  }
-
-  onGapCancel(): void {
-    this.gapSvc.cancel();
-  }
-
-  async createCvDraft(): Promise<void> {
-    if (this.preparingCv()) return;
-    const job = this.job();
-    const settings = this.settings();
-    const tailoredMd = this.finalTailoredCvMd();
-    if (!job?.id || !tailoredMd || !settings) {
-      this.reviewStatus.refuse(this.t()('jobs.wizard.document_cv_requires_tailoring'));
-      return;
-    }
-
-    await this.reviewStatus.run(async () => {
-      const result = await this.cvDraftSvc.create({
-        job,
-        settings,
-        tailoredMd,
-        language: this.targets.language(),
-        region: this.targets.region(),
-        label: jobDocLabel(job, 'Tailored CV'),
-        ensureApplication: () => this.ensureApplicationDraft(),
-        ...this.gapFillHooks(job),
-      });
-      if (!result) return;
-      this.application.set(result.application);
-      this.linkedCv.set(result.document);
-      this.finalChecksOutdated.set(!!this.finalChecks());
-      this.reviewStatus.succeed(this.t()('jobs.wizard.document_cv_linked'));
-    });
-  }
-
-  async createCoverLetterDraft(): Promise<void> {
-    if (this.preparingCoverLetter()) return;
-    const job = this.job();
-    const profile = this.profile();
-    const settings = this.settings();
-    if (!job?.id || !profile?.fullMd || !settings) {
-      this.reviewStatus.refuse(this.t()('documents.cv_generate_no_profile'));
-      return;
-    }
-
-    await this.reviewStatus.run(async () => {
-      const result = await this.coverLetterSvc.create({
-        job,
-        profile,
-        settings,
-        language: this.targets.language(),
-        region: this.targets.region(),
-        label: jobDocLabel(job, 'Cover Letter'),
-        // `preparingCv()` is part of this condition, not an extra guard: a CV
-        // still generating has not linked itself yet, so testing only
-        // `linkedCv()` let a cover letter started alongside it run a second
-        // analysis and raise a second dialog for the same questions.
-        skipGapFill: !!this.linkedCv() || this.preparingCv(),
-        ensureApplication: () => this.ensureApplicationDraft(),
-        ...this.gapFillHooks(job),
-      });
-      if (!result) return;
-      this.application.set(result.application);
-      this.linkedCoverLetter.set(result.document);
-      this.finalChecksOutdated.set(!!this.finalChecks());
-      this.reviewStatus.succeed(this.t()('jobs.wizard.document_cover_letter_linked'));
-    });
-  }
-
-  async chooseExistingDocument(kind: ReviewDocumentKind, id: number | null): Promise<void> {
-    if (!id) return;
-    await this.reviewStatus.run(async () => {
-      const app = await this.ensureApplicationDraft();
-      const result = await this.linkedDocs.link(kind, id, app, this.targets.language());
-      if (!result) return;
-      this.application.set(result.application);
-      this.reviewStatus.closeChooser(kind);
-      this.finalChecksOutdated.set(!!this.finalChecks());
-    });
-  }
-
-  runFinalChecks(): Promise<void> {
-    return this.finalChecksSvc.run(this.finalCheckInputs());
-  }
-
+  /**
+   * Retailoring from the review step. It stays on the page rather than in a
+   * store because it drives three blocks at once - the tailoring, the
+   * post-tailor score, and the documents - and moving it would drag the
+   * tailoring block along before its own turn. `JobDocumentsStore`'s header
+   * records the same boundary from the other side.
+   */
   async retailorFromFinalChecks(): Promise<void> {
     if (this.tailoring()) return;
     this.reviewStatus.clear();
@@ -546,51 +307,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (!this.postTailorScore() && !this.updatingScore()) {
       await this.updateScoreAfterTailor();
     }
-    if (this.linkedCv()) {
-      await this.createCvDraft();
+    if (this.docs.cv()) {
+      await this.drafts.createCv(this.finalTailoredCvMd());
     }
-    this.finalChecks.set(null);
-    this.finalChecksOutdated.set(true);
+    this.checks.invalidate();
     this.wizardInitialStep.set(2);
-  }
-
-  /** The linked documents and review settings the final checks run against. */
-  private finalCheckInputs(): FinalCheckInputs {
-    return {
-      cv: this.linkedCv(),
-      coverLetter: this.linkedCoverLetter(),
-      jdText: this.jdText(),
-      language: this.targets.language(),
-      region: this.targets.region(),
-    };
-  }
-
-  private currentDocumentsHash(): Promise<string> {
-    return this.finalChecksSvc.documentsHash(this.finalCheckInputs());
-  }
-
-  private refreshFinalChecksFreshness(): Promise<void> {
-    return this.finalChecksSvc.refreshFreshness(this.finalCheckInputs());
-  }
-
-  async openTailorCoverLetterModal(): Promise<void> {
-    const letters = await this.coverLetterTailor.prepare(this.settings());
-    // Null means the list could not be read - non-fatal, keep what we had.
-    if (letters) this.coverLetters.set(letters);
-  }
-
-  async startTailoringCoverLetter(): Promise<void> {
-    const result = await this.coverLetterTailor.run({
-      job: this.job(),
-      profile: this.profile(),
-      settings: this.settings(),
-      letters: this.coverLetters(),
-      application: this.application(),
-      label: (job) => jobDocLabel(job, 'Tailored Cover Letter'),
-    });
-    if (!result) return;
-    if (result.application) this.application.set(result.application);
-    void this.router.navigate(['/documents/cover-letter', result.document.id]);
   }
 
   readonly parsing = this.intake.parsing;
@@ -656,7 +377,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (pendingPrep === 'return') {
       await this.completeWizardReturnFromDocumentEditor();
     } else if (pendingPrep === 'restore-docs') {
-      await this.prepareDocumentsStep();
+      await this.docs.prepareStep();
     }
   }
 
@@ -722,7 +443,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       const app = this.application();
       this.targets.language.set(documentReviewLanguageFor(app, job, this.settings()));
       this.targets.region.set(inferDocumentRegion(job));
-      await this.loadLinkedDocuments();
+      await this.docs.loadLinked();
 
       this.portal.reset(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
       await this.portal.loadFromCache(job, this.profile(), this.settings());
@@ -739,7 +460,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * deliberately NOT auto-run (it would spend tokens without a click).
    */
   private async completeWizardReturnFromDocumentEditor(): Promise<void> {
-    await this.prepareDocumentsStep();
+    await this.docs.prepareStep();
 
     const params = this.route.snapshot.queryParamMap;
     if (params.get('documentSaved') !== '1') return;
@@ -747,15 +468,14 @@ export class JobsComponent implements OnInit, OnDestroy {
     const previousHash = params.get('reviewHash');
     if (!previousHash) return;
 
-    const currentHash = await this.currentDocumentsHash();
+    const currentHash = await this.checks.documentsHash();
     if (currentHash === previousHash) {
       const restoredChecks = this.finalChecksSvc.restoreAfterReturn(previousHash);
-      if (restoredChecks) this.finalChecks.set(restoredChecks);
-      this.finalChecksOutdated.set(false);
+      if (restoredChecks) this.checks.checks.set(restoredChecks);
+      this.checks.outdated.set(false);
       this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_unchanged'));
     } else {
-      this.finalChecks.set(null);
-      this.finalChecksOutdated.set(true);
+      this.checks.invalidate();
       this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_changed'));
     }
   }
@@ -821,8 +541,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     // The commit generates any missing CV / cover letter, refreshes a stale one
     // and writes both into the library, even after a portal application.
     const updated = await this.jobActions.markApplied(
-      () => this.ensureApplicationDraft(),
-      () => this.commitApplicationDocuments(true),
+      () => this.docs.ensureApplicationDraft(),
+      () => this.docs.commit(this.finalTailoredCvMd(), true),
     );
     if (!updated) return;
     this.application.set(updated);
@@ -864,7 +584,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   async discardTailoring(): Promise<void> {
     const discarded = await this.discardSvc.discard({
       jobId: this.job()?.id ?? null,
-      documents: [this.linkedCv(), this.linkedCoverLetter()],
+      documents: [this.docs.cv(), this.docs.coverLetter()],
       applyApplication: (application) => this.application.set(application),
     });
     // Nothing was destroyed, so nothing on the page should move. The reason is
@@ -962,7 +682,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     // Update application: push the latest tailoring into the linked CV / cover
     // letter (regenerate a stale one, generate a missing one) and commit them,
     // so re-tailoring an already-applied job refreshes its saved documents.
-    await this.commitApplicationDocuments(true);
+    await this.docs.commit(this.finalTailoredCvMd(), true);
     await this.savePostTailorScore();
     this.wizardNav.forget(j.id);
     this.applyResult.set('updated');
@@ -1047,7 +767,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       void this.updateScoreAfterTailor();
     }
     if (step === DOCUMENTS_STEP) {
-      void this.prepareDocumentsStep();
+      void this.docs.prepareStep();
     }
     // Continuing past the Updated score step commits the new score to My Jobs.
     if (step === EXPORT_STEP) {

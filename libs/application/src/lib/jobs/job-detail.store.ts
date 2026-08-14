@@ -143,10 +143,11 @@ export class JobDetailStore {
   /**
    * The application row this job's documents hang off, created on first need.
    *
-   * Returns null rather than throwing when there is no job to attach one to -
-   * the message that failure deserves is a translated string, and translation
-   * is the page's. The overview row is patched in the same breath so My Jobs
-   * and the pipeline do not have to be re-fetched to show the new status.
+   * Returns null rather than throwing when there is no job to attach one to, so
+   * a caller that can carry on without one is not forced into a `try`. Callers
+   * that cannot use `ensureApplicationOrThrow` below. The overview row is
+   * patched in the same breath so My Jobs and the pipeline do not have to be
+   * re-fetched to show the new status.
    */
   async ensureApplication(docLanguage: SupportedLanguage): Promise<Application | null> {
     const existing = this.application();
@@ -164,5 +165,20 @@ export class JobDetailStore {
     this.application.set(created);
     this.jobs.patchOverviewRow(job.id, { status: 'saved' });
     return created;
+  }
+
+  /**
+   * The throwing variant, for the document flows that have nothing to do
+   * without an application to attach the document to.
+   *
+   * It lives here rather than in each caller because there are two of them -
+   * `JobDocumentsStore` and `JobDocumentDraftsStore` - and one cannot call the
+   * other without closing a cycle. A translated `throw` copied into both would
+   * be two places for one message to drift.
+   */
+  async ensureApplicationOrThrow(docLanguage: SupportedLanguage): Promise<Application> {
+    const app = await this.ensureApplication(docLanguage);
+    if (!app) throw new Error(this.t()('jobs.not_found_label'));
+    return app;
   }
 }

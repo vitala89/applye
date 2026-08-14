@@ -53,14 +53,26 @@ speaking. The full audit reads **22 files over budget and 42 near it.**
 
 ## The plan, in priority order
 
-### 1. `jobs.component.ts`, 977/400 - the last page-level ADR-0005 violation
+### 1. `jobs.component.ts`, 723/400 - one of three pull requests done
 
-The single largest file in the repository and the only page still shaped like the pre-ADR-0005 era:
-view, state and orchestration in one class. Move its screen state into stores under
-`libs/application/src/lib/jobs/` - that directory already holds `tailoring.service.ts`,
-`job-scoring.service.ts`, `job-actions.service.ts` and `final-checks.service.ts`, so the precedents
-and the fakes exist. **The store budget is 250 and two of those files are at 249 and 250**, so a new
-responsibility gets a new store rather than a line added to an existing one.
+The last page still shaped like the pre-ADR-0005 era: view, state and orchestration in one class. It
+was 977; the document block left in PR 1 as three stores - `JobDocumentsStore`,
+`JobDocumentDraftsStore` and `JobFinalChecksStore`. **The remaining two cuts were decided through the
+grilling gate and are recorded in the Duty Watch entry for `refactor/job-documents-store`:**
+
+- **PR 2, the lifecycle block, ~135 lines.** `enterJob`, `loadJob`, `decideWizardView`,
+  `resetJobScopedState` and `restoreTailoringFromCache` move into a store - they are "load everything
+  for job N and restore the wizard", which is screen state. The `paramMap` subscription and
+  `ngOnDestroy` stay on the page: those are routing, and ~25 lines.
+- **PR 3, the actions and tailoring blocks**, which is what finally gets the page under 400.
+
+`retailorFromFinalChecks` stays on the page until PR 3 by decision - it drives tailoring, rescoring
+and documents at once.
+
+**The store budget is 250 and `tailoring.service.ts` and `job-scoring.service.ts` sit at 250 and
+249**, so a new responsibility gets a new store rather than a line added to an existing one. PR 1
+learned that the hard way: written as two stores the documents half arrived at 278, and the fix was a
+third file, not shorter comments.
 
 Expect the budgets to converge as a consequence rather than as a separate exercise - that is the
 whole finding behind ADR-0005.

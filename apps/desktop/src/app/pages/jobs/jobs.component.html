@@ -48,8 +48,8 @@
         (saveRequested)="saveJob()"
         (markAppliedRequested)="markApplied()"
         (deleteRequested)="openDeleteConfirm()"
-        (cvRequested)="openCv($event)"
-        (coverLetterRequested)="openCoverLetter($event)"
+        (cvRequested)="docs.openCv($event)"
+        (coverLetterRequested)="docs.openCoverLetter($event)"
       />
       <app-job-cross-job-confirm [jobId]="j.id" />
       <app-job-delete-confirm (confirmed)="confirmDeleteJob()" />
@@ -175,7 +175,7 @@
           [applicationStatus]="application()?.status ?? null"
           [overrideEditing]="editingLocked()"
           [initialStep]="wizardInitialStep()"
-          [busy]="tailoring() || updatingScore() || anyDocPreparing()"
+          [busy]="tailoring() || updatingScore() || drafts.anyPreparing()"
           (closeWizard)="closeWizard()"
           (discard)="askDiscardTailoring()"
           (markApplied)="markApplied()"
@@ -213,16 +213,16 @@
             [coverLetters]="coverLetters()"
             [finalTailoredCvMd]="finalTailoredCvMd()"
             [tailoring]="tailoring()"
-            (openCv)="openCv($event, true)"
-            (openCoverLetter)="openCoverLetter($event, true)"
-            (createCv)="createCvDraft()"
-            (createCoverLetter)="createCoverLetterDraft()"
-            (chooseDocument)="chooseExistingDocument($event.kind, $event.id)"
-            (runChecks)="runFinalChecks()"
+            (openCv)="docs.openCv($event, true)"
+            (openCoverLetter)="docs.openCoverLetter($event, true)"
+            (createCv)="drafts.createCv(finalTailoredCvMd())"
+            (createCoverLetter)="drafts.createCoverLetter()"
+            (chooseDocument)="docs.chooseExisting($event.kind, $event.id)"
+            (runChecks)="checks.run()"
             (rescore)="updateScoreAfterTailor()"
             (retailor)="retailorFromFinalChecks()"
-            (gapSubmit)="onGapSubmit($event)"
-            (gapCancel)="onGapCancel()"
+            (gapSubmit)="drafts.submitGap($event)"
+            (gapCancel)="drafts.cancelGap()"
           />
 
           <app-job-export-apply-step
@@ -238,7 +238,7 @@
 
   <app-job-tailor-cover-letter-modal
     [coverLetters]="coverLetters()"
-    (confirmed)="startTailoringCoverLetter()"
+    (confirmed)="drafts.startTailoringCoverLetter()"
   />
 </div>
 <app-job-photo-prompt [profilePhoto]="profilePhoto()" (accepted)="acceptPhotoPrompt()" />

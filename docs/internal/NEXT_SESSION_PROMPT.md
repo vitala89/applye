@@ -53,21 +53,25 @@ speaking. The full audit reads **22 files over budget and 42 near it.**
 
 ## The plan, in priority order
 
-### 1. `jobs.component.ts`, 723/400 - one of three pull requests done
+### 1. `jobs.component.ts`, 612/400 - two of three pull requests done
 
 The last page still shaped like the pre-ADR-0005 era: view, state and orchestration in one class. It
-was 977; the document block left in PR 1 as three stores - `JobDocumentsStore`,
-`JobDocumentDraftsStore` and `JobFinalChecksStore`. **The remaining two cuts were decided through the
-grilling gate and are recorded in the Duty Watch entry for `refactor/job-documents-store`:**
+was 977. The document block left in PR 1 as `JobDocumentsStore`, `JobDocumentDraftsStore` and
+`JobFinalChecksStore`; the lifecycle block left in PR 2 as `JobDetailLifecycleStore`, with
+`JobTailoringStore` created alongside it. **One cut remains:**
 
-- **PR 2, the lifecycle block, ~135 lines.** `enterJob`, `loadJob`, `decideWizardView`,
-  `resetJobScopedState` and `restoreTailoringFromCache` move into a store - they are "load everything
-  for job N and restore the wizard", which is screen state. The `paramMap` subscription and
-  `ngOnDestroy` stay on the page: those are routing, and ~25 lines.
-- **PR 3, the actions and tailoring blocks**, which is what finally gets the page under 400.
+- **PR 3, the actions block and what is left of tailoring.** `saveJob`, `markApplied`,
+  `updateApplication` and the discard flow; then `startTailoring`'s pre-run resets, `onWizardStep`,
+  `resetWizard` and `startOver`. `JobTailoringStore` already exists and already holds the
+  `TailorContext` assembly plus `run`, `cancel` and `restoreFromCache` - the tailoring half lands
+  there rather than in a new file.
 
-`retailorFromFinalChecks` stays on the page until PR 3 by decision - it drives tailoring, rescoring
-and documents at once.
+`retailorFromFinalChecks` stays on the page until then by decision: it drives tailoring, rescoring
+and the documents at once.
+
+**The router stays on the page.** PR 2's pattern is the one to follow: the page reads
+`route.snapshot.queryParamMap` and hands the store a plain record of facts (`JobRouteEntry`), so no
+store injects `ActivatedRoute` and no store spec needs a `RouterTestingModule`.
 
 **The store budget is 250 and `tailoring.service.ts` and `job-scoring.service.ts` sit at 250 and
 249**, so a new responsibility gets a new store rather than a line added to an existing one. PR 1

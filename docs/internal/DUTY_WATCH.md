@@ -44,6 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-16, the CSP gets its reasoning, drag-drop gets turned off, and the Rust size debt turns out not to exist
+
+- **Status:** complete for item 5 of the handoff. **Item 2 is withdrawn as written** - see the correction below, which is the substantive finding of this watch.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. No grilling round: item 5 named the exact change and the only open question in it was a fact, which is not what the gate is for.
+- **Branch:** `docs/csp-rationale-and-dragdrop`, cut from `main` at `c7aa29bd`.
+- **Objective:** items 2 and 5 of the handoff.
+- **Completed:**
+  - **The CSP's reasoning is in `docs/architecture.md`**, directive by directive, because `tauri.conf.json` is JSON and inventing a `_comment` key in a Tauri config is worse than leaving it. `style-src 'unsafe-inline'` is named as the one genuine weakening, with what it does and does not permit and the condition under which it could be removed. `script-src 'self'` is recorded as load-bearing for the microfrontend rejection rather than incidental, and `connect-src`'s omission of the AI providers is recorded as deliberate.
+  - **`dragDropEnabled: false`.** The dependency check the handoff asked for came back empty: no `onDragDropEvent` in TS or Rust, no `ondrop`/`dragover`/`DataTransfer` anywhere. The two real drag features are Angular CDK (pipeline kanban, CV section reorder), which is pointer-event based, and `data-tauri-drag-region`, which moves the window - neither goes through the OS file-drop handler. `cargo check` passes, which also confirms the key name, since `tauri-build` parses the config and rejects unknown keys.
+- **Not completed / withdrawn:** **item 2, the Rust command-layer split, as the handoff described it.** It was scoped from raw `wc -l`; the gate counts source and inline tests as separate budget classes. Measured properly, **no command module is over budget** - worst is `applications.rs` at 443/500, and `documents.rs`, quoted at 851, is **347/500** with 429 of its 852 raw lines inside `#[cfg(test)]`. The architectural claim in `AGENTS.md` - that a Tauri command stays thin and the domain logic sits in a sibling module - is untouched by this and may still be worth acting on; it simply is not the size debt the plan described, and doing it now would be a refactor with no gate behind it. **Left for the maintainer to re-scope or drop.**
+- **Also found:** the remote branch `refactor/discover-rs-split` is **dead**. Dated 2026-08-02, 177 commits behind `main`, and superseded - `discover_geo.rs` already exists on `main`, so the split it proposes has landed by another route. No open pull request. Deleting the branch is the maintainer's call; nothing was touched.
+- **Files or packages changed:** `docs/architecture.md`; `apps/desktop/src-tauri/tauri.conf.json`; `CHANGELOG.md`; this file.
+- **Validation:** `cargo check` in `src-tauri` - clean, and the only gate that reads the config. `npm run quality:file-size`, `quality:attribution`, `format:check`, `git diff --check` - clean. No TypeScript changed, so `type-check`, `lint`, `test` and `build` are unaffected and were not re-run for this diff.
+- **Privacy/security impact:** a **hardening**, and a documentation change over the policy that governs the renderer. No directive was loosened; `dragDropEnabled` moves from the permissive default to off.
+- **Decisions and assumptions:** the CSP rationale went to `docs/architecture.md` rather than a `_comment` key, as the handoff directed. `dragDropEnabled: false` was treated as a settled fact rather than a grilling gate, because the handoff named the exact change and the one condition it attached - "check whether anything depends on it first" - is a search, not a decision.
+- **Risks or compatibility impact:** **not verified in a running window.** Whether a file dropped on the app is now ignored rather than swallowed needs the packaged or dev app; `cargo check` proves the config parses, not what the webview does with it. Recorded as unverified rather than reported as covered.
+- **Open issues or blockers:** items 3 (`libs/skills` has no `project.json`) and 4 (`apps/mobile` is a placeholder) are untouched and are grilling gates by the handoff's own words. Item 6's `.status--error` fold stays blocked for the reason written into `_profile-shell.scss`. #451 is open and green.
+- **Next first action:** either run the `aif-grilling` gate on items 3 and 4 together - both are "give it a real shape or delete it" decisions and neither is large - or take the next file-size debt, `discover.component.ts` at 618/400.
+- **Evidence:** a per-module count over `src-tauri/src/commands/` splitting source from `#[cfg(test)]` for the item-2 correction; `git log -1 1a92a472` and the presence of `discover_geo.rs` on `main` for the dead branch; the empty search for `onDragDropEvent`/`ondrop`/`dragover` for the drag-drop check.
+
 ### 2026-08-16, the actions block leaves and the job detail page goes under budget, ending ADR-0005
 
 - **Status:** complete. `jobs.component.ts` is **371/400**, from 977 four pull requests ago. No page in the repository holds its own screen state.

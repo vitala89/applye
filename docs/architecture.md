@@ -94,6 +94,30 @@ Imports go through the published entry point (`@applye/core`, never
 - Tauri v2 conventions: runtime check via `window.__TAURI_INTERNALS__`; events via `emit` + the
   `Emitter` trait; window actions need a capability entry under `src-tauri/capabilities/`.
 
+### The window's content-security policy
+
+`tauri.conf.json` takes no comments, so the reasoning for `app.security.csp` lives here. The policy
+is strict by default - `default-src 'self'`, `object-src 'none'`, `form-action 'none'` - and every
+relaxation below is a specific requirement rather than a convenience.
+
+| directive     | value                                               | why it is not tighter                                                                                                                                                                                                                                                                                                     |
+| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `script-src`  | `'self'`                                            | No inline script, no CDN, no `eval`. This is also the directive that **rules out Module Federation**: a remote entry cannot load, which is one of the reasons microfrontends were rejected for an app holding API keys in the OS keychain.                                                                                |
+| `style-src`   | `'self' 'unsafe-inline'`                            | **The one real weakening.** Angular emits component styles as inline `<style>` elements at runtime, and its critical-CSS inlining does the same at build time. There is no nonce or hash the CSP can name for styles the framework generates after the policy is written. It permits CSS injection, not script execution. |
+| `img-src`     | `'self' data: blob: asset: https://asset.localhost` | `data:` carries the profile photo and generated previews; `asset:`/`asset.localhost` is how Tauri's asset protocol serves local files to the webview.                                                                                                                                                                     |
+| `connect-src` | `'self' ipc: https://ipc.localhost`                 | The IPC channel, and nothing else. **AI provider calls do not appear here** because they are made from Rust, not from the webview - which is what keeps the API key out of the renderer.                                                                                                                                  |
+| `font-src`    | `'self'`                                            | Fonts ship with the bundle; the app is local-first and must work offline.                                                                                                                                                                                                                                                 |
+
+`style-src 'unsafe-inline'` is the one line to revisit if Angular ever offers a nonce-based style
+pipeline. Nothing else here has slack in it.
+
+**File drag-and-drop into the window is disabled** (`app.windows[].dragDropEnabled: false`). Nothing
+in the app consumes a file drop - there is no `onDragDropEvent` listener in the frontend or the Rust
+side - and left at its default the webview intercepts drag events at the OS level. The two drag
+features that do exist are unaffected: the pipeline kanban and the CV section reorder use Angular
+CDK, which is pointer-event based, and `data-tauri-drag-region` moves the window, which is a
+different mechanism entirely. Turn it back on if a drop target is ever added.
+
 ## AI integration
 
 AI is an **opt-in, bring-your-own** capability, never a dependency of the core workflows.

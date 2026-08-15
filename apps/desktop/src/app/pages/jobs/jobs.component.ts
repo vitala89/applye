@@ -21,7 +21,7 @@ import { LinkedDocumentsService } from '@applye/application';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { JobDetailStore } from '@applye/application';
-import { jobHeaderTitle, parseArchetypes, parseLegitimacyNotes } from '@applye/core';
+import { jobHeaderTitle } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
@@ -38,7 +38,7 @@ import { PortalAnswersService } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { DocumentExportService } from '@applye/application';
 import { TailoringService } from '@applye/application';
-import { JobScoringService, ScoreContext } from '@applye/application';
+import { JobScoringService } from '@applye/application';
 import { WizardNavService } from '@applye/application';
 import { scrollOnTick } from '../../core/scroll-to-top';
 import { CoverLetterTailorService } from '@applye/application';
@@ -53,6 +53,7 @@ import {
   JobDocumentsStore,
   JobFinalChecksStore,
   JobRouteEntry,
+  JobScoringStore,
   JobTailoringStore,
 } from '@applye/application';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
@@ -85,8 +86,8 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // Component-scoped: portal-answer drafts belong to the job open on this page
-  // and must not outlive it, which is the lifetime they had as component fields.
+  // Component-scoped: every one of these describes the job open on this page and
+  // must not outlive it, which is the lifetime they had as component fields.
   providers: [
     JobDetailStore,
     PortalAnswersService,
@@ -112,6 +113,7 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     JobFinalChecksStore,
     JobDocumentDraftsStore,
     JobDocumentsStore,
+    JobScoringStore,
     JobTailoringStore,
     JobDetailLifecycleStore,
   ],
@@ -126,8 +128,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   protected readonly drafts = inject(JobDocumentDraftsStore);
   /** The review step's token-free checks over both. */
   protected readonly checks = inject(JobFinalChecksStore);
-  /** The three-pass tailoring pipeline for the job now open. */
+  /** The three-pass tailoring pipeline for the job now open, and the wizard's
+   * step machine. */
   protected readonly tailorStore = inject(JobTailoringStore);
+  /** Scoring the job now open, baseline and post-tailor. */
+  protected readonly scoreStore = inject(JobScoringStore);
   /** What opening a job loads, and what leaving one throws away. */
   protected readonly lifecycle = inject(JobDetailLifecycleStore);
   private readonly i18n = inject(TranslateService);
@@ -137,20 +142,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardNav = inject(WizardNavService);
   private readonly reviewStatus = inject(DocumentReviewStatusService);
-  /** The market and language the wizard's documents are written for; the
-   * review step's two selects write through it. */
-  private readonly targets = inject(DocumentReviewTargetsService);
   private readonly discardSvc = inject(TailoringDiscardService);
   protected readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
-  /** Draft-portal-answers state and AI calls. */
-  protected readonly portal = inject(PortalAnswersService);
-  /** The wizard's token-free final-checks step. */
-  private readonly finalChecksSvc = inject(FinalChecksService);
-  /** Writing the linked documents to disk. */
-  private readonly exportSvc = inject(DocumentExportService);
   /** The three-pass tailoring pipeline. */
   private readonly tailorSvc = inject(TailoringService);
   /** The single CV-gap dialog shared by both document flows. */
@@ -262,7 +258,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   // of it, scoped to the job currently shown.
   readonly postTailorScore = computed(() => this.tailorScore.resultFor(this.job()?.id ?? -1));
   readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.job()?.id ?? -1));
-  private readonly postTailorSaved = this.scoreSvc.postTailorSaved;
   /** Non-null while the post-apply/update success card is shown before the
    * redirect fires. */
   readonly applyResult = signal<'updated' | null>(null);
@@ -307,10 +302,10 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (this.tailoring()) return;
     this.reviewStatus.clear();
     this.wizardInitialStep.set(1);
-    await this.startTailoring();
+    await this.tailorStore.start();
     if (this.tailorError()) return;
     if (!this.postTailorScore() && !this.updatingScore()) {
-      await this.updateScoreAfterTailor();
+      await this.scoreStore.updateScoreAfterTailor();
     }
     if (this.docs.cv()) {
       await this.drafts.createCv(this.finalTailoredCvMd());
@@ -374,36 +369,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     // resolve it as skipped - generation then continues in the background and
     // its `reviewing` activity ends cleanly instead of sticking on the badge.
     this.gapSvc.dispose();
-  }
-
-  addPortalQuestion(): void {
-    this.portal.addQuestion();
-  }
-
-  updatePortalQuestion(index: number, value: string): void {
-    this.portal.updateQuestion(index, value);
-  }
-
-  removePortalQuestion(index: number): void {
-    this.portal.removeQuestion(index);
-  }
-
-  editPortalAnswer(index: number, value: string): void {
-    this.portal.editAnswer(index, value);
-  }
-
-  copyPortalAnswer(index: number): Promise<void> {
-    return this.portal.copyAnswer(index);
-  }
-
-  /** One AI call for the whole question set, cached by (job, profile, questions+language+model). */
-  draftPortalAnswers(): Promise<void> {
-    return this.portal.draft(this.job(), this.profile(), this.settings());
-  }
-
-  /** Re-drafts a single answer. Always a fresh AI call, still cached. */
-  redraftPortalAnswer(index: number): Promise<void> {
-    return this.portal.redraft(index, this.job(), this.profile(), this.settings());
   }
 
   /** Save this job: track it as a 'saved' lead (My Jobs / Job Tracker) without
@@ -510,7 +475,10 @@ export class JobsComponent implements OnInit, OnDestroy {
     // tailoring for this job is now stale. Drop it so the Tailored badge and
     // Retailor state clear and the user re-tailors against the updated JD.
     this.editingLocked.set(false);
-    this.resetWizard();
+    // The one call that spans both stores, which is why it stays here: the
+    // scoring block re-parses, the tailoring block is thrown away. Neither
+    // store injects the other (`JobTailoringStore`'s header records this).
+    this.tailorStore.resetWizard();
     const result = await this.intake.parse({
       jdText: this.jdText(),
       previous,
@@ -527,36 +495,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  scoreJob(forceRefresh = false): Promise<void> {
-    return this.scoreSvc.score(this.scoreContext(''), forceRefresh);
-  }
-
-  /** Post-tailor rescore - user-initiated and token-spending. See
-   * `JobScoringService.rescoreAfterTailor`. */
-  updateScoreAfterTailor(): Promise<void> {
-    const pass3 = this.tailorResults().find((r) => r.pass === 3);
-    return this.scoreSvc.rescoreAfterTailor(this.scoreContext(pass3?.resultMd ?? ''));
-  }
-
-  /** Everything a scoring run reads, snapshotted at call time. */
-  private scoreContext(tailoredResumeMd: string): ScoreContext {
-    return {
-      job: this.job(),
-      profile: this.profile(),
-      settings: this.settings(),
-      jdText: this.jdText(),
-      legitimacyNotes: this.legitimacyNotes(),
-      tailoredResumeMd,
-      reviewRegion: this.targets.region(),
-    };
-  }
-
-  /** Commits the post-tailor score to My Jobs. See
-   * `JobScoringService.savePostTailor`. */
-  private savePostTailorScore(): Promise<void> {
-    return this.scoreSvc.savePostTailor(this.job()?.id);
-  }
-
   /**
    * "Update application" - final-step action when the job already has a
    * status (applied/interview/…). Commits the re-tailored score, shows the
@@ -571,7 +509,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     // letter (regenerate a stale one, generate a missing one) and commit them,
     // so re-tailoring an already-applied job refreshes its saved documents.
     await this.docs.commit(this.finalTailoredCvMd(), true);
-    await this.savePostTailorScore();
+    await this.scoreStore.savePostTailorScore();
     this.wizardNav.forget(j.id);
     this.applyResult.set('updated');
     // Success card holds briefly, then drop back to this job's detail with the
@@ -587,85 +525,5 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.wizardNav.requestScrollTop();
       })();
     }, 2200);
-  }
-
-  legitimacyNotes(): string[] {
-    return parseLegitimacyNotes(this.job()?.legitimacyNotes);
-  }
-
-  hasArchetypes(): boolean {
-    return parseArchetypes(this.profile()?.targetArchetypes).length > 0;
-  }
-
-  // ── Tailoring wizard ────────────────────────────────────────────────────────
-
-  /** Runs the full 3-pass tailoring pipeline back-to-back on one click - the
-   * phase cards animate through running/done as each pass lands, no manual
-   * Continue between passes. Stops on the first failing pass. */
-  async startTailoring(): Promise<void> {
-    // State a tailoring run invalidates but does not own: the export status
-    // line, the post-tailor rescore, and the final checks.
-    this.exportSvc.status.set('');
-    this.exportSvc.lastExport.set(null);
-    this.tailorScore.clear(this.job()?.id);
-    this.postTailorSaved.set(false);
-    this.finalChecksSvc.reset();
-
-    await this.tailorStore.run();
-  }
-
-  /**
-   * Cancel an in-flight tailoring run. The AI pass already in flight cannot be
-   * aborted mid-request, so it finishes, but the loop stops before the next
-   * pass and every partial result is discarded - the wizard returns to the
-   * pre-tailor state so the user can adjust the source and try again.
-   */
-  cancelTailoring(): void {
-    this.tailorStore.cancel();
-  }
-
-  /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 documents · 4 export.
-   * Entering the Updated score step auto-runs the rescore once (only if the
-   * user actually tailored - pass 3 exists - and it hasn't run yet). */
-  onWizardStep(step: number): void {
-    this.wizardNav.goTo(this.job()?.id, step);
-
-    const UPDATED_SCORE_STEP = 2;
-    const DOCUMENTS_STEP = 3;
-    const EXPORT_STEP = 4;
-    if (
-      step === UPDATED_SCORE_STEP &&
-      this.tailorResults().length === 3 &&
-      !this.postTailorScore() &&
-      !this.updatingScore()
-    ) {
-      void this.updateScoreAfterTailor();
-    }
-    if (step === DOCUMENTS_STEP) {
-      void this.docs.prepareStep();
-    }
-    // Continuing past the Updated score step commits the new score to My Jobs.
-    if (step === EXPORT_STEP) {
-      void this.savePostTailorScore();
-    }
-  }
-
-  resetWizard(): void {
-    this.tailorSvc.reset();
-    this.exportSvc.status.set('');
-    this.exportSvc.error.set(false);
-    this.tailorScore.clear(this.job()?.id);
-    this.postTailorSaved.set(false);
-  }
-
-  /**
-   * "Start over" on the Export step: discard the tailoring/score/export state
-   * and return to step 1 (Tailor) so the user can tailor again from scratch.
-   * Previously this only cleared off-screen signals and left the user on the
-   * export step, so nothing visible happened.
-   */
-  startOver(): void {
-    this.resetWizard();
-    this.wizardNav.goTo(this.job()?.id, 1);
   }
 }

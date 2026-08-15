@@ -65,16 +65,16 @@
               [job]="j"
               [profileMd]="profile()?.fullMd ?? ''"
               [jdText]="jdText()"
-              [hasArchetypes]="hasArchetypes()"
+              [hasArchetypes]="scoreStore.hasArchetypes()"
               [archetypeMatch]="archetypeMatch()"
               (identityChanged)="job.set($event)"
             />
-            @if (!hasArchetypes()) {
+            @if (!scoreStore.hasArchetypes()) {
               <p class="status">{{ t()('jobs.define_archetype_prompt') }}</p>
             }
-            @if (legitimacyNotes().length) {
+            @if (scoreStore.legitimacyNotes().length) {
               <ul class="legitimacy-notes">
-                @for (n of legitimacyNotes(); track n) {
+                @for (n of scoreStore.legitimacyNotes(); track n) {
                   <li>{{ n }}</li>
                 }
               </ul>
@@ -86,7 +86,7 @@
                 <button
                   class="btn btn--secondary btn--md"
                   [disabled]="scoring()"
-                  (click)="scoreJob(false)"
+                  (click)="scoreStore.scoreJob(false)"
                 >
                   {{
                     scoring()
@@ -117,9 +117,9 @@
         @if (job()?.legitimacyTier === 'red') {
           <div class="card card--danger">
             <p class="card__title">{{ t()('jobs.legitimacy_red_banner_title') }}</p>
-            @if (legitimacyNotes().length) {
+            @if (scoreStore.legitimacyNotes().length) {
               <ul class="red-flags">
-                @for (n of legitimacyNotes(); track n) {
+                @for (n of scoreStore.legitimacyNotes(); track n) {
                   <li class="red-flag">{{ n }}</li>
                 }
               </ul>
@@ -135,7 +135,7 @@
             <button
               class="btn btn--secondary btn--sm"
               [disabled]="scoring()"
-              (click)="scoreJob(true)"
+              (click)="scoreStore.scoreJob(true)"
             >
               {{ scoring() ? t()('jobs.scoring') : t()('jobs.rescore') }}
             </button>
@@ -181,7 +181,7 @@
           (markApplied)="markApplied()"
           (updateApplication)="updateApplication()"
           (cancelEdit)="cancelEditingLocked()"
-          (stepChange)="onWizardStep($event)"
+          (stepChange)="tailorStore.goToStep($event)"
         >
           <app-job-tailor-step
             wizardTailorStep
@@ -191,9 +191,9 @@
             [hasProfileText]="!!profile()?.fullMd"
             [selectedBaseCvId]="selectedBaseCvId()"
             (baseCvChange)="selectedBaseCvId.set($event)"
-            (startTailoring)="startTailoring()"
-            (cancelTailoring)="cancelTailoring()"
-            (retailor)="resetWizard()"
+            (startTailoring)="tailorStore.start()"
+            (cancelTailoring)="tailorStore.cancel()"
+            (retailor)="tailorStore.resetWizard()"
           />
 
           <!-- Step 3: Updated score - auto-rescores the tailored resume -->
@@ -201,7 +201,7 @@
             wizardUpdateScoreStep
             class="wizard-step-content"
             [job]="job()"
-            (retry)="updateScoreAfterTailor()"
+            (retry)="scoreStore.updateScoreAfterTailor()"
           />
 
           <app-job-documents-step
@@ -219,7 +219,7 @@
             (createCoverLetter)="drafts.createCoverLetter()"
             (chooseDocument)="docs.chooseExisting($event.kind, $event.id)"
             (runChecks)="checks.run()"
-            (rescore)="updateScoreAfterTailor()"
+            (rescore)="scoreStore.updateScoreAfterTailor()"
             (retailor)="retailorFromFinalChecks()"
             (gapSubmit)="drafts.submitGap($event)"
             (gapCancel)="drafts.cancelGap()"
@@ -229,7 +229,7 @@
             wizardExportApplyStep
             class="wizard-step-content"
             [job]="job()"
-            (startOver)="startOver()"
+            (startOver)="tailorStore.startOver()"
           />
         </app-apply-wizard>
       }

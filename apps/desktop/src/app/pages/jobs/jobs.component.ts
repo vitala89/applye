@@ -7,7 +7,6 @@ import {
   computed,
   effect,
   inject,
-  signal,
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -52,6 +51,7 @@ import {
   JobDocumentDraftsStore,
   JobDocumentsStore,
   JobFinalChecksStore,
+  JobActionsStore,
   JobRouteEntry,
   JobScoringStore,
   JobTailoringStore,
@@ -112,6 +112,7 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     // for the same reason: they describe the job open on this page.
     JobFinalChecksStore,
     JobDocumentDraftsStore,
+    JobActionsStore,
     JobDocumentsStore,
     JobScoringStore,
     JobTailoringStore,
@@ -133,6 +134,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   protected readonly tailorStore = inject(JobTailoringStore);
   /** Scoring the job now open, baseline and post-tailor. */
   protected readonly scoreStore = inject(JobScoringStore);
+  /** What the user can do to the job now open. The two actions that end in a
+   * navigation return a boolean and leave the routing here. */
+  protected readonly actions = inject(JobActionsStore);
   /** What opening a job loads, and what leaving one throws away. */
   protected readonly lifecycle = inject(JobDetailLifecycleStore);
   private readonly i18n = inject(TranslateService);
@@ -142,8 +146,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardNav = inject(WizardNavService);
   private readonly reviewStatus = inject(DocumentReviewStatusService);
-  private readonly discardSvc = inject(TailoringDiscardService);
-  protected readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
@@ -214,8 +216,6 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   // Job Detail: the application row (if this job is on the board) + action state.
   readonly application = this.store.application;
-  readonly actionBusy = this.jobActions.busy;
-  readonly deleteConfirmOpen = this.jobActions.deleteConfirmOpen;
 
   /** Editing override for the scoring view only. The job-detail UI no longer
    * exposes a re-edit affordance once a job leaves Saved (the application is
@@ -226,18 +226,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   /** Confirm dialog when opening the wizard here would abandon an unfinished
    * tailoring session for a different job. */
   readonly crossJobConfirmOpen = this.wizardNav.crossJobConfirmOpen;
-
-  /** True with no application yet, one still in 'saved', or the user
-   * overrode the lock via "Edit". Anything else (applied/interview/
-   * offer/rejected/cancelled) shows the status dropdown + Edit instead of an
-   * actionable Mark-as-Applied button. */
-  readonly canMarkApplied = computed(() => {
-    const status = this.application()?.status;
-    return !status || status === 'saved' || this.editingLocked();
-  });
-
-  /** Locked exactly when Mark-as-Applied isn't available. */
-  readonly jobLocked = computed(() => !this.canMarkApplied());
 
   // Tailoring wizard. Aliases onto `TailoringService`; the template binds these
   // names and several component methods reset them directly, so they stay the
@@ -258,10 +246,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   // of it, scoped to the job currently shown.
   readonly postTailorScore = computed(() => this.tailorScore.resultFor(this.job()?.id ?? -1));
   readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.job()?.id ?? -1));
-  /** Non-null while the post-apply/update success card is shown before the
-   * redirect fires. */
-  readonly applyResult = signal<'updated' | null>(null);
-
   /** True once all 3 tailoring passes are done (in this session or restored
    * from cache) - drives the immutable Tailored badge and the Retailor CTA. */
   readonly isTailored = this.tailorSvc.isTailored;
@@ -287,10 +271,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (status) this.reviewStatus.status.set(status);
   }
 
-  protected finalTailoredCvMd(): string {
-    return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
-  }
-
   /**
    * Retailoring from the review step. It stays on the page rather than in a
    * store because it drives three blocks at once - the tailoring, the
@@ -308,7 +288,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       await this.scoreStore.updateScoreAfterTailor();
     }
     if (this.docs.cv()) {
-      await this.drafts.createCv(this.finalTailoredCvMd());
+      await this.drafts.createCv(this.tailorStore.finalCvMd());
     }
     this.checks.invalidate();
     this.wizardInitialStep.set(2);
@@ -362,6 +342,17 @@ export class JobsComponent implements OnInit, OnDestroy {
     };
   }
 
+  /** Mark as Applied, then leave for My Jobs - the store does the work and says
+   * whether the job is done with this screen; routing stays here (ADR-0005). */
+  async markApplied(): Promise<void> {
+    if (await this.actions.markApplied()) await this.router.navigate(['/jobs']);
+  }
+
+  /** Same shape: the store deletes, the page leaves a screen with no job. */
+  async confirmDeleteJob(): Promise<void> {
+    if (await this.actions.confirmDeleteJob()) await this.router.navigate(['/jobs']);
+  }
+
   ngOnDestroy(): void {
     this.pageTitle.clear();
     // Leaving while the gap dialog is open would otherwise hang the CV-draft
@@ -369,97 +360,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     // resolve it as skipped - generation then continues in the background and
     // its `reviewing` activity ends cleanly instead of sticking on the badge.
     this.gapSvc.dispose();
-  }
-
-  /** Save this job: track it as a 'saved' lead (My Jobs / Job Tracker) without
-   * claiming it was applied to. Distinct from Mark as Applied, which records an
-   * actual application ('applied', shown on the Pipeline board). */
-  async saveJob(): Promise<void> {
-    const j = this.job();
-    if (!j?.id) return;
-    const app = await this.jobActions.save(j.id, this.application());
-    if (app) this.application.set(app);
-  }
-
-  /**
-   * Mark as Applied - reuses the SAME status-transition command the pipeline
-   * kanban's drag-and-drop uses (`db_set_application_status`): it writes
-   * `status_history` and computes `follow_up_at` deterministically from
-   * `settings.followup_days_after_apply` in SQL, 0 AI tokens. No date math
-   * is duplicated here.
-   */
-  async markApplied(): Promise<void> {
-    const j = this.job();
-    if (!j?.id) return;
-    // The commit generates any missing CV / cover letter, refreshes a stale one
-    // and writes both into the library, even after a portal application.
-    const updated = await this.jobActions.markApplied(
-      () => this.docs.ensureApplicationDraft(),
-      () => this.docs.commit(this.finalTailoredCvMd(), true),
-    );
-    if (!updated) return;
-    this.application.set(updated);
-    this.editingLocked.set(false);
-    this.wizardNav.forget(j.id);
-    // Applied - send the user back to My Jobs; re-entering the job shows its
-    // Applied + Tailored state.
-    await this.router.navigate(['/jobs']);
-  }
-
-  /** "Cancel" - drops the override and discards the in-progress description
-   * edit (reverts jdText to the persisted value). Nothing was ever saved. */
-  cancelEditingLocked(): void {
-    this.editingLocked.set(false);
-    this.jdText.set(this.job()?.jdText ?? '');
-  }
-
-  /** Opening the wizard / returning to the summary should always land the
-   * user at the top of the page - the scoring view runs long, so the wizard
-   * (or the restored summary) would otherwise open mid-scroll. */
-  openWizard(): void {
-    this.wizardNav.requestOpen(this.job()?.id);
-  }
-
-  /** Opens the confirm for abandoning this job's tailoring. */
-  askDiscardTailoring(): void {
-    this.discardSvc.ask();
-  }
-
-  /**
-   * Abandon the tailoring for this job: throw away the tailored passes, the
-   * draft CV and cover letter, and the saved wizard progress, then return to
-   * the job summary as if the wizard had never been opened.
-   *
-   * Only DRAFT documents are deleted. Once a document has been committed (the
-   * user exported it or marked the job applied) it belongs to the Documents
-   * library, and cancelling a later re-tailor must not take it with it.
-   */
-  async discardTailoring(): Promise<void> {
-    const discarded = await this.discardSvc.discard({
-      jobId: this.job()?.id ?? null,
-      documents: [this.docs.cv(), this.docs.coverLetter()],
-      applyApplication: (application) => this.application.set(application),
-    });
-    // Nothing was destroyed, so nothing on the page should move. The reason is
-    // already on the status line, and the confirmation is still open.
-    if (!discarded) return;
-    this.lifecycle.resetJobScopedState();
-    this.wizardNav.forget(this.job()?.id);
-    this.wizardNav.requestScrollTop();
-  }
-
-  closeWizard(): void {
-    this.wizardNav.close(this.job()?.id);
-  }
-
-  openDeleteConfirm(): void {
-    this.jobActions.openDeleteConfirm();
-  }
-
-  async confirmDeleteJob(): Promise<void> {
-    const j = this.job();
-    if (!j?.id) return;
-    if (await this.jobActions.remove(j.id)) await this.router.navigate(['/jobs']);
   }
 
   async parseAndFilter(): Promise<void> {
@@ -493,37 +393,5 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.scoreStale.set(false);
       this.scoreStatus.set('Loaded from cache - 0 tokens used.');
     }
-  }
-
-  /**
-   * "Update application" - final-step action when the job already has a
-   * status (applied/interview/…). Commits the re-tailored score, shows the
-   * success card, then returns the user to this job's detail where the
-   * updated score and Tailored badge are now in place.
-   */
-  async updateApplication(): Promise<void> {
-    const j = this.job();
-    if (!j?.id || this.actionBusy()) return;
-    this.actionBusy.set(true);
-    // Update application: push the latest tailoring into the linked CV / cover
-    // letter (regenerate a stale one, generate a missing one) and commit them,
-    // so re-tailoring an already-applied job refreshes its saved documents.
-    await this.docs.commit(this.finalTailoredCvMd(), true);
-    await this.scoreStore.savePostTailorScore();
-    this.wizardNav.forget(j.id);
-    this.applyResult.set('updated');
-    // Success card holds briefly, then drop back to this job's detail with the
-    // updated score + Tailored badge freshly loaded from cache.
-    const view = this.document.defaultView;
-    const jobId = j.id;
-    view?.setTimeout(() => {
-      void (async () => {
-        this.wizardOpen.set(false);
-        this.applyResult.set(null);
-        this.actionBusy.set(false);
-        await this.lifecycle.loadJob(jobId);
-        this.wizardNav.requestScrollTop();
-      })();
-    }, 2200);
   }
 }

@@ -89,6 +89,16 @@ export class JobTailoringStore {
     this.svc.cancel(this.detail.job()?.id);
   }
 
+  /**
+   * The CV the pipeline actually produced, or `''` before the third pass lands.
+   *
+   * Passes 1 and 2 are intermediate, so every consumer wants pass 3 specifically
+   * rather than the last element - and there are three of them, in two layers.
+   */
+  finalCvMd(): string {
+    return this.svc.results().find((r) => r.pass === 3)?.resultMd ?? '';
+  }
+
   /** Everything tailoring this job depends on, read at call time. */
   private context(): TailorContext {
     return {

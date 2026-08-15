@@ -5,14 +5,14 @@
       <h3 class="eyebrow">{{ t()('jobs.paste_title') }}</h3>
       <textarea
         class="editor"
-        [class.editor--locked]="jobLocked()"
-        [disabled]="jobLocked()"
+        [class.editor--locked]="actions.jobLocked()"
+        [disabled]="actions.jobLocked()"
         [ngModel]="jdText()"
         (ngModelChange)="jdText.set($event)"
         [placeholder]="t()('jobs.paste_placeholder')"
         spellcheck="false"
       ></textarea>
-      @if (jobLocked()) {
+      @if (actions.jobLocked()) {
         <p class="locked-hint">{{ t()('jobs.description_locked') }}</p>
       } @else {
         <div class="row">
@@ -43,11 +43,11 @@
     @if (job(); as j) {
       <app-job-detail-actions
         [application]="application()"
-        [canMarkApplied]="canMarkApplied()"
+        [canMarkApplied]="actions.canMarkApplied()"
         [isTailored]="isTailored()"
-        (saveRequested)="saveJob()"
+        (saveRequested)="actions.saveJob()"
         (markAppliedRequested)="markApplied()"
-        (deleteRequested)="openDeleteConfirm()"
+        (deleteRequested)="actions.openDeleteConfirm()"
         (cvRequested)="docs.openCv($event)"
         (coverLetterRequested)="docs.openCoverLetter($event)"
       />
@@ -148,9 +148,9 @@
           [job]="job()"
           [icons]="icons"
           [tailored]="isTailored()"
-          (tailorApply)="openWizard()"
+          (tailorApply)="actions.openWizard()"
         />
-      } @else if (applyResult()) {
+      } @else if (actions.applyResult()) {
         <!-- Success confirmation before redirecting back to the job -->
         <div class="apply-success card">
           <span class="apply-success__icon">
@@ -176,11 +176,11 @@
           [overrideEditing]="editingLocked()"
           [initialStep]="wizardInitialStep()"
           [busy]="tailoring() || updatingScore() || drafts.anyPreparing()"
-          (closeWizard)="closeWizard()"
-          (discard)="askDiscardTailoring()"
+          (closeWizard)="actions.closeWizard()"
+          (discard)="actions.askDiscardTailoring()"
           (markApplied)="markApplied()"
-          (updateApplication)="updateApplication()"
-          (cancelEdit)="cancelEditingLocked()"
+          (updateApplication)="actions.updateApplication()"
+          (cancelEdit)="actions.cancelEditingLocked()"
           (stepChange)="tailorStore.goToStep($event)"
         >
           <app-job-tailor-step
@@ -211,11 +211,11 @@
             [application]="application()"
             [matchingCvs]="matchingCvs()"
             [coverLetters]="coverLetters()"
-            [finalTailoredCvMd]="finalTailoredCvMd()"
+            [finalTailoredCvMd]="tailorStore.finalCvMd()"
             [tailoring]="tailoring()"
             (openCv)="docs.openCv($event, true)"
             (openCoverLetter)="docs.openCoverLetter($event, true)"
-            (createCv)="drafts.createCv(finalTailoredCvMd())"
+            (createCv)="drafts.createCv(tailorStore.finalCvMd())"
             (createCoverLetter)="drafts.createCoverLetter()"
             (chooseDocument)="docs.chooseExisting($event.kind, $event.id)"
             (runChecks)="checks.run()"
@@ -242,4 +242,4 @@
   />
 </div>
 <app-job-photo-prompt [profilePhoto]="profilePhoto()" (accepted)="acceptPhotoPrompt()" />
-<app-job-discard-confirm (confirmed)="discardTailoring()" />
+<app-job-discard-confirm (confirmed)="actions.discardTailoring()" />

@@ -67,6 +67,24 @@
   starting with the stage panel, which is free; the ATS line costs a full tailoring run plus a rescore in
   tokens, which is why this watch did not spend them unasked.
 
+- **`ADR-0005` is finished: no page in the repository holds its own screen state any more.**
+  `jobs.component.ts`, the last one, is **371/400** - down from 977 across four pull requests
+  ([#448](https://github.com/vitala89/applye/pull/448) documents,
+  [#449](https://github.com/vitala89/applye/pull/449) lifecycle,
+  [#450](https://github.com/vitala89/applye/pull/450) scoring and the wizard, and the actions store).
+  Seven stores in `libs/application/src/lib/jobs/` now own what the page used to: `JobDetailStore`,
+  `JobFinalChecksStore`, `JobDocumentDraftsStore`, `JobDocumentsStore`, `JobDetailLifecycleStore`,
+  `JobTailoringStore`, `JobScoringStore` and `JobActionsStore`, every one under the 250 budget.
+  **What stays on the page is stated rather than left over**: routing (the two actions that end in a
+  navigation return a boolean and the page routes), `parseAndFilter` (the one call spanning the
+  scoring and tailoring stores, kept here so neither injects the other), and
+  `retailorFromFinalChecks` (it drives three blocks at once). **Not verified in Tauri.** Three
+  walkthroughs are outstanding, one per pull request; every path needs real database rows and a real
+  click in the webview, and outside Tauri every `invoke` rejects. **Next first action:** drive them,
+  or pick up the next file-size debt - `cv-preview.component.html` at 779/300 is blocked by decision,
+  so the live candidates are `discover.component.ts` at 618/400 and
+  `cv-live-style-panel.component.ts` at 704/400.
+
 - **Ten silent fallbacks were made to report what they did, and the last one found on the way out was a
   write path rather than a wording problem.** The maintainer asked for every place an agent had written
   a fallback that swallows a failure and substitutes a value the caller cannot tell from a real answer.

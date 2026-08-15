@@ -55,6 +55,7 @@ export * from './lib/jobs/document-review-status.service';
 export * from './lib/jobs/document-review-targets.service';
 export * from './lib/jobs/final-checks.service';
 export * from './lib/jobs/job-actions.service';
+export * from './lib/jobs/job-actions.store';
 export * from './lib/jobs/job-detail-lifecycle.store';
 export * from './lib/jobs/job-detail.store';
 export * from './lib/jobs/job-document-drafts.store';

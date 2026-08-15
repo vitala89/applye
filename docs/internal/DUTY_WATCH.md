@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-16, the actions block leaves and the job detail page goes under budget, ending ADR-0005
+
+- **Status:** complete. `jobs.component.ts` is **371/400**, from 977 four pull requests ago. No page in the repository holds its own screen state.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. No new grilling round - PR 4's scope and grouping were settled in the round recorded in the entry below, and nothing in it had a second reading.
+- **Branch:** `refactor/job-actions-store`, stacked on `refactor/job-scoring-tailoring-stores` because that PR was open and green rather than merged.
+- **Objective:** PR 4 of item 1 in the handoff - the actions block plus `updateApplication`.
+- **Completed:**
+  - **`JobActionsStore` (166/250).** `saveJob`, `markApplied`, `cancelEditingLocked`, `openWizard`, `closeWizard`, `askDiscardTailoring`, `discardTailoring`, `openDeleteConfirm`, `confirmDeleteJob`, `updateApplication`, plus `busy`, `deleteConfirmOpen`, `applyResult`, `canMarkApplied` and `jobLocked`.
+  - **The two navigating actions return a boolean rather than routing.** `markApplied` and `confirmDeleteJob` do the work and report whether the page should leave; the page routes. Same division as #449's route subscription, and it is what lets the spec run without a `RouterTestingModule`. Two tests pin the contract from the failure side: a transition that failed must not report a move, and a delete that failed must not send anyone off a screen whose job is still there.
+  - **`updateApplication` moved whole, timer included.** Its hold is a `setTimeout`, not a navigation, so it needs nothing from the page - and `libs/application` already schedules that way at five sites, `cv-style.store.ts` among them. The page's `document.defaultView?.setTimeout` indirection went with it in favour of the layer's bare global; behaviour-identical in a browser, and `apps/web` does not render this screen.
+  - **`finalTailoredCvMd` became `JobTailoringStore.finalCvMd`.** Three callers across two layers wanted pass 3 specifically, and each was finding it by hand. Cheaper than duplicating the find into the new store.
+  - **15 tests**, with `jest.useFakeTimers` for the success-card hold, asserting the reload and scroll fire only after it.
+- **Not completed:** **three Tauri walkthroughs are outstanding and are the maintainer's** - #448's, #449/#450's, and this one: save a job, mark it applied and confirm the redirect, delete a job, abandon a tailoring, and update an already-applied application and watch the card hold then reload. Every path needs real database rows and a real click in the Tauri webview; a browser preview cannot substitute, because outside Tauri every `invoke` rejects and synthetic clicks do not reach the webview.
+- **Files or packages changed:** `job-actions.store.ts` and its spec, new; `job-tailoring.store.ts`; `libs/application/src/index.ts`; `apps/desktop/src/app/pages/jobs/jobs.component.{ts,html}`; `CHANGELOG.md`; `docs/product/CURRENT_STATE.md`; this file.
+- **Validation:** `nx run desktop:type-check` - clean. `nx run-many -t lint -p desktop application --skip-nx-cache` - 0 errors, 1 pre-existing warning. `nx test application` - 1566 passed, 123 suites. `nx test desktop` - 975 passed, 105 suites. `nx build desktop` - succeeded. `quality:file-size` - 491 to 371, **under budget**. `quality:attribution`, `format:check`, `git diff --check` - clean. No Rust changed, so no `cargo check`.
+- **Privacy/security impact:** none. No new I/O, no new IPC, no gateway injection.
+- **Decisions and assumptions:** the boolean-return shape for the two navigating actions was the recorded plan from the previous watch rather than a maintainer answer - **and `JobDocumentsStore` already injects `Router`**, so "the router stays on the page" is a preference for testability here, not an invariant of the layer. Said plainly because a later session reading only #449 would take it for a rule. The `setTimeout` change from `document.defaultView` to the global is mine and is noted above.
+- **Risks or compatibility impact:** the template now calls `actions.*` at 14 sites and `tailorStore.finalCvMd()` at 3. Covered by `nx build desktop`, the only gate that type-checks templates.
+- **Open issues or blockers:** #450 was open and green at the time of writing, so this branch is stacked on it. If #450 merges first the rebase is a fast-forward; if it is reworked, this branch follows.
+- **Next first action:** drive the three Tauri walkthroughs, or start the next file-size debt. `cv-preview.component.html` at 779/300 stays blocked by decision, so the live candidates are `discover.component.ts` at 618/400 and `cv-live-style-panel.component.ts` at 704/400.
+- **Evidence:** `npm run quality:file-size:all` for 371/400 and 166/250; `libs/application/src/lib/documents/cv-style.store.ts:161` for the `setTimeout` precedent; `libs/application/src/lib/jobs/job-documents.store.ts:40` for the `Router` injection that qualifies the routing note above.
+
 ### 2026-08-16, scoring and the wizard become stores, and the block scheduled for measurement turned out to be dead
 
 - **Status:** complete for the third of four pull requests. `jobs.component.ts` is **491/400** - still over, by design; the actions block is what clears it.

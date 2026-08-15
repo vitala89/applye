@@ -20,11 +20,7 @@ import { CvGapDialogService, CvDraftService, CoverLetterDraftService } from '@ap
 import { LinkedDocumentsService } from '@applye/application';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import {
-  JobDetailStore,
-  documentReviewLanguageFor,
-  inferDocumentRegion,
-} from '@applye/application';
+import { JobDetailStore } from '@applye/application';
 import { jobHeaderTitle, parseArchetypes, parseLegitimacyNotes } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ScoringView } from './scoring-view.component';
@@ -41,9 +37,9 @@ import { ToastService } from '@applye/application';
 import { PortalAnswersService } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { DocumentExportService } from '@applye/application';
-import { TailorContext, TailoringService } from '@applye/application';
+import { TailoringService } from '@applye/application';
 import { JobScoringService, ScoreContext } from '@applye/application';
-import { WizardNavService, WizardRestore } from '@applye/application';
+import { WizardNavService } from '@applye/application';
 import { scrollOnTick } from '../../core/scroll-to-top';
 import { CoverLetterTailorService } from '@applye/application';
 import { DocumentReviewStatusService } from '@applye/application';
@@ -52,9 +48,12 @@ import { TailoringDiscardService } from '@applye/application';
 import { JobGapFillService } from '@applye/application';
 import { JobActionsService } from '@applye/application';
 import {
+  JobDetailLifecycleStore,
   JobDocumentDraftsStore,
   JobDocumentsStore,
   JobFinalChecksStore,
+  JobRouteEntry,
+  JobTailoringStore,
 } from '@applye/application';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JobExportApplyStepComponent } from './job-export-apply-step/job-export-apply-step.component';
@@ -113,6 +112,8 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     JobFinalChecksStore,
     JobDocumentDraftsStore,
     JobDocumentsStore,
+    JobTailoringStore,
+    JobDetailLifecycleStore,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -125,6 +126,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   protected readonly drafts = inject(JobDocumentDraftsStore);
   /** The review step's token-free checks over both. */
   protected readonly checks = inject(JobFinalChecksStore);
+  /** The three-pass tailoring pipeline for the job now open. */
+  protected readonly tailorStore = inject(JobTailoringStore);
+  /** What opening a job loads, and what leaving one throws away. */
+  protected readonly lifecycle = inject(JobDetailLifecycleStore);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
@@ -167,7 +172,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     // mounted - pull its fresh result into the page.
     untracked(() => {
       if (prev === 'tailoring' && this.tailorResults().length < 3) {
-        void this.restoreTailoringFromCache();
+        void this.tailorStore.restoreFromCache();
       }
     });
   });
@@ -220,7 +225,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * exposes a re-edit affordance once a job leaves Saved (the application is
    * out the door, so the pasted description is frozen); this stays because the
    * scoring view still drives it via `overrideEditing` / `cancelEdit`. */
-  readonly editingLocked = signal(false);
+  readonly editingLocked = this.lifecycle.editingLocked;
 
   /** Confirm dialog when opening the wizard here would abandon an unfinished
    * tailoring session for a different job. */
@@ -323,9 +328,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly scoreError = this.scoreSvc.error;
 
   private readonly destroyRef = inject(DestroyRef);
-  /** The job id the page currently reflects, so a route param change to a
-   * different job triggers a real reload instead of leaving stale content. */
-  private loadedJobId: number | null = null;
 
   constructor() {
     // Derived from the job rather than pushed at each site that changes it.
@@ -346,70 +348,23 @@ export class JobsComponent implements OnInit, OnDestroy {
     // a snapshot read in ngOnInit would leave the previous job on screen.
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((pm) => {
       const idParam = pm.get('id');
-      if (idParam) void this.enterJob(+idParam);
+      if (idParam) void this.lifecycle.enterJob(+idParam, this.routeEntry());
     });
   }
 
   /**
-   * Load a job when the route points at it. A switch to a different job resets
-   * the per-job wizard state first so nothing bleeds across; a re-entry to the
-   * same id (a query-param-only navigation, e.g. returning from the document
-   * editor) skips the reload but still runs the return/restore handlers.
-   * Job Detail mode loads the job and its CACHED score only - no AI on open.
+   * What the route is telling the screen, as facts rather than a query-param
+   * map. Reading `ActivatedRoute` is the page's job; deciding what to load from
+   * it is the store's.
    */
-  private async enterJob(id: number): Promise<void> {
-    const switching = this.loadedJobId !== id;
-    if (switching && this.loadedJobId != null) this.resetJobScopedState();
-
-    // Decide which view to show SYNCHRONOUSLY, before any await, so the
-    // job-detail view never paints for a frame before the wizard/tailor view
-    // replaces it (the route-transition "blink"). Both wizard triggers are
-    // synchronous reads (the editor-return query params and the persisted
-    // wizard progress); only their follow-up work is async and is owed once
-    // the job has loaded.
-    const pendingPrep = this.decideWizardView(id);
-
-    if (switching) {
-      this.loadedJobId = id;
-      await this.loadJob(id);
-    }
-
-    if (pendingPrep === 'return') {
-      await this.completeWizardReturnFromDocumentEditor();
-    } else if (pendingPrep === 'restore-docs') {
-      await this.docs.prepareStep();
-    }
-  }
-
-  /**
-   * Open the apply wizard at the correct step when the route implies it, doing
-   * so synchronously (no await) so the detail view is never rendered first.
-   * The editor-return path wins over a plain progress restore. Returns the
-   * async follow-up owed once the job has loaded, if any.
-   */
-  private decideWizardView(id: number): WizardRestore {
+  private routeEntry(): JobRouteEntry {
     const params = this.route.snapshot.queryParamMap;
-    const returningFromEditor =
-      params.get('returnTo') === 'applyWizard' || params.get('wizardStep') === 'documents';
-    return this.wizardNav.restore(id, returningFromEditor);
-  }
-
-  /** Clear transient wizard/tailor/review state when moving to another job.
-   * Background runs are keyed by job in their services, so leave those. */
-  private resetJobScopedState(): void {
-    this.wizardNav.reset();
-    this.tailorSvc.reset();
-    this.tailorCancelled.set(false);
-    this.postTailorSaved.set(false);
-    this.finalChecksSvc.reset();
-    this.reviewStatus.reset();
-    this.exportSvc.resetStatus();
-    this.editingLocked.set(false);
-    this.crossJobConfirmOpen.set(false);
-    this.deleteConfirmOpen.set(false);
-    this.cache.set(null);
-    this.fromCache.set(false);
-    this.scoreStale.set(false);
+    return {
+      returningFromEditor:
+        params.get('returnTo') === 'applyWizard' || params.get('wizardStep') === 'documents',
+      documentSaved: params.get('documentSaved') === '1',
+      reviewHash: params.get('reviewHash'),
+    };
   }
 
   ngOnDestroy(): void {
@@ -419,73 +374,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     // resolve it as skipped - generation then continues in the background and
     // its `reviewing` activity ends cleanly instead of sticking on the badge.
     this.gapSvc.dispose();
-  }
-
-  /** Restore this job's score on open, falling back to a stale one when the
-   * profile has changed since. See `JobScoringService.loadCached`. */
-  private loadCachedScore(id: number): Promise<void> {
-    return this.scoreSvc.loadCached(id, this.profile()?.scoringHash);
-  }
-
-  /**
-   * The store fetches the job, its application row and the document library;
-   * everything below sequences the page's own services around what it loaded.
-   * The cached score used to be restored between the job read and the
-   * application read - the two are independent, and doing it here keeps the
-   * store free of anything it cannot import.
-   */
-  private async loadJob(id: number): Promise<void> {
-    if (!(await this.store.loadJob(id))) return;
-    const job = this.job();
-    if (!job) return;
-    try {
-      await this.loadCachedScore(id);
-      const app = this.application();
-      this.targets.language.set(documentReviewLanguageFor(app, job, this.settings()));
-      this.targets.region.set(inferDocumentRegion(job));
-      await this.docs.loadLinked();
-
-      this.portal.reset(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
-      await this.portal.loadFromCache(job, this.profile(), this.settings());
-      await this.restoreTailoringFromCache();
-    } catch (e) {
-      this.toast.error(`${this.t()('jobs.load_partial_failed')} ${String(e)}`);
-    }
-  }
-
-  /**
-   * Async follow-up after the editor-return view has already been opened
-   * synchronously by `decideWizardView`: token-free document prep, then the
-   * saved-document score-freshness reconciliation. The Updated-score rescore is
-   * deliberately NOT auto-run (it would spend tokens without a click).
-   */
-  private async completeWizardReturnFromDocumentEditor(): Promise<void> {
-    await this.docs.prepareStep();
-
-    const params = this.route.snapshot.queryParamMap;
-    if (params.get('documentSaved') !== '1') return;
-
-    const previousHash = params.get('reviewHash');
-    if (!previousHash) return;
-
-    const currentHash = await this.checks.documentsHash();
-    if (currentHash === previousHash) {
-      const restoredChecks = this.finalChecksSvc.restoreAfterReturn(previousHash);
-      if (restoredChecks) this.checks.checks.set(restoredChecks);
-      this.checks.outdated.set(false);
-      this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_unchanged'));
-    } else {
-      this.checks.invalidate();
-      this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_changed'));
-    }
-  }
-
-  /** Re-hydrate `tailorResults` from `tailoring_cache` so returning to a
-   * previously-tailored job shows its Tailored state (badge + Retailor)
-   * without re-running any AI. Replays the exact per-pass input hashes
-   * `runTailorPass` uses; stops at the first pass with no cached row. */
-  private restoreTailoringFromCache(): Promise<void> {
-    return this.tailorSvc.restoreFromCache(this.tailorContext());
   }
 
   addPortalQuestion(): void {
@@ -590,7 +478,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     // Nothing was destroyed, so nothing on the page should move. The reason is
     // already on the status line, and the confirmation is still open.
     if (!discarded) return;
-    this.resetJobScopedState();
+    this.lifecycle.resetJobScopedState();
     this.wizardNav.forget(this.job()?.id);
     this.wizardNav.requestScrollTop();
   }
@@ -695,7 +583,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.wizardOpen.set(false);
         this.applyResult.set(null);
         this.actionBusy.set(false);
-        await this.loadJob(jobId);
+        await this.lifecycle.loadJob(jobId);
         this.wizardNav.requestScrollTop();
       })();
     }, 2200);
@@ -723,7 +611,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.postTailorSaved.set(false);
     this.finalChecksSvc.reset();
 
-    await this.tailorSvc.run(this.tailorContext());
+    await this.tailorStore.run();
   }
 
   /**
@@ -733,20 +621,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * pre-tailor state so the user can adjust the source and try again.
    */
   cancelTailoring(): void {
-    this.tailorSvc.cancel(this.job()?.id);
-  }
-
-  /** Everything the tailoring passes read, gathered at call time. */
-  private tailorContext(): TailorContext {
-    return {
-      job: this.job(),
-      profile: this.profile(),
-      settings: this.settings(),
-      jdText: this.jdText(),
-      scoring: this.cache(),
-      baseCvId: this.selectedBaseCvId(),
-      matchingCvs: this.matchingCvs(),
-    };
+    this.tailorStore.cancel();
   }
 
   /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 documents · 4 export.

@@ -80,10 +80,27 @@
   scoring and tailoring stores, kept here so neither injects the other), and
   `retailorFromFinalChecks` (it drives three blocks at once). **Not verified in Tauri.** Three
   walkthroughs are outstanding, one per pull request; every path needs real database rows and a real
-  click in the webview, and outside Tauri every `invoke` rejects. **Next first action:** drive them,
-  or pick up the next file-size debt - `cv-preview.component.html` at 779/300 is blocked by decision,
-  so the live candidates are `discover.component.ts` at 618/400 and
-  `cv-live-style-panel.component.ts` at 704/400.
+  click in the webview, and outside Tauri every `invoke` rejects.
+
+- **Discover is under budget too, and the series measured what `ADR-0005` costs a lazy route.**
+  `discover.component.ts` is **397/400**, down from 618 across four pull requests
+  ([#455](https://github.com/vitala89/applye/pull/455) moving the selection rules down a layer,
+  [#456](https://github.com/vitala89/applye/pull/456) the filters store,
+  [#457](https://github.com/vitala89/applye/pull/457) the row helpers, and the page store).
+  `DiscoverFiltersStore`, `DiscoverRowMatchStore` and `DiscoverPageStore` join the five that
+  existed; `discover-row-view.ts` holds the three helpers that are functions of a row and nothing
+  else. **Two things stay on the page by measurement, not by omission**: the feed pipeline, because
+  `filterFeedRows` calls `classifyLoc`, which reads an 811-line location table that costs **12.87
+  kB** of initial bundle if it moves; and the four locale-bound row helpers, because this layer
+  holds no locales. **The general finding is worth carrying**: `libs/application` is imported by the
+  eagerly-loaded shell and Discover is a `loadComponent` route, so migrating a lazily-routed page
+  moves code from a chunk most sessions never fetch into the one every launch does. The series cost
+  about 7 kB and finished the headroom, so the `initial` budget is now `1600kb` with the warning
+  refreshed to `1520kb` - both explained in `docs/architecture.md`. **Next first action:** the
+  Discover template at **484/300** and its stylesheet at **704/400**, neither touched by this
+  series and both needing child components rather than stores; or
+  `cv-live-style-panel.component.ts` at 704/400, the largest remaining source file.
+  `cv-preview.component.html` at 779/300 stays blocked by decision.
 
 - **Ten silent fallbacks were made to report what they did, and the last one found on the way out was a
   write path rather than a wording problem.** The maintainer asked for every place an agent had written

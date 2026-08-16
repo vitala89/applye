@@ -95,28 +95,28 @@ describe('Discover: the sources drawer is always reachable', () => {
   it('offers Sources when the feed is empty but sources have been scanned', async () => {
     const fixture = await createFixture([source()], []);
 
-    expect(fixture.componentInstance['view']()).toBe('caughtup');
+    expect(fixture.componentInstance['page'].view()).toBe('caughtup');
     expect(drawerOpeners(fixture)).toEqual(['Sources']);
   });
 
   it('offers Sources when sources are enabled but never scanned', async () => {
     const fixture = await createFixture([source({ lastScanAt: null })], []);
 
-    expect(fixture.componentInstance['view']()).toBe('never');
+    expect(fixture.componentInstance['page'].view()).toBe('never');
     expect(drawerOpeners(fixture)).toEqual(['Sources']);
   });
 
   it('offers Sources once, not twice, when the feed has rows', async () => {
     const fixture = await createFixture([source()], [feedItem()]);
 
-    expect(fixture.componentInstance['view']()).toBe('feed');
+    expect(fixture.componentInstance['page'].view()).toBe('feed');
     expect(drawerOpeners(fixture)).toEqual(['Sources']);
   });
 
   it('offers the first-run CTA when nothing is enabled yet', async () => {
     const fixture = await createFixture([source({ isEnabled: false, lastScanAt: null })], []);
 
-    expect(fixture.componentInstance['view']()).toBe('first');
+    expect(fixture.componentInstance['page'].view()).toBe('first');
     expect(drawerOpeners(fixture)).toEqual(['Choose sources']);
   });
 
@@ -130,7 +130,7 @@ describe('Discover: the sources drawer is always reachable', () => {
     button?.click();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance['drawerOpen']()).toBe(true);
+    expect(fixture.componentInstance['page'].drawerOpen()).toBe(true);
   });
 });
 

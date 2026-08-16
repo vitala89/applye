@@ -121,6 +121,35 @@ features that do exist are unaffected: the pipeline kanban and the CV section re
 CDK, which is pointer-event based, and `data-tauri-drag-region` moves the window, which is a
 different mechanism entirely. Turn it back on if a drop target is ever added.
 
+### The initial-bundle budget, and why it moves
+
+`apps/desktop/project.json` sets an `initial` budget on the production build. It
+is a real constraint that has decided a design twice, so the numbers are worth
+reading rather than raising on reflex.
+
+Eighteen routes are `loadComponent`, so a screen's own code is in its own lazy
+chunk. **`libs/application` is not**: the shell imports it eagerly, so anything
+exported from its barrel loads on launch. That puts `ADR-0005` and lazy routing
+in tension by construction - migrating a lazily-routed page's state into
+`libs/application` moves that code from a chunk most sessions never fetch into
+the one every launch does.
+
+The tension is accepted, not resolved. What the budget buys is that the cost is
+**measured** rather than discovered later:
+
+- Moving Discover's location vocabulary down - an 811-line table read by
+  `classifyLoc` - would have cost **12.87 kB** and failed the build. That is why
+  `discover-location.ts` and `discover-region-groups.ts` stay in the page while
+  the tri-state rules that need no table moved. Type-check, lint and the whole
+  suite passed on the version that failed here.
+- Discover's four-PR migration cost about **7 kB** in total and consumed the
+  remaining headroom, which is why the ceiling moved to `1600kb`.
+
+`maximumWarning` is set close to the current size on purpose. It sat at `1300kb`
+while the app was ~200 kB past it, so it fired on every build and told nobody
+anything - and the 12.87 kB regression above had to be caught by the error
+instead. A warning is only useful while it is quiet.
+
 ### `libs/skills` is not an Nx project, on purpose
 
 The 23 AI prompts under `libs/skills/src/<name>/<name>.md` are the one thing in

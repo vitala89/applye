@@ -1,0 +1,76 @@
+<div class="dv-detail">
+  <app-discover-detail-hero
+    [row]="row()"
+    [sourceLabel]="sourceLabel()"
+    [posted]="posted()"
+    [score]="detail.score()"
+    [verdict]="detail.verdict()"
+    [archetype]="archetype()"
+    [matchedKeywords]="match.matchedKeywords(row())"
+    (backRequested)="page.closeDetail()"
+    (saveRequested)="saveRequested.emit($event)"
+  />
+
+  <div class="dv-detail__grid">
+    <!-- MAIN: parsed description -->
+    <div class="dv-detail__main">
+      @if (detail.blocks() === null) {
+        <div class="dv-detail__loading">
+          <span class="dv-row__detailloading">{{ t()('discover.detail_loading') }}</span>
+          <div class="dv-skel__bar" style="width: 90%; height: 12px"></div>
+          <div class="dv-skel__bar" style="width: 96%; height: 12px"></div>
+          <div class="dv-skel__bar" style="width: 78%; height: 12px"></div>
+          <div class="dv-skel__bar" style="width: 40%; height: 12px"></div>
+        </div>
+      } @else {
+        <div class="dv-row__detail">
+          @for (block of detail.blocks(); track $index) {
+            @switch (block.kind) {
+              @case ('heading') {
+                <div class="dv-row__dh">{{ block.text }}</div>
+              }
+              @case ('list') {
+                <ul class="dv-row__dul">
+                  @for (item of block.items; track $index) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              }
+              @default {
+                <p class="dv-row__dp">{{ block.text }}</p>
+              }
+            }
+          }
+        </div>
+        @if (row().sourceUrl) {
+          <div class="dv-detail__actions">
+            <button
+              type="button"
+              class="dv-btn dv-btn--primary"
+              [title]="t()('discover.apply_hint')"
+              (click)="openOriginal(row(), $event)"
+            >
+              {{ t()('discover.apply_now') }}
+              <lucide-icon [img]="icons.external" [size]="14" aria-hidden="true" />
+            </button>
+            <span class="dv-detail__applynote">{{ t()('discover.apply_hint') }}</span>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- SIDEBAR -->
+    <app-discover-detail-score
+      [score]="detail.score()"
+      [verdict]="detail.verdict()"
+      [tip]="tip()"
+      [hasCompTarget]="context.hasCompTarget()"
+      [compVerdict]="compVerdict()"
+      [sourceLabel]="sourceLabel()"
+      [location]="row().location"
+      [posted]="posted()"
+      [skills]="detail.skills()"
+      (rescoreRequested)="rescoreRequested.emit($event)"
+    />
+  </div>
+</div>

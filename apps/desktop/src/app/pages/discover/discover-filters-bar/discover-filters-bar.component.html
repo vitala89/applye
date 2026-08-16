@@ -1,0 +1,141 @@
+<div class="dv-filters">
+  <input
+    type="text"
+    class="dv-input dv-filters__query"
+    [placeholder]="t()('discover.filter_placeholder')"
+    [ngModel]="sel.query()"
+    (ngModelChange)="sel.query.set($event)"
+  />
+  <!-- Sources filter (checkboxes; empty = all) -->
+  <app-discover-filter-menu
+    [label]="t()('discover.all_sources')"
+    [count]="sel.sourceCount()"
+    (cleared)="sel.clearSources()"
+  >
+    @for (name of sourceOptions(); track name) {
+      <label class="dv-geomenu__item">
+        <input
+          type="checkbox"
+          [checked]="sel.sourceChecked(name)"
+          (change)="sel.toggleSourceFilter(name)"
+        />
+        <span>{{ srcLabel(name) }}</span>
+      </label>
+    } @empty {
+      <span class="dv-geomenu__hint">{{ t()('discover.no_sources_yet') }}</span>
+    }
+  </app-discover-filter-menu>
+
+  <!-- Work type filter (checkboxes; empty = all) -->
+  <app-discover-filter-menu
+    [label]="t()('discover.type_all')"
+    [count]="sel.typeCount()"
+    (cleared)="sel.clearWork()"
+  >
+    @for (w of sel.allWorkTypes; track w) {
+      <label class="dv-geomenu__item">
+        <input type="checkbox" [checked]="sel.workChecked(w)" (change)="sel.toggleWork(w)" />
+        <span>{{ t()('discover.type_' + w) }}</span>
+      </label>
+    }
+  </app-discover-filter-menu>
+
+  <!-- Locations filter (regions expand to real countries from the feed) -->
+  <app-discover-filter-menu
+    [label]="t()('discover.locations_btn')"
+    [count]="sel.countryCount()"
+    [footNote]="t()('discover.loc_other_hint')"
+    (cleared)="sel.clearLocations()"
+  >
+    @for (group of availableRegions(); track group.key) {
+      <div class="dv-geomenu__region">
+        <label class="dv-geomenu__item">
+          <input
+            type="checkbox"
+            [checked]="sel.regionState(group) === 'all'"
+            [indeterminate]="sel.regionState(group) === 'some'"
+            (change)="sel.toggleRegion(group)"
+          />
+          <span>{{ regionLabel(group.key) }}</span>
+          @if (group.countries.length > 1) {
+            <button
+              type="button"
+              class="dv-geomenu__expand"
+              [class.dv-geomenu__expand--open]="sel.regionExpanded(group.key)"
+              [attr.aria-expanded]="sel.regionExpanded(group.key)"
+              (click)="expandRegion(group.key, $event)"
+            >
+              <lucide-icon [img]="icons.chevron" [size]="13" aria-hidden="true" />
+            </button>
+          }
+        </label>
+        @if (sel.regionExpanded(group.key) && group.countries.length > 1) {
+          @for (country of group.countries; track country.name) {
+            <label class="dv-geomenu__item dv-geomenu__item--child">
+              <input
+                type="checkbox"
+                [checked]="sel.countryState(country) === 'all'"
+                [indeterminate]="sel.countryState(country) === 'some'"
+                (change)="sel.toggleCountryTree(country)"
+              />
+              <span>{{ country.name }}</span>
+              @if (country.cities.length) {
+                <button
+                  type="button"
+                  class="dv-geomenu__expand"
+                  [class.dv-geomenu__expand--open]="sel.countryExpanded(country.name)"
+                  [attr.aria-expanded]="sel.countryExpanded(country.name)"
+                  (click)="expandCountry(country.name, $event)"
+                >
+                  <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
+                </button>
+              }
+            </label>
+            @if (sel.countryExpanded(country.name)) {
+              @for (city of country.cities; track city) {
+                <label class="dv-geomenu__item dv-geomenu__item--grandchild">
+                  <input
+                    type="checkbox"
+                    [checked]="sel.cityChecked(country.name, city)"
+                    (change)="sel.toggleCity(country.name, city)"
+                  />
+                  <span>{{ city }}</span>
+                </label>
+              }
+            }
+          }
+        }
+      </div>
+    } @empty {
+      <span class="dv-geomenu__hint">{{ t()('discover.no_locations_yet') }}</span>
+    }
+  </app-discover-filter-menu>
+  <div class="dv-tabs" role="tablist">
+    <button
+      type="button"
+      class="dv-tabs__tab"
+      [class.dv-tabs__tab--active]="sel.tab() === 'new'"
+      (click)="sel.tab.set('new')"
+    >
+      {{ t()('discover.tab_new') }}
+    </button>
+    <button
+      type="button"
+      class="dv-tabs__tab"
+      [class.dv-tabs__tab--active]="sel.tab() === 'all'"
+      (click)="sel.tab.set('all')"
+    >
+      {{ t()('discover.tab_all') }}
+    </button>
+  </div>
+  <button
+    type="button"
+    class="dv-btn dv-btn--ghost dv-filters__clear"
+    [title]="t()('discover.clear_list')"
+    [disabled]="!feed.hasClearableJobs()"
+    (click)="page.askClearFeed()"
+  >
+    <lucide-icon [img]="icons.remove" [size]="13" aria-hidden="true" />
+    {{ t()('discover.clear_list') }}
+  </button>
+</div>

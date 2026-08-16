@@ -44,6 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-16, three advisories close on a patch digit each, and the two that stay have reasons
+
+- **Status:** complete. `npm audit` 7 high to 5; `npm audit --omit=dev` 0 before and 0 after.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. No grilling round: patch-level bumps inside existing major-keyed overrides, with the shape settled by the previous wave and no second reading.
+- **Branch:** `chore/dependabot-js-yaml-nanoid`, cut from `main` at `632bfa0e`.
+- **Objective:** triage the three Dependabot alerts flagged in the previous watch, since the count had moved from one.
+- **Completed:**
+  - **The three alerts were two packages.** Both "high" entries were `js-yaml` (GHSA-5p4m-2wfm-xmqj, quadratic CPU in `!!omap`); the "moderate" was the known `glib`. `npm audit` separately reported `nanoid`, which Dependabot did not - the same asymmetry the previous wave saw in the other direction.
+  - **Dependabot and `npm audit` named different `js-yaml` ranges, and both were right.** The alert said `>=4.0.0 <4.3.1`; the audit said `>=3.0.0 <3.15.1`. Two copies under different majors, each one patch short of its fix. Fixing only the flagged one would have left the audit red.
+  - **Three patch bumps inside the existing overrides**, keyed by major as the `brace-expansion` lesson requires: `js-yaml@^3` 3.15.0 -> 3.15.1, `js-yaml@^4` 4.3.0 -> 4.3.1, `nanoid@^3` 3.3.16 -> 3.3.18. Verified resolved, not merely requested.
+- **Not completed, deliberately:** **the remaining five audit entries are one chain and are left.** `image-size` `<=2.0.2` reaches the tree through `less`, which reaches it through `@angular-devkit/build-angular` and `@nx/webpack`. npm's only remedy is a semver-**major downgrade** of `@angular-devkit/build-angular` to `0.1002.1` - the trap the `undici` wave already refused. It is also unreachable: **zero `.less` files in the repository** and both apps set `inlineStyleLanguage: scss`, so the parser never runs. `glib` RUSTSEC-2024-0429 stays open on purpose.
+- **Files or packages changed:** `package.json`, `package-lock.json`, `CHANGELOG.md`, this file.
+- **Validation:** `npm audit --omit=dev` - 0. `npm audit` - 7 high to 5. `nx build desktop` and `nx build web` - both succeeded (`nx build web`, not `npm run web:build`, which regenerates the sitemap). `nx run-many -t test` over all six projects - **3080 passed**. `nx run-many -t lint -p desktop application --skip-nx-cache` - 0 errors, 1 pre-existing warning. `format:check`, `quality:file-size`, `quality:attribution`, `git diff --check` - clean. No Rust changed, so no `cargo check`.
+- **Privacy/security impact:** a hardening, in development tooling only. Nothing vulnerable was in a shipped artifact before or after - that is what `--omit=dev` at 0 on both sides says.
+- **Decisions and assumptions:** patch bumps rather than an `npm audit fix --force`, which proposes the major downgrade. Overrides stay keyed by major; the previous wave recorded why collapsing them breaks the `minimatch` 3.1.5 callers with no gate to catch it.
+- **Risks or compatibility impact:** `js-yaml` and `nanoid` are build tooling, so both builds and the full suite were run rather than trusted. **A Jest "worker process failed to exit gracefully" warning appeared once during a `run-many` and was chased**: it reproduces neither on repeated single-project runs with the bumps nor consistently without them, and it appears on `main` too. Flaky and pre-existing, not introduced here - recorded rather than left as an unexplained line in the log.
+- **Open issues or blockers:** #453 is open, green and mergeable. The four unwired prompts from that PR still await a delete-or-implement decision.
+- **Next first action:** the next file-size debt, `discover.component.ts` at 618/400, or `cv-live-style-panel.component.ts` at 704/400.
+- **Evidence:** `npm ls js-yaml nanoid --all` showing `3.15.1`, `4.3.1` and `3.3.18` resolved and overridden; `npm audit --json` for the `image-size` -> `less` -> build-tooling chain and its `isSemVerMajor` remedy; `find apps libs -name "*.less"` returning zero.
+
 ### 2026-08-16, the skills coupling gets a test instead of a project.json, and the test finds four prompts nothing can load
 
 - **Status:** complete for items 3 and 4 of the handoff. Both were re-scoped by measurement before any edit; the gate is what caught that.

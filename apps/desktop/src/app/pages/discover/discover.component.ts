@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   ArrowUpRight,
   Check,
@@ -32,15 +31,13 @@ import { DiscoverDetailScoreComponent } from './discover-detail-score/discover-d
 import { compareCompensation } from '@applye/core';
 import type { CompensationVerdict, ArchetypeFit } from '@applye/core';
 import { srcLabel, workTypeOf } from '@applye/application';
-import { buildRegionGroups } from './discover-region-groups';
-import { type RegionGroup, type RegionKey } from '@applye/application';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
 
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
 
-import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
+import { DiscoverDetailScreenComponent } from './discover-detail-screen/discover-detail-screen.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
-import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
+import { DiscoverFiltersBarComponent } from './discover-filters-bar/discover-filters-bar.component';
 import {
   DiscoverDetailStore,
   DiscoverFeedStore,
@@ -64,9 +61,9 @@ import { ToastService } from '@applye/application';
     LucideAngularModule,
     DiscoverSourcesDrawerComponent,
     DiscoverDetailScoreComponent,
-    DiscoverDetailHeroComponent,
+    DiscoverDetailScreenComponent,
     DiscoverFeedRowComponent,
-    DiscoverFilterMenuComponent,
+    DiscoverFiltersBarComponent,
   ],
   providers: [
     DiscoverSourcesStore,
@@ -259,17 +256,6 @@ export class DiscoverComponent {
   }
 
   /** Distinct source names present in the feed (for the Sources checkboxes). */
-  protected readonly availableSources = computed(() => this.page.sourceOptions());
-
-  /**
-   * Region -> countries -> cities actually present in the current feed. Only
-   * regions, countries and cities that appear in scanned jobs are offered; an
-   * "Other" bucket collects unknown and remote-anywhere locations.
-   */
-  protected readonly availableRegions = computed<RegionGroup[]>(() =>
-    buildRegionGroups(this.feedStore.rows()),
-  );
-
   /** Row currently open in the detail screen. */
   protected readonly detailRow = computed<FeedRow | null>(() => {
     const id = this.detail.id();
@@ -353,28 +339,6 @@ export class DiscoverComponent {
     return m ? { fit: m.fit, label: this.archBadgeLabel(m.fit) } : null;
   }
 
-  /**
-   * The chevron sits inside the row's own click target, so expanding a level
-   * must not also select it. Stopping the event is the page's job - the store
-   * holds selection state and knows nothing about the DOM, the same division
-   * `WizardNavService` has with scrolling.
-   */
-  protected expandRegion(key: RegionKey, event: Event): void {
-    event.stopPropagation();
-    this.sel.toggleRegionExpand(key);
-  }
-
-  protected expandCountry(name: string, event: Event): void {
-    event.stopPropagation();
-    this.sel.toggleCountryExpand(name);
-  }
-
-  /** The region row's label in the Locations popover. Stays on the page: it is
-   * locale-dependent, and the filters store holds selection state only. */
-  protected regionLabel(key: RegionKey): string {
-    return this.t()(`discover.region_${key}`);
-  }
-
   // ------------------------------------------------------------ detail misc
   /** Deterministic tip line under the raw score. */
   protected tipText(row: FeedRow): string {
@@ -409,11 +373,6 @@ export class DiscoverComponent {
     event.stopPropagation();
     const error = await this.feedStore.setDismissed(row.id, false);
     if (error) this.toast.error(error);
-  }
-
-  protected async openOriginal(row: FeedRow, event: Event): Promise<void> {
-    event.stopPropagation();
-    if (row.sourceUrl) await openUrl(row.sourceUrl);
   }
 
   // --------------------------------------------------------------- helpers

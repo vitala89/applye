@@ -44,6 +44,32 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-16, Discover's template splits into two components, and the style gate finds three things review would not
+
+- **Status:** complete. `discover.component.html` is **281/300** - under budget. The stylesheet is **475/400**, down from 704 but still over.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. One `aif-grilling` run, one round, two decisions, both answered as recommended.
+- **Branch:** `refactor/discover-template-components`, stacked on `refactor/discover-feed-sections` (#458, open and green).
+- **Objective:** the Discover template at 484/300 and stylesheet at 704/400.
+- **One correction to the plan, and it simplified it.** The round asked about "filters bar, detail overlay and tabs". `dv-tabs` turned out to be **nested inside** `dv-filters`, not a sibling - one block of 142 non-blank lines rather than 110 + 72. So the answer collapsed to the two components chosen, and two were enough.
+- **Completed:**
+  - **`app-discover-filters-bar`** - the search box, the three filter menus' projected contents, the tabs and Clear list. **No inputs.** Every store it reads is provided by the Discover page, so injecting them resolves up the component tree to the same instances. `regionLabel`, `expandRegion`, `expandCountry` and `availableRegions` moved with it and are now dead on the page.
+  - **`app-discover-detail-screen`** - the full-screen job detail. Five inputs, deliberately: `sourceLabel`, `posted`, `archetype` and `tip` come from page methods the **feed rows also use**, so recomputing them here would duplicate four locale-dependent helpers rather than share them.
+  - **The feed block was deliberately not extracted.** `#loadMore` sits inside it, and the page's `loadMoreSentinel = viewChild('loadMore')` would stop resolving - infinite scroll would break with **no test able to catch it**, because jsdom has neither layout nor `IntersectionObserver`.
+- **`quality:style-move` earned its keep three times:**
+  - **`.dv-row`** stayed in the page stylesheet while the only markup that renders it moved. Its own comment recorded that it "appears only inside `.dv-detail__main`" - and that was the sentence that made it inert.
+  - **`.dv-detail`'s `@media (max-width: 980px)`** collapse was reported lost until the nested block was confirmed to have travelled inside `.dv-detail`.
+  - **A pre-existing accessibility bug, unrelated to this change.** `.dv-geomenu__panel` is animated in `discover-filter-menu.component.scss`, but its `prefers-reduced-motion` override was in the **page's** stylesheet, which cannot reach markup a child declares. The filter menu has been ignoring the preference since it was extracted. Fixed here, beside the animation.
+  - Across all four stylesheets the check now reads **lossless**.
+- **Not completed:** `discover.component.scss` is **475/400**. What remains is the page's own chrome - header, console, strip, empty states, confirm modal, skeleton - and shrinking it further means extracting those, which the template no longer needs.
+- **Files or packages changed:** `discover-filters-bar/` and `discover-detail-screen/` new (template, class, stylesheet each); `discover-filter-menu.component.scss`; `discover.component.{ts,html,scss}`; `CHANGELOG.md`; this file.
+- **Validation:** `nx run desktop:type-check` - clean. `nx build desktop` - succeeded. `nx test desktop` 962, `nx test application` 1627. `nx run-many -t lint -p desktop --skip-nx-cache` - 0 errors, 1 pre-existing warning; it found five members and three imports the extraction orphaned. `node tools/check-style-move.mjs --base origin/main` over all four stylesheets - **lossless**. `quality:file-size` - template 484 to 281, stylesheet 704 to 475, class 397 to 362, passed. `quality:attribution`, `format:check`, `git diff --check` - clean. No Rust changed.
+- **Privacy/security impact:** none. The reduced-motion fix is an accessibility improvement.
+- **Decisions and assumptions:** the two grilling answers - which blocks, and duplicating the reduced-motion media query rather than globalising it. **Mine, not asked:** one pull request rather than three, because unlike the store series these are identical mechanical extractions on one file and the template is only reviewable at its end state; and moving `openOriginal` into the detail screen, since after the extraction nothing else called it.
+- **Risks or compatibility impact:** **not verified on a rendered screen.** The traps this repo records - a host element breaking a flex rule, a directive not travelling with its markup - are invisible to type-check, lint and the suite. `.dv` is not a flex or grid container, so the host-element trap does not apply at this level, and `FormsModule` travelled with the one `ngModel`. But Discover's feed needs real database rows, and outside Tauri every `invoke` rejects, so a browser preview renders only the empty states - not the filter bar or the detail screen this change moves.
+- **Open issues or blockers:** #458 is open and green; this branch is stacked on it. The four unwired prompts from #453 still await a delete-or-implement decision.
+- **Next first action:** a rendered check of the filter bar and the detail screen, which needs the Tauri app and real rows - the sticky `.dv-filters` bar and the detail grid's 980px collapse are the two things worth looking at. Otherwise `discover.component.scss` at 475/400, or `cv-live-style-panel.component.ts` at 704/400.
+- **Evidence:** `check-style-move.mjs` reporting `.dv-row` and the 980px block lost, then lossless across four sheets; `discover-filter-menu.component.scss:45` for the animation whose override was in the wrong file; the nesting of `dv-tabs` inside `dv-filters` for the plan correction.
+
 ### 2026-08-16, Discover reaches its budget, and the last cut is decided by the bundle rather than the plan
 
 - **Status:** complete. `discover.component.ts` is **397/400**, from 618 when the series started. Discover is the second page to finish `ADR-0005`, after the job detail.

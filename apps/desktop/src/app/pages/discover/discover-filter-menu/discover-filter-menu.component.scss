@@ -54,3 +54,17 @@
   padding: var(--space-2) var(--space-3) 0;
   border-top: 1px solid var(--border-subtle);
 }
+
+/**
+ * The panel's fade, honoured for users who asked for less motion.
+ *
+ * This override used to live in the Discover page's stylesheet, where it had
+ * stopped applying: component styles are scoped, so a page rule cannot reach
+ * markup this component declares. The animation above has therefore been
+ * playing regardless of the preference since this component was extracted.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .dv-geomenu__panel {
+    animation: none;
+  }
+}

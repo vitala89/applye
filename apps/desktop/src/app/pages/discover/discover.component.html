@@ -212,21 +212,21 @@
         type="text"
         class="dv-input dv-filters__query"
         [placeholder]="t()('discover.filter_placeholder')"
-        [ngModel]="query()"
-        (ngModelChange)="query.set($event)"
+        [ngModel]="sel.query()"
+        (ngModelChange)="sel.query.set($event)"
       />
       <!-- Sources filter (checkboxes; empty = all) -->
       <app-discover-filter-menu
         [label]="t()('discover.all_sources')"
-        [count]="sourceCount()"
-        (cleared)="clearSources()"
+        [count]="sel.sourceCount()"
+        (cleared)="sel.clearSources()"
       >
         @for (name of availableSources(); track name) {
           <label class="dv-geomenu__item">
             <input
               type="checkbox"
-              [checked]="sourceChecked(name)"
-              (change)="toggleSourceFilter(name)"
+              [checked]="sel.sourceChecked(name)"
+              (change)="sel.toggleSourceFilter(name)"
             />
             <span>{{ srcLabel(name) }}</span>
           </label>
@@ -238,12 +238,12 @@
       <!-- Work type filter (checkboxes; empty = all) -->
       <app-discover-filter-menu
         [label]="t()('discover.type_all')"
-        [count]="typeCount()"
-        (cleared)="clearWork()"
+        [count]="sel.typeCount()"
+        (cleared)="sel.clearWork()"
       >
-        @for (w of allWorkTypes; track w) {
+        @for (w of sel.allWorkTypes; track w) {
           <label class="dv-geomenu__item">
-            <input type="checkbox" [checked]="workChecked(w)" (change)="toggleWork(w)" />
+            <input type="checkbox" [checked]="sel.workChecked(w)" (change)="sel.toggleWork(w)" />
             <span>{{ t()('discover.type_' + w) }}</span>
           </label>
         }
@@ -252,61 +252,61 @@
       <!-- Locations filter (regions expand to real countries from the feed) -->
       <app-discover-filter-menu
         [label]="t()('discover.locations_btn')"
-        [count]="countryCount()"
+        [count]="sel.countryCount()"
         [footNote]="t()('discover.loc_other_hint')"
-        (cleared)="clearLocations()"
+        (cleared)="sel.clearLocations()"
       >
         @for (group of availableRegions(); track group.key) {
           <div class="dv-geomenu__region">
             <label class="dv-geomenu__item">
               <input
                 type="checkbox"
-                [checked]="regionState(group) === 'all'"
-                [indeterminate]="regionState(group) === 'some'"
-                (change)="toggleRegion(group)"
+                [checked]="sel.regionState(group) === 'all'"
+                [indeterminate]="sel.regionState(group) === 'some'"
+                (change)="sel.toggleRegion(group)"
               />
               <span>{{ regionLabel(group.key) }}</span>
               @if (group.countries.length > 1) {
                 <button
                   type="button"
                   class="dv-geomenu__expand"
-                  [class.dv-geomenu__expand--open]="regionExpanded(group.key)"
-                  [attr.aria-expanded]="regionExpanded(group.key)"
-                  (click)="toggleRegionExpand(group.key, $event)"
+                  [class.dv-geomenu__expand--open]="sel.regionExpanded(group.key)"
+                  [attr.aria-expanded]="sel.regionExpanded(group.key)"
+                  (click)="expandRegion(group.key, $event)"
                 >
                   <lucide-icon [img]="icons.chevron" [size]="13" aria-hidden="true" />
                 </button>
               }
             </label>
-            @if (regionExpanded(group.key) && group.countries.length > 1) {
+            @if (sel.regionExpanded(group.key) && group.countries.length > 1) {
               @for (country of group.countries; track country.name) {
                 <label class="dv-geomenu__item dv-geomenu__item--child">
                   <input
                     type="checkbox"
-                    [checked]="countryState(country) === 'all'"
-                    [indeterminate]="countryState(country) === 'some'"
-                    (change)="toggleCountryTree(country)"
+                    [checked]="sel.countryState(country) === 'all'"
+                    [indeterminate]="sel.countryState(country) === 'some'"
+                    (change)="sel.toggleCountryTree(country)"
                   />
                   <span>{{ country.name }}</span>
                   @if (country.cities.length) {
                     <button
                       type="button"
                       class="dv-geomenu__expand"
-                      [class.dv-geomenu__expand--open]="countryExpanded(country.name)"
-                      [attr.aria-expanded]="countryExpanded(country.name)"
-                      (click)="toggleCountryExpand(country.name, $event)"
+                      [class.dv-geomenu__expand--open]="sel.countryExpanded(country.name)"
+                      [attr.aria-expanded]="sel.countryExpanded(country.name)"
+                      (click)="expandCountry(country.name, $event)"
                     >
                       <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
                     </button>
                   }
                 </label>
-                @if (countryExpanded(country.name)) {
+                @if (sel.countryExpanded(country.name)) {
                   @for (city of country.cities; track city) {
                     <label class="dv-geomenu__item dv-geomenu__item--grandchild">
                       <input
                         type="checkbox"
-                        [checked]="cityChecked(country.name, city)"
-                        (change)="toggleCity(country.name, city)"
+                        [checked]="sel.cityChecked(country.name, city)"
+                        (change)="sel.toggleCity(country.name, city)"
                       />
                       <span>{{ city }}</span>
                     </label>
@@ -323,16 +323,16 @@
         <button
           type="button"
           class="dv-tabs__tab"
-          [class.dv-tabs__tab--active]="tab() === 'new'"
-          (click)="tab.set('new')"
+          [class.dv-tabs__tab--active]="sel.tab() === 'new'"
+          (click)="sel.tab.set('new')"
         >
           {{ t()('discover.tab_new') }}
         </button>
         <button
           type="button"
           class="dv-tabs__tab"
-          [class.dv-tabs__tab--active]="tab() === 'all'"
-          (click)="tab.set('all')"
+          [class.dv-tabs__tab--active]="sel.tab() === 'all'"
+          (click)="sel.tab.set('all')"
         >
           {{ t()('discover.tab_all') }}
         </button>

@@ -4,6 +4,7 @@ export * from './lib/analytics/analytics-view';
 export * from './lib/analytics/analytics.store';
 export * from './lib/discover/discover-detail.store';
 export * from './lib/discover/discover-feed.store';
+export * from './lib/discover/discover-location-selection';
 export * from './lib/discover/discover-profile-context.store';
 export * from './lib/discover/discover-scan.store';
 export * from './lib/discover/discover-sources.store';

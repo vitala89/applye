@@ -1,5 +1,5 @@
-import { type FeedRow } from '@applye/application';
-import { OTHER_COUNTRY, cityKey, classifyLoc } from './discover-location';
+import { type FeedRow, cityKey } from '@applye/application';
+import { OTHER_COUNTRY, classifyLoc } from './discover-location';
 
 /**
  * The row shape is the feed store's - it owns the rows and the triage state.

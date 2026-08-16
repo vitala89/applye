@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-16, Discover's filters become a store, and the ratchet rejects two template versions before one lands
+
+- **Status:** complete for PR 1 of the Discover series. `discover.component.ts` is **556/400**, from 616. Two extraction PRs remain.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. No new grilling round - PR 1's scope was settled in the three rounds recorded in the entry below, and nothing in it had a second reading.
+- **Branch:** `refactor/discover-filters-store`, stacked on `refactor/discover-location-to-libs` (#455, open and green).
+- **Objective:** PR 1 - the filter/selection block out of `discover.component.ts`.
+- **Completed:**
+  - **`DiscoverFiltersStore` (110/250).** `query`, `sourceSel`, `workTypeSel`, `countrySel`, `expandedRegions`, `expandedCountries`, `tab`, `allWorkTypes`, the three badge counts and the eighteen toggle/checked/clear methods. `WorkType` and `Tab` moved with it, the latter as `DiscoverTab` because `Tab` is too generic for a public surface.
+  - **It depends on nothing, and the spec proves it.** `TestBed.configureTestingModule({ providers: [DiscoverFiltersStore] })` and no more - the store holds no feed reference and reads no rows, so the arrow to `DiscoverFeedStore` stays one-way. A spec that needed a feed fixture would be the first sign that had stopped being true, and the comment in the spec says so.
+  - **`regionLabel` stays on the page.** It translates a region key; this store holds selection state, not presentation.
+  - **The two chevron handlers came back to the page** as `expandRegion` / `expandCountry`. The store knows nothing about the DOM, so stopping the event that would otherwise select the row being expanded belongs to the page - the same division `WizardNavService` has with scrolling.
+  - **12 tests**, including the two that pin what the tri-states mean through the store's surface: a partly-selected country completes rather than clears, and clearing the location selection leaves the tree expanded, because the chevron is the user's.
+- **The gate rejected two template versions, which is the part worth carrying forward:** `discover.component.html` is **484/300** and may not grow. Inlining `$event.stopPropagation(); sel.toggle...` made prettier wrap two handlers; prefixing every binding with `filters.` pushed several `<input>` attributes past the print width and wrapped five more. **+4 lines each time.** The field is `sel`, which is short enough to keep every line where it was and is also what the store is. Neither rejection was a review comment - the ratchet caught both.
+- **Not completed:** **PR 2** `discover-row-view.ts` for the ten locale-free row helpers, with `archBadgeLabel`, `tipText` and `ago` staying on the page. **PR 3** sectioning into `DiscoverFeedStore` (injecting `TranslateService` for the two section labels) and dialogs into a new page store. The template stays 484/300 until PR 3 touches it.
+- **Files or packages changed:** `discover-filters.store.{ts,spec.ts}` new in `libs/application/src/lib/discover/`; `libs/application/src/index.ts`; `apps/desktop/src/app/pages/discover/discover.component.{ts,html}`; `CHANGELOG.md`; this file.
+- **Validation:** `nx run desktop:type-check` - clean. `nx build desktop` - succeeded; **it caught a `RegionGroup` the type-check run had predated**, which is the same lesson as `[notice]="columnsError()"`. `nx test application` 1591, `nx test desktop` 962. `nx run-many -t lint -p desktop application --skip-nx-cache` - 0 errors, 1 pre-existing warning. `quality:file-size` - page 616 to 556, template unchanged at 484, passed. `quality:attribution`, `format:check`, `git diff --check` - clean. No Rust changed.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** all settled in the previous entry's grilling. **Mine, not asked:** the injected field is `sel` rather than `filters`, chosen because the longer name failed the template ratchet and the shorter one states the store's decided responsibility; and `Tab` was renamed `DiscoverTab` on export.
+- **Risks or compatibility impact:** the template now binds `sel.*` at 23 sites. Covered by `nx build desktop`, the only gate that type-checks templates.
+- **Open issues or blockers:** #455 is open and green; this branch is stacked on it. The four unwired prompts from #453 still await a delete-or-implement decision.
+- **Next first action:** PR 2 - `discover-row-view.ts` in `libs/application` for `matchesProfile`, `rowTierRank`, `workTypeOf`, `classifyLoc`'s callers, `matchedKeywords`, `isRemote` and the rest of the locale-free row helpers. Check first whether any of them reads the location table, as `buildRegionGroups` did - that is what decided PR 0's shape.
+- **Evidence:** `quality:file-size` reporting the template at 488 twice and 484 once; the store's spec provider list; `discover-filters.store.ts` having no `inject()` call at all.
+
 ### 2026-08-16, Discover's selection rules go down a layer, and the build refuses the obvious way to do it
 
 - **Status:** complete for PR 0 of the Discover series - the prerequisite move. `discover.component.ts` is **616/400**, essentially unchanged; the extraction PRs follow.

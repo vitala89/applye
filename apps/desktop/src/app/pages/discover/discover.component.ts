@@ -39,37 +39,27 @@ import type {
 } from '@applye/core';
 import { classifyLoc, type LocClass } from './discover-location';
 import { buildRegionGroups } from './discover-region-groups';
-import { cityKey, type RegionKey } from '@applye/application';
+import { type RegionGroup, type RegionKey } from '@applye/application';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
 
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
 
-import {
-  type CountryNode,
-  type RegionGroup,
-  type SelectionState,
-  countrySelectionState,
-  regionSelectionState,
-  withCountryToggled,
-  withRegionToggled,
-} from '@applye/application';
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
 import {
   DiscoverDetailStore,
   DiscoverFeedStore,
+  DiscoverFiltersStore,
   DiscoverProfileContextStore,
   DiscoverScanStore,
   DiscoverSourcesStore,
   formatScanTime,
-  toggled,
 } from '@applye/application';
 import { ToastService } from '@applye/application';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
 type WorkType = 'remote' | 'hybrid' | 'onsite';
-type Tab = 'new' | 'all';
 
 /** A titled block of feed rows ("For you" / "More openings"). */
 /** One block of the deterministically parsed job description. */
@@ -92,6 +82,7 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
     DiscoverDetailStore,
     DiscoverScanStore,
     DiscoverFeedStore,
+    DiscoverFiltersStore,
     DiscoverProfileContextStore,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -144,6 +135,9 @@ export class DiscoverComponent {
   /** The scan and the console that narrates it. Component-scoped. */
   protected readonly scan = inject(DiscoverScanStore);
   protected readonly drawerOpen = signal(false);
+  /** What the user has narrowed the feed to. Selection state only - it holds no
+   * feed reference, which is what keeps the two stores pointing one way. */
+  protected readonly sel = inject(DiscoverFiltersStore);
   /** The open job's detail screen. Component-scoped: one page, one open job. */
   protected readonly detail = inject(DiscoverDetailStore);
   /** What a posting is read against: target roles, pay and geography. */
@@ -160,20 +154,9 @@ export class DiscoverComponent {
     compareCompensation(this.context.compTarget(), this.detail.salary()),
   );
 
-  // filters (empty selection set = "all")
-  protected readonly query = signal('');
-  protected readonly sourceSel = signal<ReadonlySet<string>>(new Set());
-  protected readonly workTypeSel = signal<ReadonlySet<WorkType>>(new Set());
-  /** Selected keys: country names, city keys ("Germany Berlin"), 'Other'. */
-  protected readonly countrySel = signal<ReadonlySet<string>>(new Set());
-  protected readonly expandedRegions = signal<ReadonlySet<RegionKey>>(new Set());
-  protected readonly expandedCountries = signal<ReadonlySet<string>>(new Set());
-  protected readonly tab = signal<Tab>('new');
   /** Two-step inline confirm for "Clear list" (no modal, per product register). */
   protected readonly clearConfirm = signal(false);
   protected readonly clearing = signal(false);
-
-  protected readonly allWorkTypes: readonly WorkType[] = ['remote', 'hybrid', 'onsite'];
 
   constructor() {
     void this.load();
@@ -250,11 +233,11 @@ export class DiscoverComponent {
     filterFeedRows(
       this.feedStore.rows(),
       {
-        query: this.query(),
-        sources: this.sourceSel(),
-        works: this.workTypeSel(),
-        countries: this.countrySel(),
-        tab: this.tab(),
+        query: this.sel.query(),
+        sources: this.sel.sourceSel(),
+        works: this.sel.workTypeSel(),
+        countries: this.sel.countrySel(),
+        tab: this.sel.tab(),
       },
       (location) => this.workTypeOf(location),
     ),
@@ -372,9 +355,6 @@ export class DiscoverComponent {
   });
 
   /** Count badges for the filter buttons (0 = "all"). */
-  protected readonly countryCount = computed(() => this.countrySel().size);
-  protected readonly typeCount = computed(() => this.workTypeSel().size);
-  protected readonly sourceCount = computed(() => this.sourceSel().size);
 
   protected readonly shownCount = computed(
     () => this.visibleRows().filter((r) => !r.dismissed).length,
@@ -534,82 +514,26 @@ export class DiscoverComponent {
     return classifyLoc(location);
   }
 
-  /** Stable selection key for a city ("Germany Berlin"). */
-  // ---- work-type checkbox helpers ----
-  protected workChecked(w: WorkType): boolean {
-    return this.workTypeSel().has(w);
+  /**
+   * The chevron sits inside the row's own click target, so expanding a level
+   * must not also select it. Stopping the event is the page's job - the store
+   * holds selection state and knows nothing about the DOM, the same division
+   * `WizardNavService` has with scrolling.
+   */
+  protected expandRegion(key: RegionKey, event: Event): void {
+    event.stopPropagation();
+    this.sel.toggleRegionExpand(key);
   }
 
-  protected toggleWork(w: WorkType): void {
-    this.workTypeSel.update((set) => toggled(set, w));
+  protected expandCountry(name: string, event: Event): void {
+    event.stopPropagation();
+    this.sel.toggleCountryExpand(name);
   }
 
-  protected clearWork(): void {
-    this.workTypeSel.set(new Set());
-  }
-
-  // ---- source checkbox helpers ----
-  protected sourceChecked(name: string): boolean {
-    return this.sourceSel().has(name);
-  }
-
-  protected toggleSourceFilter(name: string): void {
-    this.sourceSel.update((set) => toggled(set, name));
-  }
-
-  protected clearSources(): void {
-    this.sourceSel.set(new Set());
-  }
-
-  // ---- location checkbox helpers (region -> country -> city) ----
+  /** The region row's label in the Locations popover. Stays on the page: it is
+   * locale-dependent, and the filters store holds selection state only. */
   protected regionLabel(key: RegionKey): string {
     return this.t()(`discover.region_${key}`);
-  }
-
-  protected regionExpanded(key: RegionKey): boolean {
-    return this.expandedRegions().has(key);
-  }
-
-  protected toggleRegionExpand(key: RegionKey, event: Event): void {
-    event.stopPropagation();
-    this.expandedRegions.update((set) => toggled(set, key));
-  }
-
-  protected countryExpanded(name: string): boolean {
-    return this.expandedCountries().has(name);
-  }
-
-  protected toggleCountryExpand(name: string, event: Event): void {
-    event.stopPropagation();
-    this.expandedCountries.update((set) => toggled(set, name));
-  }
-
-  protected cityChecked(country: string, city: string): boolean {
-    return this.countrySel().has(cityKey(country, city));
-  }
-
-  protected toggleCity(country: string, city: string): void {
-    this.countrySel.update((set) => toggled(set, cityKey(country, city)));
-  }
-
-  protected countryState(node: CountryNode): SelectionState {
-    return countrySelectionState(this.countrySel(), node);
-  }
-
-  protected toggleCountryTree(node: CountryNode): void {
-    this.countrySel.update((set) => withCountryToggled(set, node));
-  }
-
-  protected regionState(group: RegionGroup): SelectionState {
-    return regionSelectionState(this.countrySel(), group);
-  }
-
-  protected toggleRegion(group: RegionGroup): void {
-    this.countrySel.update((set) => withRegionToggled(set, group));
-  }
-
-  protected clearLocations(): void {
-    this.countrySel.set(new Set());
   }
 
   // ------------------------------------------------------------ detail misc

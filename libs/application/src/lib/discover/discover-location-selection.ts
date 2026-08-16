@@ -12,14 +12,25 @@
  * Recognising a location is a different job, and stays in `discover-location`.
  */
 
-import { type FeedRow } from './discover-feed';
-import {
-  OTHER_COUNTRY,
-  REGION_ORDER,
-  type RegionKey,
-  cityKey,
-  classifyLoc,
-} from './discover-location';
+/**
+ * The region a location belongs to. A closed set: `classifyLoc` in the Discover
+ * page maps free text onto it, and everything it cannot place is `other`.
+ *
+ * It lives here rather than beside that recogniser because the recogniser reads
+ * an 811-line vocabulary table, and this layer is imported by the eagerly-loaded
+ * shell - pulling the table across the boundary put 13 kB of country names into
+ * the initial bundle for a screen most sessions never open.
+ */
+export type RegionKey =
+  'europe' | 'namerica' | 'samerica' | 'asia' | 'oceania' | 'mena' | 'africa' | 'other';
+
+/**
+ * The one key a selected city is stored under. Countries are stored under their
+ * own name, so a country key and a city key never collide.
+ */
+export function cityKey(country: string, city: string): string {
+  return `${country} ${city}`;
+}
 
 /** One country row in the Locations popover, with the cities actually seen. */
 export interface CountryNode {
@@ -38,55 +49,6 @@ export interface RegionGroup {
  * indeterminate state renders.
  */
 export type SelectionState = 'none' | 'some' | 'all';
-
-/**
- * The Locations tree, built from the locations the feed actually contains, in
- * `REGION_ORDER`. Countries sort by name and cities alphabetically, so the list
- * does not reshuffle as rows arrive.
- *
- * Dismissed rows contribute nothing - they are not in the list being filtered.
- * Anything `classifyLoc` cannot place (remote-only, empty, unrecognised text)
- * rolls into a single "Other" group pinned last: a normal selectable option,
- * never an always-pass.
- */
-export function buildRegionGroups(rows: readonly FeedRow[]): RegionGroup[] {
-  // region -> (country -> set of cities)
-  const byRegion = new Map<RegionKey, Map<string, Set<string>>>();
-  let hasOther = false;
-
-  for (const row of rows) {
-    if (row.dismissed) continue;
-    const loc = classifyLoc(row.location);
-    if (!loc.country) {
-      hasOther = true;
-      continue;
-    }
-    let countries = byRegion.get(loc.region);
-    if (!countries) {
-      countries = new Map();
-      byRegion.set(loc.region, countries);
-    }
-    let cities = countries.get(loc.country);
-    if (!cities) {
-      cities = new Set();
-      countries.set(loc.country, cities);
-    }
-    if (loc.city) cities.add(loc.city);
-  }
-
-  const groups: RegionGroup[] = [];
-  for (const key of REGION_ORDER) {
-    if (key === 'other') continue;
-    const countries = byRegion.get(key);
-    if (!countries || !countries.size) continue;
-    const nodes: CountryNode[] = [...countries.entries()]
-      .map(([name, cities]) => ({ name, cities: [...cities].sort() }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-    groups.push({ key, countries: nodes });
-  }
-  if (hasOther) groups.push({ key: 'other', countries: [{ name: OTHER_COUNTRY, cities: [] }] });
-  return groups;
-}
 
 /**
  * A country against the cities of it the feed contains.

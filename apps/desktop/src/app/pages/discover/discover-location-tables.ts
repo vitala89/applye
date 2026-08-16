@@ -14,7 +14,7 @@
  * a token is ambiguous the comment says which way it was resolved and why.
  */
 
-import type { RegionKey } from './discover-location';
+import type { RegionKey } from '@applye/application';
 
 export interface CityDef {
   name: string;

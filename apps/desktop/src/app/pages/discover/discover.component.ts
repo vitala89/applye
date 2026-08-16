@@ -37,7 +37,9 @@ import type {
   ArchetypeMatch,
   ArchetypeFit,
 } from '@applye/core';
-import { classifyLoc, cityKey, type LocClass, type RegionKey } from './discover-location';
+import { classifyLoc, type LocClass } from './discover-location';
+import { buildRegionGroups } from './discover-region-groups';
+import { cityKey, type RegionKey } from '@applye/application';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
 
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
@@ -46,12 +48,11 @@ import {
   type CountryNode,
   type RegionGroup,
   type SelectionState,
-  buildRegionGroups,
   countrySelectionState,
   regionSelectionState,
   withCountryToggled,
   withRegionToggled,
-} from './discover-location-selection';
+} from '@applye/application';
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
@@ -526,7 +527,7 @@ export class DiscoverComponent {
 
   /**
    * Deterministic country + city + region for a free-text location. Delegates
-   * to the pure, unit-tested `classifyLoc` in ./discover-location so the
+   * to the pure, unit-tested `classifyLoc` in `@applye/application` so the
    * recognition rules live in one testable place.
    */
   protected classifyLoc(location: string | null): LocClass {
@@ -534,10 +535,6 @@ export class DiscoverComponent {
   }
 
   /** Stable selection key for a city ("Germany Berlin"). */
-  private cityKey(country: string, city: string): string {
-    return cityKey(country, city);
-  }
-
   // ---- work-type checkbox helpers ----
   protected workChecked(w: WorkType): boolean {
     return this.workTypeSel().has(w);
@@ -588,11 +585,11 @@ export class DiscoverComponent {
   }
 
   protected cityChecked(country: string, city: string): boolean {
-    return this.countrySel().has(this.cityKey(country, city));
+    return this.countrySel().has(cityKey(country, city));
   }
 
   protected toggleCity(country: string, city: string): void {
-    this.countrySel.update((set) => toggled(set, this.cityKey(country, city)));
+    this.countrySel.update((set) => toggled(set, cityKey(country, city)));
   }
 
   protected countryState(node: CountryNode): SelectionState {

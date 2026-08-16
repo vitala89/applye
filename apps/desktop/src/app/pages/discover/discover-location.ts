@@ -35,9 +35,7 @@ import {
   US_STATES,
   USA,
 } from './discover-location-tables';
-
-export type RegionKey =
-  'europe' | 'namerica' | 'samerica' | 'asia' | 'oceania' | 'mena' | 'africa' | 'other';
+import { type RegionKey } from '@applye/application';
 
 /** Deterministic classification of one free-text location. */
 export interface LocClass {
@@ -135,6 +133,3 @@ export function classifyLoc(location: string | null): LocClass {
 }
 
 /** Stable selection key for a city ("Germany Berlin"). */
-export function cityKey(country: string, city: string): string {
-  return `${country} ${city}`;
-}

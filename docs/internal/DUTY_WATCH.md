@@ -44,6 +44,30 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-16, Discover's selection rules go down a layer, and the build refuses the obvious way to do it
+
+- **Status:** complete for PR 0 of the Discover series - the prerequisite move. `discover.component.ts` is **616/400**, essentially unchanged; the extraction PRs follow.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. One `aif-grilling` run, **three rounds**, nine decisions, all answered as recommended. Rounds two and three exist because implementation found facts that invalidated what round one had agreed - both are recorded below rather than absorbed silently.
+- **Branch:** `refactor/discover-location-to-libs`, cut from `main` at `6c60c8bc`.
+- **Objective:** the next file-size debt, `discover.component.ts` 618/400.
+- **Completed:**
+  - **The map, before any edit.** Discover's data layer is already five stores (sources 168/250, feed 121, detail 110, profile-context 87, scan 77). What remains on the page is the filter/selection machine, row presentation, and the feed/dialog block. Blocks measured: filters ~85, row presentation ~140, feed and dialogs ~170.
+  - **`countrySelectionState`, `regionSelectionState`, `withCountryToggled`, `withRegionToggled`, `cityKey` and `RegionKey` are in `libs/application`** (115/250), with their tests.
+  - **`buildRegionGroups` is `apps/.../discover-region-groups.ts`** (60 lines) with the buildRegionGroups half of the old spec, and the reason it did not move is written into its header.
+  - **The page lost two lines rather than gaining one.** Splitting the import cost a line, and the ratchet refused it - `discover.component.ts` may not grow. Moving `cityKey` down made the page's private wrapper redundant, so deleting it paid for the import and left 616.
+- **Why the plan changed twice, which is the substance of this watch:**
+  - **Round 2:** a store in `libs/application` cannot import from `apps/desktop`, and every rule the filters store needs was page-local. **This is why Discover stalled** - its pure logic went to page-local modules rather than down a layer. A prerequisite move was agreed.
+  - **Round 3:** the agreed move **fails `nx build desktop`**. `discover-location.ts` reads an 811-line vocabulary table, `libs/application` is imported by the eagerly-loaded shell, and Discover is a `loadComponent` route - so the table left its lazy chunk for the initial bundle, **12.87 kB over the 1.50 MB budget**. `type-check`, `lint` and the full suite all passed on that version. The finer split shipped instead, after finding that `classifyLoc` is read by `buildRegionGroups` and nothing else.
+- **Not completed:** the three extraction PRs. **PR 1** `DiscoverFiltersStore` - selection state only, no feed reference. **PR 2** `discover-row-view.ts` for the ten locale-free row helpers; `archBadgeLabel`, `tipText` and `ago` stay on the page per `pipeline-card-view.ts`'s rule. **PR 3** sectioning into `DiscoverFeedStore` (which injects `TranslateService` for the two section labels) and dialogs into a new page store. The arrow runs **feed -> filters**, decided now rather than discovered in PR 3.
+- **Files or packages changed:** `discover-location-selection.{ts,spec.ts}` moved to `libs/application/src/lib/discover/` and split; `discover-region-groups.{ts,spec.ts}` new in the page; `discover-location.ts`, `discover-location-tables.ts`, `discover-feed.ts`, `discover.component.ts` re-pointed; `libs/application/src/index.ts`; `CHANGELOG.md`; this file.
+- **Validation:** `nx run desktop:type-check` - clean. `nx build desktop` - **succeeded, 1.50 MB initial**, and this is the gate that decided the design. `nx test application` 1579, `nx test desktop` 962. `nx run-many -t lint -p desktop application --skip-nx-cache` - 0 errors, 1 pre-existing warning. `quality:file-size` - 618 to 616, passed. `quality:attribution`, `format:check`, `git diff --check` - clean. No Rust changed.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** the nine grilling answers. **Mine, not asked:** the libs spec spells `'Other'` as a local constant rather than importing `OTHER_COUNTRY`, because these rules do not know that bucket is special and borrowing the constant would imply they do.
+- **Risks or compatibility impact:** **2.73 kB more in the initial bundle** - the tri-state functions now load eagerly, which is the standing cost of ADR-0005 for a lazily-routed page rather than anything new. Recorded because the budget is what makes it visible: 195.95 kB over the 1.30 MB warning, against 193.22 kB before.
+- **Open issues or blockers:** #454 is open and green. The four unwired prompts from #453 still await a delete-or-implement decision.
+- **Next first action:** PR 1 - `DiscoverFiltersStore` in `libs/application`, taking `query`, `sourceSel`, `workTypeSel`, `countrySel`, `expandedRegions`, `expandedCountries`, `tab`, the eighteen toggle/checked/clear methods and the count computeds. `regionLabel` stays on the page; it is locale-bound and this store holds selection state only.
+- **Evidence:** the failing `nx build desktop` on the first version of the move, over by 12.87 kB; `discover-location-selection.ts:59` showing `classifyLoc` reached only from `buildRegionGroups`; `app.routes.ts:14` for the lazy Discover route and `shell-layout.component.ts:24` for the eager `@applye/application` import that together explain it.
+
 ### 2026-08-16, three advisories close on a patch digit each, and the two that stay have reasons
 
 - **Status:** complete. `npm audit` 7 high to 5; `npm audit --omit=dev` 0 before and 0 after.

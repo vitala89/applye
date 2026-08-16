@@ -360,4 +360,79 @@ AI-Native Software Developer based in Germany. Jobgether matches you to it.";
     fn unknown_skill_is_an_error_not_a_panic() {
         assert!(render("nope", &HashMap::new()).is_err());
     }
+
+    /// Prompts that ship in `libs/skills` and deliberately have no arm above.
+    ///
+    /// Three were superseded by implementations that spend no tokens, and one
+    /// was never built. They are recorded rather than deleted because removing
+    /// shipped content is a product decision; the list only shrinks, and adding
+    /// to it means answering why a new prompt cannot be loaded.
+    ///
+    /// - `ats-check`: the ATS check is deterministic - `commands/ats.rs`,
+    ///   `ats_tokens.rs` and `ats_format.rs`, 0 tokens.
+    /// - `employment-report`: the Eigenbemühungen report prints database rows
+    ///   to CSV/PDF; no model is involved.
+    /// - `cover-letter`: split into `cover-letter-generate` and
+    ///   `cover-letter-tailor`, both of which are wired above.
+    /// - `company-research`: never implemented. Interview preparation uses
+    ///   `interview-hr` and `interview-technical` instead.
+    const UNWIRED_PROMPTS: &[&str] = &[
+        "ats-check",
+        "company-research",
+        "cover-letter",
+        "employment-report",
+    ];
+
+    /// Every prompt in `libs/skills` has a match arm above, or a reason.
+    ///
+    /// The two directions of this coupling fail very differently. Renaming or
+    /// deleting a prompt is **loud**: `include_str!` stops resolving and the
+    /// build fails with the path. Adding one is **silent** - the directory
+    /// grows a skill, nothing references it, and `skill_source` goes on
+    /// returning `None` for a name nobody calls. That is the case this pins.
+    ///
+    /// It reads the directory at run time rather than at compile time, because
+    /// there is no macro that can list it; the path is derived from
+    /// `CARGO_MANIFEST_DIR` so it survives being run from anywhere.
+    #[test]
+    fn every_bundled_prompt_has_a_match_arm() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../libs/skills/src");
+        let entries = std::fs::read_dir(&dir)
+            .unwrap_or_else(|e| panic!("libs/skills/src is not readable at {dir:?}: {e}"));
+
+        let mut orphans = Vec::new();
+        let mut seen = 0;
+        for entry in entries {
+            let entry = entry.expect("directory entry");
+            if !entry.file_type().expect("file type").is_dir() {
+                continue;
+            }
+            let name = entry.file_name().to_string_lossy().into_owned();
+            seen += 1;
+            if skill_source(&name).is_none() && !UNWIRED_PROMPTS.contains(&name.as_str()) {
+                orphans.push(name);
+            }
+        }
+
+        orphans.sort();
+        assert!(
+            orphans.is_empty(),
+            "prompts in libs/skills with no arm in skill_source, so nothing can load them: \
+             {orphans:?}. Wire them up, or add them to UNWIRED_PROMPTS with the reason."
+        );
+
+        // The list only shrinks. A name left in it after its prompt is deleted
+        // would otherwise sit there excusing a file that no longer exists.
+        let stale: Vec<_> = UNWIRED_PROMPTS
+            .iter()
+            .filter(|n| !dir.join(n).is_dir())
+            .collect();
+        assert!(
+            stale.is_empty(),
+            "UNWIRED_PROMPTS names prompts that are gone from libs/skills: {stale:?}"
+        );
+        // A path that silently resolved to an empty or wrong directory would
+        // otherwise pass this test by finding nothing to complain about.
+        assert!(seen > 0, "no skill directories found at {dir:?}");
+    }
 }

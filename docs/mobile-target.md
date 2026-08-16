@@ -1,6 +1,12 @@
-# Mobile - Tauri 2 Mobile Target (Placeholder)
+# Mobile - Tauri 2 Mobile Target (Deferred)
 
-This directory is a placeholder for future iOS/Android builds.
+Applye has no mobile target. This is the plan for one, and the conditions under
+which it starts.
+
+There is deliberately **no `apps/mobile` directory**: an entry under `apps/`
+that builds nothing reads as a target that exists, in every architecture review
+and every `nx graph`. `tauri ios init` recreates it in one command on the day
+the conditions below are met.
 
 ## Plan
 
@@ -21,7 +27,7 @@ Applye's mobile target will reuse:
 
 ```bash
 # From the monorepo root
-cd apps/mobile
+mkdir -p apps/mobile && cd apps/mobile
 tauri ios init
 tauri android init
 ```
@@ -31,10 +37,15 @@ at the same Nx-served Angular output as the desktop app.
 
 ## Status
 
-Not scaffolded. Do not add tooling here until:
+Not scaffolded. Do not create the directory or add tooling until:
 
-1. The desktop MVP ships
+1. ~~The desktop MVP ships~~ - **met**: `0.29.2` is published, with installers
+   for macOS on both architectures, Windows and Linux
 2. iOS/Android prerequisites are installed
 3. Team capacity exists to maintain a mobile target
+
+`apps/desktop/src-tauri/tauri.conf.json` already carries a `bundle.android`
+block (`debugApplicationIdSuffix`). It is inert on a desktop build and is not
+evidence that a mobile target was started.
 
 See ROADMAP.md §13 (Release Phasing) for context.

@@ -44,6 +44,31 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-17, the four unwired prompts are deleted, and the premise that had preserved them was false
+
+- **Status:** complete. `libs/skills` holds **19** prompts against **19** match arms, and `UNWIRED_PROMPTS` is empty.
+- **Agent/tool:** Claude Code, Opus 5. No subagents.
+- **Branch:** `chore/drop-unwired-prompts`, cut from `origin/main` at `e28cf410`.
+- **Objective:** the delete-or-wire decision carried since #453, delegated to this watch by the maintainer.
+- **The decision turned on a fact the recording comment had assumed rather than checked.** `skills.rs` said the four were "recorded rather than deleted because removing shipped content is a product decision". They were not shipped content. `include_str!` is reached only from a match arm, all 19 arms name a wired prompt, and the four had no arm - so none of them was ever compiled into the binary. They existed in the git repository and nowhere else, which makes deleting them a smaller decision than the comment framed it as.
+- **Nothing referenced them.** A repository-wide grep for each of the four names outside its own directory returns only `skills.rs`'s own list and comment, plus one historical `CURRENT_STATE.md` line about the branch that made the ATS check deterministic. No code, template, spec, translation, capability or design document.
+- **And none of them held a prompt, which the deletion diff is what showed.** All four were frontmatter over a literal `TODO: Write ... prompt template.`; `employment-report.md`'s body reads "No prompt here - this is a code-side feature". So "wire them" was never an option that could have been taken as stated - it would have sent a TODO to a model, and the real work behind it was writing four prompts for three features that no longer need one and a fourth that does not exist. That fact was not in the handoff and is the one that makes the decision unambiguous rather than merely defensible.
+- **Completed:**
+  - `libs/skills/src/{ats-check,company-research,cover-letter,employment-report}/` deleted. Three were superseded by implementations that spend no tokens; `company-research` was never built, and interview preparation uses `interview-hr` and `interview-technical`.
+  - **`UNWIRED_PROMPTS` is kept and empty rather than removed with its last entry.** The case it exists for recurs - a prompt written ahead of the feature that will load it - and the empty list keeps the escape hatch documented while making the two counts equal. Both assertions in `every_bundled_prompt_has_a_match_arm` still hold: an unlisted orphan fails, and a name left behind after its prompt is deleted fails too, which is the guard that would have caught this list going stale.
+  - `docs/architecture.md` corrected: 23 prompts to 19, and the "four are listed today" sentence replaced with the empty list and the reason the four went.
+  - The `[Unreleased]` CHANGELOG entry describing the four as preserved was **amended rather than contradicted by a second entry**, because it describes a state that will now never ship.
+- **One unrelated correction, in a separate commit.** `VALIDATION_MATRIX.md` still quoted the retired Rust budgets - "Rust source modules: at most 800" and "Rust tests: at most 800". `CODE_QUALITY.md` and the enforced gate read **500** for source and **600** for inline `#[cfg(test)]` items, counted separately rather than added. A matrix that disagrees with the gate it indexes is worse than one that omits the row.
+- **Not completed:** nothing in scope. The CV detail cluster is next and is a separate branch.
+- **Files or packages changed:** four directories under `libs/skills/src/` deleted; `apps/desktop/src-tauri/src/ai/skills.rs`; `docs/architecture.md`; `docs/governance/VALIDATION_MATRIX.md`; `CHANGELOG.md`; this file.
+- **Validation:** `cargo fmt --check` - clean. `cargo test --lib` - **361 passed**, 1 ignored, including `every_bundled_prompt_has_a_match_arm` against the now-empty list. `cargo clippy --all-targets -- -D warnings` - clean. `quality:file-size`, `quality:attribution`, `format:check`, `git diff --check` - all clean. **No Angular gate run and none required**: no TypeScript, template, stylesheet or IPC contract changed, and `libs/skills` is read only by Rust.
+- **Privacy/security impact:** none. Deleting a prompt that was never in the binary changes nothing the app can do.
+- **Decisions and assumptions:** **mine, delegated by the maintainer.** Delete all four rather than wire any. Wiring the three superseded ones would put a paid path over a free deterministic one, or a second writer over a format that already has two; `company-research` is a prompt with no feature, and keeping it is the placeholder-for-missing-architecture that `CODE_QUALITY.md` names directly. Also mine: keeping `UNWIRED_PROMPTS` empty rather than deleting the mechanism, and amending the unreleased CHANGELOG entry in place.
+- **Risks or compatibility impact:** none at runtime. The only loss is convenience if a company-research feature is built later, and `git log` covers it.
+- **Open issues or blockers:** **the Tauri manual gate is still undriven, and is now nine walkthroughs across five pull requests** - #448/#449/#450/#451 and #459. Synthetic clicks do not reach the Tauri webview (hover lands, a click at the same coordinates does not, reproduced against three targets), and every path needs real database rows, so no agent can close it. It is not covered; it is outstanding. #459 remains open, mergeable and green.
+- **Next first action:** `cv-live-style-panel.component.ts` at **704/400**, the largest source file in the repository, on a branch cut from `main` - its file set is disjoint from #459, which is why it was chosen over `discover.component.scss` at 475/400 while #459 is unmerged.
+- **Evidence:** `grep -c "include_str!" skills.rs` returning 20, of which 19 are arms and the twentieth is the doc comment naming the macro; `ls libs/skills/src | wc -l` returning 19 after the deletion; `every_bundled_prompt_has_a_match_arm` passing against the empty list.
+
 ### 2026-08-16, Discover's template splits into two components, and the style gate finds three things review would not
 
 - **Status:** complete. `discover.component.html` is **281/300** - under budget. The stylesheet is **475/400**, down from 704 but still over.

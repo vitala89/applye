@@ -363,25 +363,32 @@ AI-Native Software Developer based in Germany. Jobgether matches you to it.";
 
     /// Prompts that ship in `libs/skills` and deliberately have no arm above.
     ///
-    /// Three were superseded by implementations that spend no tokens, and one
-    /// was never built. They are recorded rather than deleted because removing
-    /// shipped content is a product decision; the list only shrinks, and adding
-    /// to it means answering why a new prompt cannot be loaded.
+    /// **Empty, and that is the intended resting state.** Every directory under
+    /// `libs/skills/src` has an arm, so the count of prompts and the count of
+    /// arms are the same number and either one going wrong is a failure here.
     ///
-    /// - `ats-check`: the ATS check is deterministic - `commands/ats.rs`,
-    ///   `ats_tokens.rs` and `ats_format.rs`, 0 tokens.
-    /// - `employment-report`: the Eigenbemühungen report prints database rows
-    ///   to CSV/PDF; no model is involved.
-    /// - `cover-letter`: split into `cover-letter-generate` and
-    ///   `cover-letter-tailor`, both of which are wired above.
-    /// - `company-research`: never implemented. Interview preparation uses
-    ///   `interview-hr` and `interview-technical` instead.
-    const UNWIRED_PROMPTS: &[&str] = &[
-        "ats-check",
-        "company-research",
-        "cover-letter",
-        "employment-report",
-    ];
+    /// The escape hatch is kept rather than deleted with its last entry,
+    /// because the case it exists for recurs: a prompt written ahead of the
+    /// feature that will load it. Adding a name means writing the reason it
+    /// cannot be loaded next to it, which is a question with an answer -
+    /// "not wired yet" is not one.
+    ///
+    /// Four names sat here from 2026-07-26 until they were deleted: `ats-check`
+    /// (the ATS check is deterministic - `commands/ats.rs`, `ats_tokens.rs`,
+    /// `ats_format.rs`, 0 tokens), `employment-report` (the Eigenbemühungen
+    /// report prints database rows to CSV/PDF, no model involved),
+    /// `cover-letter` (split into `cover-letter-generate` and
+    /// `cover-letter-tailor`, both wired above) and `company-research` (never
+    /// implemented; interview preparation uses `interview-hr` and
+    /// `interview-technical`). None of the four was ever compiled into the
+    /// binary - only a name with an arm reaches `include_str!` - so they were
+    /// content of the repository, not of the product. **None of them held a
+    /// prompt either**: each was frontmatter over a literal
+    /// `TODO: Write ... prompt template.`, and `employment-report` said in its
+    /// own body that there was no prompt to write. Wiring one would have sent a
+    /// TODO to a model. `git log` has them if a company-research feature is
+    /// ever built.
+    const UNWIRED_PROMPTS: &[&str] = &[];
 
     /// Every prompt in `libs/skills` has a match arm above, or a reason.
     ///

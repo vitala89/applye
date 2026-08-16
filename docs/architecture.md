@@ -152,7 +152,7 @@ instead. A warning is only useful while it is quiet.
 
 ### `libs/skills` is not an Nx project, on purpose
 
-The 23 AI prompts under `libs/skills/src/<name>/<name>.md` are the one thing in
+The 19 AI prompts under `libs/skills/src/<name>/<name>.md` are the one thing in
 `libs/` with no `project.json`, and it is deliberate. They are **markdown read by
 Rust**, not TypeScript imported by anything: `src-tauri/src/ai/skills.rs` pulls
 each one in with `include_str!` so the prompts are compiled into the binary and
@@ -179,9 +179,16 @@ breaks. Both directions are covered:
   the build fails with the path.
 - **Adding one is silent**, so a test catches it. `every_bundled_prompt_has_a_match_arm`
   reads the directory at run time and fails if a prompt has no arm in
-  `skill_source`, unless it is listed in `UNWIRED_PROMPTS` with its reason. Four
-  are listed today: three superseded by implementations that spend no tokens, one
-  never built.
+  `skill_source`, unless it is listed in `UNWIRED_PROMPTS` with its reason.
+  **That list is empty**, so the 19 prompts and the 19 arms are the same number
+  and either side drifting is a failing test. Four names sat in it from
+  2026-07-26 until 2026-08-17, when they were deleted along with their prompts:
+  `ats-check`, `employment-report` and `cover-letter` had each been superseded by
+  an implementation that spends no tokens, and `company-research` was never
+  built. None of the four had an arm, so none was ever reached by `include_str!`
+  and none was ever in the binary - they were content of the repository rather
+  than of the product, which is what made deleting them a smaller decision than
+  the comment recording them had assumed.
 
 ## AI integration
 

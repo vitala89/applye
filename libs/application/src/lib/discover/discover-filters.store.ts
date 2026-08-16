@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { type WorkType } from './discover-row-view';
 import { toggled } from './discover-sources.util';
 import {
   type CountryNode,
@@ -11,9 +12,6 @@ import {
   withCountryToggled,
   withRegionToggled,
 } from './discover-location-selection';
-
-/** How a posting's location reads once `workTypeOf` has classified it. */
-export type WorkType = 'remote' | 'hybrid' | 'onsite';
 
 /** The feed's two views: everything, or only what the user has not saved yet. */
 export type DiscoverTab = 'new' | 'all';

@@ -9,7 +9,7 @@
         [score]="detail.score()"
         [verdict]="detail.verdict()"
         [archetype]="rowArchetype(drow)"
-        [matchedKeywords]="matchedKeywords(drow)"
+        [matchedKeywords]="match.matchedKeywords(drow)"
         (backRequested)="closeDetail()"
         (saveRequested)="saveRow(drow, $event)"
       />
@@ -440,7 +440,7 @@
               [sourceLabel]="srcLabel(row.source)"
               [posted]="ago(row.createdAt)"
               [archetype]="rowArchetype(row)"
-              [matchedKeywords]="matchedKeywords(row)"
+              [matchedKeywords]="match.matchedKeywords(row)"
               (openRequested)="openDetail(row)"
               (saveRequested)="saveRow(row, $event)"
               (dismissRequested)="dismissRow(row, $event)"

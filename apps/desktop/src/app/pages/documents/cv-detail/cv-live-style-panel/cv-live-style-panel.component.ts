@@ -13,8 +13,9 @@ import { NgStyle } from '@angular/common';
 import { ChevronDown, LucideAngularModule } from 'lucide-angular';
 import type { CvBorderStyle, CvElementStyle, CvFontWeight, CvStyle } from '@applye/core';
 import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '@applye/core';
-import { CV_ATS_SAFE_FONTS } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { CvStyleTextGroupComponent } from './cv-style-text-group/cv-style-text-group.component';
+import { CvStyleLineGroupComponent } from './cv-style-line-group/cv-style-line-group.component';
 import {
   canBold,
   canEditText,
@@ -67,12 +68,25 @@ import {
  * TO buttons), and `cv-style-panel-cascade.ts` decides what a control should
  * *show* at the active scope. Everything below is inputs, outputs, the scope
  * signal, and one-line bindings onto those two.
+ *
+ * **The template delegates too.** `CvStyleTextGroupComponent` and
+ * `CvStyleLineGroupComponent` render the collapsible groups; both are views
+ * with no view of the style tree. Every predicate that distinguishes their five
+ * call sites - `isEntrySelection`, `hasElementLine`, the two `!== 'none'`
+ * comparisons - is resolved here, so the cascade rules stay where their specs
+ * are rather than being re-derived per group.
  */
 @Component({
   selector: 'app-cv-live-style-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, NgStyle, LucideAngularModule],
+  imports: [
+    FormsModule,
+    NgStyle,
+    LucideAngularModule,
+    CvStyleTextGroupComponent,
+    CvStyleLineGroupComponent,
+  ],
   templateUrl: './cv-live-style-panel.component.html',
   styleUrl: './cv-live-style-panel.component.scss',
 })
@@ -137,7 +151,8 @@ export class CvLiveStylePanelComponent {
    * `CvPreviewComponent.applyBoldToActiveEditor()`. */
   readonly bold = output<void>();
 
-  protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
+  /** Only the separator group still draws its own head here; the Text and Line
+   * groups own theirs. */
   protected readonly icons = { chevron: ChevronDown };
 
   /** Collapsible-group state (session only): the Text group opens by default,
@@ -146,15 +161,6 @@ export class CvLiveStylePanelComponent {
    * scrolling. */
   readonly textOpen = signal(true);
   readonly lineOpen = signal(false);
-
-  /** Curated body leading choices (unitless). `1.45` is the existing
-   * `--leading-normal`; unset (Inherit) preserves each element's baseline. */
-  protected readonly lineHeightOptions: { value: number; labelKey: string }[] = [
-    { value: 1.2, labelKey: 'documents.cv_style_line_height_compact' },
-    { value: 1.35, labelKey: 'documents.cv_style_line_height_tight' },
-    { value: 1.45, labelKey: 'documents.cv_style_line_height_normal' },
-    { value: 1.6, labelKey: 'documents.cv_style_line_height_relaxed' },
-  ];
 
   // --- What the selection is ------------------------------------------------
 

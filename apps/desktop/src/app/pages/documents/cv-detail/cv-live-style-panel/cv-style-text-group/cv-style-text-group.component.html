@@ -1,0 +1,71 @@
+<div class="cvlive__group">
+  <button
+    type="button"
+    class="cvlive__group-head"
+    [attr.aria-expanded]="open()"
+    (click)="toggled.emit()"
+  >
+    <span class="cvlive__label">{{ t()('documents.cv_style_group_text') }}</span>
+    <lucide-icon
+      class="cvlive__chevron"
+      [class.cvlive__chevron--open]="open()"
+      [img]="icons.chevron"
+      [size]="16"
+      aria-hidden="true"
+    />
+  </button>
+  @if (open()) {
+    <div class="cvlive__group-body">
+      <label class="cvlive__field">
+        <span class="cvlive__label">{{ t()('documents.cv_style_font') }}</span>
+        <select [ngModel]="fontFamily()" (ngModelChange)="fontChange.emit($event)">
+          <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+          @for (font of atsSafeFonts; track font) {
+            <option [value]="font">{{ font }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="cvlive__field">
+        <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
+        <input
+          type="number"
+          [min]="sizeMin()"
+          [max]="sizeMax()"
+          step="0.5"
+          [ngModel]="fontSizePt()"
+          [placeholder]="sizePlaceholder()"
+          (ngModelChange)="sizeChange.emit($event)"
+        />
+      </label>
+
+      <label class="cvlive__field">
+        <span class="cvlive__label">{{ t()('documents.cv_style_weight') }}</span>
+        <select [ngModel]="fontWeight()" (ngModelChange)="weightChange.emit($event)">
+          <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+          <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+          <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+          <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+          <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+        </select>
+      </label>
+
+      <label class="cvlive__field">
+        <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
+        <input type="color" [ngModel]="colorHex()" (ngModelChange)="colorChange.emit($event)" />
+      </label>
+
+      @if (showLineHeight()) {
+        <label class="cvlive__field cvlive__line-height">
+          <span class="cvlive__label">{{ t()('documents.cv_style_line_height') }}</span>
+          <select [ngModel]="lineHeight()" (ngModelChange)="lineHeightChange.emit($event)">
+            <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+            @for (o of lineHeightOptions; track o.value) {
+              <option [ngValue]="o.value">{{ t()(o.labelKey) }}</option>
+            }
+          </select>
+        </label>
+      }
+    </div>
+  }
+</div>

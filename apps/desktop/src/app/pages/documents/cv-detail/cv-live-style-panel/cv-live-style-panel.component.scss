@@ -71,19 +71,10 @@
   border-radius: 5px;
 }
 
-.cvlive__field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-.cvlive__label {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
+/* `.cvlive__field` and `.cvlive__label` are shared with the Text and Line
+   group children, so they live in `_cv-style-panel-controls.scss`, emitted once
+   from `styles.scss`. Same for the collapsible group shell and the control
+   sizing rules. */
 
 /* --- Scope segmented control ----------------------------------------- */
 .cvlive__seg {
@@ -209,68 +200,11 @@
   font-size: 14px;
 }
 
-/* --- Collapsible groups ---------------------------------------------- */
-.cvlive__group {
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 12px;
-}
-.cvlive__group-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 6px 8px;
-  margin: -6px -8px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  cursor: pointer;
-  transition: background 120ms ease;
-
-  &:hover {
-    background: var(--surface-sunken);
-  }
-  &:hover .cvlive__label,
-  &:hover .cvlive__chevron {
-    color: var(--text-primary);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-.cvlive__group-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 12px;
-}
-.cvlive__chevron {
-  display: inline-flex;
-  color: var(--text-tertiary);
-  transition:
-    transform 160ms ease,
-    color 120ms ease;
-  transform: rotate(-90deg);
-}
-.cvlive__chevron--open {
-  transform: rotate(0deg);
-}
-
-/* --- Existing controls ----------------------------------------------- */
+/* --- Group stack ------------------------------------------------------ */
 .cvlive__fields {
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-.cvlive__fields select,
-.cvlive__fields input[type='number'] {
-  width: 100%;
-}
-.cvlive__fields input[type='color'] {
-  width: 48px;
-  height: 34px;
-  padding: 0;
 }
 
 .cvlive__reset-row {

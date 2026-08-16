@@ -17,6 +17,12 @@
 @use './app/pages/documents/cover-letter-detail/cover-letter-controls' as *;
 @use './app/pages/discover/discover-controls' as *;
 
+// The CV live-style panel's labelled-control and collapsible-group vocabulary,
+// shared between the panel and the Text/Line group components extracted out of
+// its template. Same reason again: a class defined on the panel does not reach
+// a child extracted out of it.
+@use './app/pages/documents/cv-detail/cv-live-style-panel/cv-style-panel-controls' as *;
+
 // Shared onboarding-wizard vocabulary (headings, card/badge and form
 // primitives, status pieces). Emitted once here for the same reason: the
 // wizard's six steps are being extracted into their own components, and a

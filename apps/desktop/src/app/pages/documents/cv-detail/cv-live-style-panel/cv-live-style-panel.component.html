@@ -73,216 +73,61 @@
 
       <div class="cvlive__fields">
         @if (sel.part === 'body') {
-          <!-- TEXT group (collapsible) -->
-          <div class="cvlive__group">
-            <button
-              type="button"
-              class="cvlive__group-head"
-              [attr.aria-expanded]="textOpen()"
-              (click)="textOpen.set(!textOpen())"
-            >
-              <span class="cvlive__label">{{ t()('documents.cv_style_group_text') }}</span>
-              <lucide-icon
-                class="cvlive__chevron"
-                [class.cvlive__chevron--open]="textOpen()"
-                [img]="icons.chevron"
-                [size]="16"
-                aria-hidden="true"
-              />
-            </button>
-            @if (textOpen()) {
-              <div class="cvlive__group-body">
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_font') }}</span>
-                  <select
-                    [ngModel]="activeBodyOverride().fontFamily ?? ''"
-                    (ngModelChange)="setBodyFont($event)"
-                  >
-                    <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                    @for (font of atsSafeFonts; track font) {
-                      <option [value]="font">{{ font }}</option>
-                    }
-                  </select>
-                </label>
-
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
-                  <input
-                    type="number"
-                    min="8"
-                    max="14"
-                    step="0.5"
-                    [ngModel]="activeBodyOverride().fontSizePt ?? null"
-                    [placeholder]="style().fontSizePt"
-                    (ngModelChange)="setBodySize($event)"
-                  />
-                </label>
-
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_weight') }}</span>
-                  <select
-                    [ngModel]="activeBodyOverride().fontWeight ?? null"
-                    (ngModelChange)="setBodyWeight($event)"
-                  >
-                    <option [ngValue]="null">
-                      {{ t()('documents.cv_section_style_inherit') }}
-                    </option>
-                    <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
-                    <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
-                    <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
-                    <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
-                  </select>
-                </label>
-
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
-                  <input
-                    type="color"
-                    [ngModel]="effectiveColorHex()"
-                    (ngModelChange)="setBodyColor($event)"
-                  />
-                </label>
-
-                <label class="cvlive__field cvlive__line-height">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_line_height') }}</span>
-                  <select
-                    [ngModel]="activeBodyOverride().lineHeight ?? null"
-                    (ngModelChange)="setLineHeight($event)"
-                  >
-                    <option [ngValue]="null">
-                      {{ t()('documents.cv_section_style_inherit') }}
-                    </option>
-                    @for (o of lineHeightOptions; track o.value) {
-                      <option [ngValue]="o.value">{{ t()(o.labelKey) }}</option>
-                    }
-                  </select>
-                </label>
-              </div>
-            }
-          </div>
+          <app-cv-style-text-group
+            [open]="textOpen()"
+            [fontFamily]="activeBodyOverride().fontFamily ?? ''"
+            [fontSizePt]="activeBodyOverride().fontSizePt ?? null"
+            [sizePlaceholder]="style().fontSizePt"
+            [sizeMin]="8"
+            [sizeMax]="14"
+            [fontWeight]="activeBodyOverride().fontWeight ?? null"
+            [colorHex]="effectiveColorHex()"
+            [showLineHeight]="true"
+            [lineHeight]="activeBodyOverride().lineHeight ?? null"
+            (toggled)="textOpen.set(!textOpen())"
+            (fontChange)="setBodyFont($event)"
+            (sizeChange)="setBodySize($event)"
+            (weightChange)="setBodyWeight($event)"
+            (colorChange)="setBodyColor($event)"
+            (lineHeightChange)="setLineHeight($event)"
+          />
 
           @if (canBodyRule()) {
-            <!-- LINE group (collapsible) -->
-            <div class="cvlive__group">
-              <button
-                type="button"
-                class="cvlive__group-head"
-                [attr.aria-expanded]="lineOpen()"
-                (click)="lineOpen.set(!lineOpen())"
-              >
-                <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-                <lucide-icon
-                  class="cvlive__chevron"
-                  [class.cvlive__chevron--open]="lineOpen()"
-                  [img]="icons.chevron"
-                  [size]="16"
-                  aria-hidden="true"
-                />
-              </button>
-              @if (lineOpen()) {
-                <div class="cvlive__group-body">
-                  <label class="cvlive__field">
-                    <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-                    <select [ngModel]="activeBodyBorder()" (ngModelChange)="setBodyBorder($event)">
-                      <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                      <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
-                      <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
-                      <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
-                      <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
-                    </select>
-                  </label>
-
-                  @if (activeBodyBorder() !== 'none') {
-                    <label class="cvlive__field">
-                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_width') }}</span>
-                      <input
-                        type="number"
-                        min="0.5"
-                        max="6"
-                        step="0.5"
-                        [ngModel]="activeBodyRuleWidth()"
-                        [placeholder]="t()('documents.cv_section_style_inherit')"
-                        (ngModelChange)="setBodyRuleWidth($event)"
-                      />
-                    </label>
-
-                    <label class="cvlive__field">
-                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
-                      <input
-                        type="color"
-                        [ngModel]="activeBodyRuleColor() ?? style().accentColorHex"
-                        (ngModelChange)="setBodyRuleColor($event)"
-                      />
-                    </label>
-                  }
-                </div>
-              }
-            </div>
+            <!-- The SECTION BODY rule. Inherit is always offered, and an
+                 inherited value ('') still draws, so the width/colour rows stay
+                 visible for everything except an explicit None. -->
+            <app-cv-style-line-group
+              [open]="lineOpen()"
+              [border]="activeBodyBorder()"
+              [showInherit]="true"
+              [showRule]="activeBodyBorder() !== 'none'"
+              [ruleWidth]="activeBodyRuleWidth()"
+              [ruleColor]="activeBodyRuleColor() ?? style().accentColorHex"
+              (toggled)="lineOpen.set(!lineOpen())"
+              (borderChange)="setBodyBorder($event)"
+              (widthChange)="setBodyRuleWidth($event)"
+              (colorChange)="setBodyRuleColor($event)"
+            />
           }
 
           @if (canElementLine()) {
-            <!-- PER-ELEMENT LINE group - a bottom rule (underline) under just
-                 this leaf; `none` = off (the default). -->
-            <div class="cvlive__group">
-              <button
-                type="button"
-                class="cvlive__group-head"
-                [attr.aria-expanded]="lineOpen()"
-                (click)="lineOpen.set(!lineOpen())"
-              >
-                <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-                <lucide-icon
-                  class="cvlive__chevron"
-                  [class.cvlive__chevron--open]="lineOpen()"
-                  [img]="icons.chevron"
-                  [size]="16"
-                  aria-hidden="true"
-                />
-              </button>
-              @if (lineOpen()) {
-                <div class="cvlive__group-body">
-                  <label class="cvlive__field">
-                    <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-                    <select
-                      [ngModel]="elementBorderModel()"
-                      (ngModelChange)="setElementBorder($event)"
-                    >
-                      @if (isEntrySelection()) {
-                        <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                      }
-                      <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
-                      <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
-                      <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
-                      <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
-                    </select>
-                  </label>
-
-                  @if (hasElementLine()) {
-                    <label class="cvlive__field">
-                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_width') }}</span>
-                      <input
-                        type="number"
-                        min="0.5"
-                        max="6"
-                        step="0.5"
-                        [ngModel]="activeElementRuleWidth()"
-                        [placeholder]="t()('documents.cv_section_style_inherit')"
-                        (ngModelChange)="setElementRuleWidth($event)"
-                      />
-                    </label>
-
-                    <label class="cvlive__field">
-                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
-                      <input
-                        type="color"
-                        [ngModel]="elementRuleColorSwatch()"
-                        (ngModelChange)="setElementRuleColor($event)"
-                      />
-                    </label>
-                  }
-                </div>
-              }
-            </div>
+            <!-- The PER-ELEMENT rule - a bottom line under just this leaf;
+                 `none` = off (the default). Only an experience entry inherits
+                 one when unset, so only it is offered Inherit, and whether a
+                 line is drawn at all is `hasElementLine()` rather than a
+                 comparison against 'none'. -->
+            <app-cv-style-line-group
+              [open]="lineOpen()"
+              [border]="elementBorderModel()"
+              [showInherit]="isEntrySelection()"
+              [showRule]="hasElementLine()"
+              [ruleWidth]="activeElementRuleWidth()"
+              [ruleColor]="elementRuleColorSwatch()"
+              (toggled)="lineOpen.set(!lineOpen())"
+              (borderChange)="setElementBorder($event)"
+              (widthChange)="setElementRuleWidth($event)"
+              (colorChange)="setElementRuleColor($event)"
+            />
           }
 
           @if (canSeparator()) {
@@ -331,135 +176,36 @@
             </div>
           }
         } @else {
-          <!-- TEXT group (collapsible) -->
-          <div class="cvlive__group">
-            <button
-              type="button"
-              class="cvlive__group-head"
-              [attr.aria-expanded]="textOpen()"
-              (click)="textOpen.set(!textOpen())"
-            >
-              <span class="cvlive__label">{{ t()('documents.cv_style_group_text') }}</span>
-              <lucide-icon
-                class="cvlive__chevron"
-                [class.cvlive__chevron--open]="textOpen()"
-                [img]="icons.chevron"
-                [size]="16"
-                aria-hidden="true"
-              />
-            </button>
-            @if (textOpen()) {
-              <div class="cvlive__group-body">
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_font') }}</span>
-                  <select
-                    [ngModel]="activeTitleOverride().fontFamily ?? ''"
-                    (ngModelChange)="setTitleFont($event)"
-                  >
-                    <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                    @for (font of atsSafeFonts; track font) {
-                      <option [value]="font">{{ font }}</option>
-                    }
-                  </select>
-                </label>
+          <!-- A title selection: `CvTextStyle` plus the section-title rule, so
+               no line-height row and a wider size range than a body leaf. -->
+          <app-cv-style-text-group
+            [open]="textOpen()"
+            [fontFamily]="activeTitleOverride().fontFamily ?? ''"
+            [fontSizePt]="activeTitleOverride().fontSizePt ?? null"
+            [sizePlaceholder]="style().titleStyle?.fontSizePt ?? style().fontSizePt"
+            [sizeMin]="6"
+            [sizeMax]="28"
+            [fontWeight]="activeTitleOverride().fontWeight ?? null"
+            [colorHex]="effectiveColorHex()"
+            (toggled)="textOpen.set(!textOpen())"
+            (fontChange)="setTitleFont($event)"
+            (sizeChange)="setTitleSize($event)"
+            (weightChange)="setTitleWeight($event)"
+            (colorChange)="setTitleColor($event)"
+          />
 
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
-                  <input
-                    type="number"
-                    min="6"
-                    max="28"
-                    step="0.5"
-                    [ngModel]="activeTitleOverride().fontSizePt ?? null"
-                    [placeholder]="style().titleStyle?.fontSizePt ?? style().fontSizePt"
-                    (ngModelChange)="setTitleSize($event)"
-                  />
-                </label>
-
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_weight') }}</span>
-                  <select
-                    [ngModel]="activeTitleOverride().fontWeight ?? null"
-                    (ngModelChange)="setTitleWeight($event)"
-                  >
-                    <option [ngValue]="null">
-                      {{ t()('documents.cv_section_style_inherit') }}
-                    </option>
-                    <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
-                    <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
-                    <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
-                    <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
-                  </select>
-                </label>
-
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
-                  <input
-                    type="color"
-                    [ngModel]="effectiveColorHex()"
-                    (ngModelChange)="setTitleColor($event)"
-                  />
-                </label>
-              </div>
-            }
-          </div>
-
-          <!-- LINE group (collapsible) -->
-          <div class="cvlive__group">
-            <button
-              type="button"
-              class="cvlive__group-head"
-              [attr.aria-expanded]="lineOpen()"
-              (click)="lineOpen.set(!lineOpen())"
-            >
-              <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-              <lucide-icon
-                class="cvlive__chevron"
-                [class.cvlive__chevron--open]="lineOpen()"
-                [img]="icons.chevron"
-                [size]="16"
-                aria-hidden="true"
-              />
-            </button>
-            @if (lineOpen()) {
-              <div class="cvlive__group-body">
-                <label class="cvlive__field">
-                  <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-                  <select [ngModel]="activeTitleBorder()" (ngModelChange)="setTitleBorder($event)">
-                    <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                    <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
-                    <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
-                    <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
-                    <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
-                  </select>
-                </label>
-
-                @if (activeTitleBorder() !== 'none') {
-                  <label class="cvlive__field">
-                    <span class="cvlive__label">{{ t()('documents.cv_style_rule_width') }}</span>
-                    <input
-                      type="number"
-                      min="0.5"
-                      max="6"
-                      step="0.5"
-                      [ngModel]="activeTitleRuleWidth()"
-                      [placeholder]="t()('documents.cv_section_style_inherit')"
-                      (ngModelChange)="setTitleRuleWidth($event)"
-                    />
-                  </label>
-
-                  <label class="cvlive__field">
-                    <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
-                    <input
-                      type="color"
-                      [ngModel]="titleRuleColorSwatch()"
-                      (ngModelChange)="setTitleRuleColor($event)"
-                    />
-                  </label>
-                }
-              </div>
-            }
-          </div>
+          <app-cv-style-line-group
+            [open]="lineOpen()"
+            [border]="activeTitleBorder()"
+            [showInherit]="true"
+            [showRule]="activeTitleBorder() !== 'none'"
+            [ruleWidth]="activeTitleRuleWidth()"
+            [ruleColor]="titleRuleColorSwatch()"
+            (toggled)="lineOpen.set(!lineOpen())"
+            (borderChange)="setTitleBorder($event)"
+            (widthChange)="setTitleRuleWidth($event)"
+            (colorChange)="setTitleRuleColor($event)"
+          />
         }
       </div>
 

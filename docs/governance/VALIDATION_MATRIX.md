@@ -20,9 +20,10 @@ The canonical budgets and decomposition rules live in `docs/governance/CODE_QUAL
 - New TypeScript/JavaScript source files: at most 400 non-empty lines.
 - Angular templates: at most 300 non-empty lines.
 - Stylesheets: at most 400 non-empty lines.
-- Rust source modules: at most 800 non-empty lines.
+- Rust source modules: at most 500 non-empty lines.
 - TypeScript tests: at most 600 non-empty lines.
-- Rust tests: at most 800 non-empty lines.
+- Rust inline `#[cfg(test)]` items: at most 600 non-empty lines, counted separately from the module's
+  source rather than added to it.
 - Existing files already above budget may not grow. Extract a cohesive responsibility first.
 
 The pre-commit hook checks staged files. CI compares the branch with its base. When a touched file is near or above budget, record its before/after size and the extracted responsibility in the PR and Duty Watch entry.

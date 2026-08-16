@@ -96,10 +96,37 @@
   eagerly-loaded shell and Discover is a `loadComponent` route, so migrating a lazily-routed page
   moves code from a chunk most sessions never fetch into the one every launch does. The series cost
   about 7 kB and finished the headroom, so the `initial` budget is now `1600kb` with the warning
-  refreshed to `1520kb` - both explained in `docs/architecture.md`. **Next first action:** the
-  Discover template at **484/300** and its stylesheet at **704/400**, neither touched by this
-  series and both needing child components rather than stores; or
-  `cv-live-style-panel.component.ts` at 704/400, the largest remaining source file.
+  refreshed to `1520kb` - both explained in `docs/architecture.md`. **The template followed in
+  [#459](https://github.com/vitala89/applye/pull/459)**, which split it into
+  `app-discover-filters-bar` and `app-discover-detail-screen`: `discover.component.html` is
+  **281/300**, from 484, and the stylesheet **475/400**, from 704. The feed block was deliberately
+  left in place, because `#loadMore` sits inside it and the page's `viewChild('loadMore')` would
+  stop resolving - infinite scroll would break with no test able to catch it, jsdom having neither
+  layout nor `IntersectionObserver`. **What remains on Discover is the stylesheet at 475/400**, and
+  it is the page's own chrome - header, console, strip, empty states, confirm modal, skeleton - so
+  shrinking it means extracting components the template no longer needs.
+
+- **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
+  concentrated.** The full audit reads **19 files over budget**; five of them are in
+  `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was the largest source file in
+  the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
+  **The finding worth carrying is that the cascade module is not a duplicate of `libs/core`'s
+  `cv-style.util.ts` even though it reads as one**: both walk the same chains, but core ends them in
+  a concrete value so a renderer can draw, and the panel's end in `undefined` so a control reads
+  Inherit - swapping them reintroduces the accent-leak bug. They are a render-facing and a
+  control-facing twin, and the cost accepted is that both sides must change together. **A mutation
+  check caught a test that could not fail**: the fixture set only a section colour where the
+  document colour was already undefined, so the assertion held whether or not the rule it named
+  existed. **Next first action:** `cv-live-style-panel.component.html` at **467/300**, which needs a
+  Text group and a Line group as child components; then `cv-detail.component.scss` 640/400,
+  `cv-detail.component.html` 466/300 and `cv-detail.component.ts` 500/400.
+  `cv-preview.component.html` at 779/300 stays blocked by decision - it looks like nine `ng-template`
+  atoms and is not, and its real seam is the 17 near-identical `@if (isEditingLeaf(...))` pairs.
+
+- **The `tauri dev` gate is undriven across five pull requests, and now has one list.**
+  `docs/internal/NATIVE_GATE_BACKLOG.md` collects every outstanding walkthrough in the order the app
+  state builds. No agent can close it: synthetic clicks do not reach the Tauri webview, and every
+  path needs real database rows. Two items cost tokens and are marked; the rest are free.
   `cv-preview.component.html` at 779/300 stays blocked by decision.
 
 - **Ten silent fallbacks were made to report what they did, and the last one found on the way out was a

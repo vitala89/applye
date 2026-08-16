@@ -10,7 +10,7 @@
         [verdict]="detail.verdict()"
         [archetype]="rowArchetype(drow)"
         [matchedKeywords]="match.matchedKeywords(drow)"
-        (backRequested)="closeDetail()"
+        (backRequested)="page.closeDetail()"
         (saveRequested)="saveRow(drow, $event)"
       />
 
@@ -80,35 +80,35 @@
   }
 
   <!-- ============ FIRST RUN (no chrome) ============ -->
-  @if (detail.id() === null && view() === 'first') {
+  @if (detail.id() === null && page.view() === 'first') {
     <div class="dv-first">
       <div class="dv-first__icon">
         <lucide-icon [img]="icons.compass" [size]="30" aria-hidden="true" />
       </div>
       <div class="dv-first__title">{{ t()('discover.first_title') }}</div>
       <p class="dv-first__hint">{{ t()('discover.first_hint') }}</p>
-      <button type="button" class="dv-btn dv-btn--primary" (click)="drawerOpen.set(true)">
+      <button type="button" class="dv-btn dv-btn--primary" (click)="page.drawerOpen.set(true)">
         {{ t()('discover.choose_sources') }}
       </button>
     </div>
   }
 
   <!-- ============ HEADER ROW ============ -->
-  @if (detail.id() === null && showHeader()) {
+  @if (detail.id() === null && page.showHeader()) {
     <div class="dv-head">
       <div class="dv-head__left">
         <span class="dv-head__label">{{ t()('discover.inbox_label') }}</span>
         <span class="dv-head__sub">{{ t()('discover.subtitle') }}</span>
       </div>
       <div class="dv-head__right">
-        @if (lastScanLabel()) {
+        @if (page.lastScanLabel()) {
           <span class="dv-head__lastscan">
-            {{ t()('discover.last_scan').replace('{time}', lastScanLabel()) }}
+            {{ t()('discover.last_scan').replace('{time}', page.lastScanLabel()) }}
           </span>
         }
         <!-- Sources is a scan setting, not a filter: it stays reachable in every
-             view, including an empty feed where the filter row is not rendered. -->
-        <button type="button" class="dv-btn dv-btn--ghost" (click)="drawerOpen.set(true)">
+             page.view, including an empty feed where the filter row is not rendered. -->
+        <button type="button" class="dv-btn dv-btn--ghost" (click)="page.drawerOpen.set(true)">
           <lucide-icon [img]="icons.source" [size]="13" aria-hidden="true" />
           {{ t()('discover.sources') }}
         </button>
@@ -128,7 +128,7 @@
   }
 
   <!-- ============ SCAN CONSOLE ============ -->
-  @if (detail.id() === null && showConsole()) {
+  @if (detail.id() === null && page.showConsole()) {
     <div class="dv-console">
       <div class="dv-console__head">
         <span class="dv-console__title">{{ t()('discover.console_title') }}</span>
@@ -150,18 +150,18 @@
   }
 
   <!-- ============ SUMMARY STRIP ============ -->
-  @if (detail.id() === null && showStrip()) {
+  @if (detail.id() === null && page.showStrip()) {
     <div class="dv-strip">
       <div class="dv-strip__stats">
         <span class="dv-strip__muted">
-          {{ t()('discover.last_scan').replace('{time}', lastScanLabel()) }}
+          {{ t()('discover.last_scan').replace('{time}', page.lastScanLabel()) }}
         </span>
         <span class="dv-strip__dot" aria-hidden="true">·</span>
         <span>
-          <b>{{ newCount() }}</b> {{ t()('discover.strip_new') }}
+          <b>{{ page.newCount() }}</b> {{ t()('discover.strip_new') }}
         </span>
         <span class="dv-strip__dot" aria-hidden="true">·</span>
-        <span>{{ filteredCount() }} {{ t()('discover.strip_filtered') }}</span>
+        <span>{{ page.filteredCount() }} {{ t()('discover.strip_filtered') }}</span>
         <span class="dv-strip__dot" aria-hidden="true">·</span>
         <span class="dv-strip__tokens">{{ t()('discover.strip_tokens') }}</span>
       </div>
@@ -175,7 +175,7 @@
   }
 
   <!-- ============ NEVER SCANNED ============ -->
-  @if (detail.id() === null && view() === 'never') {
+  @if (detail.id() === null && page.view() === 'never') {
     <div class="dv-never">
       <div class="dv-never__line">
         {{ t()('discover.never_line').replace('{n}', '' + enabledCount()) }}
@@ -189,14 +189,14 @@
   }
 
   <!-- ============ CAUGHT UP ============ -->
-  @if (detail.id() === null && view() === 'caughtup') {
+  @if (detail.id() === null && page.view() === 'caughtup') {
     <div class="dv-caught">
       <div class="dv-caught__icon">
         <lucide-icon [img]="icons.check" [size]="24" aria-hidden="true" />
       </div>
       <div class="dv-caught__title">{{ t()('discover.caught_up') }}</div>
       <div class="dv-caught__meta">
-        {{ t()('discover.caught_meta').replace('{time}', lastScanLabel()) }}
+        {{ t()('discover.caught_meta').replace('{time}', page.lastScanLabel()) }}
       </div>
       <button type="button" class="dv-btn dv-btn--ghost" (click)="runScan()">
         <lucide-icon [img]="icons.rescan" [size]="14" aria-hidden="true" />
@@ -206,7 +206,7 @@
   }
 
   <!-- ============ FILTER ROW ============ -->
-  @if (detail.id() === null && view() === 'feed') {
+  @if (detail.id() === null && page.view() === 'feed') {
     <div class="dv-filters">
       <input
         type="text"
@@ -342,7 +342,7 @@
         class="dv-btn dv-btn--ghost dv-filters__clear"
         [title]="t()('discover.clear_list')"
         [disabled]="!hasClearableJobs()"
-        (click)="askClearFeed()"
+        (click)="page.askClearFeed()"
       >
         <lucide-icon [img]="icons.remove" [size]="13" aria-hidden="true" />
         {{ t()('discover.clear_list') }}
@@ -351,11 +351,11 @@
   }
 
   <!-- ============ CLEAR CONFIRM MODAL ============ -->
-  @if (clearConfirm()) {
+  @if (page.clearConfirm()) {
     <div
       class="dv-overlay dv-overlay--center"
-      (click)="cancelClearFeed()"
-      (keydown.escape)="cancelClearFeed()"
+      (click)="page.cancelClearFeed()"
+      (keydown.escape)="page.cancelClearFeed()"
       tabindex="-1"
     >
       <div
@@ -373,16 +373,16 @@
           <button
             type="button"
             class="dv-btn dv-btn--secondary"
-            [disabled]="clearing()"
-            (click)="cancelClearFeed()"
+            [disabled]="page.clearing()"
+            (click)="page.cancelClearFeed()"
           >
             {{ t()('discover.clear_cancel') }}
           </button>
           <button
             type="button"
             class="dv-btn dv-btn--danger"
-            [disabled]="clearing()"
-            (click)="confirmClearFeed()"
+            [disabled]="page.clearing()"
+            (click)="page.confirmClearFeed()"
           >
             {{ t()('discover.clear_yes') }}
           </button>
@@ -392,16 +392,16 @@
   }
 
   <!-- ============ FEED LIST ============ -->
-  @if (detail.id() === null && (view() === 'feed' || view() === 'scanning')) {
+  @if (detail.id() === null && (page.view() === 'feed' || page.view() === 'scanning')) {
     <div class="dv-feed" [class.dv-feed--dim]="scan.scanning()">
-      @if (marketChangedSinceScan()) {
+      @if (page.marketChangedSinceScan()) {
         <div class="dv-rescan" role="status">
           <span class="dv-rescan__text">{{ t()('discover.market_changed') }}</span>
           <div class="dv-rescan__actions">
             <button
               type="button"
               class="dv-btn dv-btn--secondary"
-              [disabled]="scan.scanning() || refreshingForMarket()"
+              [disabled]="scan.scanning() || page.refreshingForMarket()"
               (click)="refreshForMarket()"
             >
               {{ t()('discover.market_changed_refresh') }}
@@ -410,7 +410,7 @@
               type="button"
               class="dv-iconbtn dv-iconbtn--sm"
               [attr.aria-label]="t()('discover.dismiss')"
-              (click)="dismissRescanBanner()"
+              (click)="page.dismissRescanBanner()"
             >
               <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
             </button>
@@ -441,7 +441,7 @@
               [posted]="ago(row.createdAt)"
               [archetype]="rowArchetype(row)"
               [matchedKeywords]="match.matchedKeywords(row)"
-              (openRequested)="openDetail(row)"
+              (openRequested)="page.openDetail(row)"
               (saveRequested)="saveRow(row, $event)"
               (dismissRequested)="dismissRow(row, $event)"
             />
@@ -457,13 +457,13 @@
       }
     </div>
 
-    @if (view() === 'feed') {
+    @if (page.view() === 'feed') {
       <div class="dv-footer">
         <span>
           {{
             t()('discover.footer_counts')
               .replace('{shown}', '' + shownCount())
-              .replace('{filtered}', '' + filteredCount())
+              .replace('{filtered}', '' + page.filteredCount())
           }}
         </span>
       </div>
@@ -471,7 +471,7 @@
   }
 
   <!-- ============ SKELETON ============ -->
-  @if (detail.id() === null && view() === 'skeleton') {
+  @if (detail.id() === null && page.view() === 'skeleton') {
     <div class="dv-feed">
       @for (sk of skeletonRows; track $index) {
         <div class="dv-skel">
@@ -491,10 +491,10 @@
 </div>
 
 <!-- ============ SOURCES DRAWER ============ -->
-@if (drawerOpen()) {
+@if (page.drawerOpen()) {
   <app-discover-sources-drawer
     [markets]="context.markets()"
     [geoScope]="context.geoScope()"
-    (closed)="drawerOpen.set(false)"
+    (closed)="page.drawerOpen.set(false)"
   />
 }

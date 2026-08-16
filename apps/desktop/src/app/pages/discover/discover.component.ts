@@ -5,7 +5,6 @@ import {
   effect,
   ElementRef,
   inject,
-  signal,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -31,7 +30,7 @@ import {
 import { TranslateService } from '@applye/i18n';
 import { DiscoverDetailScoreComponent } from './discover-detail-score/discover-detail-score.component';
 import { compareCompensation } from '@applye/core';
-import type { CompensationVerdict, ScanSourceResult, ArchetypeFit } from '@applye/core';
+import type { CompensationVerdict, ArchetypeFit } from '@applye/core';
 import { srcLabel, workTypeOf } from '@applye/application';
 import { buildRegionGroups } from './discover-region-groups';
 import { type RegionGroup, type RegionKey } from '@applye/application';
@@ -46,15 +45,13 @@ import {
   DiscoverDetailStore,
   DiscoverFeedStore,
   DiscoverFiltersStore,
+  DiscoverPageStore,
   DiscoverRowMatchStore,
   DiscoverProfileContextStore,
   DiscoverScanStore,
   DiscoverSourcesStore,
-  formatScanTime,
 } from '@applye/application';
 import { ToastService } from '@applye/application';
-
-type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
 
 /** A titled block of feed rows ("For you" / "More openings"). */
 /** One block of the deterministically parsed job description. */
@@ -77,6 +74,7 @@ type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
     DiscoverScanStore,
     DiscoverFeedStore,
     DiscoverFiltersStore,
+    DiscoverPageStore,
     DiscoverRowMatchStore,
     DiscoverProfileContextStore,
   ],
@@ -120,7 +118,6 @@ export class DiscoverComponent {
   protected readonly enabledCount = this.sourcesSvc.enabledCount;
 
   // ------------------------------------------------------------------ state
-  protected readonly loading = signal(true);
   /** The scanned jobs and every write that changes one. Component-scoped. */
   protected readonly feedStore = inject(DiscoverFeedStore);
   /**
@@ -133,7 +130,6 @@ export class DiscoverComponent {
   protected readonly hasClearableJobs = this.feedStore.hasClearableJobs;
   /** The scan and the console that narrates it. Component-scoped. */
   protected readonly scan = inject(DiscoverScanStore);
-  protected readonly drawerOpen = signal(false);
   /** What the user has narrowed the feed to. Selection state only - it holds no
    * feed reference, which is what keeps the two stores pointing one way. */
   protected readonly sel = inject(DiscoverFiltersStore);
@@ -141,15 +137,17 @@ export class DiscoverComponent {
    * the same reason: the feed store will depend on it when sectioning moves. */
   protected readonly match = inject(DiscoverRowMatchStore);
   /** The open job's detail screen. Component-scoped: one page, one open job. */
+  /** What is on screen right now: which view, what the last scan reported, and
+   * the drawer, confirm and detail the user can open. */
+  protected readonly page = inject(DiscoverPageStore);
+
   protected readonly detail = inject(DiscoverDetailStore);
   /** What a posting is read against: target roles, pay and geography. */
   protected readonly context = inject(DiscoverProfileContextStore);
   /** Session-only dismissal of the "market changed" banner. */
-  private readonly rescanBannerDismissed = signal(false);
   /** In flight for the whole refresh (clear + scan), so a double-click on the
    * market-changed banner cannot fire two clears. `scanning()` alone does not
    * cover the clear that runs before the scan starts. */
-  protected readonly refreshingForMarket = signal(false);
 
   /** Salary-fit verdict for the open detail job vs the profile target. */
   protected readonly compVerdict = computed<CompensationVerdict>(() =>
@@ -157,8 +155,6 @@ export class DiscoverComponent {
   );
 
   /** Two-step inline confirm for "Clear list" (no modal, per product register). */
-  protected readonly clearConfirm = signal(false);
-  protected readonly clearing = signal(false);
 
   constructor() {
     void this.load();
@@ -180,56 +176,6 @@ export class DiscoverComponent {
       onCleanup(() => io.disconnect());
     });
   }
-
-  // --------------------------------------------------------------- derived
-  protected readonly view = computed<View>(() => {
-    if (this.loading()) return 'skeleton';
-    if (this.scan.scanning()) return 'scanning';
-    const active = this.feedStore.rows().filter((r) => !r.dismissed).length;
-    const anyEnabled = this.sources().some((s) => s.isEnabled);
-    const everScanned = this.sources().some((s) => s.lastScanAt);
-    if (active === 0 && !anyEnabled) return 'first';
-    if (active === 0 && !everScanned) return 'never';
-    if (active === 0) return 'caughtup';
-    return 'feed';
-  });
-
-  /** Per-source results of the last scan, parsed from sources.lastScanJson. */
-  private readonly lastResults = computed<ScanSourceResult[]>(() =>
-    this.sources()
-      .map((s) => {
-        if (!s.lastScanJson) return null;
-        try {
-          return JSON.parse(s.lastScanJson) as ScanSourceResult;
-        } catch {
-          return null;
-        }
-      })
-      .filter((r): r is ScanSourceResult => r !== null),
-  );
-
-  protected readonly newCount = computed(() =>
-    this.lastResults().reduce((sum, r) => sum + r.newJobs, 0),
-  );
-  protected readonly filteredCount = computed(() =>
-    this.lastResults().reduce((sum, r) => sum + r.filteredOut, 0),
-  );
-
-  protected readonly lastScanLabel = computed(() => {
-    const times = this.sources()
-      .map((s) => s.lastScanAt)
-      .filter((v): v is string => !!v)
-      .sort();
-    const latest = times[times.length - 1];
-    return latest ? formatScanTime(latest) : '';
-  });
-
-  /** Distinct source names present in the feed, for the source select. */
-  protected readonly sourceOptions = computed(() => {
-    const names = new Set<string>();
-    for (const row of this.feedStore.rows()) if (row.source) names.add(row.source);
-    return [...names].sort();
-  });
 
   protected readonly visibleRows = computed<FeedRow[]>(() =>
     filterFeedRows(
@@ -313,7 +259,7 @@ export class DiscoverComponent {
   }
 
   /** Distinct source names present in the feed (for the Sources checkboxes). */
-  protected readonly availableSources = computed(() => this.sourceOptions());
+  protected readonly availableSources = computed(() => this.page.sourceOptions());
 
   /**
    * Region -> countries -> cities actually present in the current feed. Only
@@ -337,22 +283,6 @@ export class DiscoverComponent {
     () => this.visibleRows().filter((r) => !r.dismissed).length,
   );
 
-  protected readonly showHeader = computed(
-    () => this.view() !== 'first' && this.view() !== 'skeleton',
-  );
-  protected readonly showStrip = computed(
-    () => (this.view() === 'feed' || this.view() === 'caughtup') && this.everScanned(),
-  );
-  protected readonly showConsole = computed(
-    () => this.view() === 'scanning' || (this.scan.expanded() && this.showStrip()),
-  );
-
-  /** True when the selected market no longer matches the feed on screen, so the
-   * results shown are for a market the user has moved away from. */
-  protected readonly marketChangedSinceScan = computed(
-    () => !this.rescanBannerDismissed() && this.context.marketChangedSinceScan(),
-  );
-
   // ------------------------------------------------------------------ load
   private async load(): Promise<void> {
     try {
@@ -366,7 +296,7 @@ export class DiscoverComponent {
     } catch (e) {
       console.error('discover: load failed', e);
     } finally {
-      this.loading.set(false);
+      this.page.loading.set(false);
     }
   }
 
@@ -385,7 +315,7 @@ export class DiscoverComponent {
         await this.feedStore.load();
         await this.sourcesSvc.reload();
         this.context.markScanned();
-        this.rescanBannerDismissed.set(false);
+        this.page.rearmRescanBanner();
       },
     );
     if (error) this.toast.error(error);
@@ -396,8 +326,8 @@ export class DiscoverComponent {
    * for the current market. Saved and dismissed jobs are untouched (see
    * db_discover_clear). Then scan(), which realigns lastScanMarket. */
   protected async refreshForMarket(): Promise<void> {
-    if (this.refreshingForMarket() || this.scan.scanning()) return;
-    this.refreshingForMarket.set(true);
+    if (this.page.refreshingForMarket() || this.scan.scanning()) return;
+    this.page.refreshingForMarket.set(true);
     try {
       try {
         await this.feedStore.discardUnsaved();
@@ -406,59 +336,8 @@ export class DiscoverComponent {
       }
       await this.runScan();
     } finally {
-      this.refreshingForMarket.set(false);
+      this.page.refreshingForMarket.set(false);
     }
-  }
-
-  protected dismissRescanBanner(): void {
-    this.rescanBannerDismissed.set(true);
-  }
-
-  // ----------------------------------------------------------- clear inbox
-  /** Open the confirm modal. No-op when there is nothing unsaved to clear. */
-  protected askClearFeed(): void {
-    if (!this.feedStore.hasClearableJobs()) return;
-    this.clearConfirm.set(true);
-  }
-
-  protected cancelClearFeed(): void {
-    if (this.clearing()) return;
-    this.clearConfirm.set(false);
-  }
-
-  /**
-   * Delete every unsaved scanned job, reload the (now empty) feed, and toast the
-   * count removed so the destructive action is acknowledged.
-   */
-  protected async confirmClearFeed(): Promise<void> {
-    if (this.clearing()) return;
-    this.clearing.set(true);
-    try {
-      const result = await this.feedStore.clear();
-      if ('error' in result) {
-        this.toast.error(result.error);
-        return;
-      }
-      this.clearConfirm.set(false);
-      this.toast.success(this.t()('discover.clear_done').replace('{n}', String(result.removed)));
-    } finally {
-      this.clearing.set(false);
-    }
-  }
-
-  // ---------------------------------------------------------------- triage
-  /** Row click: open the full-screen job detail. */
-  protected openDetail(row: FeedRow): void {
-    if (row.dismissed) return;
-    this.detail.open(row.id, {
-      keywords: this.context.keywords(),
-      fit: this.match.badgeFor(row)?.fit ?? null,
-      title: row.title ?? '',
-    });
-  }
-
-  protected closeDetail(): void {
-    this.detail.close();
   }
 
   /** i18n label for an archetype tier badge. */

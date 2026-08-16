@@ -30,14 +30,9 @@ import {
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { DiscoverDetailScoreComponent } from './discover-detail-score/discover-detail-score.component';
-import { compareCompensation, matchArchetype, tierRank } from '@applye/core';
-import type {
-  CompensationVerdict,
-  ScanSourceResult,
-  ArchetypeMatch,
-  ArchetypeFit,
-} from '@applye/core';
-import { classifyLoc, type LocClass } from './discover-location';
+import { compareCompensation } from '@applye/core';
+import type { CompensationVerdict, ScanSourceResult, ArchetypeFit } from '@applye/core';
+import { srcLabel, workTypeOf } from '@applye/application';
 import { buildRegionGroups } from './discover-region-groups';
 import { type RegionGroup, type RegionKey } from '@applye/application';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
@@ -51,6 +46,7 @@ import {
   DiscoverDetailStore,
   DiscoverFeedStore,
   DiscoverFiltersStore,
+  DiscoverRowMatchStore,
   DiscoverProfileContextStore,
   DiscoverScanStore,
   DiscoverSourcesStore,
@@ -59,11 +55,9 @@ import {
 import { ToastService } from '@applye/application';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
-type WorkType = 'remote' | 'hybrid' | 'onsite';
 
 /** A titled block of feed rows ("For you" / "More openings"). */
 /** One block of the deterministically parsed job description. */
-const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distributed'];
 
 @Component({
   selector: 'app-discover',
@@ -83,6 +77,7 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
     DiscoverScanStore,
     DiscoverFeedStore,
     DiscoverFiltersStore,
+    DiscoverRowMatchStore,
     DiscoverProfileContextStore,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,6 +89,10 @@ export class DiscoverComponent {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
+
+  /** Pure row helpers the template binds by name. Exposed as fields rather than
+   * wrapped in methods: a wrapper would be three lines each for no behaviour. */
+  protected readonly srcLabel = srcLabel;
 
   protected readonly icons = {
     compass: Compass,
@@ -138,6 +137,9 @@ export class DiscoverComponent {
   /** What the user has narrowed the feed to. Selection state only - it holds no
    * feed reference, which is what keeps the two stores pointing one way. */
   protected readonly sel = inject(DiscoverFiltersStore);
+  /** How a row reads against the profile. Holds no feed reference either, for
+   * the same reason: the feed store will depend on it when sectioning moves. */
+  protected readonly match = inject(DiscoverRowMatchStore);
   /** The open job's detail screen. Component-scoped: one page, one open job. */
   protected readonly detail = inject(DiscoverDetailStore);
   /** What a posting is read against: target roles, pay and geography. */
@@ -239,7 +241,7 @@ export class DiscoverComponent {
         countries: this.sel.countrySel(),
         tab: this.sel.tab(),
       },
-      (location) => this.workTypeOf(location),
+      (location) => workTypeOf(location),
     ),
   );
 
@@ -248,36 +250,11 @@ export class DiscoverComponent {
    * Drives the "For you" bucket - a soft ranking, never a hard filter, so the
    * rest of the feed still shows under "More openings".
    */
-  protected matchesProfile(row: FeedRow): boolean {
-    return this.archetypeBadge(row) !== null;
-  }
-
   /**
    * Per-row best-fit archetype, computed once per feed/archetype change. The badge
    * is read from the template, the For-you filter, and the tier sort, so caching by
    * row id avoids re-tokenizing every archetype on each change-detection pass.
    */
-  private readonly badgeByRow = computed<Map<number, ArchetypeMatch | null>>(() => {
-    const list = this.context.archetypes();
-    const cache = new Map<number, ArchetypeMatch | null>();
-    for (const row of this.feedStore.rows())
-      cache.set(row.id, matchArchetype(row.title ?? '', list));
-    return cache;
-  });
-
-  /** Best-fit archetype for a feed row (title only; JD not loaded in the feed). */
-  protected archetypeBadge(row: FeedRow): ArchetypeMatch | null {
-    const cache = this.badgeByRow();
-    if (cache.has(row.id)) return cache.get(row.id) ?? null;
-    // Row not in the current feed snapshot (defensive): match directly.
-    return matchArchetype(row.title ?? '', this.context.archetypes());
-  }
-
-  private rowTierRank(row: FeedRow): number {
-    const m = this.archetypeBadge(row);
-    return m ? tierRank(m.fit) : 0;
-  }
-
   /**
    * The feed split into "For you" (matches target roles) and "More openings".
    * With no target roles set, a single unlabelled section holds everything, so
@@ -287,8 +264,8 @@ export class DiscoverComponent {
     splitFeedSections(
       this.visibleRows(),
       this.context.keywords().length > 0,
-      (row) => this.matchesProfile(row),
-      (row) => this.rowTierRank(row),
+      (row) => this.match.matchesProfile(row),
+      (row) => this.match.tierRankFor(row),
       { forYou: this.t()('discover.for_you'), more: this.t()('discover.more_openings') },
     ),
   );
@@ -475,7 +452,7 @@ export class DiscoverComponent {
     if (row.dismissed) return;
     this.detail.open(row.id, {
       keywords: this.context.keywords(),
-      fit: this.archetypeBadge(row)?.fit ?? null,
+      fit: this.match.badgeFor(row)?.fit ?? null,
       title: row.title ?? '',
     });
   }
@@ -493,25 +470,8 @@ export class DiscoverComponent {
    * two calls the markup used to make, so the feed row and the detail hero each
    * take one input rather than two. */
   protected rowArchetype(row: FeedRow): { fit: ArchetypeFit; label: string } | null {
-    const m = this.archetypeBadge(row);
+    const m = this.match.badgeFor(row);
     return m ? { fit: m.fit, label: this.archBadgeLabel(m.fit) } : null;
-  }
-
-  // ------------------------------------------------------- location filters
-  protected workTypeOf(location: string | null): WorkType {
-    const loc = (location ?? '').toLowerCase();
-    if (loc.includes('hybrid')) return 'hybrid';
-    if (this.isRemote(location)) return 'remote';
-    return 'onsite';
-  }
-
-  /**
-   * Deterministic country + city + region for a free-text location. Delegates
-   * to the pure, unit-tested `classifyLoc` in `@applye/application` so the
-   * recognition rules live in one testable place.
-   */
-  protected classifyLoc(location: string | null): LocClass {
-    return classifyLoc(location);
   }
 
   /**
@@ -540,7 +500,8 @@ export class DiscoverComponent {
   /** Deterministic tip line under the raw score. */
   protected tipText(row: FeedRow): string {
     if (this.detail.verdict() === 'strong') return this.t()('discover.tip_strong');
-    const kw = this.matchedKeywords(row)[0] ?? this.context.keywords()[0]?.toUpperCase() ?? '';
+    const kw =
+      this.match.matchedKeywords(row)[0] ?? this.context.keywords()[0]?.toUpperCase() ?? '';
     return this.t()('discover.tip_other').replace('{kw}', kw);
   }
 
@@ -578,21 +539,6 @@ export class DiscoverComponent {
 
   // --------------------------------------------------------------- helpers
   /** Short mono badge label for a source name ("We Work Remotely" -> WWR). */
-  protected srcLabel(name: string | null): string {
-    if (!name) return '';
-    if (/^we work remotely$/i.test(name)) return 'WWR';
-    return name.toUpperCase();
-  }
-
-  protected matchedKeywords(row: FeedRow): string[] {
-    const title = (row.title ?? '').toLowerCase();
-    return this.context
-      .keywords()
-      .filter((kw) => title.includes(kw))
-      .slice(0, 4)
-      .map((kw) => kw.toUpperCase());
-  }
-
   protected ago(created: string | null): string {
     if (!created) return '';
     const then = new Date(created.replace(' ', 'T') + 'Z').getTime();
@@ -601,11 +547,6 @@ export class DiscoverComponent {
     if (hours < 1) return this.t()('discover.ago_now');
     if (hours < 24) return this.t()('discover.ago_h').replace('{n}', String(hours));
     return this.t()('discover.ago_d').replace('{n}', String(Math.floor(hours / 24)));
-  }
-
-  protected isRemote(location: string | null): boolean {
-    const loc = (location ?? '').toLowerCase();
-    return REMOTE_MARKERS.some((m) => loc.includes(m));
   }
 
   protected readonly skeletonRows = [

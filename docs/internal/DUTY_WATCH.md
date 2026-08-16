@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-16, Discover's row helpers split three ways, and one of the ten was dead
+
+- **Status:** complete for PR 2 of the Discover series. `discover.component.ts` is **505/400**, from 556. One extraction PR remains.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. **No new grilling round, and that was a judgement call** - the plan's premise was wrong, but the principle that resolves it was already settled in the previous round, so re-asking would have spent a round to be told the same thing. Recorded here so the call is visible rather than implied.
+- **Branch:** `refactor/discover-row-view`, stacked on `refactor/discover-filters-store` (#456, open and green).
+- **Objective:** PR 2 - the row-presentation helpers out of `discover.component.ts`.
+- **The plan's premise did not survive reading the code.** It called for "ten locale-free row helpers" to become one function module. **Locale-free is not the same axis as pure.** The ten split three ways, and one of them did not exist:
+  - **Three are functions of a row and nothing else** - `workTypeOf`, `isRemote`, `srcLabel` - and are `discover-row-view.ts` (57 lines), beside `pipeline-card-view` for the reason that file records.
+  - **Five read `DiscoverProfileContextStore`** - `badgeByRow`, `archetypeBadge`, `rowTierRank`, `matchesProfile`, `matchedKeywords` - so they are a store, `DiscoverRowMatchStore` (63/250), not a function module.
+  - **Four are locale-bound and stay on the page**: `archBadgeLabel`, `rowArchetype`, `ago`, `tipText`.
+  - **One was dead.** The page's `classifyLoc` wrapper had no caller in the template or the class. Deleting it also removes a docstring **I got wrong in PR 0**: it said `classifyLoc` lives in `@applye/application`, and it does not - it stayed in the page with the location table. That error is on `main` in #455 and is corrected here.
+- **The memo changed shape deliberately.** `badgeByRow` was a `computed` over `feedStore.rows()`. It is now a lazy per-row cache keyed on the archetype list's identity, so the store **holds no feed reference**. That is the property the previous round settled for `DiscoverFiltersStore`, applied again: `DiscoverFeedStore` will section its rows by these answers in PR 3, so it depends on this store, and a store reading the feed back would close the cycle. Both specs assert the property by what they do **not** provide, with a comment saying so.
+- **17 tests.** Worth naming: `workTypeOf` reads "Hybrid - Berlin (remote 2 days)" as hybrid rather than remote, because a hybrid posting usually names remote days too and reading it as remote would put it in a filter the user chose to exclude the office from; and the memo drops on an archetype-list replacement, so editing target roles re-matches rather than serving the old answer forever.
+- **Not completed:** **PR 3** - sectioning into `DiscoverFeedStore` (injecting `TranslateService` for the two section labels), dialogs and the banner into a new page store. The page needs roughly another 105 lines gone to clear 400, and the template is still **484/300** and untouched by this series so far.
+- **Files or packages changed:** `discover-row-view.{ts,spec.ts}` and `discover-row-match.store.{ts,spec.ts}` new in `libs/application/src/lib/discover/`; `discover-filters.store.ts` (WorkType moved to the row view); `libs/application/src/index.ts`; `apps/desktop/src/app/pages/discover/discover.component.{ts,html}`; `CHANGELOG.md`; this file.
+- **Validation:** `nx run desktop:type-check` - clean. `nx build desktop` - succeeded. `nx test application` 1608, `nx test desktop` 962. `nx run-many -t lint -p desktop application --skip-nx-cache` - 0 errors, 1 pre-existing warning; it also found six imports the extraction had orphaned, including the `classifyLoc` the dead wrapper was the last user of. `quality:file-size` - page 556 to 505, template unchanged at 484, passed. `quality:attribution`, `format:check`, `git diff --check` - clean. No Rust changed.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** the three-way split follows from the measurement above rather than from a choice. **Mine, not asked:** `srcLabel` is exposed on the page as a field rather than wrapped in a method, because a wrapper is three lines for no behaviour and the template is at its ceiling; `WorkType` moved from the filters store to the row view, since it is what a location classifies to.
+- **Risks or compatibility impact:** the memo is now keyed on list identity rather than recomputed by a `computed`. `archetypes` is a signal holding a replaced array, so identity changes exactly when the contents do - pinned by a test.
+- **Open issues or blockers:** #456 is open and green; this branch is stacked on it. The four unwired prompts from #453 still await a delete-or-implement decision.
+- **Next first action:** PR 3 - `feedSections`, `renderedSections`, `hasMoreFeed` and `loadMoreFeed` into `DiscoverFeedStore`, which injects `TranslateService` for `discover.for_you` and `discover.more_openings`; the clear-feed confirm, the detail open/close and the rescan banner into a new page store. Measure both halves before committing to the split - the two-way cut that "obviously" fitted came to 278/250 the last time it was assumed.
+- **Evidence:** the six unused-import lint errors after the extraction, for the dead wrapper; `discover-row-match.store.spec.ts`'s provider list, for the no-feed-reference property; `git show 99adf155` for the wrong docstring this corrects.
+
 ### 2026-08-16, Discover's filters become a store, and the ratchet rejects two template versions before one lands
 
 - **Status:** complete for PR 1 of the Discover series. `discover.component.ts` is **556/400**, from 616. Two extraction PRs remain.

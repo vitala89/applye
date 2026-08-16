@@ -5,6 +5,8 @@ export * from './lib/analytics/analytics.store';
 export * from './lib/discover/discover-detail.store';
 export * from './lib/discover/discover-feed.store';
 export * from './lib/discover/discover-filters.store';
+export * from './lib/discover/discover-row-match.store';
+export * from './lib/discover/discover-row-view';
 export * from './lib/discover/discover-location-selection';
 export * from './lib/discover/discover-profile-context.store';
 export * from './lib/discover/discover-scan.store';

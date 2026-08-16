@@ -18,8 +18,7 @@ applye/
 │   ├── desktop/          Tauri 2 + Angular - the primary app
 │   │   ├── src/          Angular frontend (UI, routes, components)
 │   │   └── src-tauri/    Rust backend (commands, SQLite, AI bridge, file I/O)
-│   ├── web/              Angular landing site (applye.dev)
-│   └── mobile/           placeholder - scaffolded later
+│   └── web/              Angular landing site (applye.dev)
 └── libs/
     ├── core/             domain models, types, IPC contracts (framework-agnostic)
     ├── data/             Tauri invoke wrappers, DB/AI service abstractions
@@ -27,6 +26,10 @@ applye/
     ├── i18n/             translations (en/de/ru/es/fr/uk)
     └── skills/           markdown skill files (AI prompts), versioned
 ```
+
+There is no `apps/mobile`. The plan for a mobile target, and the conditions
+under which it starts, are in [mobile-target.md](mobile-target.md); an `apps/`
+entry that builds nothing reads as a target that exists.
 
 ## Layers and the dependency rule
 
@@ -117,6 +120,39 @@ side - and left at its default the webview intercepts drag events at the OS leve
 features that do exist are unaffected: the pipeline kanban and the CV section reorder use Angular
 CDK, which is pointer-event based, and `data-tauri-drag-region` moves the window, which is a
 different mechanism entirely. Turn it back on if a drop target is ever added.
+
+### `libs/skills` is not an Nx project, on purpose
+
+The 23 AI prompts under `libs/skills/src/<name>/<name>.md` are the one thing in
+`libs/` with no `project.json`, and it is deliberate. They are **markdown read by
+Rust**, not TypeScript imported by anything: `src-tauri/src/ai/skills.rs` pulls
+each one in with `include_str!` so the prompts are compiled into the binary and
+the app works offline.
+
+The consequences are smaller than they look, and were measured rather than
+assumed:
+
+- **Caching is correct already.** `rustc` records `include_str!` files in its
+  dep-info, so `cargo` rebuilds when a prompt changes - verified by touching one.
+  Nx never had a claim here: `nx build desktop` is Angular-only, and `cargo` runs
+  from `npx tauri build`, outside the Nx graph entirely.
+- **`@nx/enforce-module-boundaries` has nothing to enforce.** It governs
+  TypeScript imports, and no TypeScript imports these files.
+- **A `project.json` would make things worse, not better.** Nx cannot infer a
+  dependency that lives inside a Rust macro, so the node would sit unconnected;
+  wiring it with `implicitDependencies` would then rebuild and retest the whole
+  Angular app on every prompt edit, for nothing.
+
+What the arrangement really costs is that the coupling is invisible until it
+breaks. Both directions are covered:
+
+- **Renaming or deleting a prompt is loud** - `include_str!` stops resolving and
+  the build fails with the path.
+- **Adding one is silent**, so a test catches it. `every_bundled_prompt_has_a_match_arm`
+  reads the directory at run time and fails if a prompt has no arm in
+  `skill_source`, unless it is listed in `UNWIRED_PROMPTS` with its reason. Four
+  are listed today: three superseded by implementations that spend no tokens, one
+  never built.
 
 ## AI integration
 

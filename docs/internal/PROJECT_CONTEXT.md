@@ -35,12 +35,15 @@ Applye is an open-source, privacy-first job-search productivity app for German/E
 
 - Desktop app: `apps/desktop`.
 - Landing site: `apps/web`.
-- Mobile placeholder: `apps/mobile`.
+- Mobile: **no target and no directory**. The plan and its preconditions are in
+  `docs/mobile-target.md`.
 - Domain models and interfaces: `libs/core`.
 - Tauri invoke wrappers and service abstractions: `libs/data`.
 - Shared Angular components and tokens: `libs/ui`.
 - Translations: `libs/i18n`.
-- Versioned prompt/skill content: `libs/skills`.
+- Versioned prompt/skill content: `libs/skills`. Markdown only, compiled into
+  the Rust binary by `include_str!` rather than imported by TypeScript, so it is
+  deliberately not an Nx project - see `docs/architecture.md`.
 - TODO: Confirm the long-term module map as features stabilize.
 
 ## Design Sources

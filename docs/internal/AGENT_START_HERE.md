@@ -22,6 +22,9 @@ Do not begin implementation from the user request alone. First verify the curren
 - `DUTY_WATCH.md` is the chronological handoff log between sessions and agents.
 - `docs/governance/CODE_QUALITY.md` is the mandatory maintainability, decomposition, file-size, test, MCP, and attribution contract.
 - `docs/governance/VALIDATION_MATRIX.md` maps affected layers to required checks.
+- `docs/internal/NATIVE_GATE_BACKLOG.md` lists the `tauri dev` walkthroughs that are outstanding
+  because no agent can drive them. Add to it rather than carrying a pending native check forward as
+  a line in the next watch entry.
 - `ROADMAP.md` describes strategic and phased work.
 - `CHANGELOG.md` records shipped changes, not future work.
 

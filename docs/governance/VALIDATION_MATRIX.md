@@ -195,6 +195,8 @@ Use `npm run desktop:dev` when the behavior depends on Tauri IPC, SQLite migrati
 
 If a native gate cannot be run, mark the watch `partial` or record the check explicitly as pending. Passing unit tests or a browser preview is not evidence that a native Tauri flow works.
 
+An agent cannot run it at all: synthetic clicks do not reach the Tauri webview - hover produces a hover state, a click at the same coordinates does nothing, reproduced against three targets - and every native path needs real database rows. So a pending check has to go somewhere a later session will find it. **Add it to `docs/internal/NATIVE_GATE_BACKLOG.md`**, which is one ordered list of what is outstanding, rather than restating it as the next first action in each new watch entry. That is how five pull requests came to pass with none of their walkthroughs driven.
+
 ## CI and unavailable checks
 
 Applye may not have active PR CI for every command. Local verification must be listed command by command. Never convert an unavailable check into a passing result.

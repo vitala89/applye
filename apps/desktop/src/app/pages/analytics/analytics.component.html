@@ -11,15 +11,7 @@
         }
       </div>
     </div>
-    <div class="ana-kpis">
-      @for (i of [1, 2, 3, 4]; track i) {
-        <div class="ana-tile ana-tile--skel">
-          <div class="ana-skel ana-skel--icon"></div>
-          <div class="ana-skel ana-skel--num"></div>
-          <div class="ana-skel ana-skel--label"></div>
-        </div>
-      }
-    </div>
+    <app-analytics-kpi-row [tiles]="[]" />
     <section class="ana-card">
       <div class="ana-skel ana-skel--title"></div>
       @for (w of ['100%', '68%', '32%', '14%']; track $index) {
@@ -63,45 +55,7 @@
     </div>
 
     <!-- ============ KPI ROW ============ -->
-    <div class="ana-kpis">
-      @for (tile of tiles(); track tile.key) {
-        <div class="ana-tile">
-          <div class="ana-tile__top">
-            <span class="ana-tile__icon"
-              ><lucide-icon [img]="tile.icon" [size]="16" aria-hidden="true"
-            /></span>
-            @if (tile.deltaShow) {
-              <span class="ana-delta" [class.is-down]="!tile.deltaUp">
-                <lucide-icon [img]="tile.deltaIcon" [size]="12" aria-hidden="true" />{{
-                  tile.deltaText
-                }}
-              </span>
-            }
-          </div>
-          <div class="ana-tile__body">
-            <div class="ana-tile__value">
-              <span class="ana-tile__num" [class.is-accent]="tile.accent">{{
-                tile.valueText
-              }}</span>
-              @if (tile.isPercent) {
-                <span class="ana-tile__suffix">%</span>
-              }
-            </div>
-            <span class="ana-tile__label">{{ tile.label }}</span>
-          </div>
-          @if (tile.spark.length) {
-            <div class="ana-spark" aria-hidden="true">
-              @for (h of tile.spark; track $index) {
-                <span [style.height.%]="h * 100"></span>
-              }
-            </div>
-          }
-          @if (tile.note) {
-            <span class="ana-tile__note">{{ tile.note }}</span>
-          }
-        </div>
-      }
-    </div>
+    <app-analytics-kpi-row [tiles]="tiles()" />
 
     <!-- ============ FUNNEL ============ -->
     <section class="ana-card">
@@ -112,31 +66,10 @@
         </div>
         <span class="ana-card__flow">{{ t()('analytics.funnel_flow') }}</span>
       </header>
-      <div class="ana-funnel">
-        @for (s of stages(); track s.name) {
-          <div class="ana-stage">
-            <div class="ana-stage__name" [style.color]="s.nameColor">{{ s.name }}</div>
-            <div class="ana-stage__bar">
-              <div
-                class="ana-stage__fill"
-                [style.width]="s.widthPct"
-                [style.background]="s.fill"
-              ></div>
-              <span class="ana-stage__count">{{ s.count }}</span>
-            </div>
-            <div class="ana-stage__conv">
-              @if (s.showConv) {
-                <div class="ana-stage__pct">{{ s.convText }}</div>
-                <div class="ana-stage__of">{{ s.convOf }}</div>
-              }
-            </div>
-          </div>
-        }
-
+      <app-analytics-bar-list [rows]="stages()">
         @if (isLowData()) {
           <p class="ana-note">{{ t()('analytics.funnel_lowdata') }}</p>
         }
-
         @if (leakage(); as lk) {
           <div class="ana-leak">
             <span class="ana-leak__label">{{ t()('analytics.leakage') }}</span>
@@ -146,7 +79,7 @@
             <span class="ana-leak__text">{{ lk.text }}</span>
           </div>
         }
-      </div>
+      </app-analytics-bar-list>
     </section>
 
     <!-- ============ APPLICATIONS OVER TIME ============ -->
@@ -166,85 +99,11 @@
             }
           </div>
         </header>
-        <div class="ana-trend">
-          <div class="ana-trend__plot">
-            <span class="ana-trend__ymax">{{ tr.yMax }}</span>
-            <svg
-              viewBox="0 0 100 42"
-              preserveAspectRatio="none"
-              class="ana-trend__svg"
-              aria-hidden="true"
-            >
-              <line
-                x1="0"
-                y1="3"
-                x2="100"
-                y2="3"
-                stroke="var(--border-subtle)"
-                stroke-width="1"
-                vector-effect="non-scaling-stroke"
-              />
-              <line
-                x1="0"
-                y1="15"
-                x2="100"
-                y2="15"
-                stroke="var(--border-subtle)"
-                stroke-width="1"
-                vector-effect="non-scaling-stroke"
-                opacity="0.6"
-              />
-              <line
-                x1="0"
-                y1="27"
-                x2="100"
-                y2="27"
-                stroke="var(--border-subtle)"
-                stroke-width="1"
-                vector-effect="non-scaling-stroke"
-                opacity="0.6"
-              />
-              <line
-                x1="0"
-                y1="39"
-                x2="100"
-                y2="39"
-                stroke="var(--border-subtle)"
-                stroke-width="1"
-                vector-effect="non-scaling-stroke"
-              />
-              <polygon [attr.points]="tr.area" fill="var(--accent)" opacity="0.07" />
-              @if (tr.hasFollowups) {
-                <polyline
-                  [attr.points]="tr.lineFollow"
-                  fill="none"
-                  stroke="var(--graphite-400)"
-                  stroke-width="1.3"
-                  vector-effect="non-scaling-stroke"
-                  opacity="0.55"
-                  stroke-linejoin="round"
-                />
-              }
-              <polyline
-                [attr.points]="tr.lineApps"
-                fill="none"
-                stroke="var(--accent)"
-                stroke-width="1.7"
-                vector-effect="non-scaling-stroke"
-                stroke-linejoin="round"
-                stroke-linecap="round"
-              />
-            </svg>
-          </div>
-          <div class="ana-trend__ticks">
-            @for (tk of tr.ticks; track $index) {
-              <span>{{ tk }}</span>
-            }
-          </div>
+        <app-analytics-trend [trend]="tr">
           @if (isLowData()) {
             <p class="ana-note">{{ t()('analytics.trend_lowdata') }}</p>
           }
-        </div>
+        </app-analytics-trend>
       </section>
     }
 
@@ -260,25 +119,11 @@
             <span class="ana-card__flow">{{ t()('analytics.score_median') }} {{ sd.median }}%</span>
           }
         </header>
-        <div class="ana-funnel">
-          @for (b of sd.buckets; track b.label) {
-            <div class="ana-stage">
-              <div class="ana-stage__name">{{ b.label }}</div>
-              <div class="ana-stage__bar">
-                <div
-                  class="ana-stage__fill"
-                  [style.width]="b.widthPct"
-                  style="background: var(--ana-neutral-fill)"
-                ></div>
-                <span class="ana-stage__count">{{ b.count }}</span>
-              </div>
-              <div class="ana-stage__conv"></div>
-            </div>
-          }
+        <app-analytics-bar-list [rows]="sd.rows">
           @if (sd.lowData) {
             <p class="ana-note">{{ t()('analytics.score_lowdata') }}</p>
           }
-        </div>
+        </app-analytics-bar-list>
       </section>
     }
 
@@ -291,27 +136,11 @@
             <span class="ana-card__sub">{{ t()('analytics.outcome_sub') }}</span>
           </div>
         </header>
-        <div class="ana-funnel">
-          @for (g of so.groups; track g.label) {
-            <div class="ana-stage">
-              <div class="ana-stage__name">{{ g.label }}</div>
-              <div class="ana-stage__bar">
-                <div
-                  class="ana-stage__fill"
-                  [style.width]="g.widthPct"
-                  [style.background]="g.accent ? 'var(--accent)' : 'var(--ana-neutral-fill)'"
-                ></div>
-                <span class="ana-stage__count">{{ g.avgText }}</span>
-              </div>
-              <div class="ana-stage__conv">
-                <div class="ana-stage__of">{{ g.count }} {{ t()('analytics.outcome_apps') }}</div>
-              </div>
-            </div>
-          }
+        <app-analytics-bar-list [rows]="so.rows">
           @if (so.lowData) {
             <p class="ana-note">{{ t()('analytics.outcome_lowdata') }}</p>
           }
-        </div>
+        </app-analytics-bar-list>
       </section>
     }
 
@@ -330,25 +159,11 @@
             >
           }
         </header>
-        <div class="ana-funnel">
-          @for (b of ttr.buckets; track b.label) {
-            <div class="ana-stage">
-              <div class="ana-stage__name">{{ b.label }}</div>
-              <div class="ana-stage__bar">
-                <div
-                  class="ana-stage__fill"
-                  [style.width]="b.widthPct"
-                  style="background: var(--ana-neutral-fill)"
-                ></div>
-                <span class="ana-stage__count">{{ b.count }}</span>
-              </div>
-              <div class="ana-stage__conv"></div>
-            </div>
-          }
+        <app-analytics-bar-list [rows]="ttr.rows">
           @if (ttr.lowData) {
             <p class="ana-note">{{ t()('analytics.ttr_lowdata') }}</p>
           }
-        </div>
+        </app-analytics-bar-list>
       </section>
     }
 
@@ -374,28 +189,14 @@
             >
           }
         </header>
-        <div class="ana-funnel">
-          @for (b of ag.buckets; track b.label) {
-            <div class="ana-stage">
-              <div class="ana-stage__name">{{ b.label }}</div>
-              <div class="ana-stage__bar">
-                <div
-                  class="ana-stage__fill"
-                  [style.width]="b.widthPct"
-                  style="background: var(--ana-neutral-fill)"
-                ></div>
-                <span class="ana-stage__count">{{ b.count }}</span>
-              </div>
-              <div class="ana-stage__conv"></div>
-            </div>
-          }
+        <app-analytics-bar-list [rows]="ag.rows">
           @if (ag.staleCount > 0) {
             <p class="ana-note">{{ ag.staleCount }} {{ t()('analytics.aging_stale_note') }}</p>
           }
           @if (ag.lowData) {
             <p class="ana-note">{{ t()('analytics.aging_lowdata') }}</p>
           }
-        </div>
+        </app-analytics-bar-list>
       </section>
     }
 
@@ -408,28 +209,14 @@
             <span class="ana-card__sub">{{ t()('analytics.loc_sub') }}</span>
           </div>
         </header>
-        <div class="ana-funnel">
-          @for (r of loc.rows; track r.name) {
-            <div class="ana-stage">
-              <div class="ana-stage__name ana-stage__name--wide" [title]="r.name">{{ r.name }}</div>
-              <div class="ana-stage__bar">
-                <div
-                  class="ana-stage__fill"
-                  [style.width]="r.widthPct"
-                  style="background: var(--ana-neutral-fill)"
-                ></div>
-                <span class="ana-stage__count">{{ r.count }}</span>
-              </div>
-              <div class="ana-stage__conv"></div>
-            </div>
-          }
+        <app-analytics-bar-list [rows]="loc.rows" [wideNames]="true">
           @if (loc.unknown > 0) {
             <p class="ana-note">{{ loc.unknown }} {{ t()('analytics.loc_unknown') }}</p>
           }
           @if (loc.lowData) {
             <p class="ana-note">{{ t()('analytics.loc_lowdata') }}</p>
           }
-        </div>
+        </app-analytics-bar-list>
       </section>
     }
   }

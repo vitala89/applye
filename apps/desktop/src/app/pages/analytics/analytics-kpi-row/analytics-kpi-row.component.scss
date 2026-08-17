@@ -1,0 +1,130 @@
+// The KPI tile row. Moved here with its markup; a `.ana-tile` rule left on the
+// page could not reach a tile this component declares.
+//
+// `.ana-tile--skel` came too, because a modifier moves with the class it
+// modifies - and the loading placeholders are this component's own now rather
+// than a second copy of the tile markup in the page's skeleton branch. The
+// `.ana-skel` boxes inside them are the one thing genuinely shared with the
+// page, which is why they live in `_analytics-skeleton.scss` instead.
+
+.ana-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.ana-tile {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 130px;
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: auto;
+  }
+
+  &__value {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+  }
+
+  &__num {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--text-primary);
+
+    &.is-accent {
+      color: var(--accent);
+    }
+  }
+
+  &__suffix {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--text-tertiary);
+    padding-bottom: 2px;
+  }
+
+  &__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+
+  &__note {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-tertiary);
+  }
+}
+
+.ana-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--success);
+
+  &.is-down {
+    color: var(--text-tertiary);
+  }
+}
+
+.ana-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 20px;
+
+  span {
+    flex: 1;
+    min-height: 1px;
+    background: var(--graphite-500);
+    opacity: 0.45;
+    border-radius: 1px;
+  }
+}
+
+.ana-tile--skel {
+  gap: 14px;
+  justify-content: flex-start;
+}
+
+@media (max-width: 860px) {
+  .ana-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

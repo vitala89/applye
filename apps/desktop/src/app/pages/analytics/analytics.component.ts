@@ -13,6 +13,10 @@ import {
 import { RouterLink } from '@angular/router';
 import { TranslateService } from '@applye/i18n';
 import { AnalyticsStore, areaPoints, polylinePoints } from '@applye/application';
+import { AnalyticsBarListComponent } from './analytics-bar-list/analytics-bar-list.component';
+import type { AnalyticsBarRow } from './analytics-bar-list/analytics-bar-list.component';
+import { AnalyticsKpiRowComponent } from './analytics-kpi-row/analytics-kpi-row.component';
+import { AnalyticsTrendComponent } from './analytics-trend/analytics-trend.component';
 import { AnalyticsKpi, AnalyticsPeriod } from '@applye/core';
 import { ToastService } from '@applye/application';
 
@@ -22,7 +26,13 @@ const PERIODS: AnalyticsPeriod[] = ['30d', '90d', 'all'];
   selector: 'app-analytics',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, RouterLink],
+  imports: [
+    LucideAngularModule,
+    RouterLink,
+    AnalyticsBarListComponent,
+    AnalyticsKpiRowComponent,
+    AnalyticsTrendComponent,
+  ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss',
   providers: [AnalyticsStore],
@@ -96,13 +106,12 @@ export class AnalyticsComponent implements OnInit {
   protected readonly stages = computed(() => {
     const v = this.view();
     if (!v) return [];
-    return v.stages.map((s) => ({
+    return v.stages.map<AnalyticsBarRow>((s) => ({
       name: this.t()(`analytics.stage_${s.key}`),
-      count: s.count,
+      valueText: String(s.count),
       widthPct: `${s.widthPct}%`,
       fill: s.primary ? 'var(--accent)' : 'var(--ana-neutral-fill)',
       nameColor: s.primary ? 'var(--text-accent)' : 'var(--text-secondary)',
-      showConv: s.conv !== null,
       convText: s.conv !== null ? `${s.conv}%` : '',
       convOf: s.convOf ? this.t()(`analytics.conv_of_${s.convOf}`) : '',
     }));
@@ -150,9 +159,9 @@ export class AnalyticsComponent implements OnInit {
       median: d.median,
       lowData: d.lowData,
       coverage: `${d.scored} ${this.t()('analytics.score_scored')} · ${d.unscored} ${this.t()('analytics.score_unscored')}`,
-      buckets: d.buckets.map((b) => ({
-        label: `${b.lo}-${b.hi}`,
-        count: b.count,
+      rows: d.buckets.map<AnalyticsBarRow>((b) => ({
+        name: `${b.lo}-${b.hi}`,
+        valueText: String(b.count),
         widthPct: `${b.widthPct}%`,
       })),
     };
@@ -171,12 +180,15 @@ export class AnalyticsComponent implements OnInit {
     };
     return {
       lowData: o.lowData,
-      groups: o.groups.map((g) => ({
-        label: label[g.key],
-        count: g.count,
-        avgText: g.avgScore === null ? '-' : `${g.avgScore}%`,
+      rows: o.groups.map<AnalyticsBarRow>((g) => ({
+        name: label[g.key],
+        // The bar carries the average score; the caption carries how many
+        // applications it averages over. This is the one list whose value column
+        // is not a count.
+        valueText: g.avgScore === null ? '-' : `${g.avgScore}%`,
         widthPct: `${g.widthPct}%`,
-        accent: g.key === 'offer',
+        fill: g.key === 'offer' ? 'var(--accent)' : 'var(--ana-neutral-fill)',
+        convOf: `${g.count} ${this.t()('analytics.outcome_apps')}`,
       })),
     };
   });
@@ -192,9 +204,9 @@ export class AnalyticsComponent implements OnInit {
       lowData: r.lowData,
       medianDays: r.medianDays,
       summary: `${this.t()('analytics.ttr_fastest')} ${r.fastestDays}${d} · ${this.t()('analytics.ttr_slowest')} ${r.slowestDays}${d}`,
-      buckets: r.buckets.map((b) => ({
-        label: b.hi === null ? `${b.lo}+ ${days}` : `${b.lo}-${b.hi} ${days}`,
-        count: b.count,
+      rows: r.buckets.map<AnalyticsBarRow>((b) => ({
+        name: b.hi === null ? `${b.lo}+ ${days}` : `${b.lo}-${b.hi} ${days}`,
+        valueText: String(b.count),
         widthPct: `${b.widthPct}%`,
       })),
     };
@@ -211,9 +223,9 @@ export class AnalyticsComponent implements OnInit {
       medianDays: a.medianDays,
       activeCount: a.activeCount,
       staleCount: a.staleCount,
-      buckets: a.buckets.map((b) => ({
-        label: b.hi === null ? `${b.lo}+ ${days}` : `${b.lo}-${b.hi} ${days}`,
-        count: b.count,
+      rows: a.buckets.map<AnalyticsBarRow>((b) => ({
+        name: b.hi === null ? `${b.lo}+ ${days}` : `${b.lo}-${b.hi} ${days}`,
+        valueText: String(b.count),
         widthPct: `${b.widthPct}%`,
       })),
     };
@@ -227,7 +239,11 @@ export class AnalyticsComponent implements OnInit {
     return {
       lowData: l.lowData,
       unknown: l.unknown,
-      rows: l.rows.map((r) => ({ name: r.name, count: r.count, widthPct: `${r.widthPct}%` })),
+      rows: l.rows.map<AnalyticsBarRow>((r) => ({
+        name: r.name,
+        valueText: String(r.count),
+        widthPct: `${r.widthPct}%`,
+      })),
     };
   });
 

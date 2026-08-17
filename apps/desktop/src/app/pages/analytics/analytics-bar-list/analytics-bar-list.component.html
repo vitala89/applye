@@ -1,0 +1,33 @@
+<div class="ana-funnel">
+  @for (row of rows(); track row.name) {
+    <div class="ana-stage">
+      <div
+        class="ana-stage__name"
+        [class.ana-stage__name--wide]="wideNames()"
+        [style.color]="row.nameColor"
+        [attr.title]="wideNames() ? row.name : null"
+      >
+        {{ row.name }}
+      </div>
+      <div class="ana-stage__bar">
+        <div
+          class="ana-stage__fill"
+          [style.width]="row.widthPct"
+          [style.background]="row.fill ?? 'var(--ana-neutral-fill)'"
+        ></div>
+        <span class="ana-stage__count">{{ row.valueText }}</span>
+      </div>
+      <!-- The two halves gate independently: the funnel renders both, score vs
+           outcome renders only the caption, and four lists render neither. -->
+      <div class="ana-stage__conv">
+        @if (row.convText) {
+          <div class="ana-stage__pct">{{ row.convText }}</div>
+        }
+        @if (row.convOf) {
+          <div class="ana-stage__of">{{ row.convOf }}</div>
+        }
+      </div>
+    </div>
+  }
+  <ng-content />
+</div>

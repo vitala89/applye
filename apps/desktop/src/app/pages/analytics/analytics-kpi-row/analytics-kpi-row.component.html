@@ -1,0 +1,47 @@
+<div class="ana-kpis">
+  @if (tiles().length) {
+    @for (tile of tiles(); track tile.key) {
+      <div class="ana-tile">
+        <div class="ana-tile__top">
+          <span class="ana-tile__icon"
+            ><lucide-icon [img]="tile.icon" [size]="16" aria-hidden="true"
+          /></span>
+          @if (tile.deltaShow) {
+            <span class="ana-delta" [class.is-down]="!tile.deltaUp">
+              <lucide-icon [img]="tile.deltaIcon" [size]="12" aria-hidden="true" />{{
+                tile.deltaText
+              }}
+            </span>
+          }
+        </div>
+        <div class="ana-tile__body">
+          <div class="ana-tile__value">
+            <span class="ana-tile__num" [class.is-accent]="tile.accent">{{ tile.valueText }}</span>
+            @if (tile.isPercent) {
+              <span class="ana-tile__suffix">%</span>
+            }
+          </div>
+          <span class="ana-tile__label">{{ tile.label }}</span>
+        </div>
+        @if (tile.spark.length) {
+          <div class="ana-spark" aria-hidden="true">
+            @for (h of tile.spark; track $index) {
+              <span [style.height.%]="h * 100"></span>
+            }
+          </div>
+        }
+        @if (tile.note) {
+          <span class="ana-tile__note">{{ tile.note }}</span>
+        }
+      </div>
+    }
+  } @else {
+    @for (i of placeholders; track i) {
+      <div class="ana-tile ana-tile--skel">
+        <div class="ana-skel ana-skel--icon"></div>
+        <div class="ana-skel ana-skel--num"></div>
+        <div class="ana-skel ana-skel--label"></div>
+      </div>
+    }
+  }
+</div>

@@ -94,123 +94,6 @@
 }
 
 /* ---------- KPI tiles ---------- */
-.ana-kpis {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-@media (max-width: 860px) {
-  .ana-kpis {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.ana-tile {
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-sm);
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 130px;
-
-  &__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
-    background: var(--surface-sunken);
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    margin-top: auto;
-  }
-
-  &__value {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-  }
-
-  &__num {
-    font-family: var(--font-mono);
-    font-size: 32px;
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1;
-    color: var(--text-primary);
-
-    &.is-accent {
-      color: var(--accent);
-    }
-  }
-
-  &__suffix {
-    font-family: var(--font-mono);
-    font-size: 16px;
-    color: var(--text-tertiary);
-    padding-bottom: 2px;
-  }
-
-  &__label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    color: var(--text-tertiary);
-  }
-
-  &__note {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    line-height: 1.4;
-    color: var(--text-tertiary);
-  }
-}
-
-.ana-delta {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--success);
-
-  &.is-down {
-    color: var(--text-tertiary);
-  }
-}
-
-.ana-spark {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 20px;
-
-  span {
-    flex: 1;
-    min-height: 1px;
-    background: var(--graphite-500);
-    opacity: 0.45;
-    border-radius: 1px;
-  }
-}
-
 /* ---------- cards ---------- */
 .ana-card {
   background: var(--surface-1);
@@ -284,69 +167,6 @@
 }
 
 /* ---------- funnel ---------- */
-.ana-funnel {
-  padding: 22px 24px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.ana-stage {
-  display: grid;
-  grid-template-columns: 132px 1fr 132px;
-  align-items: center;
-  gap: 18px;
-
-  &__name {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-  }
-
-  &__bar {
-    position: relative;
-    height: 36px;
-    background: var(--surface-sunken);
-    border-radius: 6px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-  }
-
-  &__fill {
-    height: 100%;
-    border-radius: 6px;
-  }
-
-  &__count {
-    position: absolute;
-    right: 12px;
-    font-family: var(--font-mono);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  &__conv {
-    text-align: right;
-  }
-
-  &__pct {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  &__of {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    color: var(--text-tertiary);
-  }
-}
-
 @media (max-width: 620px) {
   .ana-stage {
     grid-template-columns: 96px 1fr 84px;
@@ -408,12 +228,6 @@
 }
 
 /* Location names are free text, wider than the mono band labels. */
-.ana-stage__name--wide {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ---------- trend ---------- */
 .ana-legend {
   display: flex;
@@ -444,44 +258,6 @@
     &--follow {
       background: var(--graphite-400);
       opacity: 0.6;
-    }
-  }
-}
-
-.ana-trend {
-  padding: 18px 22px 20px;
-
-  &__plot {
-    position: relative;
-    height: 172px;
-  }
-
-  &__ymax {
-    position: absolute;
-    top: -2px;
-    left: 0;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-tertiary);
-  }
-
-  &__svg {
-    width: 100%;
-    height: 148px;
-    display: block;
-    overflow: visible;
-  }
-
-  &__ticks {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-
-    span {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      letter-spacing: 0.06em;
-      color: var(--text-tertiary);
     }
   }
 }
@@ -558,64 +334,6 @@
 }
 
 /* ---------- skeleton shimmer ---------- */
-.ana-skel {
-  background: linear-gradient(
-    90deg,
-    var(--surface-sunken) 25%,
-    var(--surface-2) 50%,
-    var(--surface-sunken) 75%
-  );
-  background-size: 300% 100%;
-  animation: ana-shimmer 1.4s ease infinite;
-  border-radius: 5px;
-
-  &--caption {
-    width: 220px;
-    height: 14px;
-  }
-  &--icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
-  }
-  &--num {
-    width: 52%;
-    height: 26px;
-    margin-top: auto;
-  }
-  &--label {
-    width: 72%;
-    height: 10px;
-    border-radius: 4px;
-  }
-  &--title {
-    width: 200px;
-    height: 14px;
-  }
-  &--bar {
-    height: 34px;
-    border-radius: 6px;
-  }
-  &--plot {
-    height: 150px;
-    border-radius: 6px;
-  }
-}
-
-.ana-tile--skel {
-  gap: 14px;
-  justify-content: flex-start;
-}
-
-@keyframes ana-shimmer {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
-}
-
 @keyframes ana-pulse {
   0%,
   100% {
@@ -628,8 +346,9 @@
   }
 }
 
+// The `.ana-skel` half of this rule moved to `_analytics-skeleton.scss` with the
+// class it disables, because a page rule cannot reach the KPI row's placeholders.
 @media (prefers-reduced-motion: reduce) {
-  .ana-skel,
   .ana-caption__dot {
     animation: none;
   }

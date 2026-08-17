@@ -130,6 +130,24 @@ replacement - `_editor-shell.scss` styles them globally - is a static argument.
       the three placement chips show one active. Without one: only the "add in profile" button and its
       hint.
 
+The print protocol now lives in one module for both editors, and printing is a native path the gate
+exists for: `window.print` is overridden by Tauri's webview plugin on macOS, and jsdom implements
+none of it, so the unit tests stub it out entirely.
+
+- [ ] **Export the CV to PDF from Preview mode.** The margins in the output match the four values in
+      the Style card, the page is the selected size, and no editor chrome, caret, selection outline or
+      side panel appears. Then export a **second** time in the same session: a fresh `<style>` per
+      export would accumulate, and the second export's margins must win.
+- [ ] **Export the cover letter to PDF.** Same check. It now runs the same code as the CV, which it
+      did not before.
+- [ ] **Press Cmd/Ctrl+P directly in the CV preview with a leaf selected.** The printed output shows
+      the last-committed text with no inline control, and the uncommitted draft is discarded rather
+      than saved. This is the `beforeprint` handler, and it is CV-only on purpose - the cover-letter
+      preview has no inline editing.
+- [ ] **After any export, the app looks normal again.** The `printing-cv` class is cleared on
+      `afterprint`; if that event never fires the class lingers, which is harmless only because every
+      rule using it sits inside `@media print`. Worth one look on a real print dialog cancel.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

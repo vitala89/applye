@@ -145,10 +145,23 @@
   split removed about as much as its four imports added, and the seven aliases the page no longer
   renders are each referenced by its own specs, so shrinking it is a decision about those specs rather
   than a deletion. `cv-preview.component.html` at 779/300 stays blocked by its own decision.
-  **Next first action:** decide what `cv-detail.component.ts`'s seven spec-only aliases are for -
-  `activeTheme`, `profilePhoto`, `resetSectionStyle`, `setSectionTitleStyle`, `themeBaseStyle`,
-  `updateTitleStyle` and the `sampleStyleSync` effect - since a page member no template renders is
-  either dead surface or a store test wearing a component's clothes.
+  **Then the two editors' duplicated chrome came out**, taking `cv-detail.component.ts` 499 to
+  **464/400** and `cover-letter-detail.component.ts` 282 to 265/400: `wysiwyg-print.ts` and
+  `document-editor-return.ts` under `pages/documents/`, each of which both editors had written out in
+  full with a comment pointing at the other. `themeBaseStyle` went with them - its only mention
+  anywhere was inside a comment.
+
+- **One decision is open, and it is the only thing standing between `cv-detail.component.ts` and its
+  budget.** At **464/400**, what remains is screen state: `collapsedSections`, `livePanelOpen`,
+  `liveSelection`, `previewMode`, `justSaved`, `sampleResolvedStyle` and the `sampleStyleSync`
+  after-render effect, plus `setSectionStyle` / `setSectionTitleStyle` / `resetSectionStyle`, which
+  compose a `libs/core` helper with `CvStyleStore.applyStyle` and which **no template renders** - only
+  `cv-detail.style.spec.ts` calls them. `ADR-0005` says all of it belongs in a store, so moving it
+  changes what `libs/application` owns, which `AGENTS.md` reserves for the maintainer through the
+  grilling gate. **The supporting fact:** `cv-style.store.spec.ts` already asserts `activeTheme` and
+  `updateTitleStyle` directly, so parts of `cv-detail.style.spec.ts` (622 lines) are the same tests one
+  indirection removed - which is what makes "move the state, move the tests" plausible rather than
+  merely tidy. **Not attempted.** Everything achievable without that decision has now been taken.
   `cv-preview.component.html` at 779/300 stays blocked by decision - it looks like nine `ng-template`
   atoms and is not, and its real seam is the 17 near-identical `@if (isEditingLeaf(...))` pairs.
 

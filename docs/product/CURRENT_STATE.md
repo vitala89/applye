@@ -171,17 +171,25 @@
   `.jt-stage*`, `.jt-status*` - is about 215 lines and one responsibility, but its markup is in the
   page template at 278/300, so moving the rules means moving the markup.
 
-- **One decision is open, and it is the only thing standing between `cv-detail.component.ts` and its
-  budget.** At **464/400**, what remains is screen state: `collapsedSections`, `livePanelOpen`,
-  `liveSelection`, `previewMode`, `justSaved`, `sampleResolvedStyle` and the `sampleStyleSync`
-  after-render effect, plus `setSectionStyle` / `setSectionTitleStyle` / `resetSectionStyle`, which
-  compose a `libs/core` helper with `CvStyleStore.applyStyle` and which **no template renders** - only
-  `cv-detail.style.spec.ts` calls them. `ADR-0005` says all of it belongs in a store, so moving it
-  changes what `libs/application` owns, which `AGENTS.md` reserves for the maintainer through the
-  grilling gate. **The supporting fact:** `cv-style.store.spec.ts` already asserts `activeTheme` and
-  `updateTitleStyle` directly, so parts of `cv-detail.style.spec.ts` (622 lines) are the same tests one
-  indirection removed - which is what makes "move the state, move the tests" plausible rather than
-  merely tidy. **Not attempted.** Everything achievable without that decision has now been taken.
+- **That decision is now answered, and the answer was not either of the two options the question
+  offered.** `cv-detail.component.ts` is **464/400**, and what remains is screen state -
+  `collapsedSections`, `livePanelOpen`, `liveSelection`, `previewMode`, `justSaved`,
+  `sampleResolvedStyle` and the `sampleStyleSync` after-render effect - plus `setSectionStyle` /
+  `setSectionTitleStyle` / `resetSectionStyle`, which compose a `libs/core` helper with
+  `CvStyleStore.applyStyle` and which **no template renders**: only `cv-detail.style.spec.ts` calls
+  them. #466 asked whether `CvStyleStore` should take all of it, and merged unanswered. Re-put through
+  the grilling gate, **the maintainer chose to split it by responsibility** (`ADR-0005`, amendment
+  sixty-four): the three methods go to `CvStyleStore`, which is **161/250** and whose `applyStyle` they
+  already compose, and the screen state goes to a **new `CvDetailPageStore`**, named after
+  `DiscoverPageStore`. Panel-open, preview mode and `justSaved` are not facts about the style tree, and
+  `ADR-0005` says a page whose state does not fit decomposes by responsibility rather than growing one
+  store - putting all of it in `CvStyleStore` would have spent its 89 lines of headroom building the
+  second god-object the 250 budget exists to catch. **The tests move with the state**:
+  `cv-style.store.spec.ts` is 197/600 and can absorb the store-level half of `cv-detail.style.spec.ts`
+  (**526** lines, not the 622 earlier handoffs carried), and the page store gets its own spec. **Not
+  yet implemented, and the cost is named in advance**: `CvStyleStore` is already in the eager chunk, the
+  new store adds a second barrel export, and `cv-detail` is a `loadComponent` route - so `nx build
+desktop` measures it before it lands.
   `cv-preview.component.html` at 779/300 stays blocked by decision - it looks like nine `ng-template`
   atoms and is not, and its real seam is the 17 near-identical `@if (isEditingLeaf(...))` pairs.
 

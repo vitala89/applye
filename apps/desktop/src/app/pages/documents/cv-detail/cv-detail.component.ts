@@ -74,6 +74,20 @@ import { CvPhotoEditorComponent } from './section-editors/cv-photo-editor.compon
 import { CvSettingsCardComponent } from './cv-settings-card/cv-settings-card.component';
 import { CvPageStyleCardComponent } from './cv-page-style-card/cv-page-style-card.component';
 import { CvSaveTemplateModalComponent } from './cv-save-template-modal/cv-save-template-modal.component';
+import { printWithPageRule } from '../wysiwyg-print';
+import {
+  applyWizardReturnParams,
+  backLabel,
+  isApplyWizardReturn,
+  myJobsReturnJobId,
+  type BackLabelKeys,
+} from '../document-editor-return';
+
+/** This editor's half of the shared back-button vocabulary. */
+const CV_BACK_KEYS: BackLabelKeys = {
+  job: 'documents.cv_back_to_job',
+  documents: 'documents.cv_back_to_documents',
+};
 
 @Component({
   selector: 'app-cv-detail',
@@ -181,7 +195,6 @@ export class CvDetailComponent {
   readonly activeTheme = this.styleStore.activeTheme;
   readonly activeThemeTitleRule = this.styleStore.activeThemeTitleRule;
   readonly activeThemeEntryRule = this.styleStore.activeThemeEntryRule;
-  readonly themeBaseStyle = this.styleStore.themeBaseStyle;
   readonly hasAnyCustomStyle = this.styleStore.hasAnyCustomStyle;
 
   private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
@@ -320,14 +333,9 @@ export class CvDetailComponent {
   }
 
   /**
-   * WYSIWYG PDF export via the OS print dialog. Injects a `@page` rule sized
-   * from the current page settings, toggles `printing-cv` on `<body>` so the
-   * print stylesheet isolates `.cvpreview`, then invokes the standard DOM
-   * `window.print()`. Tauri's webview plugin already overrides
-   * `window.print` on macOS to route through its native print command (gated
-   * by the `core:webview:allow-print` capability); on Windows/Linux the
-   * webview's built-in print is used directly - no `@tauri-apps/api` import
-   * is needed or available for this in the installed SDK version.
+   * WYSIWYG PDF export via the OS print dialog. `printWithPageRule` owns the
+   * print protocol itself and carries its reasoning; what is CV-specific is
+   * everything before the call.
    */
   async exportPdfWysiwyg(): Promise<void> {
     // Commit any in-progress inline edit and drop every editor affordance BEFORE
@@ -338,37 +346,7 @@ export class CvDetailComponent {
     // pagination pass, so the exported PDF matches the on-screen preview exactly.
     this.commitAndCloseEditors();
     await this.nextStableFrame();
-    const r = resolvePageSettings(this.style().page);
-    // The @page rule supplies the REAL margins; the print stylesheet then zeroes
-    // each `.page-card`'s simulated padding and lets its height be content-driven
-    // (see `body.printing-cv .page-card`). This yields exact physical margins (no
-    // full-bleed scaling shrinking them) and stops a card that exactly filled a
-    // page from rounding over into a trailing blank page. Mirrors
-    // `exportPdfWysiwyg` on `CoverLetterDetailComponent`.
-    const m = r.margin;
-    const rule =
-      `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
-      ` margin: ${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm; }`;
-    let el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement | null;
-    if (!el) {
-      el = document.createElement('style');
-      el.id = 'wysiwyg-page-rule';
-      document.head.appendChild(el);
-    }
-    el.textContent = rule;
-    // Native macOS print (Tauri) is async: window.print() returns before the
-    // page is rendered for print, so removing the class synchronously would
-    // strip the print styles before the snapshot and capture the whole app.
-    // Keep the class on and clear it on `afterprint`. Every `body.printing-cv`
-    // rule lives inside `@media print`, so a lingering class has no on-screen
-    // effect if `afterprint` never fires.
-    const clearPrinting = (): void => {
-      document.body.classList.remove('printing-cv');
-      window.removeEventListener('afterprint', clearPrinting);
-    };
-    window.addEventListener('afterprint', clearPrinting);
-    document.body.classList.add('printing-cv');
-    window.print();
+    printWithPageRule(this.style().page);
   }
 
   /** Blur the focused inline editor - firing its `(blur)` handler, which commits
@@ -438,20 +416,15 @@ export class CvDetailComponent {
 
   /** Label for the back button: the job it returns to, or plain "Documents". */
   backLabel(): string {
-    const jobLabel = this.route.snapshot.queryParamMap.get('jobLabel');
-    return this.returnJobId() && jobLabel
-      ? this.t()('documents.cv_back_to_job').replace('{job}', jobLabel)
-      : this.t()('documents.cv_back_to_documents');
+    return backLabel(this.route.snapshot.queryParamMap, CV_BACK_KEYS, this.t());
   }
 
   private shouldReturnToApplyWizard(): boolean {
-    return this.route.snapshot.queryParamMap.get('returnTo') === 'applyWizard';
+    return isApplyWizardReturn(this.route.snapshot.queryParamMap);
   }
 
-  /** Job id to return to when opened from My Jobs (returnTo=myJobs), else null. */
   private returnJobId(): string | null {
-    const params = this.route.snapshot.queryParamMap;
-    return params.get('returnTo') === 'myJobs' ? params.get('jobId') : null;
+    return myJobsReturnJobId(this.route.snapshot.queryParamMap);
   }
 
   private returnToApplyWizard(documentSaved: boolean): Promise<boolean> {
@@ -459,14 +432,7 @@ export class CvDetailComponent {
     const jobId = params.get('jobId');
     if (!jobId) return this.router.navigate(['/documents']);
     return this.router.navigate(['/jobs', jobId], {
-      queryParams: {
-        returnTo: 'applyWizard',
-        wizardStep: 'documents',
-        documentType: 'cv',
-        documentId: this.doc()?.id ?? params.get('documentId'),
-        reviewHash: params.get('reviewHash'),
-        documentSaved: documentSaved ? '1' : '0',
-      },
+      queryParams: applyWizardReturnParams(params, 'cv', this.doc()?.id ?? null, documentSaved),
     });
   }
 

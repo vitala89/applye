@@ -70,6 +70,10 @@ import { CvSkillsEditorComponent } from './section-editors/cv-skills-editor.comp
 import { CvEducationEditorComponent } from './section-editors/cv-education-editor.component';
 import { CvExperienceEditorComponent } from './section-editors/cv-experience-editor.component';
 import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-details-editor.component';
+import { CvPhotoEditorComponent } from './section-editors/cv-photo-editor.component';
+import { CvSettingsCardComponent } from './cv-settings-card/cv-settings-card.component';
+import { CvPageStyleCardComponent } from './cv-page-style-card/cv-page-style-card.component';
+import { CvSaveTemplateModalComponent } from './cv-save-template-modal/cv-save-template-modal.component';
 
 @Component({
   selector: 'app-cv-detail',
@@ -91,6 +95,10 @@ import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-
     CvEducationEditorComponent,
     CvExperienceEditorComponent,
     CvPersonalDetailsEditorComponent,
+    CvPhotoEditorComponent,
+    CvSettingsCardComponent,
+    CvPageStyleCardComponent,
+    CvSaveTemplateModalComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
@@ -119,14 +127,6 @@ export class CvDetailComponent {
   };
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
-  protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
-
-  readonly regionOptions = computed(() =>
-    this.regionTags.map((tag) => ({
-      tag,
-      label: `${tag.toUpperCase()} - ${this.t()(`documents.cv_region_${tag}`)}`,
-    })),
-  );
 
   /** The CV row: what was loaded, what the editor changed, and the one write
    * that persists it. Component-scoped; it injects the photo and style stores
@@ -137,7 +137,6 @@ export class CvDetailComponent {
   readonly loadError = this.document.loadError;
   readonly doc = this.document.doc;
   readonly sections = this.document.sections;
-  readonly templates = this.document.templates;
   readonly label = this.document.label;
   readonly regionTag = this.document.regionTag;
   readonly isDefault = this.document.isDefault;
@@ -192,21 +191,19 @@ export class CvDetailComponent {
     weight_unavailable_risk: 'documents.cv_style_note_weight',
   };
 
-  styleNoteMessage(note: StyleNote): string {
-    return this.t()(CvDetailComponent.STYLE_NOTE_KEYS[note.kind]).replace('{value}', note.detail);
-  }
+  /** The style notes as finished sentences. The wording stays here because each
+   * note carries a `{value}` to substitute; the Style card renders strings and
+   * never sees a `StyleNote`. */
+  readonly styleNoteMessages = computed<string[]>(() =>
+    this.styleNotes().map((note) =>
+      this.t()(CvDetailComponent.STYLE_NOTE_KEYS[note.kind]).replace('{value}', note.detail),
+    ),
+  );
 
   readonly updateStyle = this.styleStore.updateStyle.bind(this.styleStore);
   readonly updateTitleStyle = this.styleStore.updateTitleStyle.bind(this.styleStore);
   readonly selectTheme = this.styleStore.selectTheme.bind(this.styleStore);
   readonly resetAllStyles = this.styleStore.resetAllStyles.bind(this.styleStore);
-
-  readonly marginSides: { key: keyof PageMargins; label: string }[] = [
-    { key: 'top', label: 'documents.cv_style_margin_top' },
-    { key: 'right', label: 'documents.cv_style_margin_right' },
-    { key: 'bottom', label: 'documents.cv_style_margin_bottom' },
-    { key: 'left', label: 'documents.cv_style_margin_left' },
-  ];
 
   /** Current 4-side margins in mm, already clamped by the resolver. */
   readonly currentMargin = computed<PageMargins>(

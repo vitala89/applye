@@ -1,0 +1,51 @@
+// Moved from the page with the only markup that renders it. `.btn-ghost` and
+// `.btn-primary` are not here: those are global, from `libs/ui`.
+//
+// The name field needs its own rule for the reason the six section editors
+// record - the page's `.cvdetail input` cannot reach a child - and here there is
+// no `.docedit-*` shell rule covering it either, because this dialog is not
+// part of the editor shell.
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #000 55%, transparent);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: var(--space-6);
+}
+.modal {
+  width: min(480px, 100%);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-7);
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.modal input[type='text'] {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  outline: none;
+}
+.modal input[type='text']:focus {
+  border-color: var(--accent);
+}

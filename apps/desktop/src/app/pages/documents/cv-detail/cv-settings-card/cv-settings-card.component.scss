@@ -1,0 +1,46 @@
+// The card, the meta row, the chips and the note block are `.docedit-*`,
+// emitted globally from `apps/desktop/src/styles.scss`. Only the "is default"
+// checkbox is this page's own vocabulary, and it moved here with the one button
+// that renders it - base and `--active` together, since the modifier only
+// repaints the box the base draws.
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.cvdetail__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+}
+.cvdetail__checkbox-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: var(--border-width) solid var(--border-strong);
+  background: transparent;
+  color: var(--accent-fg);
+}
+.cvdetail__checkbox--active .cvdetail__checkbox-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+// The region select needs nothing here. The page's own `.cvdetail select` rule
+// cannot reach it - view encapsulation - but `_editor-shell.scss` styles
+// `.docedit-meta-row select` globally and always did, so the select was already
+// being drawn by the shell rather than by the page. Restating `width: 100%`
+// here, as the six section editors restate their input rules, would have
+// overridden the shell's deliberate `width: auto` and stretched it.

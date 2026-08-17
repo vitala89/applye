@@ -1,0 +1,64 @@
+<div class="docedit-card">
+  <div class="docedit-meta">
+    <span class="docedit-field__label">{{ t()('documents.cv_field_region') }}</span>
+    <div class="docedit-meta-row">
+      <select [ngModel]="regionTag()" (ngModelChange)="regionTagChange.emit($event)">
+        @for (r of regionOptions(); track r.tag) {
+          <option [value]="r.tag">{{ r.label }}</option>
+        }
+      </select>
+      <button
+        type="button"
+        class="cvdetail__checkbox"
+        [class.cvdetail__checkbox--active]="isDefault()"
+        [attr.aria-pressed]="isDefault()"
+        (click)="defaultToggled.emit()"
+      >
+        <span class="cvdetail__checkbox-box">
+          @if (isDefault()) {
+            <lucide-icon [img]="icons.check" [size]="11" aria-hidden="true" />
+          }
+        </span>
+        {{ t()('documents.cv_field_is_default') }}
+      </button>
+    </div>
+  </div>
+
+  <div class="docedit-chip-row">
+    <button
+      type="button"
+      class="docedit-chip"
+      [class.docedit-chip--active]="includePhoto()"
+      (click)="photoToggled.emit()"
+    >
+      <span class="docedit-chip__dot"></span>
+      {{ t()('documents.cv_toggle_photo') }}
+    </button>
+    <button
+      type="button"
+      class="docedit-chip"
+      [class.docedit-chip--active]="includeBirthdate()"
+      (click)="birthdateToggled.emit()"
+    >
+      <span class="docedit-chip__dot"></span>
+      {{ t()('documents.cv_toggle_birthdate') }}
+    </button>
+    <button
+      type="button"
+      class="docedit-chip"
+      [class.docedit-chip--active]="includeMaritalStatus()"
+      (click)="maritalStatusToggled.emit()"
+    >
+      <span class="docedit-chip__dot"></span>
+      {{ t()('documents.cv_toggle_marital') }}
+    </button>
+  </div>
+
+  @if (atsNoteKeys().length) {
+    <div class="docedit-note">
+      @for (key of atsNoteKeys(); track key) {
+        <p>{{ t()(key) }}</p>
+      }
+    </div>
+  }
+</div>

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArrowLeft, LucideAngularModule, Save, Check, Eye, Pencil, Sparkles } from 'lucide-angular';
-import { COVER_LETTER_BLOCK_KEYS, resolvePageSettings } from '@applye/core';
+import { COVER_LETTER_BLOCK_KEYS } from '@applye/core';
 import {
   CoverLetterAiStore,
   CoverLetterContentStore,
@@ -24,6 +24,20 @@ import { CoverLetterRecipientBlockComponent } from './cover-letter-recipient-blo
 import { CoverLetterSettingsCardComponent } from './cover-letter-settings-card/cover-letter-settings-card.component';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
 import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/cover-letter-style-popover.component';
+import { printWithPageRule } from '../wysiwyg-print';
+import {
+  applyWizardReturnParams,
+  backLabel,
+  isApplyWizardReturn,
+  myJobsReturnJobId,
+  type BackLabelKeys,
+} from '../document-editor-return';
+
+/** This editor's half of the shared back-button vocabulary. */
+const COVER_LETTER_BACK_KEYS: BackLabelKeys = {
+  job: 'documents.cover_letter_back_to_job',
+  documents: 'documents.cover_letter_back_to_documents',
+};
 
 @Component({
   selector: 'app-cover-letter-detail',
@@ -169,20 +183,15 @@ export class CoverLetterDetailComponent {
 
   /** Label for the back button: the job it returns to, or plain "Documents". */
   backLabel(): string {
-    const jobLabel = this.route.snapshot.queryParamMap.get('jobLabel');
-    return this.returnJobId() && jobLabel
-      ? this.t()('documents.cover_letter_back_to_job').replace('{job}', jobLabel)
-      : this.t()('documents.cover_letter_back_to_documents');
+    return backLabel(this.route.snapshot.queryParamMap, COVER_LETTER_BACK_KEYS, this.t());
   }
 
   private shouldReturnToApplyWizard(): boolean {
-    return this.route.snapshot.queryParamMap.get('returnTo') === 'applyWizard';
+    return isApplyWizardReturn(this.route.snapshot.queryParamMap);
   }
 
-  /** Job id to return to when opened from My Jobs (returnTo=myJobs), else null. */
   private returnJobId(): string | null {
-    const params = this.route.snapshot.queryParamMap;
-    return params.get('returnTo') === 'myJobs' ? params.get('jobId') : null;
+    return myJobsReturnJobId(this.route.snapshot.queryParamMap);
   }
 
   private returnToApplyWizard(documentSaved: boolean): Promise<boolean> {
@@ -192,14 +201,12 @@ export class CoverLetterDetailComponent {
       return this.router.navigate(['/documents'], { queryParams: { tab: 'cover-letter' } });
     }
     return this.router.navigate(['/jobs', jobId], {
-      queryParams: {
-        returnTo: 'applyWizard',
-        wizardStep: 'documents',
-        documentType: 'cover_letter',
-        documentId: this.doc()?.id ?? params.get('documentId'),
-        reviewHash: params.get('reviewHash'),
-        documentSaved: documentSaved ? '1' : '0',
-      },
+      queryParams: applyWizardReturnParams(
+        params,
+        'cover_letter',
+        this.doc()?.id ?? null,
+        documentSaved,
+      ),
     });
   }
 
@@ -268,30 +275,7 @@ export class CoverLetterDetailComponent {
    * `exportPdfWysiwyg` on `CvDetailComponent`.
    */
   async exportPdfWysiwyg(): Promise<void> {
-    const r = resolvePageSettings(this.style().page);
-    const rule =
-      `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
-      ` margin: ${r.margin.top}mm ${r.margin.right}mm ${r.margin.bottom}mm ${r.margin.left}mm; }`;
-    let el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement | null;
-    if (!el) {
-      el = document.createElement('style');
-      el.id = 'wysiwyg-page-rule';
-      document.head.appendChild(el);
-    }
-    el.textContent = rule;
-    // Native macOS print (Tauri) is async: window.print() returns before the
-    // page is rendered for print, so removing the class synchronously would
-    // strip the print styles before the snapshot and capture the whole app.
-    // Keep the class on and clear it on `afterprint`. Every `body.printing-cv`
-    // rule lives inside `@media print`, so a lingering class has no on-screen
-    // effect if `afterprint` never fires.
-    const clearPrinting = (): void => {
-      document.body.classList.remove('printing-cv');
-      window.removeEventListener('afterprint', clearPrinting);
-    };
-    window.addEventListener('afterprint', clearPrinting);
-    document.body.classList.add('printing-cv');
-    window.print();
+    printWithPageRule(this.style().page);
   }
 
   async save(): Promise<void> {

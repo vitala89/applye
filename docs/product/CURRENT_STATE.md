@@ -133,8 +133,8 @@
   while its template shrinks is usually accumulating rules for markup that has already left, so
   compare what the page renders against what its sheet defines before hoisting anything into a
   shared partial. `dashboard`, `analytics` and `quick-view-modal` have no extracted children, so
-  their sheets cannot be large for this reason; `tracker` and `pipeline` do, and are worth the same
-  audit with a real SCSS parser, because they nest and a flat scan reads them as noise.
+  their sheets cannot be large for this reason; `tracker` and `pipeline` do, and **that audit has now
+  been run and is closed** - see the next entry.
   **Then the template went 466 to 275/300**, split into four cards - the photo section editor (which
   had been the only `@switch` arm not already a component), the settings card, the page-style card and
   the save-template dialog - taking the stylesheet to 230/400 with it. **The generic control styling
@@ -150,6 +150,26 @@
   `document-editor-return.ts` under `pages/documents/`, each of which both editors had written out in
   full with a comment pointing at the other. `themeBaseStyle` went with them - its only mention
   anywhere was inside a comment.
+
+- **The dead-copy audit on `tracker` and `pipeline` is done, and it is mostly a negative result.**
+  The method is the reusable part: compile the page's sheet with Sass so `&__head` and `&--warn`
+  resolve, then match every flattened selector's rightmost compound against the markup the page's own
+  template declares. **The tool was validated against a known answer before being believed** - run on
+  `cv-detail.component.scss` at `f79c9b1e~1` it flags 29 classes, 29 of which #464 deleted, and misses
+  none. **`pipeline.component.scss` came back clean**: 0 of 75 rules unreachable, so its 456 lines are
+  large for ordinary reasons and the dead-copy pattern does not apply. **`tracker.component.scss` went
+  455 to 433/400** on three families - `.jt__title`, which no element has ever carried; the `.jt-tbtn`
+  half of two shared selector lists, whose only real definition is the export dialog's own copy; and
+  `@keyframes jtIn` / `jtPop`, which nothing in the sheet references. **The keyframes are a distinct
+  case worth carrying:** keyframe names are _not_ scoped by Angular, so those two were live global
+  declarations rather than dead text, and dropping them is safe only because all three consumers each
+  declare a byte-identical copy. **Two false-positive classes were caught by hand, not by the tool**:
+  `pipeline`'s `score--high|mid|low` come from `[class]="scoreClass(...)"`, whose literals live in
+  `libs/application`, so a page-local scan reads them as dead. Anything binding `[class]` to a function
+  needs that function's module fed in before the result means anything. **What is left on tracker is a
+  child-component extraction, not a deletion**: the table - `.jt-th*`, `.jt-td*`, `.jt-joblink`,
+  `.jt-stage*`, `.jt-status*` - is about 215 lines and one responsibility, but its markup is in the
+  page template at 278/300, so moving the rules means moving the markup.
 
 - **One decision is open, and it is the only thing standing between `cv-detail.component.ts` and its
   budget.** At **464/400**, what remains is screen state: `collapsedSections`, `livePanelOpen`,

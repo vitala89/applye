@@ -108,9 +108,11 @@
   background: var(--bg, #0d0c0b);
 }
 
-/* COPIED, not moved: the page declares these as `.jt__tbtn, .jt-tbtn { }` and
-   the toolbar still uses the `.jt__tbtn` half. Only the `.jt-tbtn` half came
-   here, so the page's rule keeps both selectors and loses nothing. */
+/* This is the only definition of `.jt-tbtn`. It arrived as a copy of the page's
+   `.jt__tbtn, .jt-tbtn { }` pair, and the page's `.jt-tbtn` half has since been
+   deleted as unreachable: the page's sheet is scoped to the page's own view, so
+   it never matched this markup and this copy is what has always styled it. The
+   toolbar keeps `.jt__tbtn` there, which is why the two names still differ. */
 .jt-tbtn {
   display: inline-flex;
   align-items: center;

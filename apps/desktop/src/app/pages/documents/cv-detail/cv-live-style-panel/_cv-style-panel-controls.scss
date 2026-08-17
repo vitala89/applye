@@ -1,0 +1,107 @@
+// Shared vocabulary of the CV live-style panel, emitted once from
+// `apps/desktop/src/styles.scss`.
+//
+// Angular scopes a component's compiled CSS to its own view, so a class defined
+// on `cv-live-style-panel.component.scss` does not reach the Text and Line
+// groups extracted out of it. These are the classes the panel and both children
+// render, so they live here rather than being copied into three stylesheets -
+// copying is what produces a half-finished split where one file keeps the
+// selector and another keeps the declarations.
+//
+// Owned here:
+//   .cvlive__field / .cvlive__label   - one labelled control; panel + both children
+//   .cvlive__group*  .cvlive__chevron - the collapsible group shell; both children
+//   the control sizing rules          - every select / number / colour input
+//
+// Everything specific to the panel's own chrome - header, scope segmented
+// control, sample swatch, edit-text and bold buttons, separator group, empty
+// state, footer - stays encapsulated in the panel's stylesheet.
+//
+// Emitted unwrapped rather than nested under a page root: `cvlive__` is a
+// distinctive prefix and no markup outside this folder uses it, so there is
+// nothing else these rules can reach.
+
+// --------------------------------------------------------------------------
+// One labelled control
+// --------------------------------------------------------------------------
+
+.cvlive__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.cvlive__label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+// Sizing for the controls a `.cvlive__field` wraps. This keys on the field
+// rather than on the panel's `.cvlive__fields` container, which is where it
+// used to live: the container is declared by the panel and the inputs are now
+// declared by the children, and a descendant selector cannot cross that
+// boundary. Every select / number / colour input in the panel sits inside a
+// `.cvlive__field`, so the set of elements matched is unchanged.
+.cvlive__field select,
+.cvlive__field input[type='number'] {
+  width: 100%;
+}
+.cvlive__field input[type='color'] {
+  width: 48px;
+  height: 34px;
+  padding: 0;
+}
+
+// --------------------------------------------------------------------------
+// Collapsible group shell
+// --------------------------------------------------------------------------
+
+.cvlive__group {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+}
+.cvlive__group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  &:hover {
+    background: var(--surface-sunken);
+  }
+  &:hover .cvlive__label,
+  &:hover .cvlive__chevron {
+    color: var(--text-primary);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+.cvlive__group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+}
+.cvlive__chevron {
+  display: inline-flex;
+  color: var(--text-tertiary);
+  transition:
+    transform 160ms ease,
+    color 120ms ease;
+  transform: rotate(-90deg);
+}
+.cvlive__chevron--open {
+  transform: rotate(0deg);
+}

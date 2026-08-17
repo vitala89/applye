@@ -67,7 +67,35 @@ a browser preview, because the filter bar and the detail screen only render once
 - [ ] The detail grid **collapses at `max-width: 980px`**. Narrow the window past that point and the
       two-column detail becomes one column.
 
-## C. Carried from the fallback audit
+## C. The CV live-style panel, after its split (#462 and the template split)
+
+**This section was reported as filed by #462's watch entry and was not.** The entry says the check
+was "added to `docs/internal/NATIVE_GATE_BACKLOG.md` rather than restated here"; nothing was added.
+It covers both pull requests now.
+
+Every item needs a CV open in **Preview** mode with a live selection, so run section A's "create a
+CV" step first. A browser preview cannot substitute: the document has to come from SQLite.
+
+The class split (#462) moved the cascade rules out; the template split moved the controls into
+`app-cv-style-text-group` and `app-cv-style-line-group`. What no jsdom test sees is **rendering**:
+jsdom has no layout and no cascade, so a shared class that failed to reach a child would still pass
+every assertion in the suite.
+
+- [ ] **The groups are styled.** Select a body field. The Text group's head, its chevron, and every
+      labelled control look exactly as they did - the group's vocabulary is emitted from
+      `styles.scss` now rather than from the panel's own stylesheet, and a class that failed to reach
+      a child renders as an unstyled control rather than as an error.
+- [ ] **The controls fill their row.** Each select and number input spans the panel's width and each
+      colour swatch is the small fixed square. These rules re-keyed from `.cvlive__fields` to
+      `.cvlive__field`; a mismatch shows as full-width colour pickers.
+- [ ] **The group heads still toggle**, and the chevron rotates. Open and collapse both groups.
+- [ ] **The Line group differs by selection, which is the split's one real risk.** On an experience
+      entry head the line select offers **Inherit**; on a plain field (a bullet) it does **not**, and
+      its first option is None. Both are covered by tests, but only against jsdom.
+- [ ] **An edit still lands on the right target.** With APPLY TO on "This element", change the line
+      style and confirm the paper redraws that element only - not the section divider.
+
+## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.
 
@@ -79,7 +107,7 @@ Both were named as the next action on 2026-08-14 and neither has been run.
 - [ ] **The ATS line.** **(costs a full tailoring run plus a rescore)** This is why it has not been
       spent unasked.
 
-## D. Release
+## E. Release
 
 - [ ] Let an installed `0.29.1` offer the `0.29.2` update, so the download-and-install path is
       exercised once end to end. Everything else about the release is verified; the signature chain

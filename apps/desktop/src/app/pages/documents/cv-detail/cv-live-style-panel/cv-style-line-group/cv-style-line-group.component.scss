@@ -1,0 +1,8 @@
+// See the sibling text group's stylesheet: the shared `.cvlive__*` vocabulary
+// is emitted once from `_cv-style-panel-controls.scss` via `styles.scss`,
+// because an Angular component's compiled CSS is scoped to its own view and a
+// class defined on the panel cannot reach a child extracted out of it.
+:host {
+  display: block;
+  min-width: 0;
+}

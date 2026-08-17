@@ -1,0 +1,14 @@
+// The group's own vocabulary (`.cvlive__group*`, `.cvlive__field`,
+// `.cvlive__label`, `.cvlive__chevron`) is shared with the panel and with the
+// line group, so it lives in `_cv-style-panel-controls.scss`, emitted once from
+// `styles.scss`. A class defined on the panel does not reach a child extracted
+// out of it, and a copy in each child is how one side keeps the selector while
+// the other keeps the body.
+//
+// What stays here is only the host box: the panel's `.cvlive__fields` is a
+// column flex container, and this element is now the flex item where a
+// `div.cvlive__group` used to be.
+:host {
+  display: block;
+  min-width: 0;
+}

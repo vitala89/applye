@@ -78,17 +78,7 @@
             (maritalStatusToggled)="includeMaritalStatus.set(!includeMaritalStatus())"
           />
 
-          <app-cv-page-style-card
-            [open]="styleOpen()"
-            [themeId]="themeId()"
-            [pageSize]="style().page?.size ?? 'a4'"
-            [margins]="currentMargin()"
-            [noteMessages]="styleNoteMessages()"
-            (toggled)="toggleStyleOpen()"
-            (themeSelected)="selectTheme($event)"
-            (pageSizeChange)="setPageSize($event)"
-            (marginChange)="setMarginSide($event.side, $event.value)"
-          />
+          <app-cv-page-style-card [open]="styleOpen()" (toggled)="toggleStyleOpen()" />
 
           <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
             @for (section of sections(); track section.key; let i = $index; let count = $count) {

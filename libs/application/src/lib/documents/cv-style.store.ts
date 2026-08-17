@@ -1,8 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import type { CvStyle, CvTextStyle, StyleNote } from '@applye/core';
+import type { CvSectionKey, CvSectionStyle, CvStyle, CvTextStyle, StyleNote } from '@applye/core';
 import {
   CV_STYLE_DEFAULT,
   getBuiltinTheme,
+  patchCvSectionStyle,
+  resetCvSectionStyle,
   themeEntryRule,
   themeStyleSeed,
   themeTitleRule,
@@ -23,22 +25,23 @@ import { STYLE_CHECK_DEBOUNCE_MS, dedupeStyleNotes } from './document-style-safe
  * `documentLibraryUpsert` takes a whole record, so three stores editing one CV
  * cannot each save their own slice without clobbering the others.
  *
- * **It holds the style; it does not know how to edit one.** Every immutable
- * `CvStyle` transform - the per-section and per-element patches, and the
- * live-style panel's scope routing - is a pure function in `libs/core`
+ * **Every immutable `CvStyle` transform is a pure function in `libs/core`**
  * (`cv-style.util.ts`, `cv-style-scope.util.ts`), shared by this store's page,
- * the cover-letter editor and the panel component. The page composes a next
- * style with them and commits it through `applyStyle`; the store owns the
- * signal, the theme baseline and the debounced safety check. Page geometry
- * stays on the page for the same reason.
+ * the cover-letter editor and the live-style panel. This store owns the signal,
+ * the theme baseline and the debounced safety check; a caller composes a next
+ * style with those helpers and commits it through `applyStyle`.
  *
- * The split is now a choice rather than a constraint. Until those helpers moved
- * down in #418 this layer could not import them at all, and that is what the
- * arrangement was originally justified by; the justification is gone but the
- * shape is deliberate, because the panel and the cover-letter editor compose
- * styles without going through this store at all. Folding the composition in
- * here rewrites two files that are already over budget, and is its own change.
- * See ADR-0005, amendment five.
+ * **Where the composition lives is now split, and the split is deliberate.**
+ * Amendment five left all of it outside, on the grounds that folding it in
+ * rewrote two files already over budget. Amendment sixty-four folds in the three
+ * per-section transforms below and nothing else: they take a `CvSectionKey` and
+ * a patch, read this store's own `style()` and commit through its own
+ * `applyStyle`, so every argument they need is here and a page that called them
+ * was doing this store's work through an indirection. **What stays outside is
+ * what has callers this store does not serve** - the panel's scope routing
+ * (`routeCvStyleChange`) and the per-element patches are composed by the panel
+ * component and by the cover-letter editor, neither of which goes through this
+ * store at all, and page geometry stays on the page for the same reason.
  */
 @Injectable()
 export class CvStyleStore {
@@ -138,6 +141,25 @@ export class CvStyleStore {
    * expressions can't spread, so the merge happens here). */
   updateTitleStyle(patch: Partial<CvTextStyle>): void {
     this.updateStyle({ titleStyle: { ...(this.style().titleStyle ?? {}), ...patch } });
+  }
+
+  /** Patch one section's override. Shallow, so a nested field passed here
+   * replaces its object wholesale - see `setSectionTitleStyle` for the one
+   * nested field that needs merging instead. */
+  setSectionStyle(key: CvSectionKey, patch: Partial<CvSectionStyle>): void {
+    this.applyStyle(patchCvSectionStyle(this.style(), key, patch));
+  }
+
+  /** Deep-merge a patch into a section's title override, which
+   * `setSectionStyle`'s shallow merge would otherwise replace wholesale. */
+  setSectionTitleStyle(key: CvSectionKey, patch: Partial<CvTextStyle>): void {
+    this.setSectionStyle(key, { title: patch });
+  }
+
+  /** Drop one section's override entirely, back to whatever the document-wide
+   * style and the active theme resolve to. */
+  resetSectionStyle(key: CvSectionKey): void {
+    this.applyStyle(resetCvSectionStyle(this.style(), key));
   }
 
   /** Reset every section and the document-wide style back to the active theme's

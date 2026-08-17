@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CvPhotoStore } from '@applye/application';
+import { CvPhotoStore, CvStyleStore } from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
@@ -8,7 +8,6 @@ import { ToastService } from '@applye/application';
 import { CvDetailComponent } from './cv-detail.component';
 
 import {
-  effectiveSectionStyle,
   effectiveTitleBorder,
   effectiveTitleRuleColor,
   effectiveTitleRuleWidth,
@@ -18,6 +17,11 @@ import {
 describe('CvDetailComponent per-section style', () => {
   let component: CvDetailComponent;
   let fixture: ComponentFixture<CvDetailComponent>;
+  /** The style store the page provides. These used to be page methods; they are
+   * the store's own now (ADR-0005, amendment sixty-four), so the tests reach it
+   * the way this file already reaches `CvPhotoStore` below. */
+  let styles: CvStyleStore;
+  let photo: CvPhotoStore;
 
   beforeEach(async () => {
     const dbStub: Partial<DbService> = {
@@ -49,40 +53,9 @@ describe('CvDetailComponent per-section style', () => {
 
     fixture = TestBed.createComponent(CvDetailComponent);
     component = fixture.componentInstance;
+    styles = fixture.debugElement.injector.get(CvStyleStore);
+    photo = fixture.debugElement.injector.get(CvPhotoStore);
     fixture.detectChanges();
-  });
-
-  it('setSectionStyle writes an override and re-emits', () => {
-    component.setSectionStyle('experience', { fontWeight: 700 });
-    expect(component.style().sectionStyles?.experience?.fontWeight).toBe(700);
-    expect(effectiveSectionStyle(component.style(), 'experience').fontWeight).toBe(700);
-  });
-
-  it('resetSectionStyle clears the override back to inherit', () => {
-    component.setSectionStyle('experience', { fontSizePt: 13, colorHex: '#0a5' });
-    component.resetSectionStyle('experience');
-    expect(component.style().sectionStyles?.experience).toBeUndefined();
-    expect(effectiveSectionStyle(component.style(), 'experience').colorHex).toBe(
-      component.style().accentColorHex,
-    );
-  });
-
-  it('applies a line-height patch as a cleaned override via the panel handler', () => {
-    // The panel emits a semantic patch; the parent applies it through the
-    // Task 1 reducer, which keeps the override minimal (no stray keys).
-    component.setSectionStyle('summary', { lineHeight: 1.6 });
-    expect(component.style().sectionStyles?.summary).toEqual({ lineHeight: 1.6 });
-    expect(effectiveSectionStyle(component.style(), 'summary').lineHeight).toBe(1.6);
-  });
-
-  it('resetSectionStyle removes only the selected section, leaving siblings intact', () => {
-    component.setSectionStyle('summary', { fontWeight: 700 });
-    component.setSectionStyle('skills', { colorHex: '#123456' });
-
-    component.resetSectionStyle('summary');
-
-    expect(component.style().sectionStyles?.summary).toBeUndefined();
-    expect(component.style().sectionStyles?.skills).toEqual({ colorHex: '#123456' });
   });
 
   describe('onStylePanelChange scope mapping', () => {
@@ -290,7 +263,7 @@ describe('CvDetailComponent per-section style', () => {
 
     it('title this-title reset clears the section title but keeps body overrides', () => {
       component.liveSelection.set({ sectionKey: 'skills', part: 'title' });
-      component.setSectionStyle('skills', { fontFamily: 'Arial' });
+      styles.setSectionStyle('skills', { fontFamily: 'Arial' });
       component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 20 } });
       component.onStylePanelChange({ scope: 'section', reset: true });
       expect(component.style().sectionStyles?.skills?.title).toBeUndefined();
@@ -334,25 +307,25 @@ describe('CvDetailComponent per-section style', () => {
   it('hasAnyCustomStyle detects document-wide changes, not only per-section', () => {
     expect(component.hasAnyCustomStyle()).toBe(false); // pristine default
 
-    component.updateStyle({ fontFamily: 'Open Sans' });
+    styles.updateStyle({ fontFamily: 'Open Sans' });
     expect(component.hasAnyCustomStyle()).toBe(true); // document-wide font
 
     component.resetAllStyles();
     expect(component.hasAnyCustomStyle()).toBe(false);
 
-    component.updateStyle({ fontSizePt: 22 });
+    styles.updateStyle({ fontSizePt: 22 });
     expect(component.hasAnyCustomStyle()).toBe(true); // document-wide size
     component.resetAllStyles();
 
-    component.updateTitleStyle({ fontFamily: 'Georgia' });
+    styles.updateTitleStyle({ fontFamily: 'Georgia' });
     expect(component.hasAnyCustomStyle()).toBe(true); // title style
     component.resetAllStyles();
 
-    component.updateStyle({ titleBorder: 'dotted' });
+    styles.updateStyle({ titleBorder: 'dotted' });
     expect(component.hasAnyCustomStyle()).toBe(true); // title line
     component.resetAllStyles();
 
-    component.setSectionStyle('skills', { fontFamily: 'Arial' });
+    styles.setSectionStyle('skills', { fontFamily: 'Arial' });
     expect(component.hasAnyCustomStyle()).toBe(true); // per-section still works
   });
 
@@ -373,13 +346,13 @@ describe('CvDetailComponent per-section style', () => {
   it('is not "custom" on a pristine non-default theme, and resets to that theme', () => {
     // Switch to Aurora: the four base tokens are reseeded, so a pristine
     // Aurora doc is NOT custom - the badge shows the theme name, not "Custom".
-    component.selectTheme(2);
+    styles.selectTheme(2);
     expect(component.hasAnyCustomStyle()).toBe(false);
     expect(component.activeTheme().name).toBe('Aurora');
     expect(component.style().accentColorHex).toBe('#1B7464');
 
     // Editing a token makes it custom.
-    component.updateStyle({ accentColorHex: '#000000' });
+    styles.updateStyle({ accentColorHex: '#000000' });
     expect(component.hasAnyCustomStyle()).toBe(true);
 
     // Reset returns to the SELECTED theme (Aurora), not the Classic default.
@@ -391,14 +364,15 @@ describe('CvDetailComponent per-section style', () => {
 
   it('resetAllStyles clears style overrides but leaves the custom page size/margins untouched', () => {
     // Custom page geometry: non-default size AND a non-default margin side.
-    component.setPageSize('letter');
-    component.setMarginSide('top', 5);
+    styles.updateStyle({
+      page: { size: 'letter', margin: { top: 5, right: 20, bottom: 20, left: 20 } },
+    });
     const customPage = { size: 'letter', margin: { top: 5, right: 20, bottom: 20, left: 20 } };
     expect(component.style().page).toEqual(customPage);
 
     // Also dirty a style override so reset-all has something to clear.
-    component.updateStyle({ fontFamily: 'Open Sans' });
-    component.setSectionStyle('skills', { fontFamily: 'Arial' });
+    styles.updateStyle({ fontFamily: 'Open Sans' });
+    styles.setSectionStyle('skills', { fontFamily: 'Arial' });
     expect(component.hasAnyCustomStyle()).toBe(true);
 
     component.resetAllStyles();
@@ -410,7 +384,7 @@ describe('CvDetailComponent per-section style', () => {
   });
 
   it('shows the profile photo in preference to bytes stored on the document', () => {
-    component.profilePhoto.set('data:image/jpeg;base64,PROFILE');
+    photo.profilePhoto.set('data:image/jpeg;base64,PROFILE');
     expect(component.photoDataUri()).toBe('data:image/jpeg;base64,PROFILE');
   });
 
@@ -424,7 +398,7 @@ describe('CvDetailComponent per-section style', () => {
       .hydrate([
         { key: 'photo', order: 0, visible: true, dataUri: 'data:image/jpeg;base64,LEGACY' },
       ]);
-    component.profilePhoto.set(null);
+    photo.profilePhoto.set(null);
     expect(component.photoDataUri()).toBe('data:image/jpeg;base64,LEGACY');
   });
 
@@ -609,14 +583,5 @@ describe('CvDetailComponent per-section style', () => {
     expect(root.querySelector('.page-card .cvpreview__summary')?.textContent).toContain(
       'Edited from the sidebar form',
     );
-  });
-
-  it('setSectionTitleStyle deep-merges into the section title override', () => {
-    component.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
-    component.setSectionTitleStyle('skills', { fontSizePt: 15 });
-    expect(component.style().sectionStyles?.skills?.title).toEqual({
-      fontFamily: 'Arial',
-      fontSizePt: 15,
-    });
   });
 });

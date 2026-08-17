@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CV_STYLE_DEFAULT } from '@applye/core';
+import { CV_STYLE_DEFAULT, resolvePageSettings } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { CvStyleStore, ToastService } from '@applye/application';
 import { CvDetailComponent } from './cv-detail.component';
 
 /**
@@ -21,6 +21,13 @@ import { CvDetailComponent } from './cv-detail.component';
 describe('CvDetailComponent card wiring', () => {
   let component: CvDetailComponent;
   let fixture: ComponentFixture<CvDetailComponent>;
+
+  /** The resolved margins. The page used to expose `currentMargin`; the Style
+   * card owns page geometry now (ADR-0005, amendment sixty-four), so this reads
+   * the same value from the store the card writes to. These tests still drive
+   * the real `<input>`s, which is the wiring they exist to check. */
+  const margins = () =>
+    resolvePageSettings(fixture.debugElement.injector.get(CvStyleStore).style().page).margin;
 
   beforeEach(async () => {
     const docItem = {
@@ -178,10 +185,10 @@ describe('CvDetailComponent card wiring', () => {
     });
 
     it('editing the RIGHT margin moves only the right margin', () => {
-      const before = component.currentMargin();
+      const before = margins();
       typeInto(marginInputs()[1], '25');
 
-      const after = component.currentMargin();
+      const after = margins();
       expect(after.right).toBe(25);
       expect(after.top).toBe(before.top);
       expect(after.bottom).toBe(before.bottom);
@@ -189,19 +196,19 @@ describe('CvDetailComponent card wiring', () => {
     });
 
     it('editing the BOTTOM margin moves only the bottom margin', () => {
-      const before = component.currentMargin();
+      const before = margins();
       typeInto(marginInputs()[2], '7');
 
-      const after = component.currentMargin();
+      const after = margins();
       expect(after.bottom).toBe(7);
       expect(after.top).toBe(before.top);
       expect(after.right).toBe(before.right);
       expect(after.left).toBe(before.left);
     });
 
-    it('the clamp still runs on the page, not in the card', () => {
+    it('the clamp runs in the card, which now owns page geometry', () => {
       typeInto(marginInputs()[0], '999');
-      expect(component.currentMargin().top).toBe(50);
+      expect(margins().top).toBe(50);
     });
 
     it('the page-size select writes the page size', () => {

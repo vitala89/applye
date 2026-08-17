@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService, CvStyleStore } from '@applye/application';
 import { mergePersonalField } from '@applye/application';
 import { CvDetailComponent } from './cv-detail.component';
 
@@ -283,7 +283,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
     expect(component.style().bodyColorHex).toBeUndefined();
     expect(component.hasAnyCustomStyle()).toBe(false);
 
-    component.updateStyle({ bodyColorHex: '#204060' });
+    fixture.debugElement.injector.get(CvStyleStore).updateStyle({ bodyColorHex: '#204060' });
     expect(component.hasAnyCustomStyle()).toBe(true);
   });
 

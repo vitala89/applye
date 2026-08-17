@@ -1,0 +1,11 @@
+// No classes of its own: `.docedit-card`, `.docedit-collapse`,
+// `.docedit-style-*`, `.docedit-field*` and `.docedit-margin-*` are emitted
+// globally from `apps/desktop/src/styles.scss` so the CV and cover-letter
+// editors render one visual system.
+//
+// The host box is all that belongs here - this element is now the flex item in
+// `.cvdetail__editor-col` where a `div.docedit-card` used to be.
+:host {
+  display: block;
+  min-width: 0;
+}

@@ -107,8 +107,8 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **16 files over budget**, down from 18 across two watches.
-  Three of the sixteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
+  concentrated.** The full audit reads **15 files over budget**, down from 18 across three watches.
+  Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
   **The finding worth carrying is that the cascade module is not a duplicate of `libs/core`'s
@@ -135,7 +135,20 @@
   shared partial. `dashboard`, `analytics` and `quick-view-modal` have no extracted children, so
   their sheets cannot be large for this reason; `tracker` and `pipeline` do, and are worth the same
   audit with a real SCSS parser, because they nest and a flat scan reads them as noise.
-  **Next first action:** `cv-detail.component.html` 466/300, then `cv-detail.component.ts` 500/400.
+  **Then the template went 466 to 275/300**, split into four cards - the photo section editor (which
+  had been the only `@switch` arm not already a component), the settings card, the page-style card and
+  the save-template dialog - taking the stylesheet to 230/400 with it. **The generic control styling
+  was the risk, and checking it inverted the expected fix**: both new cards needed no restated rule,
+  because `_editor-shell.scss` styles those controls globally and always did, and copying the section
+  editors' `width: 100%` would have overridden the shell's deliberate `width: auto`.
+  **What is left in the cluster is two files.** `cv-detail.component.ts` is **499/400**: the template
+  split removed about as much as its four imports added, and the seven aliases the page no longer
+  renders are each referenced by its own specs, so shrinking it is a decision about those specs rather
+  than a deletion. `cv-preview.component.html` at 779/300 stays blocked by its own decision.
+  **Next first action:** decide what `cv-detail.component.ts`'s seven spec-only aliases are for -
+  `activeTheme`, `profilePhoto`, `resetSectionStyle`, `setSectionTitleStyle`, `themeBaseStyle`,
+  `updateTitleStyle` and the `sampleStyleSync` effect - since a page member no template renders is
+  either dead surface or a store test wearing a component's clothes.
   `cv-preview.component.html` at 779/300 stays blocked by decision - it looks like nine `ng-template`
   atoms and is not, and its real seam is the 17 near-identical `@if (isEditingLeaf(...))` pairs.
 

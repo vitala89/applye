@@ -1,0 +1,35 @@
+<div class="cvdetail__photo-editor">
+  @if (dataUri(); as uri) {
+    <img class="cvdetail__photo-thumb" [src]="uri" alt="" />
+    <div class="cvdetail__photo-actions">
+      <button appButton variant="secondary" size="sm" (click)="manageRequested.emit()">
+        {{ t()('documents.cv_photo_manage') }}
+      </button>
+    </div>
+    <p class="cvdetail__hint">{{ t()('documents.cv_photo_from_profile') }}</p>
+  } @else {
+    <button appButton variant="secondary" size="sm" (click)="manageRequested.emit()">
+      {{ t()('documents.cv_photo_add_in_profile') }}
+    </button>
+    <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
+  }
+  @if (dataUri()) {
+    <div class="cvdetail__photo-placement">
+      <span class="cvdetail__photo-placement-label">
+        {{ t()('documents.cv_photo_placement') }}
+      </span>
+      <div class="cvdetail__chip-row" role="group">
+        @for (opt of placementOptions(); track opt.value) {
+          <button
+            type="button"
+            class="cvdetail__chip"
+            [class.cvdetail__chip--active]="placement() === opt.value"
+            (click)="placementChange.emit(opt.value)"
+          >
+            {{ t()(opt.labelKey) }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,78 @@
+<div class="docedit-card">
+  <div class="docedit-card__head">
+    <button
+      type="button"
+      class="docedit-card__toggle"
+      [attr.aria-expanded]="open()"
+      (click)="toggled.emit()"
+    >
+      <span class="docedit-card__title">{{ t()('documents.cv_section_style') }}</span>
+      <lucide-icon
+        [img]="icons.chevron"
+        [size]="16"
+        aria-hidden="true"
+        class="docedit-chevron"
+        [class.docedit-chevron--closed]="!open()"
+      />
+    </button>
+  </div>
+
+  <div class="docedit-collapse" [class.docedit-collapse--closed]="!open()">
+    <div>
+      <div class="docedit-style-section">
+        <span class="docedit-style-section__header">{{ t()('documents.cv_theme_label') }}</span>
+        <div class="docedit-style-grid">
+          <label class="docedit-field">
+            <select
+              [value]="themeId().toString()"
+              (change)="themeSelected.emit(+$any($event.target).value)"
+            >
+              <option value="1">{{ t()('documents.cv_theme_classic') }}</option>
+              <option value="2">{{ t()('documents.cv_theme_aurora') }}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="docedit-style-section">
+        <span class="docedit-style-section__header">{{
+          t()('documents.cv_style_group_page')
+        }}</span>
+        <div class="docedit-style-grid">
+          <div class="docedit-field">
+            <span class="docedit-field__label">{{ t()('documents.cv_style_page_size') }}</span>
+            <select [ngModel]="pageSize()" (ngModelChange)="pageSizeChange.emit($event)">
+              <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
+              <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
+            </select>
+          </div>
+          <div class="docedit-field docedit-field--full">
+            <span class="docedit-field__label">{{ t()('documents.cv_style_margins') }}</span>
+            <div class="docedit-margin-grid">
+              @for (side of marginSides; track side.key) {
+                <label class="docedit-margin-field">
+                  <span>{{ t()(side.label) }}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="50"
+                    step="1"
+                    [ngModel]="margins()[side.key]"
+                    (ngModelChange)="marginChange.emit({ side: side.key, value: $event })"
+                  />
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      @if (noteMessages().length) {
+        <div class="docedit-note">
+          @for (message of noteMessages(); track message) {
+            <p>{{ message }}</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

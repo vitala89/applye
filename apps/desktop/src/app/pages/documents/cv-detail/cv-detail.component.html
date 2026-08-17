@@ -64,158 +64,31 @@
     <div class="cvdetail__body">
       @if (!previewMode()) {
         <div class="cvdetail__editor-col">
-          <div class="docedit-card">
-            <div class="docedit-meta">
-              <span class="docedit-field__label">{{ t()('documents.cv_field_region') }}</span>
-              <div class="docedit-meta-row">
-                <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
-                  @for (r of regionOptions(); track r.tag) {
-                    <option [value]="r.tag">{{ r.label }}</option>
-                  }
-                </select>
-                <button
-                  type="button"
-                  class="cvdetail__checkbox"
-                  [class.cvdetail__checkbox--active]="isDefault()"
-                  [attr.aria-pressed]="isDefault()"
-                  (click)="isDefault.set(!isDefault())"
-                >
-                  <span class="cvdetail__checkbox-box">
-                    @if (isDefault()) {
-                      <lucide-icon [img]="icons.check" [size]="11" aria-hidden="true" />
-                    }
-                  </span>
-                  {{ t()('documents.cv_field_is_default') }}
-                </button>
-              </div>
-            </div>
+          <app-cv-settings-card
+            [regionTag]="regionTag()"
+            [isDefault]="isDefault()"
+            [includePhoto]="includePhoto()"
+            [includeBirthdate]="includeBirthdate()"
+            [includeMaritalStatus]="includeMaritalStatus()"
+            [atsNoteKeys]="atsNoteKeys()"
+            (regionTagChange)="regionTag.set($event)"
+            (defaultToggled)="isDefault.set(!isDefault())"
+            (photoToggled)="toggleIncludePhoto()"
+            (birthdateToggled)="includeBirthdate.set(!includeBirthdate())"
+            (maritalStatusToggled)="includeMaritalStatus.set(!includeMaritalStatus())"
+          />
 
-            <div class="docedit-chip-row">
-              <button
-                type="button"
-                class="docedit-chip"
-                [class.docedit-chip--active]="includePhoto()"
-                (click)="toggleIncludePhoto()"
-              >
-                <span class="docedit-chip__dot"></span>
-                {{ t()('documents.cv_toggle_photo') }}
-              </button>
-              <button
-                type="button"
-                class="docedit-chip"
-                [class.docedit-chip--active]="includeBirthdate()"
-                (click)="includeBirthdate.set(!includeBirthdate())"
-              >
-                <span class="docedit-chip__dot"></span>
-                {{ t()('documents.cv_toggle_birthdate') }}
-              </button>
-              <button
-                type="button"
-                class="docedit-chip"
-                [class.docedit-chip--active]="includeMaritalStatus()"
-                (click)="includeMaritalStatus.set(!includeMaritalStatus())"
-              >
-                <span class="docedit-chip__dot"></span>
-                {{ t()('documents.cv_toggle_marital') }}
-              </button>
-            </div>
-
-            @if (atsNoteKeys().length) {
-              <div class="docedit-note">
-                @for (key of atsNoteKeys(); track key) {
-                  <p>{{ t()(key) }}</p>
-                }
-              </div>
-            }
-          </div>
-
-          <div class="docedit-card">
-            <div class="docedit-card__head">
-              <button
-                type="button"
-                class="docedit-card__toggle"
-                [attr.aria-expanded]="styleOpen()"
-                (click)="toggleStyleOpen()"
-              >
-                <span class="docedit-card__title">{{ t()('documents.cv_section_style') }}</span>
-                <lucide-icon
-                  [img]="icons.chevron"
-                  [size]="16"
-                  aria-hidden="true"
-                  class="docedit-chevron"
-                  [class.docedit-chevron--closed]="!styleOpen()"
-                />
-              </button>
-            </div>
-
-            <div class="docedit-collapse" [class.docedit-collapse--closed]="!styleOpen()">
-              <div>
-                <div class="docedit-style-section">
-                  <span class="docedit-style-section__header">{{
-                    t()('documents.cv_theme_label')
-                  }}</span>
-                  <div class="docedit-style-grid">
-                    <label class="docedit-field">
-                      <select
-                        [value]="themeId().toString()"
-                        (change)="selectTheme(+$any($event.target).value)"
-                      >
-                        <option value="1">{{ t()('documents.cv_theme_classic') }}</option>
-                        <option value="2">{{ t()('documents.cv_theme_aurora') }}</option>
-                      </select>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="docedit-style-section">
-                  <span class="docedit-style-section__header">{{
-                    t()('documents.cv_style_group_page')
-                  }}</span>
-                  <div class="docedit-style-grid">
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{
-                        t()('documents.cv_style_page_size')
-                      }}</span>
-                      <select
-                        [ngModel]="style().page?.size ?? 'a4'"
-                        (ngModelChange)="setPageSize($event)"
-                      >
-                        <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
-                        <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
-                      </select>
-                    </div>
-                    <div class="docedit-field docedit-field--full">
-                      <span class="docedit-field__label">{{
-                        t()('documents.cv_style_margins')
-                      }}</span>
-                      <div class="docedit-margin-grid">
-                        @for (side of marginSides; track side.key) {
-                          <label class="docedit-margin-field">
-                            <span>{{ t()(side.label) }}</span>
-                            <input
-                              type="number"
-                              min="0"
-                              max="50"
-                              step="1"
-                              [ngModel]="currentMargin()[side.key]"
-                              (ngModelChange)="setMarginSide(side.key, $event)"
-                            />
-                          </label>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                @if (styleNotes().length) {
-                  <div class="docedit-note">
-                    @for (note of styleNotes(); track note.kind + note.detail) {
-                      <p>{{ styleNoteMessage(note) }}</p>
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-          </div>
+          <app-cv-page-style-card
+            [open]="styleOpen()"
+            [themeId]="themeId()"
+            [pageSize]="style().page?.size ?? 'a4'"
+            [margins]="currentMargin()"
+            [noteMessages]="styleNoteMessages()"
+            (toggled)="toggleStyleOpen()"
+            (themeSelected)="selectTheme($event)"
+            (pageSizeChange)="setPageSize($event)"
+            (marginChange)="setMarginSide($event.side, $event.value)"
+          />
 
           <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
             @for (section of sections(); track section.key; let i = $index; let count = $count) {
@@ -310,53 +183,13 @@
                         />
                       }
                       @case ('photo') {
-                        <div class="cvdetail__photo-editor">
-                          @if (photoDataUri(); as uri) {
-                            <img class="cvdetail__photo-thumb" [src]="uri" alt="" />
-                            <div class="cvdetail__photo-actions">
-                              <button
-                                appButton
-                                variant="secondary"
-                                size="sm"
-                                (click)="goToProfilePhoto()"
-                              >
-                                {{ t()('documents.cv_photo_manage') }}
-                              </button>
-                            </div>
-                            <p class="cvdetail__hint">
-                              {{ t()('documents.cv_photo_from_profile') }}
-                            </p>
-                          } @else {
-                            <button
-                              appButton
-                              variant="secondary"
-                              size="sm"
-                              (click)="goToProfilePhoto()"
-                            >
-                              {{ t()('documents.cv_photo_add_in_profile') }}
-                            </button>
-                            <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
-                          }
-                          @if (photoDataUri()) {
-                            <div class="cvdetail__photo-placement">
-                              <span class="cvdetail__photo-placement-label">
-                                {{ t()('documents.cv_photo_placement') }}
-                              </span>
-                              <div class="cvdetail__chip-row" role="group">
-                                @for (opt of photoPlacementOptions; track opt.value) {
-                                  <button
-                                    type="button"
-                                    class="cvdetail__chip"
-                                    [class.cvdetail__chip--active]="photoPlacement() === opt.value"
-                                    (click)="setPhotoPlacement(opt.value)"
-                                  >
-                                    {{ t()(opt.labelKey) }}
-                                  </button>
-                                }
-                              </div>
-                            </div>
-                          }
-                        </div>
+                        <app-cv-photo-editor
+                          [dataUri]="photoDataUri()"
+                          [placement]="photoPlacement()"
+                          [placementOptions]="photoPlacementOptions"
+                          (manageRequested)="goToProfilePhoto()"
+                          (placementChange)="setPhotoPlacement($event)"
+                        />
                       }
                     }
                   </div>
@@ -436,39 +269,11 @@
 }
 
 @if (saveTemplateOpen()) {
-  <div
-    class="modal-backdrop"
-    (click)="cancelSaveTemplate()"
-    (keydown.escape)="cancelSaveTemplate()"
-    tabindex="-1"
-    role="presentation"
-  >
-    <div
-      class="modal"
-      role="presentation"
-      tabindex="-1"
-      (click)="$event.stopPropagation()"
-      (keydown)="$event.stopPropagation()"
-    >
-      <h3>{{ t()('documents.cv_save_as_template_title') }}</h3>
-      <input
-        type="text"
-        [ngModel]="saveTemplateName()"
-        (ngModelChange)="saveTemplateName.set($event)"
-        [placeholder]="t()('documents.cv_field_template_name')"
-      />
-      <div class="modal__actions">
-        <button class="btn-ghost" (click)="cancelSaveTemplate()">
-          {{ t()('actions.cancel') }}
-        </button>
-        <button
-          class="btn-primary"
-          [disabled]="savingTemplate() || !saveTemplateName().trim()"
-          (click)="confirmSaveTemplate()"
-        >
-          {{ savingTemplate() ? t()('common.loading') : t()('actions.save') }}
-        </button>
-      </div>
-    </div>
-  </div>
+  <app-cv-save-template-modal
+    [name]="saveTemplateName()"
+    [saving]="savingTemplate()"
+    (nameChange)="saveTemplateName.set($event)"
+    (cancelled)="cancelSaveTemplate()"
+    (confirmed)="confirmSaveTemplate()"
+  />
 }

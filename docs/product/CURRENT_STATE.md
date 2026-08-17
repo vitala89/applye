@@ -107,7 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **12 files over budget**, down from 18 across four watches.
+  concentrated.** The full audit reads **11 files over budget**, down from 18 across five watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -170,6 +170,16 @@
   child-component extraction, not a deletion**: the table - `.jt-th*`, `.jt-td*`, `.jt-joblink`,
   `.jt-stage*`, `.jt-status*` - is about 215 lines and one responsibility, but its markup is in the
   page template at 278/300, so moving the rules means moving the markup.
+
+- **The documentation site's page module is split, and the routes never noticed.**
+  `apps/web/src/app/docs/pages.ts` **557/400 to thirteen files**, largest 120. The reusable part is
+  the resolution trick rather than the split: `import('./docs/pages')` pointed at `pages.ts` and now
+  points at `docs/pages/index.ts`, so all thirteen `loadComponent` routes in `app.routes.ts` are
+  **unchanged**, and the build emits the same 22 lazy chunks with the docs still in one 23.63 kB
+  chunk. Splitting a file and splitting its chunk are separate decisions, and only the first was
+  taken. Content preserved line for line - 541 payload lines each side, nothing lost or gained. The
+  site's 504.25 kB initial bundle against its 500 kB warning budget is **pre-existing and unchanged
+  to the byte**; it is recorded here so the next watch does not mistake it for a regression.
 
 - **Analytics is split, and the seam was repetition rather than sections.**
   `analytics.component.html` **426 to 215/300** and `analytics.component.scss` **557 to 312/400**.

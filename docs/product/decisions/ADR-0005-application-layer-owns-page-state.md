@@ -3448,9 +3448,10 @@ chip painting from the child's copy, and **"Page 1 of 2" unchanged**, which is w
 
 ## Amendment sixty-four: the CV editor's remainder splits two ways, and the question as asked had the wrong shape
 
-**Decided, not yet implemented.** `cv-detail.component.ts` has sat at **464/400** since #466, which
-put one question to the maintainer and merged without an answer: should `CvStyleStore` take over the
-page's screen-state signals _and_ its three spec-only orchestration methods?
+**Done: `cv-detail.component.ts` 464 -> 388/400**, and the CV cluster's last unblocked file is inside
+its budget. It had sat at 464 since #466, which put one question to the maintainer and merged without
+an answer: should `CvStyleStore` take over the page's screen-state signals _and_ its three spec-only
+orchestration methods?
 
 **The answer is that those are two different moves, and asking them as one was the flaw in the
 question.** Put to the maintainer as three options, the settled shape is:
@@ -3458,22 +3459,50 @@ question.** Put to the maintainer as three options, the settled shape is:
 - **`setSectionStyle`, `setSectionTitleStyle` and `resetSectionStyle` go to `CvStyleStore`.** They
   compose a `libs/core` helper with that store's own `applyStyle`, so they are its work. It is
   **161/250**, so they fit.
-- **The screen state goes to a new `CvDetailPageStore`** - `collapsedSections`, `livePanelOpen`,
-  `liveSelection`, `previewMode`, `justSaved`, `sampleResolvedStyle` and the `sampleStyleSync`
-  after-render effect. Panel-open, preview mode and `justSaved` are not facts about the style tree,
-  and this ADR already says a page whose state does not fit **decomposes by responsibility rather
-  than growing one store**. Putting all of it in `CvStyleStore` would have used the 89 lines of
-  headroom to build exactly the second god-object the 250 budget exists to catch.
+- **The screen state goes to a new `CvDetailPageStore`** (**75/250**) - `collapsedSections`,
+  `livePanelOpen`, `liveSelection`, `previewMode`, `justSaved` and `styleOpen`. Panel-open, preview
+  mode and `justSaved` are not facts about the style tree, and this ADR already says a page whose
+  state does not fit **decomposes by responsibility rather than growing one store**. Putting all of it
+  in `CvStyleStore` would have used the 89 lines of headroom to build exactly the second god-object
+  the 250 budget exists to catch.
 
-Naming follows `DiscoverPageStore`. The tests move with the state: `cv-style.store.spec.ts` is
-**197/600** and can absorb the store-level half of `cv-detail.style.spec.ts` (**526**, not the 622
-carried in earlier handoffs), and the page store gets its own spec.
+Naming follows `DiscoverPageStore`. `CvStyleStore` is 161 -> **180/250**, and its header no longer
+claims it "does not know how to edit one": it says which half of the composition moved in and which
+half stayed out, because the panel's scope routing and the cover-letter editor compose styles without
+going through this store at all.
 
-**The cost is named in advance rather than discovered.** `CvStyleStore` is already exported from the
-barrel, so it is already in the eager chunk; the new page store adds a second export, and `cv-detail`
-is a `loadComponent` route. That is the tension `docs/architecture.md` records as accepted-but-measured,
-and it is measured by `nx build desktop` before the change lands - Discover's location table cost
-12.87 kB and failed the build on a version where type-check, lint and the whole suite passed.
+**Three things the implementation found that the decision had not.**
+
+- **`sampleResolvedStyle` and `sampleStyleSync` could not move**, though the decision listed them.
+  The effect reads a `viewChild`'s computed style off the DOM after layout. That is view, and this
+  layer does not own view - the line `wizard-nav`'s `querySelector` and `scrollingElement` were held
+  to in amendment fifty-four. A store needing a `TestBed` and a rendered component to be tested is the
+  signal that its dependencies are wrong; `cv-detail-page.store.spec.ts` builds its subject with
+  `new`.
+- **The decision's premise was optimistic: moving the state left the class at 434, not under 400.**
+  The last 34 lines were page geometry (`currentMargin`, `setMarginSide`, `setPageSize`) and the ATS
+  note wording, and they did **not** belong in the store either. The cover-letter editor already had
+  the answer: `CoverLetterStyleCardComponent` owns both and injects its store directly, while
+  `CvPageStyleCardComponent` took four inputs and emitted three outputs so the page could do the same
+  work upstairs. **The CV side was the outlier, exactly as it was for the three methods**, and the
+  card now matches (50 -> 90/400), taking the page template 275 -> 265/300 with it. Page geometry
+  stays out of `libs/application` for the reason `CoverLetterStyleStore`'s own header already gave:
+  `resolvePageSettings` is app-local and the library cannot import it.
+- **The bundle cost was measured and is ~250 bytes**, raw eager chunk 279.78 -> 280.03 kB, initial
+  total unchanged at **1.50 MB**. `CvStyleStore` was already barrel-exported; the new page store is a
+  second export and `cv-detail` is a `loadComponent` route, so this is the tension
+  `docs/architecture.md` records as accepted-but-measured. It was measured before the change landed,
+  because Discover's location table cost 12.87 kB and failed the build on a version where type-check,
+  lint and the whole suite passed.
+
+**The tests moved with the state.** Five per-section tests left `cv-detail.style.spec.ts`
+(526 -> **498/600**) for `cv-style.store.spec.ts` (197 -> **246/600**), where they need no `TestBed`
+and no four service stubs to reach what they were always testing; the page keeps the scope routing and
+the DOM-driven card wiring, which are its own composition. Three spec-only aliases went with them,
+replaced by `fixture.debugElement.injector.get(...)` - the forward-only alias rule discharged by work
+that was already in those lines. Seven mutations, all killed; the one needing a **new** test was
+`setSectionStyle` bypassing `applyStyle`, which still writes the right style and only loses the
+debounced ATS re-check, so nothing asserting the result could see it.
 
 ## References
 

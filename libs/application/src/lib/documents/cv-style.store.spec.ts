@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CV_STYLE_DEFAULT, type StyleNote } from '@applye/core';
+import { CV_STYLE_DEFAULT, effectiveSectionStyle, type StyleNote } from '@applye/core';
 import { DbService } from '@applye/data';
 import { CvStyleStore } from './cv-style.store';
 
@@ -215,6 +215,62 @@ describe('CvStyleStore', () => {
       store.updateTitleStyle({ fontFamily: 'Georgia' });
       store.updateTitleStyle({ fontSizePt: 15 });
       expect(store.style().titleStyle).toEqual({ fontFamily: 'Georgia', fontSizePt: 15 });
+    });
+  });
+  /** Moved here from `cv-detail.style.spec.ts` with the methods themselves
+   * (ADR-0005, amendment sixty-four). They were always tests of this store's
+   * behaviour; what they used to need was a whole `CvDetailComponent` fixture to
+   * reach it, and the page's versions were the same assertions one indirection
+   * removed. What stayed on the page is the scope routing, which is the page's
+   * own composition rather than this store's. */
+  describe('per-section overrides', () => {
+    it('setSectionStyle writes an override and re-emits', () => {
+      store.setSectionStyle('experience', { fontWeight: 700 });
+      expect(store.style().sectionStyles?.experience?.fontWeight).toBe(700);
+      expect(effectiveSectionStyle(store.style(), 'experience').fontWeight).toBe(700);
+    });
+
+    it('keeps the override minimal rather than writing every key', () => {
+      store.setSectionStyle('summary', { lineHeight: 1.6 });
+      expect(store.style().sectionStyles?.summary).toEqual({ lineHeight: 1.6 });
+      expect(effectiveSectionStyle(store.style(), 'summary').lineHeight).toBe(1.6);
+    });
+
+    it('resetSectionStyle clears the override back to inherit', () => {
+      store.setSectionStyle('experience', { fontSizePt: 13, colorHex: '#0a5' });
+      store.resetSectionStyle('experience');
+      expect(store.style().sectionStyles?.experience).toBeUndefined();
+      expect(effectiveSectionStyle(store.style(), 'experience').colorHex).toBe(
+        store.style().accentColorHex,
+      );
+    });
+
+    it('resetSectionStyle removes only the selected section, leaving siblings intact', () => {
+      store.setSectionStyle('summary', { fontWeight: 700 });
+      store.setSectionStyle('skills', { colorHex: '#123456' });
+
+      store.resetSectionStyle('summary');
+
+      expect(store.style().sectionStyles?.summary).toBeUndefined();
+      expect(store.style().sectionStyles?.skills).toEqual({ colorHex: '#123456' });
+    });
+
+    it('setSectionTitleStyle deep-merges rather than replacing the title object', () => {
+      store.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
+      store.setSectionTitleStyle('skills', { fontSizePt: 15 });
+      expect(store.style().sectionStyles?.skills?.title).toEqual({
+        fontFamily: 'Arial',
+        fontSizePt: 15,
+      });
+    });
+
+    it('debounces the ATS re-check like every other write, rather than checking per patch', async () => {
+      db.checkStyleSafety.mockClear();
+      store.setSectionStyle('summary', { fontSizePt: 13 });
+      store.setSectionStyle('skills', { fontSizePt: 14 });
+      expect(db.checkStyleSafety).not.toHaveBeenCalled();
+      await settle();
+      expect(db.checkStyleSafety).toHaveBeenCalledTimes(1);
     });
   });
 });

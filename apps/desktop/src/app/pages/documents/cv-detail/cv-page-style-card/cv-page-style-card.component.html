@@ -25,7 +25,7 @@
           <label class="docedit-field">
             <select
               [value]="themeId().toString()"
-              (change)="themeSelected.emit(+$any($event.target).value)"
+              (change)="selectTheme(+$any($event.target).value)"
             >
               <option value="1">{{ t()('documents.cv_theme_classic') }}</option>
               <option value="2">{{ t()('documents.cv_theme_aurora') }}</option>
@@ -41,7 +41,7 @@
         <div class="docedit-style-grid">
           <div class="docedit-field">
             <span class="docedit-field__label">{{ t()('documents.cv_style_page_size') }}</span>
-            <select [ngModel]="pageSize()" (ngModelChange)="pageSizeChange.emit($event)">
+            <select [ngModel]="pageSize()" (ngModelChange)="setPageSize($event)">
               <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
               <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
             </select>
@@ -58,7 +58,7 @@
                     max="50"
                     step="1"
                     [ngModel]="margins()[side.key]"
-                    (ngModelChange)="marginChange.emit({ side: side.key, value: $event })"
+                    (ngModelChange)="setMarginSide(side.key, $event)"
                   />
                 </label>
               }

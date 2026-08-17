@@ -54,6 +54,7 @@ export * from './lib/documents/cv-photo.store';
 export * from './lib/documents/cv-regeneration';
 export * from './lib/documents/cv-regeneration.store';
 export * from './lib/documents/cv-section-order';
+export * from './lib/documents/cv-detail-page.store';
 export * from './lib/documents/cv-style.store';
 export * from './lib/jobs/cv-photo-prompt.service';
 export * from './lib/jobs/document-review-status.service';

@@ -25,31 +25,17 @@ import {
   PanelRightClose,
   PanelRightOpen,
 } from 'lucide-angular';
-import type {
-  CvSection,
-  CvSectionKey,
-  CvSectionStyle,
-  CvTextStyle,
-  PageMargins,
-  PageSettings,
-  PageSize,
-  PhotoPlacement,
-  StyleNote,
-} from '@applye/core';
+import type { CvSection, CvSectionKey, PhotoPlacement } from '@applye/core';
 import {
-  PAGE_SETTINGS_DEFAULT,
   REGENERATABLE_SECTION_KEYS,
   cvFieldAtsNoteKeys,
   cvLeafText,
-  patchCvSectionStyle,
-  resetCvSectionStyle,
-  resolvePageSettings,
   routeCvStyleChange,
   sectionLabelKey,
-  type CvPreviewSelection,
   type CvStylePanelChange,
 } from '@applye/core';
 import {
+  CvDetailPageStore,
   CvDocumentStore,
   CvNoProfileError,
   CvPhotoStore,
@@ -116,7 +102,7 @@ const CV_BACK_KEYS: BackLabelKeys = {
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
-  providers: [CvPhotoStore, CvStyleStore, CvDocumentStore, CvRegenerationStore],
+  providers: [CvPhotoStore, CvStyleStore, CvDocumentStore, CvRegenerationStore, CvDetailPageStore],
 })
 export class CvDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -166,14 +152,11 @@ export class CvDetailComponent {
    * profile's. Aliased for the template, which names each of these once. */
   private readonly photo = inject(CvPhotoStore);
   readonly includePhoto = this.photo.includePhoto;
-  readonly profilePhoto = this.photo.profilePhoto;
   readonly photoDataUri = this.photo.dataUri;
   readonly photoPlacement = this.photo.placement;
   readonly photoPlacementOptions = this.photo.placements;
   readonly includeBirthdate = this.photo.includeBirthdate;
   readonly includeMaritalStatus = this.photo.includeMaritalStatus;
-
-  readonly justSaved = signal(false);
 
   /** Regenerating a section from the profile, and pulling fresh personal
    * details. Component-scoped; it writes through `CvDocumentStore`. */
@@ -191,60 +174,27 @@ export class CvDetailComponent {
   private readonly styleStore = inject(CvStyleStore);
   readonly style = this.styleStore.style;
   readonly themeId = this.styleStore.themeId;
-  readonly styleNotes = this.styleStore.styleNotes;
   readonly activeTheme = this.styleStore.activeTheme;
   readonly activeThemeTitleRule = this.styleStore.activeThemeTitleRule;
   readonly activeThemeEntryRule = this.styleStore.activeThemeEntryRule;
   readonly hasAnyCustomStyle = this.styleStore.hasAnyCustomStyle;
 
-  private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
-    font_ats_risk: 'documents.cv_style_note_font',
-    size_out_of_range: 'documents.cv_style_note_size',
-    color_readability_risk: 'documents.cv_style_note_color',
-    weight_unavailable_risk: 'documents.cv_style_note_weight',
-  };
-
-  /** The style notes as finished sentences. The wording stays here because each
-   * note carries a `{value}` to substitute; the Style card renders strings and
-   * never sees a `StyleNote`. */
-  readonly styleNoteMessages = computed<string[]>(() =>
-    this.styleNotes().map((note) =>
-      this.t()(CvDetailComponent.STYLE_NOTE_KEYS[note.kind]).replace('{value}', note.detail),
-    ),
-  );
-
-  readonly updateStyle = this.styleStore.updateStyle.bind(this.styleStore);
-  readonly updateTitleStyle = this.styleStore.updateTitleStyle.bind(this.styleStore);
-  readonly selectTheme = this.styleStore.selectTheme.bind(this.styleStore);
   readonly resetAllStyles = this.styleStore.resetAllStyles.bind(this.styleStore);
 
-  /** Current 4-side margins in mm, already clamped by the resolver. */
-  readonly currentMargin = computed<PageMargins>(
-    () => resolvePageSettings(this.style().page).margin,
-  );
-
-  private updatePage(page: PageSettings): void {
-    this.updateStyle({ page });
-  }
-
-  setMarginSide(side: keyof PageMargins, value: number): void {
-    const clamped = Math.min(50, Math.max(0, Math.round(Number(value) || 0)));
-    const cur = this.currentMargin();
-    const size = this.style().page?.size ?? PAGE_SETTINGS_DEFAULT.size;
-    this.updatePage({ size, margin: { ...cur, [side]: clamped } });
-  }
-
-  setPageSize(size: PageSize): void {
-    this.updatePage({ size, margin: this.currentMargin() });
-  }
-
-  /** The section/part the user has clicked in the live preview, driving the
-   * contextual `CvLiveStylePanelComponent` beside the paper. Null until the
-   * first selection; cleared is fine (panel shows its empty state). */
-  /** Live-style panel visibility. Collapsing it hands the reclaimed width to
-   * the paper, which is the whole point of the preview. */
-  readonly livePanelOpen = signal(true);
-  readonly liveSelection = signal<CvPreviewSelection | null>(null);
+  /** What this screen is showing: mode, what is open or collapsed, what is
+   * selected on the paper, and whether the last save is still acknowledged.
+   * Component-scoped (ADR-0005, amendment sixty-four). Aliased for the template,
+   * which reads and writes these signals directly. */
+  private readonly page = inject(CvDetailPageStore);
+  readonly livePanelOpen = this.page.livePanelOpen;
+  readonly liveSelection = this.page.liveSelection;
+  readonly previewMode = this.page.previewMode;
+  readonly justSaved = this.page.justSaved;
+  readonly styleOpen = this.page.styleOpen;
+  readonly togglePreview = this.page.togglePreview.bind(this.page);
+  readonly toggleStyleOpen = this.page.toggleStyleOpen.bind(this.page);
+  readonly isSectionOpen = this.page.isSectionOpen.bind(this.page);
+  readonly toggleSectionCollapse = this.page.toggleSectionCollapse.bind(this.page);
 
   /** Plain text of the currently-selected leaf, fed to the live-style panel's
    * "Ag" sample so it previews the real selected content. A title's text is its
@@ -278,43 +228,6 @@ export class CvDetailComponent {
     }
   });
 
-  /** Per-section collapse state for the content-section accordion - session
-   * only (not persisted); every section starts expanded (an empty set means
-   * nothing is collapsed). */
-  readonly collapsedSections = signal<Set<CvSectionKey>>(new Set());
-
-  isSectionOpen(key: CvSectionKey): boolean {
-    return !this.collapsedSections().has(key);
-  }
-
-  toggleSectionCollapse(key: CvSectionKey): void {
-    const next = new Set(this.collapsedSections());
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    this.collapsedSections.set(next);
-  }
-
-  /** Collapse state for the "Style" card - open by default. */
-  readonly styleOpen = signal(true);
-
-  toggleStyleOpen(): void {
-    this.styleOpen.set(!this.styleOpen());
-  }
-
-  setSectionStyle(key: CvSectionKey, patch: Partial<CvSectionStyle>): void {
-    this.styleStore.applyStyle(patchCvSectionStyle(this.style(), key, patch));
-  }
-
-  /** Deep-merge a patch into a section's title override (a nested object that
-   * `setSectionStyle`'s shallow merge would otherwise replace wholesale). */
-  setSectionTitleStyle(key: CvSectionKey, patch: Partial<CvTextStyle>): void {
-    this.setSectionStyle(key, { title: patch });
-  }
-
-  resetSectionStyle(key: CvSectionKey): void {
-    this.styleStore.applyStyle(resetCvSectionStyle(this.style(), key));
-  }
-
   /** Routes a scope-tagged panel change to the correct write target for the
    * current live selection. The mapping itself is `routeCvStyleChange`, a pure
    * transform beside the other `CvStyle` helpers; this only supplies the
@@ -324,12 +237,6 @@ export class CvDetailComponent {
     const sel = this.liveSelection();
     if (!sel) return;
     this.styleStore.applyStyle(routeCvStyleChange(this.style(), sel, change));
-  }
-
-  readonly previewMode = signal(false);
-
-  togglePreview(): void {
-    this.previewMode.set(!this.previewMode());
   }
 
   /**

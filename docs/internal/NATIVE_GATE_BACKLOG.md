@@ -169,6 +169,34 @@ Both checks are free and need only the tracker to have rows.
       The first two are the keyframe deletion - the page's copies are gone and the children's
       identical ones must be what runs.
 
+## C3. Analytics, after the split into three child components
+
+The page's markup crossed an encapsulation boundary in three places and one class
+family became a global partial. jsdom has no layout and no cascade, so a rule that
+failed to reach a child still passes every assertion in the suite - the symptom is
+an unstyled control, not an error. Needs applications in the database; run
+section A's steps first.
+
+- [ ] **The six bar lists all look the same as each other.** Open Analytics with a
+      populated pipeline. Funnel, match-score distribution, score vs outcome, time
+      to response, pipeline aging and locations each render name, bar and value at
+      the same size and spacing. One component draws all six now; a rule that
+      failed to reach it shows as bare text with no bar.
+- [ ] **Only the funnel shows a conversion percentage**, and score vs outcome shows
+      its "N applications" caption **without** one. The two halves gate separately
+      and a unit test can only check the DOM, not the layout of the column.
+- [ ] **The KPI tiles animate while loading.** Switch period on a slow database, or
+      reopen the page: the four placeholder tiles shimmer. Those boxes are styled
+      from `_analytics-skeleton.scss`, a **global** partial - the one thing here
+      that could regress another page rather than this one.
+- [ ] **Nothing else on any other page changed.** The partial is emitted unwrapped
+      into the global sheet. `ana-` was verified unique by grep, but a glance at
+      Dashboard, Jobs and Settings costs nothing and is the only check that would
+      catch a collision.
+- [ ] **The trend plot still draws both lines.** With follow-ups logged in the
+      period, the chart shows the accent applications line and the grey follow-ups
+      line, with the tick labels beneath.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

@@ -107,10 +107,9 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **17 files over budget** - it said 19 here while the tool
-  reported 18 before this watch and 17 after it, so the number was stale in both directions. Four of
-  the seventeen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was the
-  largest source file in
+  concentrated.** The full audit reads **16 files over budget**, down from 18 across two watches.
+  Three of the sixteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
+  the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
   **The finding worth carrying is that the cascade module is not a duplicate of `libs/core`'s
   `cv-style.util.ts` even though it reads as one**: both walk the same chains, but core ends them in
@@ -126,8 +125,17 @@
   **The rule that shaped it: reuse the markup, not the rules.** The three line groups differ in what
   Inherit means and in when the width and colour rows show, so those predicates stay resolved in the
   panel and the child is a view. **The panel folder is off the over-budget list**, and the cluster is
-  four files down to three. **Next first action:** `cv-detail.component.scss` 640/400, then
-  `cv-detail.component.html` 466/300 and `cv-detail.component.ts` 500/400.
+  four files down to three. **Then `cv-detail.component.scss` went 640 to 349/400, by deletion rather
+  than by the partial the plan called for**: 321 of its lines could not reach an element, because a
+  page's compiled CSS is scoped to its own view and twenty-three selector groups styled markup the
+  section editors declare and already style themselves, while six more were rendered nowhere in the
+  repository. **The reusable finding is the check, not the deletion** - a page stylesheet growing
+  while its template shrinks is usually accumulating rules for markup that has already left, so
+  compare what the page renders against what its sheet defines before hoisting anything into a
+  shared partial. `dashboard`, `analytics` and `quick-view-modal` have no extracted children, so
+  their sheets cannot be large for this reason; `tracker` and `pipeline` do, and are worth the same
+  audit with a real SCSS parser, because they nest and a flat scan reads them as noise.
+  **Next first action:** `cv-detail.component.html` 466/300, then `cv-detail.component.ts` 500/400.
   `cv-preview.component.html` at 779/300 stays blocked by decision - it looks like nine `ng-template`
   atoms and is not, and its real seam is the 17 near-identical `@if (isEditingLeaf(...))` pairs.
 

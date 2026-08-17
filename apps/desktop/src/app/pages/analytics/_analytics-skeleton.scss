@@ -1,0 +1,80 @@
+// Analytics loading placeholders, emitted once from `apps/desktop/src/styles.scss`.
+//
+// This is the one part of the page's vocabulary genuinely shared with a child.
+// The page's own skeleton branch renders `--caption`, `--title`, `--bar` and
+// `--plot`; `AnalyticsKpiRowComponent` renders `--icon`, `--num` and `--label`
+// inside its own placeholder tiles. A page rule cannot reach a child's markup,
+// so one of the two would otherwise need a copy - and copying is what loses
+// rules when only one side is later edited.
+//
+// The whole family moves together rather than only the three the child needs:
+// a base and its modifiers split across two files are decided by style-injection
+// order rather than by source order.
+//
+// Emitted unwrapped rather than nested under a page root, which is safe here
+// because `ana-` is distinctive - no other stylesheet in the repository defines
+// an `.ana-*` class. That check is the condition `CODE_QUALITY.md` attaches to
+// an unwrapped partial, and it is why Profile's generic vocabulary had to be
+// nested instead.
+
+.ana-skel {
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunken) 25%,
+    var(--surface-2) 50%,
+    var(--surface-sunken) 75%
+  );
+  background-size: 300% 100%;
+  animation: ana-shimmer 1.4s ease infinite;
+  border-radius: 5px;
+
+  &--caption {
+    width: 220px;
+    height: 14px;
+  }
+  &--icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+  }
+  &--num {
+    width: 52%;
+    height: 26px;
+    margin-top: auto;
+  }
+  &--label {
+    width: 72%;
+    height: 10px;
+    border-radius: 4px;
+  }
+  &--title {
+    width: 200px;
+    height: 14px;
+  }
+  &--bar {
+    height: 34px;
+    border-radius: 6px;
+  }
+  &--plot {
+    height: 150px;
+    border-radius: 6px;
+  }
+}
+
+@keyframes ana-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+// Half of the page's reduced-motion rule, kept beside the animation it disables
+// for the same reachability reason: the page's copy cannot reach the child's
+// placeholders. The `.ana-caption__dot` half stays on the page with its dot.
+@media (prefers-reduced-motion: reduce) {
+  .ana-skel {
+    animation: none;
+  }
+}

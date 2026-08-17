@@ -1,0 +1,77 @@
+// The bar list under an analytics card. These rules moved here with the markup
+// they style (`analytics-bar-list.component.html`), because Angular scopes a
+// component's compiled CSS to its own view and a `.ana-stage` rule left on the
+// page could not reach a row this component declares.
+//
+// The per-card notes and the funnel's leakage bar are NOT here: they are
+// projected through `<ng-content>`, so they stay in the page's view and keep the
+// page's own `.ana-note` / `.ana-leak` rules.
+
+.ana-funnel {
+  padding: 22px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ana-stage {
+  display: grid;
+  grid-template-columns: 132px 1fr 132px;
+  align-items: center;
+  gap: 18px;
+
+  &__name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+
+  &__bar {
+    position: relative;
+    height: 36px;
+    background: var(--surface-sunken);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: 6px;
+  }
+
+  &__count {
+    position: absolute;
+    right: 12px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  &__conv {
+    text-align: right;
+  }
+
+  &__pct {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  &__of {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+}
+
+.ana-stage__name--wide {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

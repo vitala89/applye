@@ -107,7 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **15 files over budget**, down from 18 across three watches.
+  concentrated.** The full audit reads **12 files over budget**, down from 18 across four watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -170,6 +170,32 @@
   child-component extraction, not a deletion**: the table - `.jt-th*`, `.jt-td*`, `.jt-joblink`,
   `.jt-stage*`, `.jt-status*` - is about 215 lines and one responsibility, but its markup is in the
   page template at 278/300, so moving the rules means moving the markup.
+
+- **Analytics is split, and the seam was repetition rather than sections.**
+  `analytics.component.html` **426 to 215/300** and `analytics.component.scss` **557 to 312/400**.
+  Six cards - funnel, score distribution, score vs outcome, time to response, pipeline aging,
+  locations - each wrote out the same fifteen lines of bar markup. They differ only in their data,
+  and the page's computeds had already resolved every difference into a value, so one
+  `AnalyticsBarListComponent` serves all six while every predicate that distinguishes them stays in
+  the page. The KPI row and the trend plot came out for size rather than repetition.
+  **Three reusable findings.** First, **the KPI row renders its own loading placeholders and that is
+  a fact rather than a mode** - the store returns no view until the facts load, so the tile list is
+  already empty exactly while the page is loading; a boolean `skeleton` input would have been a
+  hidden mode saying the same thing twice, and leaving a second copy of the tile markup in the
+  page's skeleton branch would have made `.ana-tile` shared for no reason. Second, **the one family
+  that genuinely is shared went to a partial rather than a copy** - `_analytics-skeleton.scss`,
+  emitted once from `styles.scss`, moving the whole `.ana-skel` family together including its half
+  of the reduced-motion rule, because a base and its modifiers split across two files are decided by
+  style-injection order rather than by source order. Third, **per-card notes and the leakage bar are
+  projected rather than passed as inputs**, so they stay in the page's view and keep the page's own
+  `.ana-note` / `.ana-leak` rules without moving at all. `quality:style-move` across all five sheets:
+  **lossless**. **The page had no spec of any kind, and the one it has now was written before the
+  split** - all sixteen assertions passed against the unsplit page first, which is what makes them a
+  check rather than a description. **Two mutations survived the first pass**, and the important one
+  is the shape this refactor makes possible: making every list render the funnel's conversion column
+  left everything green, because the spec only checked the column existed _somewhere_. With one
+  component serving six call sites the property is that the column belongs to the funnel and to
+  nothing else, and it has to be counted per list.
 
 - **That decision was answered and is now implemented: `cv-detail.component.ts` 464 -> 388/400.** The
   CV cluster's last unblocked file is inside its budget. #466 asked whether `CvStyleStore` should take

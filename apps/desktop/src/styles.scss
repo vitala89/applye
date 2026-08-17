@@ -36,6 +36,12 @@
 // restyle Settings, Dashboard and Jobs.
 @use './app/pages/profile/profile-shell' as *;
 
+// Analytics loading placeholders. The page's skeleton branch and the extracted
+// KPI row both render `.ana-skel` boxes, and a page rule cannot reach a child's
+// markup. Emitted unwrapped, which is safe because `ana-` is distinctive - no
+// other stylesheet defines an `.ana-*` class.
+@use './app/pages/analytics/analytics-skeleton' as *;
+
 // CV theme fonts. The preview/editor sets `font-family` to the theme font by
 // name (e.g. "Lato"); without these @font-face rules the browser can't find it
 // and falls back to its default serif, so the editor looked nothing like the

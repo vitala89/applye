@@ -139,7 +139,7 @@ the recorder emits. Check a re-encode by eye at 1:1 before shipping it; these we
   a row reaches `document_library` are importing a file, generating a baseline, or finishing the
   apply wizard, and the first two are AI calls. Writing rows straight into the database would put it
   in a state no user could reach. The content is the same invented person as `PROFILE_MD` in
-  `seed.mjs`, word for word where they overlap.
+  `seed-persona.mjs`, word for word where they overlap.
 
 - `guide/dashboard-empty.png` - captured 2026-07-27. The quiet state was produced by clearing the
   actual reasons for each card - the follow-up date, the imminent interview, the cached scores -

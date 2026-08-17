@@ -107,7 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **11 files over budget**, down from 18 across five watches.
+  concentrated.** The full audit reads **10 files over budget**, down from 18 across six watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -170,6 +170,23 @@
   child-component extraction, not a deletion**: the table - `.jt-th*`, `.jt-td*`, `.jt-joblink`,
   `.jt-stage*`, `.jt-status*` - is about 215 lines and one responsibility, but its markup is in the
   page template at 278/300, so moving the rules means moving the markup.
+
+- **The capture seed is split, and the last item with no decision attached is done.**
+  `tools/capture/seed.mjs` **541/400 to 220**, with the demo data in `seed-persona.mjs` (61),
+  `seed-jobs.mjs` (202) and `seed-discover.mjs` (80). **Split by what changes when** - the persona
+  changes with the story the screenshots tell, the jobs with the mix of statuses the Dashboard needs,
+  the Discover rows with the feed's badge rules, and none of those is a reason to touch the SQL
+  writer or the safety flag. The Discover rows are their own module because they are exactly what
+  `--discover-only` touches. **It extracted cleanly because the data holds no timestamps**: every
+  date is a relative day offset resolved against one `NOW` stamped at the start of the run, which is
+  what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
+  notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
+  `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
+  **With this the over-budget list is ten, and every remaining item has a decision or a shape
+  attached to it** rather than being unexamined: four are blocked by decision
+  (`cv-preview.component.html` 779/300, `document.model.ts` 504/400, `db.service.ts` 461/400,
+  Profile 445/400 settled), five are page stylesheets, and `first-launch.component.ts` 419/400 is the
+  one source file nobody has looked at yet.
 
 - **The documentation site's page module is split, and the routes never noticed.**
   `apps/web/src/app/docs/pages.ts` **557/400 to thirteen files**, largest 120. The reusable part is

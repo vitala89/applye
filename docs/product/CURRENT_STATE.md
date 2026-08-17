@@ -171,25 +171,26 @@
   `.jt-stage*`, `.jt-status*` - is about 215 lines and one responsibility, but its markup is in the
   page template at 278/300, so moving the rules means moving the markup.
 
-- **That decision is now answered, and the answer was not either of the two options the question
-  offered.** `cv-detail.component.ts` is **464/400**, and what remains is screen state -
-  `collapsedSections`, `livePanelOpen`, `liveSelection`, `previewMode`, `justSaved`,
-  `sampleResolvedStyle` and the `sampleStyleSync` after-render effect - plus `setSectionStyle` /
-  `setSectionTitleStyle` / `resetSectionStyle`, which compose a `libs/core` helper with
-  `CvStyleStore.applyStyle` and which **no template renders**: only `cv-detail.style.spec.ts` calls
-  them. #466 asked whether `CvStyleStore` should take all of it, and merged unanswered. Re-put through
-  the grilling gate, **the maintainer chose to split it by responsibility** (`ADR-0005`, amendment
-  sixty-four): the three methods go to `CvStyleStore`, which is **161/250** and whose `applyStyle` they
-  already compose, and the screen state goes to a **new `CvDetailPageStore`**, named after
-  `DiscoverPageStore`. Panel-open, preview mode and `justSaved` are not facts about the style tree, and
-  `ADR-0005` says a page whose state does not fit decomposes by responsibility rather than growing one
-  store - putting all of it in `CvStyleStore` would have spent its 89 lines of headroom building the
-  second god-object the 250 budget exists to catch. **The tests move with the state**:
-  `cv-style.store.spec.ts` is 197/600 and can absorb the store-level half of `cv-detail.style.spec.ts`
-  (**526** lines, not the 622 earlier handoffs carried), and the page store gets its own spec. **Not
-  yet implemented, and the cost is named in advance**: `CvStyleStore` is already in the eager chunk, the
-  new store adds a second barrel export, and `cv-detail` is a `loadComponent` route - so `nx build
-desktop` measures it before it lands.
+- **That decision was answered and is now implemented: `cv-detail.component.ts` 464 -> 388/400.** The
+  CV cluster's last unblocked file is inside its budget. #466 asked whether `CvStyleStore` should take
+  the page's whole remainder and merged unanswered; re-put through the grilling gate with the sizes
+  settled first, **the maintainer chose a third shape - split it by responsibility** (`ADR-0005`,
+  amendment sixty-four). The three per-section methods went to `CvStyleStore` (161 -> **180/250**),
+  whose own `applyStyle` they already composed; the screen state went to a new **`CvDetailPageStore`**
+  (**75/250**), because panel-open, preview mode and `justSaved` are not facts about the style tree and
+  this ADR says a page decomposes by responsibility rather than growing one store.
+  **Three findings the decision had not anticipated, and they are the reusable part.** First,
+  `sampleResolvedStyle` and its `afterRenderEffect` **could not move** - the effect reads a
+  `viewChild`'s computed style off the DOM after layout, which is view, and this layer does not own
+  view. Second, **the premise was optimistic**: moving the state left the class at **434**, not under 400. The last 34 lines were page geometry and the ATS note wording, and the cover-letter editor
+  already had the answer - `CoverLetterStyleCardComponent` owns both and injects its store directly,
+  while `CvPageStyleCardComponent` took four inputs and emitted three outputs so the page could do the
+  same work upstairs. **The CV side was the outlier twice over**, and the card now matches (50 ->
+  90/400), taking the template 275 -> 265/300. Third, the bundle cost was **~250 bytes** (eager chunk
+  279.78 -> 280.03 kB, initial total unchanged at 1.50 MB), measured before landing rather than after.
+  **The tests moved with the state**: five per-section tests left `cv-detail.style.spec.ts`
+  (526 -> 498/600) for `cv-style.store.spec.ts` (197 -> 246/600), the new store has 9 tests built with
+  `new` and no `TestBed`, and seven mutations all kill a test.
   `cv-preview.component.html` at 779/300 stays blocked by decision - it looks like nine `ng-template`
   atoms and is not, and its real seam is the 17 near-identical `@if (isEditingLeaf(...))` pairs.
 

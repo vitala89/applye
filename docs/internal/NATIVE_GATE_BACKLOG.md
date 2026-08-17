@@ -95,6 +95,23 @@ every assertion in the suite.
 - [ ] **An edit still lands on the right target.** With APPLY TO on "This element", change the line
       style and confirm the paper redraws that element only - not the section divider.
 
+The stylesheet deletion needs one pass of its own, in **Edit** mode rather than Preview. 321 lines
+were removed on the reasoning that Angular's view encapsulation made them unreachable, and each
+section editor already carries its own copy. That was checked declaration by declaration and by
+`quality:style-move`, but both are static: if the reasoning is wrong anywhere, the symptom is an
+unstyled control, which no test in this repository can see.
+
+- [ ] **Open the CV editor in Edit mode and look at each section.** Personal details (the two-column
+      grid and the "pull from profile" button), Experience (entry frames, bullet rows with their dot
+      and remove button, add/remove buttons), Education (the same frames), Skills (group labels,
+      chips, the dashed "add skill" input), Languages (rows and the add button). Anything that reads
+      as unstyled - a bare input, a button with no frame, a chip with no background - is a rule that
+      was load-bearing after all.
+- [ ] **Drag a section.** The drag preview and the placeholder are the one case the static check
+      could not settle: CDK applies `.cdk-drag-preview` at runtime and moves the preview into a
+      body-level overlay, so an encapsulated rule may never have reached it. Left in place rather
+      than removed on a guess.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

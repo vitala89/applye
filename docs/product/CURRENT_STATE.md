@@ -133,8 +133,8 @@
   while its template shrinks is usually accumulating rules for markup that has already left, so
   compare what the page renders against what its sheet defines before hoisting anything into a
   shared partial. `dashboard`, `analytics` and `quick-view-modal` have no extracted children, so
-  their sheets cannot be large for this reason; `tracker` and `pipeline` do, and are worth the same
-  audit with a real SCSS parser, because they nest and a flat scan reads them as noise.
+  their sheets cannot be large for this reason; `tracker` and `pipeline` do, and **that audit has now
+  been run and is closed** - see the next entry.
   **Then the template went 466 to 275/300**, split into four cards - the photo section editor (which
   had been the only `@switch` arm not already a component), the settings card, the page-style card and
   the save-template dialog - taking the stylesheet to 230/400 with it. **The generic control styling
@@ -151,17 +151,45 @@
   full with a comment pointing at the other. `themeBaseStyle` went with them - its only mention
   anywhere was inside a comment.
 
-- **One decision is open, and it is the only thing standing between `cv-detail.component.ts` and its
-  budget.** At **464/400**, what remains is screen state: `collapsedSections`, `livePanelOpen`,
-  `liveSelection`, `previewMode`, `justSaved`, `sampleResolvedStyle` and the `sampleStyleSync`
-  after-render effect, plus `setSectionStyle` / `setSectionTitleStyle` / `resetSectionStyle`, which
-  compose a `libs/core` helper with `CvStyleStore.applyStyle` and which **no template renders** - only
-  `cv-detail.style.spec.ts` calls them. `ADR-0005` says all of it belongs in a store, so moving it
-  changes what `libs/application` owns, which `AGENTS.md` reserves for the maintainer through the
-  grilling gate. **The supporting fact:** `cv-style.store.spec.ts` already asserts `activeTheme` and
-  `updateTitleStyle` directly, so parts of `cv-detail.style.spec.ts` (622 lines) are the same tests one
-  indirection removed - which is what makes "move the state, move the tests" plausible rather than
-  merely tidy. **Not attempted.** Everything achievable without that decision has now been taken.
+- **The dead-copy audit on `tracker` and `pipeline` is done, and it is mostly a negative result.**
+  The method is the reusable part: compile the page's sheet with Sass so `&__head` and `&--warn`
+  resolve, then match every flattened selector's rightmost compound against the markup the page's own
+  template declares. **The tool was validated against a known answer before being believed** - run on
+  `cv-detail.component.scss` at `f79c9b1e~1` it flags 29 classes, 29 of which #464 deleted, and misses
+  none. **`pipeline.component.scss` came back clean**: 0 of 75 rules unreachable, so its 456 lines are
+  large for ordinary reasons and the dead-copy pattern does not apply. **`tracker.component.scss` went
+  455 to 433/400** on three families - `.jt__title`, which no element has ever carried; the `.jt-tbtn`
+  half of two shared selector lists, whose only real definition is the export dialog's own copy; and
+  `@keyframes jtIn` / `jtPop`, which nothing in the sheet references. **The keyframes are a distinct
+  case worth carrying:** keyframe names are _not_ scoped by Angular, so those two were live global
+  declarations rather than dead text, and dropping them is safe only because all three consumers each
+  declare a byte-identical copy. **Two false-positive classes were caught by hand, not by the tool**:
+  `pipeline`'s `score--high|mid|low` come from `[class]="scoreClass(...)"`, whose literals live in
+  `libs/application`, so a page-local scan reads them as dead. Anything binding `[class]` to a function
+  needs that function's module fed in before the result means anything. **What is left on tracker is a
+  child-component extraction, not a deletion**: the table - `.jt-th*`, `.jt-td*`, `.jt-joblink`,
+  `.jt-stage*`, `.jt-status*` - is about 215 lines and one responsibility, but its markup is in the
+  page template at 278/300, so moving the rules means moving the markup.
+
+- **That decision is now answered, and the answer was not either of the two options the question
+  offered.** `cv-detail.component.ts` is **464/400**, and what remains is screen state -
+  `collapsedSections`, `livePanelOpen`, `liveSelection`, `previewMode`, `justSaved`,
+  `sampleResolvedStyle` and the `sampleStyleSync` after-render effect - plus `setSectionStyle` /
+  `setSectionTitleStyle` / `resetSectionStyle`, which compose a `libs/core` helper with
+  `CvStyleStore.applyStyle` and which **no template renders**: only `cv-detail.style.spec.ts` calls
+  them. #466 asked whether `CvStyleStore` should take all of it, and merged unanswered. Re-put through
+  the grilling gate, **the maintainer chose to split it by responsibility** (`ADR-0005`, amendment
+  sixty-four): the three methods go to `CvStyleStore`, which is **161/250** and whose `applyStyle` they
+  already compose, and the screen state goes to a **new `CvDetailPageStore`**, named after
+  `DiscoverPageStore`. Panel-open, preview mode and `justSaved` are not facts about the style tree, and
+  `ADR-0005` says a page whose state does not fit decomposes by responsibility rather than growing one
+  store - putting all of it in `CvStyleStore` would have spent its 89 lines of headroom building the
+  second god-object the 250 budget exists to catch. **The tests move with the state**:
+  `cv-style.store.spec.ts` is 197/600 and can absorb the store-level half of `cv-detail.style.spec.ts`
+  (**526** lines, not the 622 earlier handoffs carried), and the page store gets its own spec. **Not
+  yet implemented, and the cost is named in advance**: `CvStyleStore` is already in the eager chunk, the
+  new store adds a second barrel export, and `cv-detail` is a `loadComponent` route - so `nx build
+desktop` measures it before it lands.
   `cv-preview.component.html` at 779/300 stays blocked by decision - it looks like nine `ng-template`
   atoms and is not, and its real seam is the 17 near-identical `@if (isEditingLeaf(...))` pairs.
 

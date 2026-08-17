@@ -20,13 +20,6 @@ $pin: 190px;
   flex-wrap: wrap;
   margin-bottom: var(--space-5);
 }
-.jt__title {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xl, 22px);
-  font-weight: var(--weight-semibold, 600);
-  letter-spacing: -0.02em;
-  margin: 0;
-}
 .jt__sub {
   font-size: var(--text-sm);
   color: var(--text-secondary);
@@ -76,8 +69,7 @@ $pin: 190px;
   cursor: pointer;
   outline: none;
 }
-.jt__tbtn,
-.jt-tbtn {
+.jt__tbtn {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -104,8 +96,7 @@ $pin: 190px;
     cursor: default;
   }
 }
-.jt__tbtn--primary,
-.jt-tbtn--primary {
+.jt__tbtn--primary {
   background: var(--text-accent);
   border-color: var(--text-accent);
   color: #fff;
@@ -429,29 +420,16 @@ $pin: 190px;
 
 /* The export dialog's rules - `.jt-modal*` and `.jt-field*` - moved with its
    markup into `tracker-export-modal/` (ADR-0005, amendment twenty-one). The
-   `.jt-tbtn` half of the shared button rule below was copied there rather
-   than moved, because the toolbar still uses the `.jt__tbtn` half. */
+   `.jt-tbtn` half of that shared pair has since been deleted here: this sheet is
+   scoped to this component's view, so it never reached the dialog, whose own copy
+   has been styling it. The toolbar's `.jt__tbtn` is the live half and stays. */
 
-@keyframes jtIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes jtPop {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+/* `jtIn` and `jtPop` were defined here and referenced by nothing in this sheet.
+   Their consumers - the export dialog, the column drawer, the row menu - each
+   carry an identical definition of their own. Keyframe names are not scoped by
+   Angular, so these were live global declarations rather than dead text;
+   identical bodies are why dropping them cannot change which one wins.
+   `jtPulse` stays: `.jt__skbar` above uses it. */
 @keyframes jtPulse {
   0%,
   100% {

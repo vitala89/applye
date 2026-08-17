@@ -148,6 +148,27 @@ none of it, so the unit tests stub it out entirely.
       `afterprint`; if that event never fires the class lingers, which is harmless only because every
       rule using it sits inside `@media print`. Worth one look on a real print dialog cancel.
 
+## C2. The tracker, after the dead-rule deletion
+
+Three rule families were deleted from `tracker.component.scss` on the argument that Angular's view
+scoping meant they could never match. The static proof is strong - the sheet was compiled with Sass
+and every flattened selector matched against the markup the page declares - but it cannot see a class
+written at runtime, and it cannot see which of two identical global `@keyframes` the browser picks.
+Both checks are free and need only the tracker to have rows.
+
+- [ ] **The tracker page renders unchanged.** Open Tracker with at least one application. The title
+      row, the toolbar buttons, the segmented period control, the table and the status pills all look
+      as they did. `.jt__title` is the rule most worth a second look - it was deleted as matching
+      nothing, so a heading that suddenly renders at the default font size is what a wrong call looks
+      like.
+- [ ] **The export dialog still has styled toolbar buttons.** Open the tracker's export dialog. Its
+      buttons keep their border, mono type and hover state, and the primary one is still accent-filled.
+      This is the `.jt-tbtn` deletion: the dialog's own copy is supposed to be what styles it.
+- [ ] **The three animations still play.** The export dialog and the column drawer fade-and-rise on
+      open (`jtIn`); a row's action menu pops (`jtPop`); the loading skeleton bars pulse (`jtPulse`).
+      The first two are the keyframe deletion - the page's copies are gone and the children's
+      identical ones must be what runs.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

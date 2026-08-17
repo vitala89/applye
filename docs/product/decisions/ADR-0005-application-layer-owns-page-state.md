@@ -3446,6 +3446,35 @@ The re-check after the fix: uppercase and letter-spacing restored, the selection
 chip painting from the child's copy, and **"Page 1 of 2" unchanged**, which is what proves
 `display: contents` kept the measured height intact.
 
+## Amendment sixty-four: the CV editor's remainder splits two ways, and the question as asked had the wrong shape
+
+**Decided, not yet implemented.** `cv-detail.component.ts` has sat at **464/400** since #466, which
+put one question to the maintainer and merged without an answer: should `CvStyleStore` take over the
+page's screen-state signals _and_ its three spec-only orchestration methods?
+
+**The answer is that those are two different moves, and asking them as one was the flaw in the
+question.** Put to the maintainer as three options, the settled shape is:
+
+- **`setSectionStyle`, `setSectionTitleStyle` and `resetSectionStyle` go to `CvStyleStore`.** They
+  compose a `libs/core` helper with that store's own `applyStyle`, so they are its work. It is
+  **161/250**, so they fit.
+- **The screen state goes to a new `CvDetailPageStore`** - `collapsedSections`, `livePanelOpen`,
+  `liveSelection`, `previewMode`, `justSaved`, `sampleResolvedStyle` and the `sampleStyleSync`
+  after-render effect. Panel-open, preview mode and `justSaved` are not facts about the style tree,
+  and this ADR already says a page whose state does not fit **decomposes by responsibility rather
+  than growing one store**. Putting all of it in `CvStyleStore` would have used the 89 lines of
+  headroom to build exactly the second god-object the 250 budget exists to catch.
+
+Naming follows `DiscoverPageStore`. The tests move with the state: `cv-style.store.spec.ts` is
+**197/600** and can absorb the store-level half of `cv-detail.style.spec.ts` (**526**, not the 622
+carried in earlier handoffs), and the page store gets its own spec.
+
+**The cost is named in advance rather than discovered.** `CvStyleStore` is already exported from the
+barrel, so it is already in the eager chunk; the new page store adds a second export, and `cv-detail`
+is a `loadComponent` route. That is the tension `docs/architecture.md` records as accepted-but-measured,
+and it is measured by `nx build desktop` before the change lands - Discover's location table cost
+12.87 kB and failed the build on a version where type-check, lint and the whole suite passed.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

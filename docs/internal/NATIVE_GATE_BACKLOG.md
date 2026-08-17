@@ -112,6 +112,24 @@ unstyled control, which no test in this repository can see.
       body-level overlay, so an encapsulated rule may never have reached it. Left in place rather
       than removed on a guess.
 
+The template split into four cards needs the same Edit-mode look, for the same reason: markup crossed
+an encapsulation boundary and jsdom has no cascade. The controls are the part to look at, because the
+page's `.cvdetail select` rule no longer reaches any of them and the reasoning that they need no
+replacement - `_editor-shell.scss` styles them globally - is a static argument.
+
+- [ ] **The settings card.** The region select is a normal control sized to its content, **not**
+      stretched across the row: `.docedit-meta-row select` sets `width: auto` on purpose, and
+      restating the page's `width: 100%` here was the mistake that was avoided rather than made. The
+      "is default" checkbox draws its box and fills it when active.
+- [ ] **The Style card.** The theme select, the page-size select and the four margin inputs all look
+      like the styled controls they were, not native browser defaults. Collapse and expand the card.
+- [ ] **The save-as-template dialog.** Open it from the header. The name field is a styled input
+      (this one **did** need its rule restated, because no `.docedit-*` rule covers a dialog), the
+      backdrop dims, Escape closes it, and confirm is disabled until the name is non-blank.
+- [ ] **The photo section.** With a profile photo present: the thumbnail is a 3:4 rounded frame, and
+      the three placement chips show one active. Without one: only the "add in profile" button and its
+      hint.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

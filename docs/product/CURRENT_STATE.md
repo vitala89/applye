@@ -107,7 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **10 files over budget**, down from 18 across six watches.
+  concentrated.** The full audit reads **9 files over budget**, down from 18 across seven watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -182,11 +182,28 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is ten, and every remaining item has a decision or a shape
+  **With this the over-budget list is nine, and every remaining item has a decision or a shape
   attached to it** rather than being unexamined: four are blocked by decision
   (`cv-preview.component.html` 779/300, `document.model.ts` 504/400, `db.service.ts` 461/400,
-  Profile 445/400 settled), five are page stylesheets, and `first-launch.component.ts` 419/400 is the
-  one source file nobody has looked at yet.
+  Profile 445/400 settled), and the other five are page stylesheets. There is no unexamined
+  source file left.
+
+- **The welcome screen's view moves out of its class, and the measurement chose the cut.**
+  `first-launch.component.ts` **419 to 38/400**, with `first-launch.component.html` at 60/300 and
+  `first-launch.component.scss` at 317/400. The first question was whether the file was over budget
+  because of view or because of logic, and the answer was not close: **323 of 419 non-empty lines
+  were the animation stylesheet and 63 were markup**, leaving two injections, one `output` and a
+  four-line method. So no store was invented and no child was carved out of a logo lockup with one
+  call site - the file was simply one of the **ten** components in `apps/desktop` that inline their
+  view, against **100** that use `styleUrl`. **The check that the rules survived is a multiset diff,
+  not `quality:style-move`**: the tool reads `.scss` files and the old rules lived in a `styles: []`
+  array, so it reports 57 selectors gained and 0 losing declarations, which is what a
+  nothing-to-compare-against run looks like rather than a clean bill. 323 style lines and 63 template
+  lines on each side, identical. **The spec was written before the split and mutation-checked before
+  it**, and the mutation that survived is the reusable finding: asserting the embedded health panel
+  shows no continue button asserted **nothing**, because the panel was still rendering its loading
+  skeleton at that point - an assertion about a branch that has not rendered yet passes for the wrong
+  reason. Settling the fixture first and counting the buttons its action row renders kills it.
 
 - **The documentation site's page module is split, and the routes never noticed.**
   `apps/web/src/app/docs/pages.ts` **557/400 to thirteen files**, largest 120. The reusable part is

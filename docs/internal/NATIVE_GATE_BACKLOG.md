@@ -197,6 +197,39 @@ section A's steps first.
       period, the chart shows the accent applications line and the grey follow-ups
       line, with the tick labels beneath.
 
+## C4. The welcome screen, after its view moved out of the class
+
+The template and the animation stylesheet moved from `styles: []` and `template:`
+into sibling files. The rules are byte-identical and Angular compiles both forms
+the same way, so nothing here is expected to have changed - but **nobody has ever
+watched this sequence run**, jsdom has neither layout nor animation, and this is
+the one screen a user sees exactly once, on a database that has never been
+written to. A regression here is invisible until it is a first impression.
+Needs a **fresh profile**: an empty database with `healthCheckSeen` unset, which
+is the only state that renders this screen.
+
+- [ ] **The whole choreography plays, in order.** Launch with a fresh profile: the
+      cursor flies in and taps the mark, the slash morphs into place, the accent
+      bar rises, the wordmark wipes in left to right, then the title, tagline,
+      buttons, hint, divider, check label and health panel arrive in sequence. A
+      `@keyframes` name that failed to survive the move shows as an element that
+      is simply present at rest, with no error anywhere.
+- [ ] **The blinking caret blinks**, after the title has settled, and keeps
+      blinking. It is the only infinite animation on the screen.
+- [ ] **Reduced motion stands the whole thing down.** With "Reduce motion" on in
+      macOS System Settings, relaunch on a fresh profile: everything is on screen
+      immediately, nothing moves, and the caret is **gone** rather than static.
+      This is one `[data-anim]` selector inside a media query - the single rule
+      whose loss would be silent in every automated check.
+- [ ] **A short window compresses rather than scrolls.** Resize to roughly half
+      height before launching: the vertical rhythm tightens and the health panel
+      is still reachable without a scrollbar. Every vertical step is a `clamp` on
+      `vh`, which no test can exercise.
+- [ ] **Both ways out work and are recorded.** "Start the tour" opens onboarding;
+      "set up on my own" goes straight to the app, and neither screen returns on
+      the next launch. The unit spec covers the two gateway writes; this covers
+      that the app actually routes on them.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

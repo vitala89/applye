@@ -8,9 +8,7 @@
  * key, which is what keeps "which leaf is this" answered in one place.
  */
 import type {
-  CvBorderStyle,
   CvEducationSection,
-  CvElementStyle,
   CvExperienceEntry,
   CvExperienceSection,
   CvLanguagesSection,
@@ -19,7 +17,8 @@ import type {
   CvSectionKey,
   CvSkillsSection,
   CvSummarySection,
-} from '../models/document.model';
+} from '../models/cv-content.model';
+import type { CvBorderStyle, CvElementStyle } from '../models/cv-style.model';
 
 import { buildContactLine } from './cv-page.util';
 

@@ -1,4 +1,4 @@
-import type { CvTemplate } from '../models/document.model';
+import type { CvTemplate } from '../models/document-library.model';
 import { buildCvContent } from './cv-content.util';
 import {
   buildAdditionalInfoBlock,

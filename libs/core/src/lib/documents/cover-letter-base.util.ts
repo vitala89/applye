@@ -5,8 +5,8 @@ import {
   CoverLetterContent,
   CoverLetterLength,
   CoverLetterTone,
-  DocumentLibraryItem,
-} from '../models/document.model';
+} from '../models/cover-letter-content.model';
+import { DocumentLibraryItem } from '../models/document-library.model';
 import { sanitizeSignature } from '../text/signature';
 
 /**

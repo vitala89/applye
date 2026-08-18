@@ -15,7 +15,8 @@
  * that did not exist yet.
  */
 
-import { CoverLetterContent, CvParsedContent } from '../models/document.model';
+import { CoverLetterContent } from '../models/cover-letter-content.model';
+import { CvParsedContent } from '../models/cv-import.model';
 import { splitDisplayName } from '../profile/split-display-name';
 
 /** Parses a skill response (JSON, possibly fenced) that is either a single

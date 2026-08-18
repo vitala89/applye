@@ -1,4 +1,6 @@
-import type { CvContent, CvParsedContent, CvSection, CvTemplate } from '../models/document.model';
+import type { CvContent, CvSection } from '../models/cv-content.model';
+import type { CvParsedContent } from '../models/cv-import.model';
+import type { CvTemplate } from '../models/document-library.model';
 import {
   buildCvContent,
   cvContentToMd,

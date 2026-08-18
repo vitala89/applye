@@ -10,17 +10,16 @@
 // section overrides and an empty map are all removed on the way out, so a style
 // that has been set and unset again is byte-identical to one never touched.
 
+import { CoverLetterBlockKey, CoverLetterStyle } from '../models/cover-letter-content.model';
+import { CvSectionKey } from '../models/cv-content.model';
 import {
-  CoverLetterBlockKey,
-  CoverLetterStyle,
   CvBorderStyle,
   CvElementStyle,
   CvFontWeight,
-  CvSectionKey,
   CvSectionStyle,
   CvStyle,
   CvTextStyle,
-} from '../models/document.model';
+} from '../models/cv-style.model';
 
 /** Applies an immutable per-section style patch while keeping the persisted
  * override tree minimal. Nested title fields are deep-merged; inherited

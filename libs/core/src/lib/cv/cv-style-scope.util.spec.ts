@@ -1,4 +1,4 @@
-import { CV_STYLE_DEFAULT, type CvStyle } from '../models/document.model';
+import { CV_STYLE_DEFAULT, type CvStyle } from '../models/cv-style.model';
 import type { CvPreviewSelection, CvStylePanelChange } from './cv-selection.util';
 import { routeCvStyleChange } from './cv-style-scope.util';
 

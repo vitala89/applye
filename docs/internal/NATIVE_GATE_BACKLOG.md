@@ -326,6 +326,35 @@ them archived; run section A's steps first.
       or an animation. Any movement seen here - a hover fade, a row transition -
       means that finding was wrong and the rule has to be copied into the child.
 
+## C8. The pipeline card, after it left the board
+
+The card's insides are a child now, but `.card` and `cdkDrag` stayed on the page,
+on that child's host element. **Drag-and-drop is the whole risk here and jsdom
+cannot drag at all** - the suite can prove each card is a registered draggable
+with its placeholder resolved, and nothing beyond that. Needs applications on the
+board, at least one at Interview with a scheduled stage. Run section A first.
+
+- [ ] **A card can still be dragged between columns.** Pick one up in Applied and
+      drop it in Interview: the status changes and the card stays where it was
+      dropped. This is the single check that would catch `cdkDrag` no longer
+      being content of its drop list, which every automated check here misses.
+- [ ] **The dragged card sits under the pointer rather than trailing it.** This is
+      the bug `_drag.scss` and `drag-styles.spec.ts` exist for, and the `.card`
+      rule it depends on now lives on a component host rather than on an
+      `<article>`. Drag slowly across the board: no echo, no lag.
+- [ ] **The drop animation still runs**, and the gap the card leaves behind shows
+      the dashed placeholder at the right size while the drag is in progress.
+- [ ] **The other cards reflow around the gap.** `.col__list.cdk-drop-list-dragging
+.card` reaches from the page's drop list into the host element; if the
+      selector stopped matching, the other cards would jump rather than slide.
+- [ ] **A card still looks like a card.** Hover one: the lift, the border and the
+      shadow are the page's `.card` rule, while everything inside it is now the
+      child's sheet - the seam a screen would show as a card whose box and
+      contents disagree.
+- [ ] **The interview stage track shows in the Interview column only.** An
+      application that moved on to Offer keeps its stage data; the track must not
+      follow it there. Counted in the suite, but only per rendered column.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

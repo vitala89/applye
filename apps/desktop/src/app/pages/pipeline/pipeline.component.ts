@@ -21,13 +21,7 @@ import {
   TriangleAlert,
   X,
 } from 'lucide-angular';
-import {
-  PipelineStore,
-  companyInitials,
-  scoreClass,
-  stageSegments,
-  stageTotal,
-} from '@applye/application';
+import { PipelineStore } from '@applye/application';
 import {
   Application,
   ApplicationStatus,
@@ -36,6 +30,7 @@ import {
   Priority,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { PipelineCardComponent } from './pipeline-card/pipeline-card.component';
 import { QuickViewModalComponent } from './quick-view-modal/quick-view-modal.component';
 import { ToastService } from '@applye/application';
 
@@ -75,6 +70,7 @@ const COLS: KanbanCol[] = [
     CdkDragPlaceholder,
     FormsModule,
     LucideAngularModule,
+    PipelineCardComponent,
     QuickViewModalComponent,
   ],
   providers: [PipelineStore],
@@ -92,12 +88,8 @@ export class PipelineComponent implements OnInit {
 
   readonly COLS = COLS;
 
-  /** Pure card drawing, from `libs/application` - exposed for the template. */
-  protected readonly initials = companyInitials;
-  protected readonly segments = stageSegments;
-  protected readonly stageTotal = stageTotal;
-  protected readonly scoreClass = scoreClass;
-  protected readonly placeholder = '-';
+  // The pure card-drawing helpers and `formatDate` moved into `pipeline-card/`
+  // with the only markup that called them.
 
   protected readonly icons = {
     empty: KanbanSquare,
@@ -181,12 +173,5 @@ export class PipelineComponent implements OnInit {
 
   onModalStageAdded(event: { id: number; stage: InterviewStage }): void {
     this.board.applyModalStage(event.id, event.stage);
-  }
-
-  /** Presentation, and therefore the page's: locale-dependent, and the
-   * application layer holds no locales. */
-  formatDate(iso?: string): string {
-    if (!iso) return '';
-    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   }
 }

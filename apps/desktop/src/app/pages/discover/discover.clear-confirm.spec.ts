@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService } from '@applye/data';
+import { DbService, DiscoverGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
 import { ToastService } from '@applye/application';
@@ -55,26 +55,28 @@ describe('Discover: the clear-feed confirmation', () => {
 
   async function mount(): Promise<void> {
     clearFeed = jest.fn().mockResolvedValue(undefined);
+    const db = {
+      listSources: jest.fn().mockResolvedValue([source()]),
+      discoverFeed: jest.fn().mockResolvedValue([feedItem(10), feedItem(11)]),
+      getProfile: jest.fn().mockResolvedValue(null),
+      getSettings: jest.fn().mockResolvedValue({
+        uiLanguage: 'en',
+        geoScope: 'worldwide',
+        market: null,
+        lastScanMarket: null,
+      }),
+      discoverClear: clearFeed,
+    };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [DiscoverComponent],
       providers: [
         provideRouter([]),
-        {
-          provide: DbService,
-          useValue: {
-            listSources: jest.fn().mockResolvedValue([source()]),
-            discoverFeed: jest.fn().mockResolvedValue([feedItem(10), feedItem(11)]),
-            getProfile: jest.fn().mockResolvedValue(null),
-            getSettings: jest.fn().mockResolvedValue({
-              uiLanguage: 'en',
-              geoScope: 'worldwide',
-              market: null,
-              lastScanMarket: null,
-            }),
-            discoverClear: clearFeed,
-          },
-        },
+        // One stub, two tokens. The page's stores read sources and the feed
+        // through `DiscoverGateway` now, and still read the profile and the
+        // settings through `DbService` - neither domain has moved yet.
+        { provide: DbService, useValue: db },
+        { provide: DiscoverGateway, useValue: db },
         TranslateService,
         ToastService,
       ],

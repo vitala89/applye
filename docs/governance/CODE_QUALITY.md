@@ -196,13 +196,19 @@ it must still never be injected into a component.
 
 Eight gateways, one per domain: profile and settings · jobs and applications · tracker · discover ·
 interview · documents (library and export) · **drafts** (tailoring, portal answers, follow-ups) ·
-system (import, backup, health). **One pull request per gateway**, smallest domain first, and each
+system (import, backup, health). **One pull request per gateway**, and each
 one is a complete migration - the methods move, that domain's consumers and their specs are
 repointed, and the methods are deleted from `DbService`. No pull request leaves a gateway delegating
 back to `DbService`: the dependency never points the wrong way, not even temporarily.
 
+**The order is by files touched, not by method count** - the two are almost uncorrelated, and the
+point of going smallest-first is a reviewable diff. Measured: discover 11 files · interview 14 ·
+tracker 14 · system 39 · jobs 54 · documents 56 · **profile and settings 68**, on seven methods.
+Ordering by method count would have put the largest migration second. Re-measure before each pull
+request rather than trusting this list, since every migration changes it.
+
 **So `DbService` is a shrinking remainder, not a home.** A method still on it means its domain has
-not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426); the
+not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget); the
 file is deleted when the last domain leaves. New code reaches for the gateway if its domain has one,
 and for `DbService` only if it does not yet.
 

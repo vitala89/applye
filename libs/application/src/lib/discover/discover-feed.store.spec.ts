@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { DiscoverFeedItem } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DiscoverGateway } from '@applye/data';
 import { DiscoverFeedStore, FEED_PAGE } from './discover-feed.store';
 
 function item(): DiscoverFeedItem {
@@ -33,7 +33,14 @@ function createStore(over: Partial<Db> = {}): { store: DiscoverFeedStore; db: Db
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [DiscoverFeedStore, { provide: DbService, useValue: db }],
+    providers: [
+      DiscoverFeedStore,
+      // One stub, two tokens: the store reads the feed through
+      // `DiscoverGateway` and still saves an application through `DbService`,
+      // which belongs to the jobs domain and has not moved.
+      { provide: DbService, useValue: db },
+      { provide: DiscoverGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(DiscoverFeedStore), db };
 }

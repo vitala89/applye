@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
-import { DbService } from '@applye/data';
+import { DiscoverGateway } from '@applye/data';
 import { type ConsoleLine, failureLines, resultLines, startedLines } from './scan-console';
 
 /**
@@ -22,7 +22,7 @@ import { type ConsoleLine, failureLines, resultLines, startedLines } from './sca
  */
 @Injectable()
 export class DiscoverScanStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DiscoverGateway);
   private readonly t = inject(TranslateService).t;
 
   private readonly scanningState = signal(false);

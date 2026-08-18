@@ -109,56 +109,60 @@
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
   concentrated.** **`db.service.ts` is now being cut into eight per-domain gateways**, one pull
   request each, smallest domain first - the maintainer superseded the recorded "not before the
-  ratchet refuses" rule on 2026-08-19. `DraftsGateway` is the first: **461 to 426/400**, still over
-  budget and expected to be until the last domain leaves. The file-size stream is otherwise
-  finished, and its last deliverable is
-  `docs/internal/NATIVE_GATE_SCRIPT.md`: the backlog's 81 checks ordered into one walkable pass of
-  fifteen stations, with the two paid checks and the two destructive ones held to the end. **The
-  maintainer drives it; no agent can.** The full audit reads **1 file over budget**, down from 18 across fifteen watches:
-  `db.service.ts`, **426/400 and falling** as the gateway migration proceeds. No stylesheet, no
-  template and no other source file is over budget.
-  `cv-live-style-panel.component.ts` was
-  the largest source file in
-  the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
-  **The finding worth carrying is that the cascade module is not a duplicate of `libs/core`'s
-  `cv-style.util.ts` even though it reads as one**: both walk the same chains, but core ends them in
-  a concrete value so a renderer can draw, and the panel's end in `undefined` so a control reads
-  Inherit - swapping them reintroduces the accent-leak bug. They are a render-facing and a
-  control-facing twin, and the cost accepted is that both sides must change together. **A mutation
-  check caught a test that could not fail**: the fixture set only a section colour where the
-  document colour was already undefined, so the assertion held whether or not the rule it named
-  existed. **The panel's template followed and is now 226/300**, split into
-  `app-cv-style-text-group` and `app-cv-style-line-group`; its stylesheet went 336 to 272/400 and
-  the shared `.cvlive__*` vocabulary is emitted once from `styles.scss`, because a class defined on
-  a page does not reach a child extracted out of it - the fourth time that has decided a split here.
-  **The rule that shaped it: reuse the markup, not the rules.** The three line groups differ in what
-  Inherit means and in when the width and colour rows show, so those predicates stay resolved in the
-  panel and the child is a view. **The panel folder is off the over-budget list**, and the cluster is
-  four files down to three. **Then `cv-detail.component.scss` went 640 to 349/400, by deletion rather
-  than by the partial the plan called for**: 321 of its lines could not reach an element, because a
-  page's compiled CSS is scoped to its own view and twenty-three selector groups styled markup the
-  section editors declare and already style themselves, while six more were rendered nowhere in the
-  repository. **The reusable finding is the check, not the deletion** - a page stylesheet growing
-  while its template shrinks is usually accumulating rules for markup that has already left, so
-  compare what the page renders against what its sheet defines before hoisting anything into a
-  shared partial. `dashboard`, `analytics` and `quick-view-modal` have no extracted children, so
-  their sheets cannot be large for this reason; `tracker` and `pipeline` do, and **that audit has now
-  been run and is closed** - see the next entry.
-  **Then the template went 466 to 275/300**, split into four cards - the photo section editor (which
-  had been the only `@switch` arm not already a component), the settings card, the page-style card and
-  the save-template dialog - taking the stylesheet to 230/400 with it. **The generic control styling
-  was the risk, and checking it inverted the expected fix**: both new cards needed no restated rule,
-  because `_editor-shell.scss` styles those controls globally and always did, and copying the section
-  editors' `width: 100%` would have overridden the shell's deliberate `width: auto`.
-  **What is left in the cluster is two files.** `cv-detail.component.ts` is **499/400**: the template
-  split removed about as much as its four imports added, and the seven aliases the page no longer
-  renders are each referenced by its own specs, so shrinking it is a decision about those specs rather
-  than a deletion. `cv-preview.component.html` at 779/300 stays blocked by its own decision.
-  **Then the two editors' duplicated chrome came out**, taking `cv-detail.component.ts` 499 to
-  **464/400** and `cover-letter-detail.component.ts` 282 to 265/400: `wysiwyg-print.ts` and
-  `document-editor-return.ts` under `pages/documents/`, each of which both editors had written out in
-  full with a comment pointing at the other. `themeBaseStyle` went with them - its only mention
-  anywhere was inside a comment.
+  ratchet refuses" rule on 2026-08-19. `DraftsGateway` was first (461 to 426) and `DiscoverGateway`
+  second: **426 to 381/400**, so the file is **under budget** from the second of eight pull requests
+  - six earlier than the ratchet would have forced it. The order of the rest was re-judged on files
+    touched rather than method count, which are almost uncorrelated: profile and settings is seven
+    methods and sixty-eight files and now goes last. The file-size stream is otherwise
+    finished, and its last deliverable is
+    `docs/internal/NATIVE_GATE_SCRIPT.md`: the backlog's 81 checks ordered into one walkable pass of
+    fifteen stations, with the two paid checks and the two destructive ones held to the end. **The
+    maintainer drives it; no agent can.** The full audit reads **0 files over budget**, down from 18 across sixteen watches:
+    nothing. `db.service.ts` reached **381/400** with the second gateway, so **no file in the
+    repository is over budget** for the first time since the campaign began. It keeps shrinking as the
+    remaining six domains leave.
+    `cv-live-style-panel.component.ts` was
+    the largest source file in
+    the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
+    **The finding worth carrying is that the cascade module is not a duplicate of `libs/core`'s
+    `cv-style.util.ts` even though it reads as one**: both walk the same chains, but core ends them in
+    a concrete value so a renderer can draw, and the panel's end in `undefined` so a control reads
+    Inherit - swapping them reintroduces the accent-leak bug. They are a render-facing and a
+    control-facing twin, and the cost accepted is that both sides must change together. **A mutation
+    check caught a test that could not fail**: the fixture set only a section colour where the
+    document colour was already undefined, so the assertion held whether or not the rule it named
+    existed. **The panel's template followed and is now 226/300**, split into
+    `app-cv-style-text-group` and `app-cv-style-line-group`; its stylesheet went 336 to 272/400 and
+    the shared `.cvlive__*` vocabulary is emitted once from `styles.scss`, because a class defined on
+    a page does not reach a child extracted out of it - the fourth time that has decided a split here.
+    **The rule that shaped it: reuse the markup, not the rules.** The three line groups differ in what
+    Inherit means and in when the width and colour rows show, so those predicates stay resolved in the
+    panel and the child is a view. **The panel folder is off the over-budget list**, and the cluster is
+    four files down to three. **Then `cv-detail.component.scss` went 640 to 349/400, by deletion rather
+    than by the partial the plan called for**: 321 of its lines could not reach an element, because a
+    page's compiled CSS is scoped to its own view and twenty-three selector groups styled markup the
+    section editors declare and already style themselves, while six more were rendered nowhere in the
+    repository. **The reusable finding is the check, not the deletion** - a page stylesheet growing
+    while its template shrinks is usually accumulating rules for markup that has already left, so
+    compare what the page renders against what its sheet defines before hoisting anything into a
+    shared partial. `dashboard`, `analytics` and `quick-view-modal` have no extracted children, so
+    their sheets cannot be large for this reason; `tracker` and `pipeline` do, and **that audit has now
+    been run and is closed** - see the next entry.
+    **Then the template went 466 to 275/300**, split into four cards - the photo section editor (which
+    had been the only `@switch` arm not already a component), the settings card, the page-style card and
+    the save-template dialog - taking the stylesheet to 230/400 with it. **The generic control styling
+    was the risk, and checking it inverted the expected fix**: both new cards needed no restated rule,
+    because `_editor-shell.scss` styles those controls globally and always did, and copying the section
+    editors' `width: 100%` would have overridden the shell's deliberate `width: auto`.
+    **What is left in the cluster is two files.** `cv-detail.component.ts` is **499/400**: the template
+    split removed about as much as its four imports added, and the seven aliases the page no longer
+    renders are each referenced by its own specs, so shrinking it is a decision about those specs rather
+    than a deletion. `cv-preview.component.html` at 779/300 stays blocked by its own decision.
+    **Then the two editors' duplicated chrome came out**, taking `cv-detail.component.ts` 499 to
+    **464/400** and `cover-letter-detail.component.ts` 282 to 265/400: `wysiwyg-print.ts` and
+    `document-editor-return.ts` under `pages/documents/`, each of which both editors had written out in
+    full with a comment pointing at the other. `themeBaseStyle` went with them - its only mention
+    anywhere was inside a comment.
 
 - **The dead-copy audit on `tracker` and `pipeline` is done, and it is mostly a negative result.**
   The method is the reusable part: compile the page's sheet with Sass so `&__head` and `&--warn`

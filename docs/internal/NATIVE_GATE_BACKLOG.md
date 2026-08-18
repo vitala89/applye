@@ -418,6 +418,18 @@ break), education, skills and languages.
 - [ ] **Skills rows and the languages line still read at their normal weights**
       and separators, with the printed PDF matching the on-screen sheet.
 
+## C11. The CV save-as-template dialog, after its buttons were fixed
+
+One check, and it is the whole of the bug: the dialog's two buttons were
+rendering unstyled and no automated gate could see it, because a class name that
+matches nothing fails silently. The suite now asserts the design-system classes
+are present, which is a claim about the DOM, not about the paint.
+
+- [ ] **The Save-as-template dialog's buttons look like buttons.** CV editor,
+      Save as template: Cancel reads as a ghost button and Save as the primary
+      one, both matching every other dialog in the app - not as unstyled
+      browser-default buttons. Type a name and confirm Save enables.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

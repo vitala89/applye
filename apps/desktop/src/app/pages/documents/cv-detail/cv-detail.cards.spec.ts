@@ -284,7 +284,7 @@ describe('CvDetailComponent card wiring', () => {
       typeInto(input, 'Berlin CV');
       expect(component.saveTemplateName()).toBe('Berlin CV');
 
-      (root().querySelector('.btn-ghost') as HTMLButtonElement).click();
+      (root().querySelector('.modal__actions .btn--ghost') as HTMLButtonElement).click();
       fixture.detectChanges();
       expect(component.saveTemplateOpen()).toBe(false);
     });
@@ -293,7 +293,7 @@ describe('CvDetailComponent card wiring', () => {
       component.openSaveTemplate();
       fixture.detectChanges();
 
-      const confirm = root().querySelector('.btn-primary') as HTMLButtonElement;
+      const confirm = root().querySelector('.modal__actions .btn--primary') as HTMLButtonElement;
       expect(confirm.disabled).toBe(true);
 
       typeInto(root().querySelector('.modal input[type="text"]') as HTMLInputElement, 'X');

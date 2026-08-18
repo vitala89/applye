@@ -1,5 +1,10 @@
-// Moved from the page with the only markup that renders it. `.btn-ghost` and
-// `.btn-primary` are not here: those are global, from `libs/ui`.
+// Moved from the page with the only markup that renders it. The buttons are not
+// here and are not styled by name at all: they use `libs/ui`'s `ButtonDirective`,
+// which emits `.btn`/`.btn--ghost`/`.btn--primary` - the family the global sheet
+// actually declares. The comment this replaces claimed `.btn-ghost` and
+// `.btn-primary` were global from `libs/ui`; they were declared nowhere that
+// could reach this dialog, and both buttons rendered unstyled from the day the
+// component was split out.
 //
 // The name field needs its own rule for the reason the six section editors
 // record - the page's `.cvdetail input` cannot reach a child - and here there is

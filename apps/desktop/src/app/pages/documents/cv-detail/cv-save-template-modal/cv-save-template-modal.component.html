@@ -20,9 +20,13 @@
       [placeholder]="t()('documents.cv_field_template_name')"
     />
     <div class="modal__actions">
-      <button class="btn-ghost" (click)="cancelled.emit()">{{ t()('actions.cancel') }}</button>
+      <button appButton variant="ghost" type="button" (click)="cancelled.emit()">
+        {{ t()('actions.cancel') }}
+      </button>
       <button
-        class="btn-primary"
+        appButton
+        variant="primary"
+        type="button"
         [disabled]="saving() || !name().trim()"
         (click)="confirmed.emit()"
       >

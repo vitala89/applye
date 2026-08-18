@@ -107,7 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **7 files over budget**, down from 18 across nine watches.
+  concentrated.** The full audit reads **6 files over budget**, down from 18 across ten watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -182,16 +182,36 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is seven, and every remaining item has a decision or a shape
+  **With this the over-budget list is six, and every remaining item has a decision or a shape
   attached to it** rather than being unexamined. Three are blocked by decision -
   `cv-preview.component.html` 779/300 (the seventeen `@if (isEditingLeaf(...))` pairs, which need
   `aif-grilling`), `document.model.ts` 504/400 (a `libs/` public API, same gate) and `db.service.ts`
   461/400 (cut into per-domain gateways when the ratchet refuses the next method, not before). The
-  rest are stylesheets: `discover` 475, `_editor-shell` 460, `pipeline` 456 and `tracker` 433.
-  **`pipeline` and `tracker` are audited clean of dead rules** and need a child extraction rather
-  than a deletion pass; `_editor-shell` is the shared global partial both document editors depend
-  on; `discover` was judged not worth it once, on grounds that still hold. There is no unexamined
-  source file left.
+  rest are stylesheets: `discover` 475, `_editor-shell` 460 and `pipeline` 456. **`pipeline` is
+  audited clean of dead rules** and needs a child extraction rather than a deletion pass - the same
+  shape `tracker` has just been through, and the same conclusion #467 reached for both;
+  `_editor-shell` is the shared global partial both document editors depend on, and changing what it
+  emits is not a size pass; `discover` was judged not worth it once, on grounds that still hold.
+  There is no unexamined source file left.
+
+- **The tracker's grid comes out of the page, and the last audited-clean stylesheet reaches budget.**
+  `tracker.component.scss` **433 to 207/400**, template **278 to 134/300**, class 259 to 213/400,
+  with `app-tracker-table` extracted. **A deletion pass was ruled out in advance:** #467 audited this
+  sheet with a real Sass parser and found nothing dead, so moving markup was the only route - which
+  is why it waited for its own session. The child **reads the three stores directly**, as the four
+  existing tracker children already do, and owns nothing that reaches outside the grid: navigation,
+  the save-and-reload, and the row menu's fixed-position popup all stay on the page as outputs.
+  **Two Sass variables had to move with it, and a crash rather than a judgement said so:** `$idx` and
+  `$pin` are the sticky-column offsets, declared at the top of the page sheet and read only by the
+  grid, so the extracted sheet would not compile until they came along - **a Sass variable is a
+  dependency a selector-level check cannot see.** The reduced-motion rule at the foot of the page
+  sheet deliberately stayed: it is a `*` selector scoped to the page's own view, and nothing in the
+  grid animates, which was checked rather than assumed. `quality:style-move` across both sheets is
+  **lossless**; the cost is 1.08 kB in the `tracker` lazy chunk. **The page had no spec at all**,
+  which is why the grid had never been rendered by a test even though all four of its siblings have
+  one. **Two mutations survived the first pass and both were real gaps:** emitting a fixed row rather
+  than the clicked one is invisible with a single row on screen, and the `menuId` input could be
+  dropped entirely because nothing asserted which row reported itself expanded.
 
 - **The dashboard's two list panels become one component with two call sites.**
   `dashboard.component.scss` **506 to 360/400**, template **262 to 187/300**, class 313/400.

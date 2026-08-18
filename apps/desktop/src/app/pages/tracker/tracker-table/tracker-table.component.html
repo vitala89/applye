@@ -1,0 +1,143 @@
+<div class="jt__table-wrap">
+  <div class="jt__scroll" (scroll)="scrolled.emit()">
+    <table class="jt__table">
+      <thead>
+        <tr>
+          <th class="jt-th jt-th--idx">{{ t()('tracker.col_n') }}</th>
+          @for (col of columns.visibleColumns(); track col.key) {
+            <th class="jt-th" [class.jt-th--pin]="col.pin">
+              <span class="jt-th__inner">
+                @if (col.custom) {
+                  <lucide-icon class="jt-th__mark" [img]="icons.sparkles" [size]="11" />
+                }
+                {{ colLabel(col) }}
+                @if (col.editable) {
+                  <lucide-icon class="jt-th__pencil" [img]="icons.pencil" [size]="10" />
+                }
+              </span>
+            </th>
+          }
+          <th class="jt-th jt-th--act"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows.view(); track r.id; let i = $index) {
+          <tr
+            class="jt-row"
+            [class.is-archived]="r.archived"
+            [class.is-editing]="editor.isEditing(r)"
+          >
+            <td class="jt-td jt-td--idx">{{ (i + 1).toString().padStart(2, '0') }}</td>
+            @for (col of columns.visibleColumns(); track col.key) {
+              <td
+                class="jt-td"
+                [class.jt-td--pin]="col.pin"
+                [class.jt-td--locked]="col.src === 'job' && !col.custom"
+                [class.jt-td--notes]="col.key === 'notes'"
+                [attr.title]="col.src === 'job' && !col.custom ? t()('tracker.locked_hint') : null"
+              >
+                <!-- edit mode -->
+                @if (editor.isEditing(r) && col.editable) {
+                  @if (col.type === 'status') {
+                    <select
+                      class="jt-input"
+                      [value]="editor.value(col)"
+                      (change)="setDraft(col, $event)"
+                    >
+                      @for (s of statuses; track s) {
+                        <option [value]="s">{{ t()('status.' + s) }}</option>
+                      }
+                    </select>
+                  } @else if (col.type === 'yesno') {
+                    <select
+                      class="jt-input"
+                      [value]="editor.value(col)"
+                      (change)="setDraft(col, $event)"
+                    >
+                      <option value="yes">{{ t()('common.yes') }}</option>
+                      <option value="no">{{ t()('common.no') }}</option>
+                    </select>
+                  } @else {
+                    <input
+                      class="jt-input"
+                      [type]="
+                        col.type === 'date' ? 'date' : col.type === 'number' ? 'number' : 'text'
+                      "
+                      [value]="editor.value(col)"
+                      (change)="setDraft(col, $event)"
+                    />
+                  }
+                } @else {
+                  <!-- read mode -->
+                  @if (col.key === 'company') {
+                    @if (r.jobId != null) {
+                      <button type="button" class="jt-joblink" (click)="jobRequested.emit(r)">
+                        {{ cellValue(r, col) || '·' }}
+                        <lucide-icon [img]="icons.link" [size]="13" />
+                      </button>
+                    } @else {
+                      <span class="jt-strong">{{ cellValue(r, col) || '·' }}</span>
+                    }
+                  } @else if (col.type === 'status') {
+                    <span class="jt-status" [attr.data-status]="r.status">
+                      <span class="jt-status__dot"></span>{{ statusLabel(r.status) }}
+                    </span>
+                  } @else if (col.type === 'link') {
+                    @if (cellValue(r, col)) {
+                      <a
+                        class="jt-link"
+                        [href]="cellValue(r, col)"
+                        target="_blank"
+                        rel="noopener"
+                        >{{ t()('tracker.open_link') }}</a
+                      >
+                    } @else {
+                      <span class="jt-dim">-</span>
+                    }
+                  } @else if (col.type === 'date') {
+                    <span class="jt-mono" [class.jt-dim]="!cellValue(r, col)">{{
+                      cellValue(r, col) ? fmtDate(cellValue(r, col)) : '-'
+                    }}</span>
+                  } @else if (col.type === 'stage') {
+                    @if (r.nextStageLabel) {
+                      <span class="jt-stage">
+                        <span class="jt-stage__label">{{ r.nextStageLabel }}</span>
+                        @if (r.nextStageAt) {
+                          <span class="jt-stage__date">{{ fmtDate(r.nextStageAt) }}</span>
+                        }
+                      </span>
+                    } @else {
+                      <span class="jt-dim">-</span>
+                    }
+                  } @else if (col.type === 'yesno') {
+                    <span
+                      class="jt-mono"
+                      [class.jt-yes]="cellValue(r, col) === 'yes'"
+                      [class.jt-dim]="cellValue(r, col) !== 'yes'"
+                      >{{ t()(cellValue(r, col) === 'yes' ? 'common.yes' : 'common.no') }}</span
+                    >
+                  } @else {
+                    <span class="jt-cell" [class.jt-dim]="!cellValue(r, col)">{{
+                      cellValue(r, col) || '-'
+                    }}</span>
+                  }
+                }
+              </td>
+            }
+            <!-- actions -->
+            <td class="jt-td jt-td--act">
+              <app-tracker-row-actions
+                [editing]="editor.isEditing(r)"
+                [saving]="editor.saving()"
+                [menuOpen]="menuId() === r.id"
+                (saved)="saveRequested.emit()"
+                (cancelled)="editor.cancel()"
+                (menuToggled)="menuToggled.emit({ row: r, trigger: $event })"
+              />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

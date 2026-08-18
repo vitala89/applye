@@ -25,13 +25,13 @@
 //   body  + element  -> the one selected leaf
 //   body  + document -> the document body
 
+import type { CvSectionKey } from '../models/cv-content.model';
 import type {
   CvElementStyle,
-  CvSectionKey,
   CvSectionStyle,
   CvStyle,
   CvTextStyle,
-} from '../models/document.model';
+} from '../models/cv-style.model';
 import type { CvPreviewSelection, CvStylePanelChange } from './cv-selection.util';
 import {
   clearSectionElementOverrides,

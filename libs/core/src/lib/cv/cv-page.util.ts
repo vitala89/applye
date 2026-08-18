@@ -8,7 +8,8 @@
  * legacy preset string, or absent - into clamped millimetres plus the
  * resolution-independent percentages the preview pads with.
  */
-import type { CvPersonalDetailsSection, PageMargins, PageSettings } from '../models/document.model';
+import type { CvPersonalDetailsSection } from '../models/cv-content.model';
+import type { PageMargins, PageSettings } from '../models/page-settings.model';
 
 /** Reference-order single-line contact string: location · phone · email ·
  * website · linkedin, then optionally birthdate/marital. Empty fields drop out

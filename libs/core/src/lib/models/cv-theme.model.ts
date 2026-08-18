@@ -1,4 +1,4 @@
-import type { CvFontWeight, CvStyle } from './document.model';
+import type { CvFontWeight, CvStyle } from './cv-style.model';
 
 export interface CvThemeTokens {
   accentHex: string;

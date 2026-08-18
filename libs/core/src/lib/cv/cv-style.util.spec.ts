@@ -12,7 +12,7 @@ import {
   resetCvElementStyle,
   resetCvSectionStyle,
 } from './cv-style.util';
-import { CV_STYLE_DEFAULT, CvStyle } from '../models/document.model';
+import { CV_STYLE_DEFAULT, CvStyle } from '../models/cv-style.model';
 
 describe('effectiveSectionStyle', () => {
   const base: CvStyle = { ...CV_STYLE_DEFAULT }; // fontFamily Calibri, fontSizePt 11, accentColorHex #333333, fontWeight 400

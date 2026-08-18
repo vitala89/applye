@@ -1,5 +1,5 @@
-import type { CvPhotoSection } from './document.model';
-import { PAGE_SETTINGS_DEFAULT } from './document.model';
+import type { CvPhotoSection } from './cv-content.model';
+import { PAGE_SETTINGS_DEFAULT } from './page-settings.model';
 
 describe('CvPhotoSection', () => {
   it('carries an optional dataUri', () => {

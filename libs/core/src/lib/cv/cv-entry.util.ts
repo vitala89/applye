@@ -12,7 +12,7 @@ import {
   CvExperienceSection,
   CvLanguagesSection,
   CvSkillsSection,
-} from '../models/document.model';
+} from '../models/cv-content.model';
 
 /** Blank rows for the "add entry" affordance in the CV editor. */
 export function blankExperienceEntry(): CvExperienceEntry {

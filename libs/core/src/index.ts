@@ -9,7 +9,12 @@ export * from './lib/models/settings.model';
 export * from './lib/models/source.model';
 export * from './lib/models/discover.model';
 export * from './lib/models/health.model';
-export * from './lib/models/document.model';
+export * from './lib/models/cv-content.model';
+export * from './lib/models/cover-letter-content.model';
+export * from './lib/models/page-settings.model';
+export * from './lib/models/cv-style.model';
+export * from './lib/models/document-library.model';
+export * from './lib/models/cv-import.model';
 export * from './lib/models/cv-theme.model';
 export * from './lib/types/common.types';
 

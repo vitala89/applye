@@ -3,7 +3,7 @@ import type {
   CvExperienceSection,
   CvLanguagesSection,
   CvSkillsSection,
-} from '../models/document.model';
+} from '../models/cv-content.model';
 import {
   blankEducationEntry,
   blankExperienceEntry,

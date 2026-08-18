@@ -1,12 +1,12 @@
 import type {
   CvContent,
-  CvParsedContent,
   CvSection,
   CvSectionKey,
   CvSkillGroup,
   CvSkillsSection,
-  CvTemplate,
-} from '../models/document.model';
+} from '../models/cv-content.model';
+import type { CvParsedContent } from '../models/cv-import.model';
+import type { CvTemplate } from '../models/document-library.model';
 
 /**
  * Building a CV document and rendering it back out: the section order a

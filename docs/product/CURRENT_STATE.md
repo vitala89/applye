@@ -107,9 +107,10 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **2 files over budget**, down from 18 across fourteen watches,
-  and **no stylesheet and no template is over budget any more.**
-  Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
+  concentrated.** The full audit reads **1 file over budget**, down from 18 across fifteen watches:
+  `db.service.ts` 461/400, which **stays by decision**. No stylesheet, no template and no other
+  source file is over budget.
+  `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
   **The finding worth carrying is that the cascade module is not a duplicate of `libs/core`'s
@@ -183,10 +184,11 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is two, and both are decided rather than pending.**
-  `document.model.ts` 504/400 (a `libs/` public API, split by domain with the barrel re-exporting, so
-  no call site moves) and `db.service.ts` 461/400, where the recorded rule **stands**: cut into
-  per-domain gateways when the ratchet refuses the next method added to it, not before. **`_editor-shell.scss`
+  **With this the over-budget list is one, and it is decided rather than pending.** `db.service.ts`
+  461/400, where the recorded rule in `CODE_QUALITY.md` **stands**: cut into per-domain gateways when
+  the ratchet refuses the next method added to it, not before. **`document.model.ts` is done** - 504
+  into six files along the seams already in it, with the `@applye/core` exported-symbol count
+  **315 before and 315 after**. **`_editor-shell.scss`
   is done** - 460 to **26/400** as a barrel over ten partials under `editor-shell/`, with the compiled
   `styles.scss` diffed before and after and found **byte-identical**, which is the only check that can
   prove a global partial still emits what it did. **`cv-preview.component.html` is done** - 779 to

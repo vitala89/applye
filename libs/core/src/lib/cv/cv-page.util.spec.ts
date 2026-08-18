@@ -1,4 +1,4 @@
-import type { CvPersonalDetailsSection } from '../models/document.model';
+import type { CvPersonalDetailsSection } from '../models/cv-content.model';
 import {
   buildContactLine,
   resolvePageSettings,

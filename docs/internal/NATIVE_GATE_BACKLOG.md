@@ -230,6 +230,38 @@ is the only state that renders this screen.
       the next launch. The unit spec covers the two gateway writes; this covers
       that the app actually routes on them.
 
+## C6. The dashboard's two list panels, after they became one component
+
+The two panels are one component with two call sites now, and three rules cross
+the new boundary: `.badge` and the `.sk` shimmer are second copies, and
+`@keyframes dash-shimmer` is a **global** declaration made twice under the same
+name. A copy that drifts shows as an unstyled or unanimated element and never as
+an error. Needs a database with at least one scheduled future interview stage and
+one claimed job; run section A's steps first.
+
+- [ ] **Both panels sit side by side and fill their columns.** The host element
+      is the grid item now rather than the `.panel` div, with `:host { display:
+block }` added to make that work. A missed host rule collapses a column,
+      which is the most visible thing on this page and invisible to every test
+      here.
+- [ ] **Interviews show a stage badge and a time; recent jobs show a status
+      pill.** Neither shows the other's. The unit tests count this per panel, but
+      only a real screen shows the two trailing elements are still laid out where
+      they were.
+- [ ] **The accent badge still reads as accented.** Schedule a stage inside the
+      next 48 hours: its badge takes the accent treatment while a later one does
+      not. `.badge` is a copy in the child and the page keeps its own for queue
+      cards, so this is where a drift between them would first show.
+- [ ] **Both skeletons shimmer, on the same beat.** Open the dashboard on a slow
+      database: the KPI tiles, the queue cards and both list panels all animate.
+      The panels' shimmer is a second `@keyframes dash-shimmer`; if the two
+      definitions ever diverge, the two halves of the page animate differently.
+- [ ] **Reduced motion stops all of it.** With "Reduce motion" on, no shimmer
+      anywhere on the dashboard. That rule is now declared twice as well.
+- [ ] **The jobs skeleton looks unchanged.** Its placeholder widths moved from
+      52%/28% to 50%/30% when the two panels merged. This is the one deliberate
+      visual change in the split, and the only check on whether it is noticeable.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

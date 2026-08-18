@@ -1,0 +1,66 @@
+<div class="panel">
+  <div class="panel__head">
+    <span class="panel__title">{{ title() }}</span>
+    <button type="button" class="panel__link" (click)="linkClicked.emit()">
+      {{ linkLabel() }}
+    </button>
+  </div>
+  @if (loading()) {
+    <div class="panel__body">
+      @for (i of [0, 1]; track i) {
+        <div class="prow">
+          <span class="sk prow__mono"></span>
+          <!-- One pair of widths for both panels. They were 50%/30% here and
+               52%/28% on Recent jobs - two percentage points apart, which is
+               below the width of a character at this size and was almost
+               certainly never a decision. -->
+          <div class="prow__meta" style="display: flex; flex-direction: column; gap: 7px">
+            <span class="sk" style="width: 50%; height: 11px"></span>
+            <span class="sk" style="width: 30%; height: 10px"></span>
+          </div>
+          @if (trailing() === 'pill') {
+            <span
+              class="sk"
+              style="width: 60px; height: 20px; border-radius: var(--radius-badge)"
+            ></span>
+          } @else {
+            <span class="sk" style="width: 64px; height: 10px"></span>
+          }
+        </div>
+      }
+    </div>
+  } @else if (rows().length) {
+    <div class="panel__body">
+      @for (row of rows(); track row.route) {
+        <button type="button" class="prow" (click)="rowClicked.emit(row)">
+          <span class="prow__mono">{{ row.monogram }}</span>
+          <div class="prow__meta">
+            <div class="prow__role">{{ row.role }}</div>
+            <div class="prow__company">{{ row.company }}</div>
+          </div>
+          @if (trailing() === 'pill') {
+            <span class="pill" [class.pill--applied]="row.pillActive">
+              @if (row.pillActive) {
+                <span class="pill__dot"></span>
+              }
+              {{ row.pill }}
+            </span>
+          } @else {
+            @if (row.badge) {
+              <span class="badge" [class.badge--accent]="row.badgeAccent">{{ row.badge }}</span>
+            }
+            <span class="prow__time">{{ row.time }}</span>
+          }
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="panel__empty">
+      <span class="panel__empty-icon"
+        ><lucide-icon [img]="emptyIcon()" [size]="20" aria-hidden="true"
+      /></span>
+      <div class="panel__empty-title">{{ emptyTitle() }}</div>
+      <div class="panel__empty-body">{{ emptyBody() }}</div>
+    </div>
+  }
+</div>

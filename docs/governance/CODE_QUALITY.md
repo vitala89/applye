@@ -189,9 +189,32 @@ rather than only components, and every service in `libs/data` rather than those 
 re-exported through `@applye/application` would satisfy the tag check while the `inject()` call stayed
 the only evidence.
 
-**`db.service.ts` is internal to this layer.** It is over budget, it may not grow, and it is cut into
-per-domain gateways when the ratchet refuses the next method added to it. Do not inject it into a
-component.
+**`db.service.ts` is internal to this layer, and it is being cut into per-domain gateways now.** The
+rule here used to be "cut it when the ratchet refuses the next method added to it, not before"; the
+maintainer superseded that on 2026-08-19 and the migration is under way. It may still not grow, and
+it must still never be injected into a component.
+
+Eight gateways, one per domain: profile and settings · jobs and applications · tracker · discover ·
+interview · documents (library and export) · **drafts** (tailoring, portal answers, follow-ups) ·
+system (import, backup, health). **One pull request per gateway**, smallest domain first, and each
+one is a complete migration - the methods move, that domain's consumers and their specs are
+repointed, and the methods are deleted from `DbService`. No pull request leaves a gateway delegating
+back to `DbService`: the dependency never points the wrong way, not even temporarily.
+
+**So `DbService` is a shrinking remainder, not a home.** A method still on it means its domain has
+not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426); the
+file is deleted when the last domain leaves. New code reaches for the gateway if its domain has one,
+and for `DbService` only if it does not yet.
+
+`hashText` is the one method deliberately not going to a domain: a dozen callers across profile,
+documents, dashboard and jobs read it, so it goes to the system gateway rather than being duplicated
+into each domain that happens to key a cache on it. A service migrated before then injects both, and
+says so where it injects them.
+
+**Each gateway carries a spec that asserts its command strings and argument shapes**, because every
+consumer stubs the gateway: a method invoking the wrong Rust command leaves the whole suite green and
+fails only in the running app. `drafts.gateway.spec.ts` is the shape to copy, including the test that
+counts distinct command names - two methods sharing a string passes every per-method assertion.
 
 ## Angular and frontend decomposition
 

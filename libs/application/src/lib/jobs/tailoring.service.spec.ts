@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DraftsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TailorContext, TailoringService } from './tailoring.service';
 import { WizardActivityService } from './wizard-activity.service';
@@ -13,7 +13,8 @@ import { ToastService } from '../shell/toast.service';
  * them would serve a stale build.
  */
 describe('TailoringService', () => {
-  let db: { hashText: jest.Mock; tailoringCacheGet: jest.Mock; tailoringCacheSave: jest.Mock };
+  let db: { hashText: jest.Mock };
+  let drafts: { tailoringCacheGet: jest.Mock; tailoringCacheSave: jest.Mock };
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
   let toast: { warning: jest.Mock };
 
@@ -54,6 +55,8 @@ describe('TailoringService', () => {
   function make(): TailoringService {
     db = {
       hashText: jest.fn(async (s: string) => `hash(${s})`),
+    };
+    drafts = {
       tailoringCacheGet: jest.fn(async () => null),
       tailoringCacheSave: jest.fn(async () => undefined),
     };
@@ -70,6 +73,7 @@ describe('TailoringService', () => {
         TailoringService,
         WizardActivityService,
         { provide: DbService, useValue: db },
+        { provide: DraftsGateway, useValue: drafts },
         { provide: AiService, useValue: ai },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
         { provide: ToastService, useValue: toast },
@@ -127,7 +131,7 @@ describe('TailoringService', () => {
 
   it('serves a cached pass without calling the AI or re-saving it', async () => {
     const s = make();
-    db.tailoringCacheGet.mockResolvedValue({
+    drafts.tailoringCacheGet.mockResolvedValue({
       resultMd: 'cached',
       changesJson: '["c"]',
       gapsJson: '["g"]',
@@ -136,7 +140,7 @@ describe('TailoringService', () => {
     await s.run(ctx());
 
     expect(ai.run).not.toHaveBeenCalled();
-    expect(db.tailoringCacheSave).not.toHaveBeenCalled();
+    expect(drafts.tailoringCacheSave).not.toHaveBeenCalled();
     expect(s.results()).toHaveLength(3);
     expect(s.results()[0].fromCache).toBe(true);
     expect(s.status()).toContain('0 tokens');
@@ -146,8 +150,8 @@ describe('TailoringService', () => {
     const s = make();
     await s.run(ctx());
 
-    expect(db.tailoringCacheSave).toHaveBeenCalledTimes(3);
-    expect(db.tailoringCacheSave).toHaveBeenCalledWith(
+    expect(drafts.tailoringCacheSave).toHaveBeenCalledTimes(3);
+    expect(drafts.tailoringCacheSave).toHaveBeenCalledWith(
       expect.objectContaining({ jobId: JOB_ID, pass: 1, resultMd: 'md-1', modelUsed: 'm' }),
     );
     expect(s.status()).toBe('Pass 3 done - 10 in / 5 out');
@@ -217,7 +221,7 @@ describe('TailoringService', () => {
 
     expect(s.error()).toBe(true);
     expect(s.status()).toContain('Pass 1 returned invalid JSON');
-    expect(db.tailoringCacheSave).not.toHaveBeenCalled();
+    expect(drafts.tailoringCacheSave).not.toHaveBeenCalled();
   });
 
   it('discards every partial result when cancelled mid-run', async () => {
@@ -273,7 +277,7 @@ describe('TailoringService', () => {
   describe('restoreFromCache', () => {
     it('rebuilds every cached pass without spending a token', async () => {
       const s = make();
-      db.tailoringCacheGet.mockResolvedValue({
+      drafts.tailoringCacheGet.mockResolvedValue({
         resultMd: 'cached',
         changesJson: '["c"]',
         gapsJson: '["g"]',
@@ -289,7 +293,7 @@ describe('TailoringService', () => {
 
     it('stops at the first miss - later passes are keyed on what is missing', async () => {
       const s = make();
-      db.tailoringCacheGet
+      drafts.tailoringCacheGet
         .mockResolvedValueOnce({ resultMd: 'md-1', changesJson: '[]', gapsJson: '[]' })
         .mockResolvedValueOnce(null);
 
@@ -297,7 +301,7 @@ describe('TailoringService', () => {
 
       expect(s.results()).toHaveLength(1);
       expect(s.isTailored()).toBe(false);
-      expect(db.tailoringCacheGet).toHaveBeenCalledTimes(2);
+      expect(drafts.tailoringCacheGet).toHaveBeenCalledTimes(2);
     });
 
     it('leaves the results alone when nothing is cached', async () => {
@@ -333,7 +337,7 @@ describe('TailoringService', () => {
       await s.restoreFromCache(ctx({ profile: null }));
       await s.restoreFromCache(ctx({ settings: null }));
 
-      expect(db.tailoringCacheGet).not.toHaveBeenCalled();
+      expect(drafts.tailoringCacheGet).not.toHaveBeenCalled();
     });
   });
 

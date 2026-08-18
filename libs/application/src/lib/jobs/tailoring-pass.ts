@@ -96,6 +96,31 @@ export function resultMdForPass(passes: readonly PassResult[], pass: number): st
  * string made those two cases identical, and a corrupt row silently tailored
  * the profile under the name of the selected CV.
  */
+/** The exact byte string a pass's cache key is computed from - every input to
+ * the pass, including the results of the passes before it, so a change anywhere
+ * upstream invalidates the cache. Pure and here rather than in the service
+ * because it is a function of its arguments and nothing else; the service keeps
+ * only the hashing call, which is I/O.
+ *
+ * `\x00` joins the parts because it cannot occur in any of them, so no two
+ * different input sets can produce the same string by running together. */
+export function passHashInput(
+  baselineMd: string,
+  jdText: string,
+  passNum: PassNumber,
+  lang: string,
+  priorPasses: readonly PassResult[],
+): string {
+  return [
+    baselineMd,
+    jdText,
+    String(passNum),
+    lang,
+    resultMdForPass(priorPasses, 1),
+    resultMdForPass(priorPasses, 2),
+  ].join('\x00');
+}
+
 export type CvBaselineFailure = 'missing' | 'unreadable';
 
 export type CvBaseline =

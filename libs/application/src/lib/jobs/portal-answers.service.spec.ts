@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DraftsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PortalAnswersService } from './portal-answers.service';
 import { ToastService } from '../shell/toast.service';
@@ -18,15 +18,16 @@ describe('PortalAnswersService', () => {
 
   let db: {
     hashText: jest.Mock;
-    portalAnswersGet: jest.Mock;
-    portalAnswersSave: jest.Mock;
   };
+  let drafts: { portalAnswersGet: jest.Mock; portalAnswersSave: jest.Mock };
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
   let toast: { error: jest.Mock };
 
   function make(): PortalAnswersService {
     db = {
       hashText: jest.fn(async (s: string) => `hash:${s}`),
+    };
+    drafts = {
       portalAnswersGet: jest.fn(async () => null),
       portalAnswersSave: jest.fn(async () => undefined),
     };
@@ -45,6 +46,7 @@ describe('PortalAnswersService', () => {
       providers: [
         PortalAnswersService,
         { provide: DbService, useValue: db },
+        { provide: DraftsGateway, useValue: drafts },
         { provide: AiService, useValue: ai },
         { provide: ToastService, useValue: toast },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
@@ -110,7 +112,7 @@ describe('PortalAnswersService', () => {
 
   it('loadFromCache adopts a cache hit and marks it cached', async () => {
     const s = make();
-    db.portalAnswersGet.mockResolvedValue({
+    drafts.portalAnswersGet.mockResolvedValue({
       answersJson: '[{"question":"Q","answer":"cached"}]',
     });
 
@@ -122,7 +124,7 @@ describe('PortalAnswersService', () => {
 
   it('loadFromCache swallows a cache read failure', async () => {
     const s = make();
-    db.portalAnswersGet.mockRejectedValue(new Error('db down'));
+    drafts.portalAnswersGet.mockRejectedValue(new Error('db down'));
 
     await expect(s.loadFromCache(job, profile, settings)).resolves.toBeUndefined();
     expect(s.answers()).toEqual([]);
@@ -140,7 +142,7 @@ describe('PortalAnswersService', () => {
     s.questions.set(['   ']);
     await s.draft(job, profile, settings);
 
-    expect(db.portalAnswersGet).not.toHaveBeenCalled();
+    expect(drafts.portalAnswersGet).not.toHaveBeenCalled();
     expect(ai.run).not.toHaveBeenCalled();
   });
 
@@ -153,12 +155,12 @@ describe('PortalAnswersService', () => {
     expect(s.fromCache()).toBe(false);
     expect(s.status()).toBe('15 tokens used.');
     expect(s.drafting()).toBe(false);
-    expect(db.portalAnswersSave).toHaveBeenCalledTimes(1);
+    expect(drafts.portalAnswersSave).toHaveBeenCalledTimes(1);
   });
 
   it('draft returns the cached answers without calling the AI', async () => {
     const s = make();
-    db.portalAnswersGet.mockResolvedValue({
+    drafts.portalAnswersGet.mockResolvedValue({
       answersJson: '[{"question":"Q","answer":"cached"}]',
     });
 
@@ -190,7 +192,7 @@ describe('PortalAnswersService', () => {
 
     expect(s.error()).toBe(true);
     expect(s.status()).toContain('AI returned invalid JSON');
-    expect(db.portalAnswersSave).not.toHaveBeenCalled();
+    expect(drafts.portalAnswersSave).not.toHaveBeenCalled();
   });
 
   it('draft strips a fenced code block before parsing', async () => {
@@ -233,9 +235,9 @@ describe('PortalAnswersService', () => {
 
     await s.redraft(0, job, profile, settings);
 
-    expect(db.portalAnswersGet).not.toHaveBeenCalled();
+    expect(drafts.portalAnswersGet).not.toHaveBeenCalled();
     expect(ai.run).toHaveBeenCalledTimes(1);
-    expect(db.portalAnswersSave).toHaveBeenCalledTimes(1);
+    expect(drafts.portalAnswersSave).toHaveBeenCalledTimes(1);
   });
 
   it('redraft keeps the current answer when the AI returns nothing usable', async () => {

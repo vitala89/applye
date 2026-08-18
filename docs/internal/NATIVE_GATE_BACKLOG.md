@@ -297,6 +297,35 @@ block }` added to make that work. A missed host rule collapses a column,
       52%/28% to 50%/30% when the two panels merged. This is the one deliberate
       visual change in the split, and the only check on whether it is noticeable.
 
+## C7. The tracker grid, after it left the page
+
+The whole table is a child now, and the two sticky-column offsets went with it.
+Sticky positioning, horizontal overflow and column pinning are exactly what jsdom
+has no model of: the suite renders every cell and can prove none of them stays
+put while the grid scrolls sideways. Needs tracker rows in the database, one of
+them archived; run section A's steps first.
+
+- [ ] **The index and the pinned column still stick.** Scroll the grid
+      horizontally: the row number and the pinned column stay against the left
+      edge while everything else moves under them. `$idx` and `$pin` moved into
+      the child's sheet, and they are the only two values that decide this.
+- [ ] **The header stays put vertically.** Scroll down a long list: the column
+      headings remain visible above the rows.
+- [ ] **The row menu still escapes the grid.** Open a row's kebab menu near the
+      bottom or right edge: the popup is drawn whole rather than clipped by the
+      scroll container. It is rendered at the page root for that reason, and it
+      now crosses a component boundary to get there.
+- [ ] **Scrolling the grid closes an open row menu**, and the menu does not
+      linger detached from its row. The unit test asserts the wiring; only a real
+      scroll shows the popup actually goes.
+- [ ] **Editing a row in place still fits.** Open a row for editing: the inputs
+      sit inside their cells without changing the row height or pushing the
+      pinned columns out of alignment.
+- [ ] **Nothing in the grid animates.** The page's reduced-motion rule was left
+      behind deliberately, on the finding that no grid rule declares a transition
+      or an animation. Any movement seen here - a hover fade, a row transition -
+      means that finding was wrong and the rule has to be copied into the child.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

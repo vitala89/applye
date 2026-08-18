@@ -14,19 +14,15 @@ import {
 } from 'lucide-angular';
 import type { ApplicationStatus, TrackerRow } from '@applye/core';
 import {
-  TrackerColumnDef,
   TrackerColumnsStore,
   TrackerReportStore,
   TrackerRowEditorStore,
   TrackerRowsStore,
-  formatTrackerDate,
-  trackerCellValue,
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
-import { trackerColumnLabel } from './tracker-column-label';
 import { TrackerColumnDrawerComponent } from './tracker-column-drawer/tracker-column-drawer.component';
-import { TrackerRowActionsComponent } from './tracker-row-actions/tracker-row-actions.component';
+import { TrackerTableComponent } from './tracker-table/tracker-table.component';
 import { TrackerRowMenuComponent } from './tracker-row-menu/tracker-row-menu.component';
 import { TrackerSummaryStripComponent } from './tracker-summary-strip/tracker-summary-strip.component';
 import { TrackerExportModalComponent } from './tracker-export-modal/tracker-export-modal.component';
@@ -43,9 +39,9 @@ import { TrackerExportModalComponent } from './tracker-export-modal/tracker-expo
     LucideAngularModule,
     TrackerColumnDrawerComponent,
     TrackerExportModalComponent,
-    TrackerRowActionsComponent,
     TrackerRowMenuComponent,
     TrackerSummaryStripComponent,
+    TrackerTableComponent,
   ],
   templateUrl: './tracker.component.html',
   styleUrl: './tracker.component.scss',
@@ -144,25 +140,9 @@ export class TrackerComponent {
     this.report.market.set(this.rows.settings()?.uiLanguage === 'de' ? 'de' : 'intl');
   }
 
-  /** The table's column headings. Three components under `pages/tracker/` name
-   * columns now, so the rule itself lives in `tracker-column-label.ts` rather
-   * than in a third copy of these two lines (ADR-0005, amendment twenty-two). */
-  colLabel(col: TrackerColumnDef): string {
-    return trackerColumnLabel(col, this.t());
-  }
-
-  // Template-side delegates to the pure column module, which a template cannot
-  // import directly.
-  cellValue(row: TrackerRow, col: TrackerColumnDef): string {
-    return trackerCellValue(row, col);
-  }
-  fmtDate(v: string): string {
-    return formatTrackerDate(v);
-  }
-
-  statusLabel(v?: string): string {
-    return v ? this.t()('status.' + v) : '·';
-  }
+  // `colLabel`, `cellValue`, `fmtDate` and `statusLabel` moved into
+  // `tracker-table/` with the only markup that called them. `setDraft` went with
+  // them for the same reason (ADR-0005, amendment twenty-two).
 
   // ---------- row link ----------
   openJob(row: TrackerRow): void {
@@ -176,11 +156,6 @@ export class TrackerComponent {
   startEdit(row: TrackerRow): void {
     this.editor.start(row);
     this.closeMenus();
-  }
-
-  /** Reads the DOM event the store must not see, then delegates. */
-  setDraft(col: TrackerColumnDef, e: Event): void {
-    this.editor.setValue(col, (e.target as HTMLInputElement | HTMLSelectElement).value);
   }
 
   // The store writes and reports; the page decides what to say about it, and

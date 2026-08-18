@@ -1,0 +1,237 @@
+/* The grid's sticky-column offsets. Both moved from the page sheet with the
+ * only rules that read them: the index column's width, and where the pinned
+ * column starts after it. */
+$idx: 48px;
+$pin: 190px;
+
+/* ---------------- table ---------------- */
+.jt__table-wrap {
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--surface-1);
+}
+/* the actual horizontal-scroll container: sticky columns stick relative to
+   THIS element, so it must be the overflow parent (not the table). */
+.jt__scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.jt__table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  min-width: max-content;
+}
+.jt-th {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  white-space: nowrap;
+  border-bottom: var(--border-width) solid var(--border-default);
+  background: var(--surface-1);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.jt-th__inner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.jt-th__mark {
+  color: var(--text-accent);
+}
+.jt-th__pencil {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+.jt-th--idx {
+  width: $idx;
+  min-width: $idx;
+  text-align: center;
+  left: 0;
+  z-index: 3;
+}
+.jt-th--pin {
+  left: $idx;
+  min-width: $pin;
+  z-index: 3;
+  box-shadow: 1px 0 0 var(--border-default);
+}
+.jt-th--act {
+  right: 0;
+  width: 46px;
+  z-index: 3;
+  box-shadow: -1px 0 0 var(--border-default);
+}
+.jt-row {
+  background: var(--surface-1);
+  &:nth-child(even) {
+    background: var(--surface-sunken);
+  }
+  &.is-archived {
+    opacity: 0.6;
+  }
+}
+.jt-td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  color: var(--text-secondary);
+  vertical-align: middle;
+  background: inherit;
+}
+.jt-td--idx {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  text-align: center;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+.jt-td--pin {
+  position: sticky;
+  left: $idx;
+  z-index: 2;
+  min-width: $pin;
+  box-shadow: 1px 0 0 var(--border-default);
+}
+.jt-td--locked {
+  color: var(--text-tertiary);
+}
+.jt-td--notes {
+  white-space: normal;
+}
+.jt-td--act {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  text-align: center;
+  box-shadow: -1px 0 0 var(--border-default);
+}
+.jt-joblink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  lucide-icon {
+    color: var(--text-tertiary);
+  }
+  &:hover {
+    color: var(--text-accent);
+    lucide-icon {
+      color: var(--text-accent);
+    }
+  }
+}
+.jt-strong {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+.jt-cell {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jt-td--notes .jt-cell {
+  white-space: normal;
+  max-width: 260px;
+}
+.jt-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs, 12px);
+  color: var(--text-secondary);
+}
+.jt-dim {
+  color: var(--text-tertiary);
+}
+.jt-yes {
+  color: var(--success);
+}
+.jt-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs, 12px);
+  color: var(--text-accent);
+}
+.jt-stage {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+.jt-stage__label {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+.jt-stage__date {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--warning);
+}
+.jt-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-badge);
+  border: var(--border-width) solid var(--border-default);
+  color: var(--text-tertiary);
+}
+.jt-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.jt-status[data-status='applied'] {
+  color: var(--text-accent);
+  border-color: color-mix(in srgb, var(--text-accent) 40%, transparent);
+}
+.jt-status[data-status='interview'] {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+.jt-status[data-status='offer'] {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+.jt-status[data-status='rejected'] {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+/* ---------------- inline edit ---------------- */
+.jt-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs, 12px);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--text-accent);
+  border-radius: var(--radius-input);
+  padding: var(--space-1) var(--space-2);
+  outline: none;
+}

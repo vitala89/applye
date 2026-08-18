@@ -350,3 +350,42 @@
   letter-spacing: var(--tracking-wide);
   color: var(--text-tertiary);
 }
+
+/* Keyframes declared here rather than on the page, because this is where their
+ * consumers are. Angular does not scope keyframe names, so the page's copies
+ * were live global declarations made on behalf of files that never declared
+ * them - `dv-pulse` and `dv-shimmer` are used by this partial and by nothing in
+ * the page's own sheet at all. This partial is emitted once from `styles.scss`,
+ * so every consumer reaches them, page included. */
+@keyframes dv-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--accent-tint);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+@keyframes dv-shimmer {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes dv-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

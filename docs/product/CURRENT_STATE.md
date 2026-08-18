@@ -107,7 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **5 files over budget**, down from 18 across eleven watches.
+  concentrated.** The full audit reads **4 files over budget**, down from 18 across twelve watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -182,18 +182,30 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is five, and every remaining item has a decision or a shape
+  **With this the over-budget list is four, and every remaining item has a decision or a shape
   attached to it** rather than being unexamined. Three are blocked by decision -
   `cv-preview.component.html` 779/300 (the seventeen `@if (isEditingLeaf(...))` pairs, which need
   `aif-grilling`), `document.model.ts` 504/400 (a `libs/` public API, same gate) and `db.service.ts`
   461/400 (cut into per-domain gateways when the ratchet refuses the next method, not before). The
-  rest are two stylesheets: `discover` 475 and `_editor-shell` 460. **Both are decisions rather than
-  mechanics.** `_editor-shell` is the shared global partial both document editors depend on, and
-  changing what it emits is not a size pass; `discover` was judged not worth it once, on the grounds
-  that what remains is the page's own chrome and shrinking it means extracting components its
-  template does not need - **that judgement should be made again rather than inherited.** Every
-  stylesheet #467 audited clean has now been through a child extraction. There is no unexamined
-  source file left.
+  fourth is `_editor-shell.scss` 460/400, the shared global partial both document editors depend on -
+  splitting it by responsibility is a size pass, changing what it emits is not. **`discover` is
+  done**: re-judged rather than re-declined, and the re-judgement found 48 lines that were dead or
+  declared in the wrong place. There is no unexamined source file left.
+
+- **Discover was re-judged rather than re-declined, and the verdict changed because the measurement
+  did.** `discover.component.scss` **475 to 393/400**. The old reasoning - what remains is the page's
+  own chrome, and shrinking it means extracting components the 281/300 template does not need - **was
+  right about extraction and wrong about the file.** A reachability audit had never been run here.
+  **Two selectors are genuinely dead** (`.dv-footer__actions`, `.dv-footer__confirm` - no template,
+  no TypeScript, no dynamic binding anywhere), and **four of the six keyframes were declared on the
+  page and belonged elsewhere**: `dv-pulse` and `dv-slidein` are used by nothing in the page's own
+  sheet at all, and their consumers - the global partial and the sources drawer - **declare no copy**,
+  so the page was emitting them on behalf of files that would have gone silently unanimated. This is
+  the mirror of the tracker's `jtIn`/`jtPop` case, where every consumer _had_ an identical copy and
+  deletion was the answer. The clear-feed confirmation became `app-discover-clear-confirm` at no cost
+  in duplicated rules, because `.dv-btn` already comes from the global partial. **The audit tool was
+  validated against a known answer before its negative result was believed**, and its documented
+  false positive fired exactly as expected on five `[class]`-bound console modifiers.
 
 - **The pipeline card leaves the board, and what stayed behind is the finding.**
   `pipeline.component.scss` **456 to 269/400**, template **199 to 133/300**, class 192 to 162/400,

@@ -355,6 +355,36 @@ board, at least one at Interview with a scheduled stage. Run section A first.
       application that moved on to Offer keeps its stage data; the track must not
       follow it there. Counted in the suite, but only per rendered column.
 
+## C9. Discover, after the keyframe relocation and the dialog extraction
+
+Four keyframes moved out of the page sheet and two dead rules were deleted.
+**Keyframe names are global, so a relocation is invisible to every check here** -
+the animation either plays or it silently does not, and jsdom has neither. Needs
+at least one enabled source and a feed with rows; the clear-feed check wipes the
+feed, so do it last.
+
+- [ ] **The scan console's cursor still blinks** while a scan is running, and the
+      scanning button still pulses. `dv-blink` stayed on the page and `dv-pulse`
+      moved to the global partial - if the move went wrong, the button is simply
+      static and nothing errors.
+- [ ] **The skeleton still shimmers** while the feed loads. `dv-shimmer` moved
+      with `dv-pulse`; same failure mode.
+- [ ] **The sources drawer still slides in** rather than appearing. `dv-slidein`
+      moved into the drawer's own sheet, and the drawer was its only consumer.
+- [ ] **The filter menu and the full job detail still fade in.** `dv-fade` has
+      three consumers across two children and the page, and now lives in the
+      partial that reaches all of them.
+- [ ] **The clear-feed dialog still pops in**, centred, over a dimmed backdrop.
+      `dv-popin` travelled into the extracted component with the only rule that
+      used it.
+- [ ] **The dialog still cancels three ways and wipes one.** Escape, the Cancel
+      button and a click on the backdrop all close it without wiping; only the
+      red button wipes. The suite covers all four, but the backdrop is a large
+      target next to a destructive action and is worth seeing.
+- [ ] **The feed footer still reads correctly.** Two rules under it were deleted
+      as unreachable - `.dv-footer__actions` and `.dv-footer__confirm`. Nothing
+      renders them, so nothing should change; this is the check on that claim.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

@@ -31,6 +31,7 @@ import { DiscoverDetailScoreComponent } from './discover-detail-score/discover-d
 import { compareCompensation } from '@applye/core';
 import type { CompensationVerdict, ArchetypeFit } from '@applye/core';
 import { srcLabel, workTypeOf } from '@applye/application';
+import { DiscoverClearConfirmComponent } from './discover-clear-confirm/discover-clear-confirm.component';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
 
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
@@ -57,6 +58,7 @@ import { ToastService } from '@applye/application';
   selector: 'app-discover',
   standalone: true,
   imports: [
+    DiscoverClearConfirmComponent,
     FormsModule,
     LucideAngularModule,
     DiscoverSourcesDrawerComponent,

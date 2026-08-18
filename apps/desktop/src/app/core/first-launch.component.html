@@ -1,0 +1,63 @@
+<main class="welcome">
+  <div class="welcome__stage">
+    <!-- Logo lockup: a cursor taps the mark, the slash morphs in, the bar
+         rises, then the wordmark reveals. -->
+    <div class="welcome__logo" role="img" aria-label="Applye">
+      <div class="welcome__mark-wrap">
+        <svg
+          class="welcome__mark"
+          data-anim
+          width="60"
+          height="60"
+          viewBox="0 0 64 64"
+          fill="none"
+          aria-hidden="true"
+        >
+          <polygon class="welcome__slash" data-anim points="37,10 45,10 15,54 7,54" />
+          <rect class="welcome__bar" data-anim x="50" y="10" width="8" height="44" />
+        </svg>
+        <span class="welcome__ripple" data-anim aria-hidden="true"></span>
+        <svg
+          class="welcome__cursor"
+          data-anim
+          width="30"
+          height="30"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"
+            fill="var(--text-primary)"
+            stroke="var(--bg-app)"
+            stroke-width="1.4"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <span class="welcome__wordmark" data-anim>applye</span>
+    </div>
+
+    <h1 class="welcome__title" data-anim>
+      {{ t()('health.welcome_title')
+      }}<span class="welcome__caret" data-anim aria-hidden="true"></span>
+    </h1>
+    <p class="welcome__tagline" data-anim>{{ t()('health.welcome_tagline') }}</p>
+
+    <div class="welcome__actions" data-anim>
+      <button appButton variant="primary" size="lg" type="button" (click)="finish(true)">
+        {{ t()('health.cta_onboarding') }}
+      </button>
+      <button appButton variant="ghost" size="lg" type="button" (click)="finish(false)">
+        {{ t()('health.cta_skip') }}
+      </button>
+    </div>
+    <p class="welcome__hint" data-anim>{{ t()('health.recommend_onboarding') }}</p>
+
+    <div class="welcome__divider" data-anim aria-hidden="true"></div>
+    <p class="welcome__check-label" data-anim>{{ t()('health.welcome_subtitle') }}</p>
+    <div class="welcome__check" data-anim>
+      <app-health-check-panel [showContinue]="false" />
+    </div>
+  </div>
+</main>

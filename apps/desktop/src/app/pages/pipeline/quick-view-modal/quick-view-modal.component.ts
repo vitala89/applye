@@ -12,24 +12,8 @@ import {
 import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  Calendar,
-  Check,
-  Copy,
-  ExternalLink,
-  Flag,
-  LucideAngularModule,
-  Mail,
-  X,
-} from 'lucide-angular';
-import {
-  QuickViewStore,
-  companyInitials,
-  scoreClass,
-  stageDone,
-  stageIsCurrent,
-  stageReached,
-} from '@applye/application';
+import { ExternalLink, Flag, LucideAngularModule, X } from 'lucide-angular';
+import { QuickViewStore, companyInitials, scoreClass } from '@applye/application';
 import { ToastService } from '@applye/application';
 import {
   Application,
@@ -37,11 +21,12 @@ import {
   InterviewStage,
   PipelineCard,
   Priority,
-  SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { StageQuickAddComponent } from '../stage-quick-add/stage-quick-add.component';
-import { FOLLOWUP_LANGUAGES, FollowupDraftService } from '@applye/application';
+import { FollowupDraftService } from '@applye/application';
+import { FollowupComposerComponent } from './followup-composer/followup-composer.component';
+import { InterviewStepperComponent } from './interview-stepper/interview-stepper.component';
 
 const STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected', 'cancelled'];
 const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
@@ -55,12 +40,22 @@ const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
   selector: 'app-quick-view-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [A11yModule, FormsModule, LucideAngularModule, StageQuickAddComponent],
+  imports: [
+    A11yModule,
+    FormsModule,
+    FollowupComposerComponent,
+    InterviewStepperComponent,
+    LucideAngularModule,
+    StageQuickAddComponent,
+  ],
   templateUrl: './quick-view-modal.component.html',
   styleUrl: './quick-view-modal.component.scss',
   host: { '(document:keydown.escape)': 'close()' },
   // Component-scoped: a follow-up draft belongs to the card this modal shows
   // and must not outlive it, which is the lifetime it had as component fields.
+  // It stays provided HERE rather than on `app-followup-composer`, which is
+  // gated on `card().overdue`: a status change can flip that flag, and a
+  // provider on the section would destroy a draft still being edited.
   providers: [FollowupDraftService, QuickViewStore],
 })
 export class QuickViewModalComponent {
@@ -78,18 +73,9 @@ export class QuickViewModalComponent {
   @Output() priorityChanged = new EventEmitter<{ id: number; priority: Priority }>();
   @Output() stageAdded = new EventEmitter<{ id: number; stage: InterviewStage }>();
 
-  protected readonly icons = {
-    close: X,
-    openExternal: ExternalLink,
-    flag: Flag,
-    mail: Mail,
-    copy: Copy,
-    check: Check,
-    calendar: Calendar,
-  };
+  protected readonly icons = { close: X, openExternal: ExternalLink, flag: Flag };
   protected readonly STATUSES = STATUSES;
   protected readonly PRIORITIES = PRIORITIES;
-  protected readonly FOLLOWUP_LANGUAGES = FOLLOWUP_LANGUAGES;
 
   // `promptDismissed` and `showQuickAdd` stay here: the gate reads `card()`,
   // which is this component's input (ADR-0005, amendment thirty-one). See the
@@ -112,20 +98,6 @@ export class QuickViewModalComponent {
       !this.promptDismissed(),
   );
 
-  // Draft follow-up. Aliases onto `FollowupDraftService`; the template binds
-  // these names and writes several of them back via ngModel, so they stay the
-  // same writable signals rather than views of them.
-  protected readonly followupLanguage = this.followup.language;
-  protected readonly followupSubject = this.followup.subject;
-  protected readonly followupBody = this.followup.body;
-  protected readonly followupDrafting = this.followup.drafting;
-  protected readonly followupFromCache = this.followup.fromCache;
-  protected readonly followupError = this.followup.error;
-  protected readonly followupCopied = this.followup.copied;
-  protected readonly followupTo = this.followup.to;
-  protected readonly followupCc = this.followup.cc;
-  protected readonly followupHasDraft = this.followup.hasDraft;
-
   constructor() {
     effect(() => {
       const card = this.card();
@@ -134,30 +106,6 @@ export class QuickViewModalComponent {
       void this.refreshStages(card.id, card.status);
       this.followup.resetFor(card);
     });
-  }
-
-  protected async draftFollowup(): Promise<void> {
-    try {
-      await this.followup.draft(this.card());
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
-
-  protected langName(language: SupportedLanguage): string {
-    return this.followup.langName(language);
-  }
-
-  protected onFollowupLanguageChange(language: SupportedLanguage): void {
-    this.followup.changeLanguage(language);
-  }
-
-  protected copyFollowup(): Promise<void> {
-    return this.followup.copy();
-  }
-
-  protected openFollowupInMail(): Promise<void> {
-    return this.followup.openInMail();
   }
 
   private async loadComments(applicationId: number): Promise<void> {
@@ -183,22 +131,6 @@ export class QuickViewModalComponent {
 
   protected scoreClass(): string {
     return scoreClass(this.card().score);
-  }
-
-  protected stageDone(stage: InterviewStage): boolean {
-    return stageDone(stage);
-  }
-
-  protected stageCurrent(stage: InterviewStage): boolean {
-    return stageIsCurrent(stage, this.quick.stageSummary());
-  }
-
-  protected stageReached(stage: InterviewStage): boolean {
-    return stageReached(stage, this.quick.stageSummary());
-  }
-
-  protected formatStageDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   }
 
   protected onStageAdded(stage: InterviewStage): void {

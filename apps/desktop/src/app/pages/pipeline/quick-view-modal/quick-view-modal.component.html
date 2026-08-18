@@ -88,44 +88,11 @@
           } @else if (quick.stagesLoading()) {
             <p class="qv__hint">{{ t()('common.loading') }}</p>
           } @else if (quick.stages().length > 0) {
-            <div class="qv__stepper-box">
-              <div class="qv__stepper">
-                @for (st of quick.stages(); track st.id) {
-                  <div class="qv__step" [class.is-reached]="stageReached(st)">
-                    <span
-                      class="qv__step-dot"
-                      [class.is-done]="stageDone(st)"
-                      [class.is-current]="stageCurrent(st)"
-                    >
-                      @if (stageDone(st)) {
-                        <lucide-icon [img]="icons.check" [size]="11" />
-                      } @else if (stageCurrent(st)) {
-                        <span class="qv__step-pip"></span>
-                      }
-                    </span>
-                    <span class="qv__step-label" [class.is-current]="stageCurrent(st)">
-                      {{ st.stageLabel }}
-                    </span>
-                  </div>
-                }
-              </div>
-              <div class="qv__stepper-foot">
-                @if (quick.stageSummary(); as cur) {
-                  <div class="qv__stage-meta">
-                    @if (cur.scheduledAt) {
-                      <span class="qv__stage-chip">
-                        <lucide-icon [img]="icons.calendar" [size]="12" />
-                        {{ formatStageDate(cur.scheduledAt) }}
-                      </span>
-                    }
-                    <span class="qv__stage-current-label">{{ cur.stageLabel }}</span>
-                  </div>
-                }
-                <button type="button" class="qv__link" (click)="viewAllStages()">
-                  {{ t()('interview.quickview_view_all') }} →
-                </button>
-              </div>
-            </div>
+            <app-interview-stepper
+              [stages]="quick.stages()"
+              [current]="quick.stageSummary()"
+              (viewAll)="viewAllStages()"
+            />
           } @else if (quick.stagesError()) {
             <!-- Before the "no stages yet" branch on purpose: an empty list is
                  what a failed read leaves behind, and that branch would state
@@ -158,78 +125,7 @@
             <span class="qv__label">{{ t()('followup.section_label') }}</span>
             <span class="qv__due-badge">{{ t()('pipeline.overdue') }}</span>
           </div>
-          <div class="qv__followup-row">
-            <select
-              class="qv__lang-select"
-              [ngModel]="followupLanguage()"
-              [ngModelOptions]="{ standalone: true }"
-              (ngModelChange)="onFollowupLanguageChange($event)"
-            >
-              @for (l of FOLLOWUP_LANGUAGES; track l) {
-                <option [value]="l">{{ langName(l) }}</option>
-              }
-            </select>
-            <button
-              type="button"
-              class="btn-ghost"
-              [disabled]="followupDrafting()"
-              (click)="draftFollowup()"
-            >
-              <lucide-icon [img]="icons.mail" [size]="14" />
-              {{ t()('followup.draft_action') }}
-            </button>
-          </div>
-
-          @if (followupDrafting()) {
-            <p class="qv__hint">{{ t()('common.loading') }}</p>
-          } @else if (followupError()) {
-            <p class="qv__error">{{ followupError() }}</p>
-          } @else if (followupHasDraft()) {
-            @if (followupFromCache()) {
-              <p class="qv__hint">{{ t()('followup.cached_hint') }}</p>
-            }
-            <div class="qv__followup-row">
-              <input
-                class="qv__followup-recipient"
-                [ngModel]="followupTo()"
-                (ngModelChange)="followupTo.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="t()('followup.to_placeholder')"
-              />
-              <input
-                class="qv__followup-recipient"
-                [ngModel]="followupCc()"
-                (ngModelChange)="followupCc.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="t()('followup.cc_placeholder')"
-              />
-            </div>
-            <input
-              class="qv__followup-subject"
-              [ngModel]="followupSubject()"
-              (ngModelChange)="followupSubject.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-              [placeholder]="t()('followup.subject_placeholder')"
-            />
-            <textarea
-              class="qv__followup-body"
-              rows="6"
-              [ngModel]="followupBody()"
-              (ngModelChange)="followupBody.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-            ></textarea>
-            <div class="qv__followup-row">
-              <button type="button" class="btn-ghost" (click)="copyFollowup()">
-                <lucide-icon [img]="icons.copy" [size]="14" />
-                {{ followupCopied() ? t()('followup.copied') : t()('followup.copy') }}
-              </button>
-              <button type="button" class="btn-primary" (click)="openFollowupInMail()">
-                {{ t()('followup.open_in_mail') }}
-              </button>
-            </div>
-          } @else {
-            <p class="qv__followup-note">{{ t()('followup.privacy_note') }}</p>
-          }
+          <app-followup-composer [card]="card()" />
         </section>
       }
 

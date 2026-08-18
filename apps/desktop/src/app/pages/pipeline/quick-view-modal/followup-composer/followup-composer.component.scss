@@ -1,0 +1,137 @@
+/* The follow-up composer, moved with the only markup that renders it.
+ *
+ * The four controls are grouped rather than written out one by one. That is the
+ * repetition this stylesheet was mostly made of: every control on this modal
+ * declared the same sunken background, the same border, the same radius, the
+ * same text colour and the same focus ring, and differed only in its box and its
+ * type. Grouping keeps each control's own rule down to what actually makes it
+ * that control.
+ *
+ * `.qv__hint`, `.qv__error`, `.btn-ghost` and `.btn-primary` are deliberate
+ * second copies rather than moves: the modal still renders all four outside this
+ * section, and a class defined on the modal does not reach a child extracted out
+ * of it. There is no global `.btn-ghost` or `.btn-primary` in this application -
+ * the only global match is `.profile .btn-ghost`, which is nested under
+ * `.profile` and reaches nothing here. */
+
+.qv__followup-note {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs, 12px);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.qv__followup-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* The vocabulary every control here shares. */
+.qv__lang-select,
+.qv__followup-recipient,
+.qv__followup-subject,
+.qv__followup-body {
+  background: var(--surface-sunken);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-input, 6px);
+  color: var(--text-primary);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
+.qv__lang-select {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 38px;
+  padding: 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm, 13px);
+  cursor: pointer;
+}
+
+.qv__followup-recipient {
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm, 13px);
+  padding: var(--space-2) var(--space-3);
+}
+
+.qv__followup-subject {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: var(--text-body, 14px);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
+}
+
+.qv__followup-body {
+  width: 100%;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: var(--text-body, 14px);
+  padding: var(--space-2) var(--space-3);
+  line-height: 1.5;
+}
+
+.qv__hint {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm, 13px);
+}
+
+.qv__error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-sm, 13px);
+}
+
+.btn-primary {
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-card, 8px);
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-ghost {
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border: var(--border-width, 1px) solid var(--border-strong);
+  border-radius: var(--radius-card, 8px);
+  font-size: var(--text-sm, 13px);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}

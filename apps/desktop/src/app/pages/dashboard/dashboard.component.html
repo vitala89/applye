@@ -145,106 +145,30 @@
 
   <!-- Two-column: interviews + recent jobs -->
   <div class="cols">
-    <!-- Upcoming interviews -->
-    <div class="panel">
-      <div class="panel__head">
-        <span class="panel__title">{{ t()('dashboard.upcoming_interviews') }}</span>
-        <button type="button" class="panel__link" (click)="go('/interview-prep')">
-          {{ t()('dashboard.view_all') }}
-        </button>
-      </div>
-      @if (board.loading()) {
-        <div class="panel__body">
-          @for (i of [0, 1]; track i) {
-            <div class="prow">
-              <span class="sk prow__mono"></span>
-              <div class="prow__meta" style="display: flex; flex-direction: column; gap: 7px">
-                <span class="sk" style="width: 50%; height: 11px"></span>
-                <span class="sk" style="width: 30%; height: 10px"></span>
-              </div>
-              <span class="sk" style="width: 64px; height: 10px"></span>
-            </div>
-          }
-        </div>
-      } @else if (board.upcomingTop().length) {
-        <div class="panel__body">
-          @for (iv of board.upcomingTop(); track iv.applicationId) {
-            <button type="button" class="prow" (click)="go('/interview-prep/' + iv.applicationId)">
-              <span class="prow__mono">{{ iv.monogram }}</span>
-              <div class="prow__meta">
-                <div class="prow__role">{{ iv.role }}</div>
-                <div class="prow__company">{{ iv.company }}</div>
-              </div>
-              @if (iv.stage) {
-                <span class="badge" [class.badge--accent]="iv.soon">{{ iv.stage }}</span>
-              }
-              <span class="prow__time">{{ iv.when }}</span>
-            </button>
-          }
-        </div>
-      } @else {
-        <div class="panel__empty">
-          <span class="panel__empty-icon"
-            ><lucide-icon [img]="icons.noInterviews" [size]="20" aria-hidden="true"
-          /></span>
-          <div class="panel__empty-title">{{ t()('dashboard.no_interviews_title') }}</div>
-          <div class="panel__empty-body">{{ t()('dashboard.no_interviews_body') }}</div>
-        </div>
-      }
-    </div>
-
-    <!-- Recent jobs -->
-    <div class="panel">
-      <div class="panel__head">
-        <span class="panel__title">{{ t()('dashboard.recent_jobs') }}</span>
-        <button type="button" class="panel__link" (click)="go('/pipeline')">
-          {{ t()('dashboard.open_pipeline') }}
-        </button>
-      </div>
-      @if (board.loading()) {
-        <div class="panel__body">
-          @for (i of [0, 1]; track i) {
-            <div class="prow">
-              <span class="sk prow__mono"></span>
-              <div class="prow__meta" style="display: flex; flex-direction: column; gap: 7px">
-                <span class="sk" style="width: 52%; height: 11px"></span>
-                <span class="sk" style="width: 28%; height: 10px"></span>
-              </div>
-              <span
-                class="sk"
-                style="width: 60px; height: 20px; border-radius: var(--radius-badge)"
-              ></span>
-            </div>
-          }
-        </div>
-      } @else if (recentJobs().length) {
-        <div class="panel__body">
-          @for (job of recentJobs(); track job.jobId) {
-            <button type="button" class="prow" (click)="go('/jobs/' + job.jobId)">
-              <span class="prow__mono">{{ job.monogram }}</span>
-              <div class="prow__meta">
-                <div class="prow__role">{{ job.role }}</div>
-                <div class="prow__company">{{ job.company }}</div>
-              </div>
-              <span class="pill" [class.pill--applied]="job.applied">
-                @if (job.applied) {
-                  <span class="pill__dot"></span>
-                }
-                {{ job.statusLabel }}
-              </span>
-            </button>
-          }
-        </div>
-      } @else {
-        <div class="panel__empty">
-          <span class="panel__empty-icon"
-            ><lucide-icon [img]="icons.noJobs" [size]="20" aria-hidden="true"
-          /></span>
-          <div class="panel__empty-title">{{ t()('dashboard.no_jobs_title') }}</div>
-          <div class="panel__empty-body">{{ t()('dashboard.no_jobs_body') }}</div>
-        </div>
-      }
-    </div>
+    <app-dashboard-list-panel
+      [title]="t()('dashboard.upcoming_interviews')"
+      [linkLabel]="t()('dashboard.view_all')"
+      [loading]="board.loading()"
+      [rows]="interviewRows()"
+      trailing="time"
+      [emptyIcon]="icons.noInterviews"
+      [emptyTitle]="t()('dashboard.no_interviews_title')"
+      [emptyBody]="t()('dashboard.no_interviews_body')"
+      (linkClicked)="go('/interview-prep')"
+      (rowClicked)="go($event.route)"
+    />
+    <app-dashboard-list-panel
+      [title]="t()('dashboard.recent_jobs')"
+      [linkLabel]="t()('dashboard.open_pipeline')"
+      [loading]="board.loading()"
+      [rows]="recentJobRows()"
+      trailing="pill"
+      [emptyIcon]="icons.noJobs"
+      [emptyTitle]="t()('dashboard.no_jobs_title')"
+      [emptyBody]="t()('dashboard.no_jobs_body')"
+      (linkClicked)="go('/pipeline')"
+      (rowClicked)="go($event.route)"
+    />
   </div>
 
   <!-- Quick actions -->

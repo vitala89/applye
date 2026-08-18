@@ -107,7 +107,9 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **9 files over budget**, down from 18 across seven watches.
+  concentrated.** The full audit reads **8 files over budget** on this branch, down from 18 across
+  eight watches - and **7** once #473 lands, which removes `quick-view-modal.component.scss` and is
+  still in flight.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -182,11 +184,36 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is nine, and every remaining item has a decision or a shape
-  attached to it** rather than being unexamined: four are blocked by decision
-  (`cv-preview.component.html` 779/300, `document.model.ts` 504/400, `db.service.ts` 461/400,
-  Profile 445/400 settled), and the other five are page stylesheets. There is no unexamined
-  source file left.
+  **With this the over-budget list is eight, and every remaining item has a decision or a shape
+  attached to it** rather than being unexamined. Three are blocked by decision -
+  `cv-preview.component.html` 779/300 (the seventeen `@if (isEditingLeaf(...))` pairs, which need
+  `aif-grilling`), `document.model.ts` 504/400 (a `libs/` public API, same gate) and `db.service.ts`
+  461/400 (cut into per-domain gateways when the ratchet refuses the next method, not before). The
+  rest are stylesheets: `quick-view-modal` 537 (removed by #473, in flight), `discover` 475,
+  `_editor-shell` 460, `pipeline` 456 and `tracker` 433. **`pipeline` and `tracker` are audited clean
+  of dead rules** and need a child extraction rather than a deletion pass; `_editor-shell` is the
+  shared global partial both document editors depend on; `discover` was judged not worth it once, on
+  grounds that still hold. There is no unexamined source file left.
+
+- **The dashboard's two list panels become one component with two call sites.**
+  `dashboard.component.scss` **506 to 360/400**, template **262 to 187/300**, class 313/400.
+  `Upcoming interviews` and `Recent jobs` were the same hundred lines of markup - titled card, link,
+  loading skeleton, row list, empty state - **differing only in their labels, their destinations and
+  their trailing element**, with the page's computeds already resolving every difference into text.
+  **`trailing` is a panel-level input rather than a per-row field, and that is forced rather than
+  chosen:** the loading skeleton must draw a placeholder the right shape before there are any rows to
+  look at. `quality:style-move` reports **one gained declaration and nothing lost** - `:host {
+display: block }`, because `.cols` now lays out two host elements rather than two `.panel` divs and
+  an Angular host defaults to inline. **One real visual change, named rather than buried:** the two
+  skeletons used placeholder widths of 50%/30% and 52%/28%; the shared one uses 50%/30%. `.badge` and
+  the `.sk` shimmer are deliberate second copies, and `@keyframes dash-shimmer` comes with the
+  shimmer - **Angular does not scope keyframe names**, so both copies are global declarations of the
+  same name and must stay identical. **The reusable finding is about mutation testing itself:** a
+  mutation that survived turned out to be a bad mutation rather than a coverage gap - the same
+  `go('/interview-prep')` string appears twice in the template, and the rewrite hit the KPI tile
+  instead of the panel link. Re-running it against the right occurrence killed a test; the first
+  attempt had exposed that the KPI tiles' four destinations were untested, which they now are.
+  **A surviving mutation is a question, not an answer: check that it changed what you meant.**
 
 - **The welcome screen's view moves out of its class, and the measurement chose the cut.**
   `first-launch.component.ts` **419 to 38/400**, with `first-launch.component.html` at 60/300 and

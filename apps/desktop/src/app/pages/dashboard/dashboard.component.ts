@@ -28,6 +28,7 @@ import { missingFields, parseProfileMd, pitchState, profileCompleteness } from '
 import { OnboardingBannerComponent } from '../../core/onboarding/onboarding-banner.component';
 import { WizardProgressService } from '@applye/application';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
+import { ListPanelComponent, type ListPanelRow } from './list-panel/list-panel.component';
 import {
   DashboardStore,
   daysOverdue,
@@ -61,7 +62,7 @@ interface QueueItem {
   selector: 'app-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, OnboardingBannerComponent],
+  imports: [ListPanelComponent, LucideAngularModule, OnboardingBannerComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   providers: [DashboardStore],
@@ -118,6 +119,32 @@ export class DashboardComponent {
 
   protected readonly recentJobs = computed<RecentRow[]>(() =>
     recentClaimedJobs(this.board.overview(), this.t()),
+  );
+
+  /** The two lists in the one shape `app-dashboard-list-panel` draws. Both are
+   *  pure renames: the panel takes a route rather than an id, because deciding
+   *  where a row goes is the page's job and not the list's. */
+  protected readonly interviewRows = computed<ListPanelRow[]>(() =>
+    this.board.upcomingTop().map((iv) => ({
+      route: '/interview-prep/' + iv.applicationId,
+      monogram: iv.monogram,
+      role: iv.role,
+      company: iv.company,
+      badge: iv.stage,
+      badgeAccent: iv.soon,
+      time: iv.when,
+    })),
+  );
+
+  protected readonly recentJobRows = computed<ListPanelRow[]>(() =>
+    this.recentJobs().map((job) => ({
+      route: '/jobs/' + job.jobId,
+      monogram: job.monogram,
+      role: job.role,
+      company: job.company,
+      pill: job.statusLabel,
+      pillActive: job.applied,
+    })),
   );
 
   // --- Action queue -----------------------------------------------------

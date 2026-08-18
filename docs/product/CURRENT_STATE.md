@@ -107,9 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **8 files over budget** on this branch, down from 18 across
-  eight watches - and **7** once #473 lands, which removes `quick-view-modal.component.scss` and is
-  still in flight.
+  concentrated.** The full audit reads **7 files over budget**, down from 18 across nine watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -184,16 +182,16 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is eight, and every remaining item has a decision or a shape
+  **With this the over-budget list is seven, and every remaining item has a decision or a shape
   attached to it** rather than being unexamined. Three are blocked by decision -
   `cv-preview.component.html` 779/300 (the seventeen `@if (isEditingLeaf(...))` pairs, which need
   `aif-grilling`), `document.model.ts` 504/400 (a `libs/` public API, same gate) and `db.service.ts`
   461/400 (cut into per-domain gateways when the ratchet refuses the next method, not before). The
-  rest are stylesheets: `quick-view-modal` 537 (removed by #473, in flight), `discover` 475,
-  `_editor-shell` 460, `pipeline` 456 and `tracker` 433. **`pipeline` and `tracker` are audited clean
-  of dead rules** and need a child extraction rather than a deletion pass; `_editor-shell` is the
-  shared global partial both document editors depend on; `discover` was judged not worth it once, on
-  grounds that still hold. There is no unexamined source file left.
+  rest are stylesheets: `discover` 475, `_editor-shell` 460, `pipeline` 456 and `tracker` 433.
+  **`pipeline` and `tracker` are audited clean of dead rules** and need a child extraction rather
+  than a deletion pass; `_editor-shell` is the shared global partial both document editors depend
+  on; `discover` was judged not worth it once, on grounds that still hold. There is no unexamined
+  source file left.
 
 - **The dashboard's two list panels become one component with two call sites.**
   `dashboard.component.scss` **506 to 360/400**, template **262 to 187/300**, class 313/400.
@@ -214,6 +212,31 @@ display: block }`, because `.cols` now lays out two host elements rather than tw
   instead of the panel link. Re-running it against the right occurrence killed a test; the first
   attempt had exposed that the KPI tiles' four destinations were untested, which they now are.
   **A surviving mutation is a question, not an answer: check that it changed what you meant.**
+
+- **The quick view splits along its repetition, and a bug fell out of the stylesheet audit.**
+  `quick-view-modal.component.scss` **537 to 343/400**, template **281 to 170/300**, class 290 to
+  201/400, with `app-interview-stepper` and `app-followup-composer` extracted. **The seam was one
+  control written six times** - the same sunken background, border, radius, text colour and focus
+  ring across the status select, the language select, both recipient inputs, the subject, the body
+  and the comment box - not the section headings the file appeared to be organised by. **The stepper
+  is a view with no view of the store**: it takes the ordered stages and the current one, while every
+  branch that decides _what_ to show stays on the modal, because `showQuickAdd`'s gate reads the
+  modal's own `card()`. **`FollowupDraftService` deliberately stays provided on the modal**: the
+  composer is gated on `card().overdue`, a status change can flip that flag, and a provider on the
+  section would destroy a draft still being edited. `quality:style-move` across all three sheets is
+  **lossless**, which also proves the grouped selector expands back to what each control had; the
+  cost is **2.02 kB in the `pipeline` lazy chunk** and nothing in the initial bundle. **The surviving
+  mutation is the reusable one:** passing the composer a bogus `card` left all 23 tests green,
+  because the only reader of that input is the draft call and no test drafted - **a new input that
+  nothing asserts is not covered by the tests that pass around it.**
+
+  **The audit also found a live bug on another page, which was filed rather than fixed here.**
+  `cv-save-template-modal.component.scss` opens by stating that `.btn-ghost` and `.btn-primary` are
+  "global, from `libs/ui`". They are not: `libs/ui` declares the `.btn--ghost` BEM family, a
+  different vocabulary, and the only global match in the built sheet is `.profile .btn-ghost`, nested
+  where it reaches nothing. The two buttons in the CV save-as-template dialog render unstyled, and
+  `git log -S` shows the page's sheet never declared them, so this predates the #465 split rather
+  than being caused by it.
 
 - **The welcome screen's view moves out of its class, and the measurement chose the cut.**
   `first-launch.component.ts` **419 to 38/400**, with `first-launch.component.html` at 60/300 and

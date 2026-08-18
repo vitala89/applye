@@ -1,0 +1,38 @@
+<div class="qv__stepper-box">
+  <div class="qv__stepper">
+    @for (st of stages(); track st.id) {
+      <div class="qv__step" [class.is-reached]="stageReached(st)">
+        <span
+          class="qv__step-dot"
+          [class.is-done]="stageDone(st)"
+          [class.is-current]="stageCurrent(st)"
+        >
+          @if (stageDone(st)) {
+            <lucide-icon [img]="icons.check" [size]="11" />
+          } @else if (stageCurrent(st)) {
+            <span class="qv__step-pip"></span>
+          }
+        </span>
+        <span class="qv__step-label" [class.is-current]="stageCurrent(st)">
+          {{ st.stageLabel }}
+        </span>
+      </div>
+    }
+  </div>
+  <div class="qv__stepper-foot">
+    @if (current(); as cur) {
+      <div class="qv__stage-meta">
+        @if (cur.scheduledAt) {
+          <span class="qv__stage-chip">
+            <lucide-icon [img]="icons.calendar" [size]="12" />
+            {{ formatStageDate(cur.scheduledAt) }}
+          </span>
+        }
+        <span class="qv__stage-current-label">{{ cur.stageLabel }}</span>
+      </div>
+    }
+    <button type="button" class="qv__link" (click)="viewAll.emit()">
+      {{ t()('interview.quickview_view_all') }} →
+    </button>
+  </div>
+</div>

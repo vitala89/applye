@@ -230,6 +230,41 @@ is the only state that renders this screen.
       the next launch. The unit spec covers the two gateway writes; this covers
       that the app actually routes on them.
 
+## C5. The Pipeline quick view, after the stepper and composer came out
+
+Two blocks left the modal for children, and four rules are now second copies
+rather than moves - `.qv__link`, `.qv__hint`, `.qv__error`, `.btn-ghost` and
+`.btn-primary`. A copy that drifts, or one that was needed and not made, shows as
+an unstyled control and never as an error: jsdom has no cascade, and
+`quality:style-move` compares the union of the sheets, so it cannot see which
+side of the boundary a rule ended up on. Needs applications in the database, one
+of them **overdue** and one **in interview with stages**; run section A first.
+
+- [ ] **The interview stepper looks unchanged.** Open the quick view on an
+      application at interview with several stages: the rail draws a filled track
+      up to the current stage, a check in each passed dot, a pip in the current
+      one, the current label in accent, and the counter in the head reading
+      position over total. All of that is now the child's stylesheet.
+- [ ] **The view-all link still looks like a link in all three branches.** It is
+      drawn by the child inside the stepper foot and by the modal in the
+      failed-read and no-stages-yet branches - two copies of the same rule, and
+      the one check that would catch them drifting apart.
+- [ ] **The follow-up composer's controls match the modal's own.** On an overdue
+      card: the language select, both recipient inputs, the subject and the body
+      share the sunken background, the border, the radius and the focus ring with
+      the status select and the comment box above them. Those four are one
+      grouped selector in the child now and the other two stayed on the modal, so
+      this is the check that the grouping kept them identical.
+- [ ] **Both composer buttons are styled.** "Draft" is a ghost button and "Open in
+      mail" a filled one, matching the modal's own footer pair. `.btn-ghost` and
+      `.btn-primary` are copies in the child - and there is no global rule for
+      either name to fall back on, which is what makes an omission here silent.
+- [ ] **A draft survives a status change.** Draft a follow-up on an overdue card,
+      then change the status in the same modal. The composer may disappear if the
+      card stops being overdue; reopening it must still show the draft rather
+      than an empty form. This is the reason `FollowupDraftService` stayed
+      provided on the modal, and nothing automated can exercise it.
+
 ## C6. The dashboard's two list panels, after they became one component
 
 The two panels are one component with two call sites now, and three rules cross

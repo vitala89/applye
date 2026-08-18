@@ -385,6 +385,39 @@ feed, so do it last.
       as unreachable - `.dv-footer__actions` and `.dv-footer__confirm`. Nothing
       renders them, so nothing should change; this is the check on that claim.
 
+## C10. The CV preview, after the six atoms became child components
+
+Six of the eight atom templates left `cv-preview.component.html` and each now
+declares its own markup. **Angular's emulated encapsulation binds a rule to the
+component that DECLARES the markup**, and the paginated sheet measures each
+atom's natural height off the wrapper it renders into - so a wrong host box or a
+missing `@use` changes the printed layout with every automated check still
+green. jsdom has neither layout nor pagination, and the reachability audit only
+proves the rules exist in the child's compiled sheet, not that the page looks
+right. Needs a CV with several experience entries (enough to cross a page
+break), education, skills and languages.
+
+- [ ] **The CV still paginates where it did.** Open a CV long enough to run to a
+      second page, and check the page break falls between the same entries as
+      before. Six `:host { display: contents }` declarations are the only thing
+      keeping each child's host out of the measured box.
+- [ ] **Every section title still reads as one.** Uppercase, letter-spaced, with
+      its underline rule running straight edge to edge rather than curving in at
+      the corners. Four components now declare that rule from one partial.
+- [ ] **The experience head still lays out as one line.** Company, industry and
+      location on the left, dates on the right, with Aurora's thin rule under
+      it - and education, which shares the same partial, showing **no** rule.
+- [ ] **Bullets still hang under their entry** with the list indent, and a long
+      entry still splits head-from-bullets across a page break.
+- [ ] **Selecting a leaf still rings exactly one element**, and the inline editor
+      that replaces it sits at the text's own width rather than stretching the
+      whole column. Four atoms `@use` that sizing rule from one partial.
+- [ ] **Click-a-word bold still works in the summary and in a bullet**, and
+      nowhere else. The rewrite moved to `CvPreviewEditingService`; the two
+      atoms are the only callers.
+- [ ] **Skills rows and the languages line still read at their normal weights**
+      and separators, with the printed PDF matching the on-screen sheet.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

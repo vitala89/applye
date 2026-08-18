@@ -1,0 +1,37 @@
+// The entry head line the experience and education atoms both draw: the flex
+// row, the role, the dates and the date separator.
+//
+// Two consumers, so it is here rather than copied - a second copy is a rule
+// that drifts. `.cvpreview__entry-meta` rides along in the dates rule and is
+// rendered only by the experience atom; education emits a selector it cannot
+// match, which is the price of keeping one declaration of the pair.
+
+.cvpreview__entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+.cvpreview__entry-role {
+  font-weight: var(--weight-medium);
+  font-style: var(--cv-role-style, normal);
+}
+// These entry sub-parts carry their own theme colour by default (industry/meta/
+// dates = muted). But a "This section" colour override must recolour the WHOLE
+// section uniformly, so each reads `--cv-section-body-color` FIRST (set on the
+// section wrapper by `bodyCss` only when an override exists) and falls back to
+// its theme colour otherwise. An element-scope override still wins: `leafCss`
+// writes an inline `color` on the leaf itself, which beats these class rules.
+// Priority: a per-ENTRY element override (`--cv-entry-color`, set on the head
+// wrapper when the whole entry is styled) wins, then a "This section" colour,
+// then the part's own theme colour.
+.cvpreview__entry-meta,
+.cvpreview__entry-dates {
+  white-space: nowrap;
+  font-size: 0.85em;
+  color: var(--cv-entry-color, var(--cv-section-body-color, var(--text-tertiary)));
+}
+.cvpreview__date-sep {
+  color: var(--text-tertiary);
+  white-space: pre;
+}

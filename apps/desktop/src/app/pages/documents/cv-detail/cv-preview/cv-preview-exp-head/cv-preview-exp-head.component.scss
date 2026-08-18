@@ -1,0 +1,53 @@
+// Shared atom affordances - selection ring, chip, hover, leaf editors. `@use`d
+// rather than inherited: Angular's emulated encapsulation stamps this markup
+// with THIS component's attribute, so the page sheet's copy of these rules does
+// not match it. See the partial's own header for the regression that proved it.
+@use '../cv-preview-atom';
+@use '../cv-preview-entry';
+@use '../cv-preview-inline-editor';
+
+// The host box must not exist. `<lib-paginated-sheet>` measures each atom's
+// NATURAL HEIGHT off the wrapper it renders into, so an inline-by-default host
+// sitting between the two changes both the layout and the measured height - and
+// a wrong measurement re-paginates the document silently, with no error
+// anywhere. See `cv-preview-header.component.scss` for the four regressions
+// this has already cost.
+:host {
+  display: contents;
+}
+
+// Gap above every experience entry except the first. Padding (not an adjacency
+// margin) because each entry head is a separate atom in its own page-card
+// wrapper - sibling `+` selectors never match across atoms, and padding is
+// included in the atom's measured height so pagination stays accurate.
+.cvpreview__entry--sep {
+  padding-top: var(--space-4);
+}
+.cvpreview__entry-lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+// The company carries the accent colour by default, and reads
+// `--cv-section-body-color` first so a "This section" override recolours the
+// whole section uniformly - see `_cv-preview-entry.scss` for the full priority
+// order this shares with the other entry parts.
+.cvpreview__entry-company {
+  font-weight: 700;
+  color: var(--cv-entry-color, var(--cv-section-body-color, var(--cv-company-color, inherit)));
+}
+.cvpreview__entry-industry {
+  color: var(--cv-entry-color, var(--cv-section-body-color, var(--cv-muted, var(--text-tertiary))));
+}
+.cvpreview__entry-head--rule {
+  // Aurora draws a thin rule under the experience role/dates line; Classic
+  // width 0. Scoped to the experience head only (not education) via the
+  // explicit --rule modifier class.
+  padding-bottom: var(--space-1);
+  border-bottom: var(--cv-entry-rule-width, 0pt) var(--cv-entry-rule-style, solid)
+    var(--cv-entry-rule-color, transparent);
+  // Same square-corner fix as the section title and header: the selectable/
+  // selected 4px `border-radius` would curve this rule's ends inward.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}

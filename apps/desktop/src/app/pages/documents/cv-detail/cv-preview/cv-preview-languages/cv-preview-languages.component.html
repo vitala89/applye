@@ -1,0 +1,83 @@
+<!-- Moved verbatim from `cv-preview.component.html`'s `#languagesTpl`; the only
+     changes are the service prefixes the protocol now needs and the input
+     calls that replaced the outlet-context variables. -->
+<div class="cvpreview__section cvpreview__section-start" [ngStyle]="css.bodyCss('languages')">
+  <h3
+    class="cvpreview__section-title"
+    [class.cvpreview__selectable]="selectable()"
+    [class.cvpreview__selected]="sel.isSelected('languages', 'title') && selectable()"
+    [attr.role]="selectable() ? 'button' : null"
+    [attr.tabindex]="selectable() ? 0 : null"
+    [attr.aria-label]="selectable() ? sel.selectAriaLabel('languages', 'title') : null"
+    [attr.data-cv-select]="'languages:title'"
+    [attr.data-cv-chip]="sel.partChipLabel('title')"
+    (click)="sel.selectPart('languages', 'title', renderMode(), $event)"
+    (keydown.enter)="sel.selectPart('languages', 'title', renderMode(), $event)"
+    (keydown.space)="sel.onSelectKey($event, 'languages', 'title', renderMode())"
+    [ngStyle]="css.titleCss('languages')"
+    [style.borderBottom]="css.titleBorderCss('languages')"
+  >
+    {{ t()(sectionLabelKey('languages')) }}
+  </h3>
+  <p
+    class="cvpreview__languages"
+    [ngStyle]="css.leafCss(leafPath('lang'))"
+    [class.cvpreview__selectable]="selectable()"
+    [class.cvpreview__element-selected]="sel.isElementSelected(leafPath('lang')) && selectable()"
+    [attr.role]="selectable() ? 'button' : null"
+    [attr.tabindex]="selectable() ? 0 : null"
+    [attr.aria-label]="selectable() ? sel.selectAriaLabel('languages', 'body') : null"
+    [attr.data-cv-select]="'languages:body'"
+    [attr.data-cv-chip]="t()(sectionLabelKey('languages'))"
+    (click)="sel.selectLeaf('languages', leafPath('lang'), renderMode(), $event)"
+    (keydown.enter)="sel.selectLeaf('languages', leafPath('lang'), renderMode(), $event)"
+    (keydown.space)="sel.onSelectKey($event, 'languages', 'body', renderMode(), leafPath('lang'))"
+  >
+    @for (item of section().items; track $index; let i = $index) {
+      @if (i > 0) {
+        <span class="cvpreview__languages-sep"> | </span>
+      }
+      @if (mode.isEditingLeaf(leafPath('lang', i, 'language')) && selectable()) {
+        <input
+          type="text"
+          class="cvpreview__leaf-editor cvpreview__language-input cvpreview__element-selected"
+          [ngStyle]="css.leafCss(leafPath('lang', i, 'language'))"
+          [value]="edit.leafDraft(leafPath('lang', i, 'language'), item.language)"
+          (input)="edit.onLeafInput(leafPath('lang', i, 'language'), $any($event.target).value)"
+          (blur)="edit.commitLanguageValue(section(), i, item.language)"
+          (keydown.escape)="edit.onLeafEscape(leafPath('lang', i, 'language'))"
+          (keydown.enter)="mode.finishLeafEdit($any($event.target), 'languages', 'body')"
+        />
+      } @else {
+        <span
+          class="cvpreview__language-value"
+          [ngStyle]="css.leafCss(leafPath('lang', i, 'language'))"
+          [class.cvpreview__selectable]="selectable()"
+          [class.cvpreview__element-selected]="
+            sel.isElementSelected(leafPath('lang', i, 'language')) && selectable()
+          "
+          [attr.role]="selectable() ? 'button' : null"
+          [attr.tabindex]="selectable() ? 0 : null"
+          [attr.aria-label]="selectable() ? sel.leafAriaLabel('languages', 'language') : null"
+          [attr.data-cv-chip]="sel.leafChipLabel('language')"
+          (click)="
+            sel.selectLeaf('languages', leafPath('lang', i, 'language'), renderMode(), $event)
+          "
+          (keydown.enter)="
+            sel.selectLeaf('languages', leafPath('lang', i, 'language'), renderMode(), $event)
+          "
+          (keydown.space)="
+            sel.onSelectKey(
+              $event,
+              'languages',
+              'body',
+              renderMode(),
+              leafPath('lang', i, 'language')
+            )
+          "
+          >{{ item.language }}</span
+        >
+      }
+    }
+  </p>
+</div>

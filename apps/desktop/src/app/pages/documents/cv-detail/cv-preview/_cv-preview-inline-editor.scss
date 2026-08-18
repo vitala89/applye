@@ -1,0 +1,20 @@
+// Inline leaf editors sized to their content (not the block-level 100% default
+// from `.cvpreview__leaf-editor`) - mirrors `.cvpreview__contact-input`.
+//
+// One rule, four consumers: the skills, experience-head, education-entry and
+// languages atoms. Each emits the whole selector list scoped to itself, and
+// only the selectors it actually renders can match - which is what keeps the
+// declaration in one place instead of four that drift apart.
+
+.cvpreview__entry-company.cvpreview__leaf-editor,
+.cvpreview__entry-industry.cvpreview__leaf-editor,
+.cvpreview__entry-meta.cvpreview__leaf-editor,
+.cvpreview__entry-role.cvpreview__leaf-editor,
+.cvpreview__date-input.cvpreview__leaf-editor,
+.cvpreview__skill-label.cvpreview__leaf-editor,
+.cvpreview__skill-values.cvpreview__leaf-editor,
+.cvpreview__language-input.cvpreview__leaf-editor {
+  width: auto;
+  min-width: 3ch;
+  flex: 0 1 auto;
+}

@@ -1,0 +1,60 @@
+<!-- Moved verbatim from `cv-preview.component.html`'s `#expBulletTpl`; the only
+     changes are the service prefixes the protocol now needs and the input
+     calls that replaced the outlet-context variables. -->
+<ul
+  class="cvpreview__bullets"
+  [class.cvpreview__selectable]="selectable()"
+  [class.cvpreview__element-selected]="
+    sel.isElementSelected(leafPath('exp', i(), 'bullet', b())) && selectable()
+  "
+  [attr.data-cv-chip]="sel.leafChipLabel('bullet')"
+  [attr.role]="selectable() ? 'button' : null"
+  [attr.tabindex]="selectable() ? 0 : null"
+  [attr.aria-label]="selectable() ? sel.leafAriaLabel(key(), 'bullet') : null"
+  [attr.data-cv-select]="key + ':body'"
+  (click)="sel.selectPart(key(), 'body', renderMode(), $event, leafPath('exp', i(), 'bullet', b()))"
+  (keydown.enter)="
+    sel.selectPart(key(), 'body', renderMode(), $event, leafPath('exp', i(), 'bullet', b()))
+  "
+  (keydown.space)="
+    sel.onSelectKey($event, key(), 'body', renderMode(), leafPath('exp', i(), 'bullet', b()))
+  "
+  [ngStyle]="css.bulletListCss(key())"
+>
+  @if (mode.isEditingLeaf(leafPath('exp', i(), 'bullet', b())) && selectable()) {
+    <li>
+      <textarea
+        #bulletEl
+        class="cvpreview__leaf-editor cvpreview__bullet-editor"
+        [ngStyle]="css.leafCss(leafPath('exp', i(), 'bullet', b()))"
+        [value]="edit.leafDraft(leafPath('exp', i(), 'bullet', b()), bullet())"
+        (input)="edit.onLeafInput(leafPath('exp', i(), 'bullet', b()), $any($event.target).value)"
+        (blur)="edit.commitExperienceBullet(section(), i(), b(), bullet())"
+        (keydown.escape)="edit.onLeafEscape(leafPath('exp', i(), 'bullet', b()))"
+        (keydown)="edit.onBulletBoldKeydown($event, bulletEl, i(), b(), bullet())"
+      ></textarea>
+    </li>
+  } @else {
+    <li [ngStyle]="css.leafCss(leafPath('exp', i(), 'bullet', b()))">
+      @if (sel.isElementSelected(leafPath('exp', i(), 'bullet', b())) && selectable()) {
+        @for (w of wordTokens(bullet()); track w.index) {
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <span
+            class="cvpreview__word"
+            [class.cvpreview__word--bold]="w.bold"
+            (click)="toggleWord(w.index, $event)"
+            >{{ w.text }}</span
+          >
+        }
+      } @else {
+        @for (run of runs(bullet()); track $index) {
+          @if (run.bold) {
+            <strong>{{ run.text }}</strong>
+          } @else {
+            {{ run.text }}
+          }
+        }
+      }
+    </li>
+  }
+</ul>

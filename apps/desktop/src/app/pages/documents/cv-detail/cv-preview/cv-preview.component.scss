@@ -8,10 +8,15 @@
 // rules - moving them here from `cv-detail.component.scss` changes nothing
 // about the print seam.
 
-// Selection ring, chip, hover and leaf-editor resets, shared with every atom
-// child component. See the partial's header for why they cannot simply live
-// here: encapsulation binds a rule to the component that DECLARES the markup.
+// What is left here is what THIS component still declares: the viewport, the
+// overflow warning and `#sectionTitleTpl`. Every other atom's rules went with
+// its markup into the child that now declares it, because encapsulation binds
+// a rule to the declaring component - see `_cv-preview-atom.scss` for the
+// regression that proved it. Four partials carry what more than one atom
+// needs: `_cv-preview-atom`, `_cv-preview-section`, `_cv-preview-word`,
+// `_cv-preview-entry` and `_cv-preview-inline-editor`.
 @use './cv-preview-atom';
+@use './cv-preview-section';
 
 .cvpreview-viewport {
   overflow: auto;
@@ -29,67 +34,6 @@
   text-align: left;
   vertical-align: top;
 }
-// Click-a-word-to-bold targets inside a selected summary/bullet (design). Only
-// rendered for the selected leaf, so they never reach the measurement pass.
-.cvpreview__word {
-  cursor: pointer;
-  border-radius: 3px;
-  transition: background 100ms ease;
-}
-.cvpreview__word:hover {
-  background: color-mix(in srgb, var(--cv-accent, #157a5c) 16%, transparent);
-}
-.cvpreview__word--bold {
-  font-weight: 700;
-}
-// Space above each new section. Uses padding (not margin) on the section's
-// first element so the paginated sheet - which measures each atom's
-// offsetHeight in isolation and can't see sibling margins across its
-// per-atom wrappers - includes the gap in its page-fit math.
-.cvpreview__section-start {
-  padding-top: var(--space-6);
-}
-.cvpreview__section-title {
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  padding-bottom: var(--space-2);
-  margin: 0 0 var(--space-3);
-  // The title's underline rule is a `border-bottom`; the selectable/selected
-  // 4px `border-radius` would curve its ends inward (the "angled corners"
-  // artefact). Square the bottom corners so the rule runs straight edge to
-  // edge; the top corners stay rounded for the hover/selection tint.
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.cvpreview__summary {
-  line-height: var(--cv-section-line-height, var(--leading-normal));
-  margin: 0;
-}
-// Gap above every experience entry except the first. Padding (not an adjacency
-// margin) because each entry head is a separate atom in its own page-card
-// wrapper - sibling `+` selectors never match across atoms, and padding is
-// included in the atom's measured height so pagination stays accurate.
-.cvpreview__entry--sep {
-  padding-top: var(--space-4);
-}
-.cvpreview__entry-role {
-  font-weight: var(--weight-medium);
-  font-style: var(--cv-role-style, normal);
-}
-// One `<ul>` per bullet atom; margin 0 so consecutive single-item lists stack
-// seamlessly like one list, with the per-item bottom margin providing rhythm.
-.cvpreview__bullets {
-  margin: 0;
-  padding-left: var(--space-5);
-  color: var(--cv-section-body-color, var(--text-secondary));
-}
-.cvpreview__bullets li {
-  margin: 0 0 var(--space-1);
-}
-.cvpreview__languages {
-  color: var(--cv-section-body-color, var(--text-secondary));
-  margin: 0;
-}
 .cvpreview__warning {
   margin: var(--space-2) auto 0;
   max-width: 720px;
@@ -98,119 +42,4 @@
   background: var(--warning-tint, #fff4e5);
   color: var(--warning-strong, #8a5a00);
   font-size: var(--text-sm);
-}
-// Native leaf editors: swapped in over the resting text/paragraph while a
-// leaf is selected (page render only - see `selectable()`). Reset to blend
-// with the surrounding typography instead of looking like a form control.
-//
-// A mounted editor is by definition inside the current selection, which is
-// already ringed and chipped, so the editor paints NO ring of its own: an
-// `outline` here stacked a second accent ring outside the selection one and
-// read as a single heavy frame, and the app-wide `:focus-visible` box-shadow
-// in `libs/ui/src/styles/global.scss` added a third, indigo, wherever the
-// selection ring was on an ancestor rather than on the editor itself. One
-// element, one ring - see `.cvpreview__element-selected`.
-.cvpreview__skill-row {
-  margin: 0.15rem 0;
-}
-.cvpreview__skill-row--editor {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  margin: 0.15rem 0;
-}
-.cvpreview__skill-sep {
-  color: var(--text-tertiary);
-  white-space: pre;
-}
-// Inline leaf editors sized to their content (not the block-level 100%
-// default from `.cvpreview__leaf-editor`) - mirrors `.cvpreview__contact-input`.
-.cvpreview__entry-company.cvpreview__leaf-editor,
-.cvpreview__entry-industry.cvpreview__leaf-editor,
-.cvpreview__entry-meta.cvpreview__leaf-editor,
-.cvpreview__entry-role.cvpreview__leaf-editor,
-.cvpreview__date-input.cvpreview__leaf-editor,
-.cvpreview__skill-label.cvpreview__leaf-editor,
-.cvpreview__skill-values.cvpreview__leaf-editor,
-.cvpreview__language-input.cvpreview__leaf-editor {
-  width: auto;
-  min-width: 3ch;
-  flex: 0 1 auto;
-}
-.cvpreview__entry-role--editor {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-}
-.cvpreview__entry-role-sep {
-  color: var(--text-tertiary);
-  white-space: pre;
-}
-.cvpreview__entry-dates--editor {
-  display: inline-flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-}
-.cvpreview__date-sep {
-  color: var(--text-tertiary);
-  white-space: pre;
-}
-.cvpreview__languages--editor {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  margin: 0;
-}
-.cvpreview__languages-sep {
-  color: var(--cv-sep-color, var(--text-tertiary));
-  font-size: var(--cv-sep-size, inherit);
-  white-space: pre;
-}
-.cvpreview__entry-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
-}
-.cvpreview__entry-lead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-}
-// These entry sub-parts carry their own theme colour by default (company =
-// accent, industry/meta/dates = muted). But a "This section" colour override
-// must recolour the WHOLE section uniformly - including the company - so each
-// reads `--cv-section-body-color` FIRST (set on the section wrapper by
-// `bodyCss` only when an override exists) and falls back to its theme colour
-// otherwise. An element-scope override still wins: `leafCss` writes an inline
-// `color` on the leaf itself, which beats these class rules.
-// Priority: a per-ENTRY element override (`--cv-entry-color`, set on the head
-// wrapper when the whole entry is styled) wins, then a "This section" colour
-// (`--cv-section-body-color`), then the part's own theme colour. This lets a
-// per-entry colour recolour the WHOLE head line - company/dates included -
-// even though those parts carry their own colour by default.
-.cvpreview__entry-company {
-  font-weight: 700;
-  color: var(--cv-entry-color, var(--cv-section-body-color, var(--cv-company-color, inherit)));
-}
-.cvpreview__entry-industry {
-  color: var(--cv-entry-color, var(--cv-section-body-color, var(--cv-muted, var(--text-tertiary))));
-}
-.cvpreview__entry-meta,
-.cvpreview__entry-dates {
-  white-space: nowrap;
-  font-size: 0.85em;
-  color: var(--cv-entry-color, var(--cv-section-body-color, var(--text-tertiary)));
-}
-.cvpreview__entry-head--rule {
-  // Aurora draws a thin rule under the experience role/dates line; Classic
-  // width 0. Scoped to the experience head only (not education) via the
-  // explicit --rule modifier class - see #expHeadTpl.
-  padding-bottom: var(--space-1);
-  border-bottom: var(--cv-entry-rule-width, 0pt) var(--cv-entry-rule-style, solid)
-    var(--cv-entry-rule-color, transparent);
-  // Same square-corner fix as the section title and header: the selectable/
-  // selected 4px `border-radius` would curve this rule's ends inward.
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
 }

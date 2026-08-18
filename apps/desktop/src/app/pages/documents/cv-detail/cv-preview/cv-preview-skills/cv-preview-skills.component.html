@@ -1,0 +1,126 @@
+<!-- Moved verbatim from `cv-preview.component.html`'s `#skillsTpl`; the only
+     changes are the service prefixes the protocol now needs and the input
+     calls that replaced the outlet-context variables. -->
+<div class="cvpreview__section cvpreview__section-start" [ngStyle]="css.bodyCss('skills')">
+  <h3
+    class="cvpreview__section-title"
+    [class.cvpreview__selectable]="selectable()"
+    [class.cvpreview__selected]="sel.isSelected('skills', 'title') && selectable()"
+    [attr.role]="selectable() ? 'button' : null"
+    [attr.tabindex]="selectable() ? 0 : null"
+    [attr.aria-label]="selectable() ? sel.selectAriaLabel('skills', 'title') : null"
+    [attr.data-cv-select]="'skills:title'"
+    [attr.data-cv-chip]="sel.partChipLabel('title')"
+    (click)="sel.selectPart('skills', 'title', renderMode(), $event)"
+    (keydown.enter)="sel.selectPart('skills', 'title', renderMode(), $event)"
+    (keydown.space)="sel.onSelectKey($event, 'skills', 'title', renderMode())"
+    [ngStyle]="css.titleCss('skills')"
+    [style.borderBottom]="css.titleBorderCss('skills')"
+  >
+    {{ t()(sectionLabelKey('skills')) }}
+  </h3>
+  @for (group of section().groups; track $index; let i = $index) {
+    @if (group.values.length) {
+      <p
+        class="cvpreview__skill-row"
+        [ngStyle]="css.leafCss(leafPath('skills', i))"
+        [class.cvpreview__selectable]="selectable()"
+        [class.cvpreview__element-selected]="
+          sel.isElementSelected(leafPath('skills', i)) && selectable()
+        "
+        [attr.role]="selectable() ? 'button' : null"
+        [attr.tabindex]="selectable() ? 0 : null"
+        [attr.aria-label]="selectable() ? sel.selectAriaLabel('skills', 'body') : null"
+        [attr.data-cv-select]="'skills:body'"
+        [attr.data-cv-chip]="t()(sectionLabelKey('skills'))"
+        (click)="sel.selectLeaf('skills', leafPath('skills', i), renderMode(), $event)"
+        (keydown.enter)="sel.selectLeaf('skills', leafPath('skills', i), renderMode(), $event)"
+        (keydown.space)="
+          sel.onSelectKey($event, 'skills', 'body', renderMode(), leafPath('skills', i))
+        "
+      >
+        @if (mode.isEditingLeaf(leafPath('skills', i, 'label')) && selectable()) {
+          <input
+            type="text"
+            class="cvpreview__leaf-editor cvpreview__skill-label cvpreview__element-selected"
+            [ngStyle]="css.leafCss(leafPath('skills', i, 'label'))"
+            [value]="edit.leafDraft(leafPath('skills', i, 'label'), group.label)"
+            (input)="edit.onLeafInput(leafPath('skills', i, 'label'), $any($event.target).value)"
+            (blur)="edit.commitSkillLabel(section(), i, group.label)"
+            (keydown.escape)="edit.onLeafEscape(leafPath('skills', i, 'label'))"
+            (keydown.enter)="mode.finishLeafEdit($any($event.target), 'skills', 'body')"
+          />
+        } @else {
+          <strong
+            class="cvpreview__skill-label-view"
+            [ngStyle]="css.leafCss(leafPath('skills', i, 'label'))"
+            [class.cvpreview__selectable]="selectable()"
+            [class.cvpreview__element-selected]="
+              sel.isElementSelected(leafPath('skills', i, 'label')) && selectable()
+            "
+            [attr.role]="selectable() ? 'button' : null"
+            [attr.tabindex]="selectable() ? 0 : null"
+            [attr.aria-label]="selectable() ? sel.leafAriaLabel('skills', 'skillLabel') : null"
+            [attr.data-cv-chip]="sel.leafChipLabel('skillLabel')"
+            (click)="sel.selectLeaf('skills', leafPath('skills', i, 'label'), renderMode(), $event)"
+            (keydown.enter)="
+              sel.selectLeaf('skills', leafPath('skills', i, 'label'), renderMode(), $event)
+            "
+            (keydown.space)="
+              sel.onSelectKey(
+                $event,
+                'skills',
+                'body',
+                renderMode(),
+                leafPath('skills', i, 'label')
+              )
+            "
+            >{{ group.label }}</strong
+          >
+        }
+        <span class="cvpreview__skill-sep">: </span>
+        @if (mode.isEditingLeaf(leafPath('skills', i, 'values')) && selectable()) {
+          <input
+            type="text"
+            class="cvpreview__leaf-editor cvpreview__skill-values cvpreview__element-selected"
+            [ngStyle]="css.leafCss(leafPath('skills', i, 'values'))"
+            [value]="edit.leafDraft(leafPath('skills', i, 'values'), group.values.join(', '))"
+            (input)="edit.onLeafInput(leafPath('skills', i, 'values'), $any($event.target).value)"
+            (blur)="edit.commitSkillValues(section(), i, group.values.join(', '))"
+            (keydown.escape)="edit.onLeafEscape(leafPath('skills', i, 'values'))"
+            (keydown.enter)="mode.finishLeafEdit($any($event.target), 'skills', 'body')"
+          />
+        } @else {
+          <span
+            class="cvpreview__skill-values-view"
+            [ngStyle]="css.leafCss(leafPath('skills', i, 'values'))"
+            [class.cvpreview__selectable]="selectable()"
+            [class.cvpreview__element-selected]="
+              sel.isElementSelected(leafPath('skills', i, 'values')) && selectable()
+            "
+            [attr.role]="selectable() ? 'button' : null"
+            [attr.tabindex]="selectable() ? 0 : null"
+            [attr.aria-label]="selectable() ? sel.leafAriaLabel('skills', 'skillValues') : null"
+            [attr.data-cv-chip]="sel.leafChipLabel('skillValues')"
+            (click)="
+              sel.selectLeaf('skills', leafPath('skills', i, 'values'), renderMode(), $event)
+            "
+            (keydown.enter)="
+              sel.selectLeaf('skills', leafPath('skills', i, 'values'), renderMode(), $event)
+            "
+            (keydown.space)="
+              sel.onSelectKey(
+                $event,
+                'skills',
+                'body',
+                renderMode(),
+                leafPath('skills', i, 'values')
+              )
+            "
+            >{{ group.values.join(', ') }}</span
+          >
+        }
+      </p>
+    }
+  }
+</div>

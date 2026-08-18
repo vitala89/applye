@@ -107,8 +107,8 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **3 files over budget**, down from 18 across thirteen watches,
-  and **no stylesheet is over budget any more.**
+  concentrated.** The full audit reads **2 files over budget**, down from 18 across fourteen watches,
+  and **no stylesheet and no template is over budget any more.**
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -183,16 +183,17 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is three, and every one of them is blocked on the
-  maintainer's decision** rather than on work. `cv-preview.component.html` 779/300 (the seventeen
-  `@if (isEditingLeaf(...))` pairs, which need `aif-grilling`), `document.model.ts` 504/400 (a
-  `libs/` public API, same gate) and `db.service.ts` 461/400 (cut into per-domain gateways when the
-  ratchet refuses the next method, not before). **`_editor-shell.scss` is done** - 460 to **26/400**
-  as a barrel over ten partials under `editor-shell/`, with the compiled `styles.scss` diffed
-  before and after and found **byte-identical**, which is the only check that can prove a global
-  partial still emits what it did. **`discover` is done**: re-judged rather than re-declined, and
-  the re-judgement found 48 lines that were dead or declared in the wrong place. There is no
-  unexamined source file left.
+  **With this the over-budget list is two, and both are decided rather than pending.**
+  `document.model.ts` 504/400 (a `libs/` public API, split by domain with the barrel re-exporting, so
+  no call site moves) and `db.service.ts` 461/400, where the recorded rule **stands**: cut into
+  per-domain gateways when the ratchet refuses the next method added to it, not before. **`_editor-shell.scss`
+  is done** - 460 to **26/400** as a barrel over ten partials under `editor-shell/`, with the compiled
+  `styles.scss` diffed before and after and found **byte-identical**, which is the only check that can
+  prove a global partial still emits what it did. **`cv-preview.component.html` is done** - 779 to
+  **126/300**, six atoms into child components, the seam judged to be the sections rather than the 15
+  inline-editing pairs. **`discover` is done**: re-judged rather than re-declined, and the
+  re-judgement found 48 lines that were dead or declared in the wrong place. There is no unexamined
+  source file left.
 
 - **Discover was re-judged rather than re-declined, and the verdict changed because the measurement
   did.** `discover.component.scss` **475 to 393/400**. The old reasoning - what remains is the page's

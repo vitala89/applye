@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { PipelineCard } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 
 /**
  * The Interview Prep list: every application with at least one stage, sorted
@@ -21,6 +21,8 @@ import { DbService } from '@applye/data';
 @Injectable()
 export class InterviewPrepStore {
   private readonly db = inject(DbService);
+  /** Stages and prep come from `InterviewGateway`; `db` stays for the cards. */
+  private readonly interview = inject(InterviewGateway);
 
   private readonly cards = signal<PipelineCard[]>([]);
   readonly loading = signal(true);
@@ -113,8 +115,8 @@ export class InterviewPrepStore {
     this.removing.set(true);
     this.error.set('');
     try {
-      const stages = await this.db.listInterviewStages(id);
-      await Promise.all(stages.map((s) => this.db.deleteInterviewStage(s.id)));
+      const stages = await this.interview.listInterviewStages(id);
+      await Promise.all(stages.map((s) => this.interview.deleteInterviewStage(s.id)));
       this.cards.update((cs) =>
         cs.map((c) =>
           c.id === id

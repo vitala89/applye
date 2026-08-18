@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { PipelineCard } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 import { InterviewPrepStore } from './interview-prep.store';
 
 const card = (over: Partial<PipelineCard> = {}): PipelineCard =>
@@ -19,7 +19,11 @@ function createStore(cards: PipelineCard[], over: Partial<Record<string, jest.Mo
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [InterviewPrepStore, { provide: DbService, useValue: db }],
+    providers: [
+      InterviewPrepStore,
+      { provide: DbService, useValue: db },
+      { provide: InterviewGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(InterviewPrepStore), db };
 }

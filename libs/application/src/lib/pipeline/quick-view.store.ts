@@ -6,7 +6,7 @@ import type {
   InterviewStage,
   Priority,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 import { pickCurrentStage, sortStages } from './interview-stage-view';
 
 /**
@@ -28,6 +28,9 @@ import { pickCurrentStage, sortStages } from './interview-stage-view';
 @Injectable()
 export class QuickViewStore {
   private readonly db = inject(DbService);
+  /** Stages come from `InterviewGateway`; `db` stays for the comment and
+   * status writes, which belong to the jobs domain and have not moved. */
+  private readonly interview = inject(InterviewGateway);
 
   readonly statusBusy = signal(false);
   readonly priorityBusy = signal(false);
@@ -89,7 +92,7 @@ export class QuickViewStore {
     }
     this.stagesLoading.set(true);
     try {
-      const stages = await this.db.listInterviewStages(applicationId);
+      const stages = await this.interview.listInterviewStages(applicationId);
       this.stages.set(sortStages(stages));
       this.stageSummary.set(pickCurrentStage(stages));
       return true;

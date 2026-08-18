@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { Application, ApplicationStatus, InterviewStage, PipelineCard } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 
 /** Statuses that count towards the board's "active" total. `saved` lives in My
  * Jobs, and the two terminal columns are the archive. */
@@ -27,6 +27,9 @@ const ACTIVE_STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer'];
 @Injectable()
 export class PipelineStore {
   private readonly db = inject(DbService);
+  /** Stages come from `InterviewGateway`; `db` stays for the board's cards
+   * and status writes. */
+  private readonly interview = inject(InterviewGateway);
 
   cards: Record<ApplicationStatus, PipelineCard[]> = {
     saved: [],
@@ -138,7 +141,7 @@ export class PipelineStore {
    * have stages. */
   async hasNoStages(applicationId: number): Promise<boolean> {
     try {
-      const stages: InterviewStage[] = await this.db.listInterviewStages(applicationId);
+      const stages: InterviewStage[] = await this.interview.listInterviewStages(applicationId);
       return stages.length === 0;
     } catch (e) {
       this.error.set(String(e));

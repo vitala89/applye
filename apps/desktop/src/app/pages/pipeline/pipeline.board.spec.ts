@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { provideRouter } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, InterviewGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { PipelineComponent } from './pipeline.component';
@@ -44,19 +44,21 @@ describe('PipelineComponent board', () => {
 
   async function mount(cards: PipelineCard[] = [card()]): Promise<void> {
     TestBed.resetTestingModule();
+    // One stub, two tokens: the interview stages come from `InterviewGateway`
+    // now, and the rest of this stub is still `DbService`'s - those domains
+    // have not moved.
+    const dbStub = {
+      listPipelineCards: jest.fn().mockResolvedValue(cards),
+      listInterviewStages: jest.fn().mockResolvedValue([]),
+      setApplicationStatus: jest.fn().mockResolvedValue(undefined),
+      listApplicationComments: jest.fn().mockResolvedValue([]),
+    };
     TestBed.configureTestingModule({
       imports: [PipelineComponent],
       providers: [
         provideRouter([]),
-        {
-          provide: DbService,
-          useValue: {
-            listPipelineCards: jest.fn().mockResolvedValue(cards),
-            listInterviewStages: jest.fn().mockResolvedValue([]),
-            setApplicationStatus: jest.fn().mockResolvedValue(undefined),
-            listApplicationComments: jest.fn().mockResolvedValue([]),
-          },
-        },
+        { provide: DbService, useValue: dbStub },
+        { provide: InterviewGateway, useValue: dbStub },
         { provide: AiService, useValue: { renderSkill: jest.fn(), run: jest.fn() } },
         TranslateService,
         ToastService,
@@ -289,17 +291,19 @@ describe('PipelineComponent board', () => {
 
     it('reports a failed read with a retry rather than an empty board', async () => {
       TestBed.resetTestingModule();
+      // One stub, two tokens: the interview stages come from `InterviewGateway`
+      // now, and the rest of this stub is still `DbService`'s - those domains
+      // have not moved.
+      const dbStub2 = {
+        listPipelineCards: jest.fn().mockRejectedValue(new Error('db gone')),
+        listInterviewStages: jest.fn().mockResolvedValue([]),
+      };
       TestBed.configureTestingModule({
         imports: [PipelineComponent],
         providers: [
           provideRouter([]),
-          {
-            provide: DbService,
-            useValue: {
-              listPipelineCards: jest.fn().mockRejectedValue(new Error('db gone')),
-              listInterviewStages: jest.fn().mockResolvedValue([]),
-            },
-          },
+          { provide: DbService, useValue: dbStub2 },
+          { provide: InterviewGateway, useValue: dbStub2 },
           { provide: AiService, useValue: {} },
           TranslateService,
           ToastService,

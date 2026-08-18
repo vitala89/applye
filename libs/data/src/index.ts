@@ -3,6 +3,7 @@ export * from './lib/services/ats.service';
 export * from './lib/services/db.service';
 export * from './lib/services/discover.gateway';
 export * from './lib/services/drafts.gateway';
+export * from './lib/services/interview.gateway';
 export * from './lib/services/job-source.service';
 export * from './lib/services/keys.service';
 export * from './lib/stores/jobs.store';

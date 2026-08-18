@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DraftsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { WizardActivityService } from './wizard-activity.service';
 import { ToastService } from '../shell/toast.service';
@@ -12,6 +12,7 @@ import {
   baselineFor,
   buildPassResult,
   parsePassResult,
+  passHashInput,
   resultMdForPass,
 } from './tailoring-pass';
 
@@ -37,6 +38,9 @@ export type { PassResult, TailorContext };
 @Injectable()
 export class TailoringService {
   private readonly db = inject(DbService);
+  /** The tailoring cache moved to its own gateway; `db` stays for `hashText`,
+   * which is cross-cutting and has not been migrated yet. */
+  private readonly drafts = inject(DraftsGateway);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly activity = inject(WizardActivityService);
@@ -136,7 +140,7 @@ export class TailoringService {
         lang,
         restored,
       );
-      const cached = await this.db.tailoringCacheGet(job.id, passNum, inputHash);
+      const cached = await this.drafts.tailoringCacheGet(job.id, passNum, inputHash);
       // A miss means every later pass is keyed on a result we do not have.
       if (!cached) break;
       restored.push(
@@ -184,7 +188,7 @@ export class TailoringService {
       this.results(),
     );
 
-    const cached = await this.db.tailoringCacheGet(job.id, passNum, inputHash);
+    const cached = await this.drafts.tailoringCacheGet(job.id, passNum, inputHash);
     if (cached) {
       this.appendPassResult({
         pass: passNum,
@@ -221,7 +225,7 @@ export class TailoringService {
 
     const parsed = parsePassResult(res.text, passNum);
 
-    await this.db.tailoringCacheSave({
+    await this.drafts.tailoringCacheSave({
       jobId: job.id,
       pass: passNum,
       inputHash,
@@ -255,16 +259,7 @@ export class TailoringService {
     lang: string,
     priorPasses: readonly PassResult[],
   ): Promise<string> {
-    return this.db.hashText(
-      [
-        baselineMd,
-        jdText,
-        String(passNum),
-        lang,
-        resultMdForPass(priorPasses, 1),
-        resultMdForPass(priorPasses, 2),
-      ].join('\x00'),
-    );
+    return this.db.hashText(passHashInput(baselineMd, jdText, passNum, lang, priorPasses));
   }
 
   private appendPassResult(input: PassResultInput): void {

@@ -3,7 +3,7 @@
 One walkable pass over every check in `docs/internal/NATIVE_GATE_BACKLOG.md`.
 
 The backlog says **what** is unrun and **why** no agent can run it. This file says **in what order**,
-**on what data**, and **what to look at** - so the 81 checks across fifteen sections become one
+**on what data**, and **what to look at** - so the 83 checks across sixteen sections become one
 sitting of fifteen stations, numbered 0 to 14, instead of fifteen separate setups. Nothing here is
 new: every item is a backlog item, named by its section so the two files stay in step.
 
@@ -334,6 +334,13 @@ is a legitimate outcome; say so in the watch entry rather than leaving them look
 - **Run a tailoring, then discard it.** The draft goes and the job returns to its prior state. →
   A "discard a tailoring".
 - **The ATS line.** Costs a full tailoring run plus a rescore. → D "the ATS line".
+- **Re-run the tailoring you just paid for, with nothing changed.** It returns without a provider
+  call - the cache is being hit through `DraftsGateway` now. → C12 "a tailoring pass is served from
+  cache".
+
+**And one free check that belongs with station 8**, where the composer already is: draft a follow-up
+on the overdue card, close the quick view, reopen it - **the draft is still there**. → C12 "a
+follow-up draft survives and is re-read".
 
 ## Station 13. Destructive - last, and in this order
 
@@ -380,6 +387,7 @@ already owns that screen rather than to the end of this file.
 | C9      |      7 | 10 (six) · 13 (one destructive)                  |
 | C10     |      7 | 5                                                |
 | C11     |      1 | 4                                                |
+| C12     |      2 | 12 (one paid) · 8 (one free)                     |
 | D       |      2 | 11 (one) · 12 (one paid)                         |
 | E       |      1 | 14                                               |
-| **81**  |        |                                                  |
+| **83**  |        |                                                  |

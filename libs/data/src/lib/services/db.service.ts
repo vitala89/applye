@@ -25,9 +25,6 @@ import {
 } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
-import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
-import { PortalAnswer, SavePortalAnswersInput } from '@applye/core';
-import { FollowupDraft, SaveFollowupDraftInput } from '@applye/core';
 import {
   CvImportFile,
   CvTemplate,
@@ -37,6 +34,7 @@ import {
   UpsertCvTemplateInput,
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
+import { GeneratedDoc } from '@applye/core';
 import { HealthReport } from '@applye/core';
 import { DiscoverFeedItem, DiscoverSource, MarketSourcePlan, ScanSummary } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
@@ -330,45 +328,6 @@ export class DbService {
   /** Ordered by stageOrder ascending. */
   async listInterviewStages(applicationId: number): Promise<InterviewStage[]> {
     return tauriInvoke<InterviewStage[]>('list_interview_stages', { applicationId });
-  }
-
-  // --- Tailoring cache ---
-  async tailoringCacheGet(
-    jobId: number,
-    pass: number,
-    inputHash: string,
-  ): Promise<TailoringCache | null> {
-    return tauriInvoke<TailoringCache | null>('tailoring_cache_get', { jobId, pass, inputHash });
-  }
-
-  async tailoringCacheSave(input: SaveTailoringInput): Promise<TailoringCache> {
-    return tauriInvoke<TailoringCache>('tailoring_cache_save', { input });
-  }
-
-  // --- Portal answer drafts ---
-  async portalAnswersGet(
-    jobId: number,
-    profileHash: string,
-    inputHash: string,
-  ): Promise<PortalAnswer | null> {
-    return tauriInvoke<PortalAnswer | null>('portal_answers_get', {
-      jobId,
-      profileHash,
-      inputHash,
-    });
-  }
-
-  async portalAnswersSave(input: SavePortalAnswersInput): Promise<PortalAnswer> {
-    return tauriInvoke<PortalAnswer>('portal_answers_save', { input });
-  }
-
-  // --- Follow-up drafts ---
-  async followupDraftGet(applicationId: number, inputHash: string): Promise<FollowupDraft | null> {
-    return tauriInvoke<FollowupDraft | null>('followup_draft_get', { applicationId, inputHash });
-  }
-
-  async followupDraftSave(input: SaveFollowupDraftInput): Promise<FollowupDraft> {
-    return tauriInvoke<FollowupDraft>('followup_draft_save', { input });
   }
 
   // --- Documents library (CV / Cover Letter) ---

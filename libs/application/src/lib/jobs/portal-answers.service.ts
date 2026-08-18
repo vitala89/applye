@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DraftsGateway } from '@applye/data';
 import { Job, Profile, Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../shell/toast.service';
@@ -22,6 +22,8 @@ export interface PortalAnswerDraft {
 @Injectable()
 export class PortalAnswersService {
   private readonly db = inject(DbService);
+  /** Portal drafts moved to their own gateway; `db` stays for `hashText`. */
+  private readonly drafts = inject(DraftsGateway);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
@@ -67,7 +69,7 @@ export class PortalAnswersService {
     if (!job || !profile?.scoringHash || !settings || !questions.length) return;
     try {
       const inputHash = await this.inputHash(questions, settings.defaultModel);
-      const cached = await this.db.portalAnswersGet(job.id, profile.scoringHash, inputHash);
+      const cached = await this.drafts.portalAnswersGet(job.id, profile.scoringHash, inputHash);
       if (cached) {
         this.answers.set(JSON.parse(cached.answersJson ?? '[]'));
         this.fromCache.set(true);
@@ -121,7 +123,7 @@ export class PortalAnswersService {
     this.status.set('');
     try {
       const inputHash = await this.inputHash(questions, s.defaultModel);
-      const cached = await this.db.portalAnswersGet(job.id, p.scoringHash, inputHash);
+      const cached = await this.drafts.portalAnswersGet(job.id, p.scoringHash, inputHash);
       if (cached) {
         this.answers.set(JSON.parse(cached.answersJson ?? '[]'));
         this.fromCache.set(true);
@@ -146,7 +148,7 @@ export class PortalAnswersService {
       const parsed = this.parseAnswers(res.text);
       this.answers.set(parsed);
       this.fromCache.set(false);
-      await this.db.portalAnswersSave({
+      await this.drafts.portalAnswersSave({
         jobId: job.id,
         profileHash: p.scoringHash,
         questionsJson: JSON.stringify(questions),
@@ -203,7 +205,7 @@ export class PortalAnswersService {
       });
       const parsed = this.parseAnswers(res.text);
       const answer = parsed[0]?.answer ?? current.answer;
-      await this.db.portalAnswersSave({
+      await this.drafts.portalAnswersSave({
         jobId: job.id,
         profileHash: p.scoringHash,
         questionsJson: JSON.stringify([question]),

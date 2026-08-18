@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DraftsGateway } from '@applye/data';
 import { PipelineCard, SupportedLanguage } from '@applye/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -46,6 +46,9 @@ export function parseFollowupDraft(text: string): { subject: string; body: strin
 @Injectable()
 export class FollowupDraftService {
   private readonly db = inject(DbService);
+  /** Follow-up drafts moved to their own gateway; `db` stays for `hashText`
+   * and `getSettings`. */
+  private readonly drafts = inject(DraftsGateway);
   private readonly ai = inject(AiService);
 
   readonly language = signal<SupportedLanguage>('en');
@@ -116,7 +119,7 @@ export class FollowupDraftService {
     try {
       const settings = await this.db.getSettings();
       const inputHash = await this.inputHash(card, settings.economyModel);
-      const cached = await this.db.followupDraftGet(card.id, inputHash);
+      const cached = await this.drafts.followupDraftGet(card.id, inputHash);
       if (cached) {
         this.subject.set(cached.subject);
         this.body.set(cached.body);
@@ -142,7 +145,7 @@ export class FollowupDraftService {
       this.subject.set(parsed.subject);
       this.body.set(parsed.body);
       this.fromCache.set(false);
-      await this.db.followupDraftSave({
+      await this.drafts.followupDraftSave({
         applicationId: card.id,
         inputHash,
         language: this.language(),

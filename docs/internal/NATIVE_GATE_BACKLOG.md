@@ -434,6 +434,22 @@ are present, which is a claim about the DOM, not about the paint.
       one, both matching every other dialog in the app - not as unstyled
       browser-default buttons. Type a name and confirm Save enables.
 
+## C12. The draft caches, after they moved to their own gateway
+
+Three AI draft caches now come from `DraftsGateway` rather than `DbService`.
+The gateway's spec pins every command string, so a mangled name cannot reach
+here - but **whether the cache is still hit at runtime is a different claim**,
+and it needs the real SQLite rows the unit tests stub away. Two of the three
+cost tokens to fill, so run these at the script's paid station rather than on
+their own.
+
+- [ ] **A tailoring pass is served from cache the second time.** Run a tailoring,
+      then re-run it with nothing changed: it returns without a provider call.
+      **(costs tokens on the first run only)**
+- [ ] **A follow-up draft survives and is re-read.** Draft a follow-up on an
+      overdue card, close the quick view, reopen it: the draft is still there.
+      This is free - the cache read is the same path either way.
+
 ## D. Carried from the fallback audit
 
 Both were named as the next action on 2026-08-14 and neither has been run.

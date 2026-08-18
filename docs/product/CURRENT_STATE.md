@@ -107,12 +107,16 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The file-size stream is finished, and its last deliverable is
+  concentrated.** **`db.service.ts` is now being cut into eight per-domain gateways**, one pull
+  request each, smallest domain first - the maintainer superseded the recorded "not before the
+  ratchet refuses" rule on 2026-08-19. `DraftsGateway` is the first: **461 to 426/400**, still over
+  budget and expected to be until the last domain leaves. The file-size stream is otherwise
+  finished, and its last deliverable is
   `docs/internal/NATIVE_GATE_SCRIPT.md`: the backlog's 81 checks ordered into one walkable pass of
   fifteen stations, with the two paid checks and the two destructive ones held to the end. **The
   maintainer drives it; no agent can.** The full audit reads **1 file over budget**, down from 18 across fifteen watches:
-  `db.service.ts` 461/400, which **stays by decision**. No stylesheet, no template and no other
-  source file is over budget.
+  `db.service.ts`, **426/400 and falling** as the gateway migration proceeds. No stylesheet, no
+  template and no other source file is over budget.
   `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.

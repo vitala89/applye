@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { PipelineCard } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DraftsGateway } from '@applye/data';
 import { FollowupDraftService, parseFollowupDraft } from './followup-draft.service';
 
 jest.mock('@tauri-apps/plugin-opener', () => ({ openUrl: jest.fn() }));
@@ -15,9 +15,8 @@ describe('FollowupDraftService', () => {
   let db: {
     getSettings: jest.Mock;
     hashText: jest.Mock;
-    followupDraftGet: jest.Mock;
-    followupDraftSave: jest.Mock;
   };
+  let drafts: { followupDraftGet: jest.Mock; followupDraftSave: jest.Mock };
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
 
   const card = { id: 7, company: 'Northlane', title: 'UI Engineer' } as PipelineCard;
@@ -30,6 +29,8 @@ describe('FollowupDraftService', () => {
         economyModel: 'm',
       })),
       hashText: jest.fn(async () => 'h1'),
+    };
+    drafts = {
       followupDraftGet: jest.fn(async () => null),
       followupDraftSave: jest.fn(async () => undefined),
     };
@@ -47,6 +48,7 @@ describe('FollowupDraftService', () => {
       providers: [
         FollowupDraftService,
         { provide: DbService, useValue: db },
+        { provide: DraftsGateway, useValue: drafts },
         { provide: AiService, useValue: ai },
       ],
     });
@@ -70,7 +72,7 @@ describe('FollowupDraftService', () => {
   describe('draft', () => {
     it('serves a cached draft without spending tokens', async () => {
       const s = make();
-      db.followupDraftGet.mockResolvedValueOnce({ subject: 'cached', body: 'body' });
+      drafts.followupDraftGet.mockResolvedValueOnce({ subject: 'cached', body: 'body' });
       await s.draft(card);
       expect(ai.run).not.toHaveBeenCalled();
       expect(s.subject()).toBe('cached');
@@ -83,7 +85,7 @@ describe('FollowupDraftService', () => {
       expect(s.subject()).toBe('Following up');
       expect(s.body()).toBe('Line one\nLine two');
       expect(s.fromCache()).toBe(false);
-      expect(db.followupDraftSave).toHaveBeenCalledWith(
+      expect(drafts.followupDraftSave).toHaveBeenCalledWith(
         expect.objectContaining({ applicationId: 7, inputHash: 'h1', language: 'en' }),
       );
       expect(s.drafting()).toBe(false);
@@ -106,7 +108,7 @@ describe('FollowupDraftService', () => {
       await expect(s.draft(card)).rejects.toThrow('provider down');
       expect(s.error()).toContain('provider down');
       expect(s.drafting()).toBe(false);
-      expect(db.followupDraftSave).not.toHaveBeenCalled();
+      expect(drafts.followupDraftSave).not.toHaveBeenCalled();
     });
 
     it('ignores a second call while one is in flight', async () => {

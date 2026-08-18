@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { DiscoverFeedItem } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DiscoverGateway } from '@applye/data';
 
 /** A scanned job plus the triage state the page holds until the next reload. */
 export interface FeedRow extends DiscoverFeedItem {
@@ -31,6 +31,9 @@ export const FEED_PAGE = 30;
 @Injectable()
 export class DiscoverFeedStore {
   private readonly db = inject(DbService);
+  /** Feed reads and the dismiss/clear writes; `db` stays only for
+   * `upsertApplication`, which belongs to the jobs domain and has not moved. */
+  private readonly discover = inject(DiscoverGateway);
 
   private readonly rowsState = signal<FeedRow[]>([]);
   private readonly displayCountState = signal(FEED_PAGE);
@@ -43,7 +46,7 @@ export class DiscoverFeedStore {
 
   /** Reads the feed and resets the render window to the first page. */
   async load(): Promise<void> {
-    this.receive(await this.db.discoverFeed());
+    this.receive(await this.discover.discoverFeed());
   }
 
   /** Renders one more page. */
@@ -80,7 +83,7 @@ export class DiscoverFeedStore {
   async setDismissed(jobId: number, dismissed: boolean): Promise<string | null> {
     this.patch(jobId, { dismissed });
     try {
-      await this.db.discoverDismiss(jobId, dismissed);
+      await this.discover.discoverDismiss(jobId, dismissed);
       return null;
     } catch (e) {
       console.error('discover: dismiss failed', e);
@@ -115,7 +118,7 @@ export class DiscoverFeedStore {
    * scanning.
    */
   async discardUnsaved(): Promise<number> {
-    return this.db.discoverClear();
+    return this.discover.discoverClear();
   }
 
   /** A fresh read: nothing is new that the database did not say is new. */

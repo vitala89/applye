@@ -8,7 +8,7 @@ import {
   parseGeoScopes,
   parseLocalMarkets,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DiscoverGateway } from '@applye/data';
 import { type GeoTarget, toggleMarket, toggleRegion, worldwide } from './geo-target';
 import { SettingsStore } from './settings.store';
 
@@ -32,7 +32,7 @@ import { SettingsStore } from './settings.store';
  */
 @Injectable()
 export class GeoTargetStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DiscoverGateway);
   private readonly settings = inject(SettingsStore);
 
   readonly plan = signal<MarketSourcePlan | null>(null);

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService } from '@applye/data';
+import { DbService, DiscoverGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
 import { ToastService } from '@applye/application';
@@ -47,25 +47,27 @@ async function createFixture(
   feed: DiscoverFeedItem[],
   profile: { targetArchetypes?: string; fullMd?: string } | null = null,
 ): Promise<ComponentFixture<DiscoverComponent>> {
+  // One stub, two tokens. The page's stores read sources and the feed through
+  // `DiscoverGateway` now, and still read the profile and the settings through
+  // `DbService` - neither of those domains has moved yet.
+  const db = {
+    listSources: jest.fn().mockResolvedValue(sources),
+    discoverFeed: jest.fn().mockResolvedValue(feed),
+    getProfile: jest.fn().mockResolvedValue(profile),
+    getSettings: jest.fn().mockResolvedValue({
+      uiLanguage: 'en',
+      geoScope: 'worldwide',
+      market: null,
+      lastScanMarket: null,
+    }),
+  };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [DiscoverComponent],
     providers: [
       provideRouter([]),
-      {
-        provide: DbService,
-        useValue: {
-          listSources: jest.fn().mockResolvedValue(sources),
-          discoverFeed: jest.fn().mockResolvedValue(feed),
-          getProfile: jest.fn().mockResolvedValue(profile),
-          getSettings: jest.fn().mockResolvedValue({
-            uiLanguage: 'en',
-            geoScope: 'worldwide',
-            market: null,
-            lastScanMarket: null,
-          }),
-        },
-      },
+      { provide: DbService, useValue: db },
+      { provide: DiscoverGateway, useValue: db },
       TranslateService,
       ToastService,
     ],

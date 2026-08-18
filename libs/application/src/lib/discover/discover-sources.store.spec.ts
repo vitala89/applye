@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DiscoverSource } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DiscoverGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { DiscoverSourcesStore, formatScanTime } from './discover-sources.store';
 
@@ -28,7 +28,7 @@ function setup(rows: DiscoverSource[] = []) {
   TestBed.configureTestingModule({
     providers: [
       DiscoverSourcesStore,
-      { provide: DbService, useValue: db },
+      { provide: DiscoverGateway, useValue: db },
       { provide: TranslateService, useValue: { t: () => (k: string) => k } },
     ],
   });

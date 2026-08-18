@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { DiscoverSource } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DiscoverGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { hostOf } from './discover-sources.util';
 
@@ -54,7 +54,7 @@ export interface SourceWriteResult {
  */
 @Injectable()
 export class DiscoverSourcesStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DiscoverGateway);
   private readonly i18n = inject(TranslateService);
   private readonly t = this.i18n.t;
 

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { ScanSummary } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { DbService } from '@applye/data';
+import { DiscoverGateway } from '@applye/data';
 import { DiscoverScanStore } from './discover-scan.store';
 
 const SUMMARY: ScanSummary = {
@@ -20,7 +20,7 @@ function createStore(discoverScan: jest.Mock): DiscoverScanStore {
     providers: [
       DiscoverScanStore,
       TranslateService,
-      { provide: DbService, useValue: { discoverScan } },
+      { provide: DiscoverGateway, useValue: { discoverScan } },
     ],
   });
   return TestBed.inject(DiscoverScanStore);

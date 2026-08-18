@@ -1,0 +1,34 @@
+// ---------------------------------------------------------------------------
+// Chevron + collapse animator
+// ---------------------------------------------------------------------------
+
+.docedit-chevron {
+  color: var(--text-tertiary);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.docedit-chevron--closed {
+  transform: rotate(-90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .docedit-chevron {
+    transition: none;
+  }
+}
+
+.docedit-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out);
+}
+.docedit-collapse--closed {
+  grid-template-rows: 0fr;
+}
+.docedit-collapse > * {
+  overflow: hidden;
+  min-height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .docedit-collapse {
+    transition: none;
+  }
+}

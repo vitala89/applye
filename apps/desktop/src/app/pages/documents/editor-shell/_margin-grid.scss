@@ -1,0 +1,52 @@
+// ---------------------------------------------------------------------------
+// Margin grid
+// ---------------------------------------------------------------------------
+
+// Margins - one tidy row of 4 compact labelled boxes, left-clustered so they
+// read as small numeric fields (not stretched full-width inputs). Wraps when
+// the pane is narrow.
+.docedit-margin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 96px));
+  justify-content: start;
+  gap: var(--space-3);
+}
+@container (max-width: 420px) {
+  .docedit-margin-grid {
+    grid-template-columns: repeat(2, minmax(0, 96px));
+  }
+}
+@media (max-width: 620px) {
+  .docedit-margin-grid {
+    grid-template-columns: repeat(2, minmax(0, 96px));
+  }
+}
+.docedit-margin-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.docedit-margin-field span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.docedit-margin-field input {
+  width: 100%;
+  height: var(--control-h, 36px);
+  padding: 0 var(--space-3);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+.docedit-margin-field input:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}

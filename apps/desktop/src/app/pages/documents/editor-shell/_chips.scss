@@ -1,0 +1,49 @@
+// ---------------------------------------------------------------------------
+// Chips (toggle-chip row)
+// ---------------------------------------------------------------------------
+
+.docedit-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.docedit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background var(--dur-instant) var(--ease-standard),
+    border-color var(--dur-instant) var(--ease-standard),
+    color var(--dur-instant) var(--ease-standard);
+}
+.docedit-chip:hover {
+  background: var(--surface-hover);
+}
+.docedit-chip--active {
+  background: var(--accent-tint);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text-primary);
+}
+.docedit-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-default);
+  flex: 0 0 auto;
+  transition: background var(--dur-instant) var(--ease-standard);
+}
+.docedit-chip--active .docedit-chip__dot {
+  background: var(--accent);
+}

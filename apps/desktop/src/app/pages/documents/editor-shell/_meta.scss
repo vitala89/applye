@@ -1,0 +1,36 @@
+// ---------------------------------------------------------------------------
+// Meta row (region select + default toggle)
+// ---------------------------------------------------------------------------
+
+.docedit-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.docedit-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+}
+.docedit-meta-row select {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
+  height: var(--control-h, 36px);
+  min-width: 130px;
+  padding: 0 var(--space-4);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+.docedit-meta-row select:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}

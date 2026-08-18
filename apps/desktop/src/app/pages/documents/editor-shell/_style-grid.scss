@@ -1,0 +1,106 @@
+// ---------------------------------------------------------------------------
+// Style grid - the polished control layout
+// ---------------------------------------------------------------------------
+
+// Two compact columns, left-clustered - the card is full width, but the
+// controls stay a comfortable size instead of stretching edge-to-edge.
+.docedit-style-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 280px));
+  justify-content: start;
+  gap: var(--space-4) var(--space-5);
+  align-items: end;
+}
+@container (max-width: 420px) {
+  .docedit-style-grid {
+    grid-template-columns: minmax(0, 280px);
+  }
+}
+// Fallback for browsers/contexts without a container-query ancestor.
+@media (max-width: 620px) {
+  .docedit-style-grid {
+    grid-template-columns: minmax(0, 280px);
+  }
+}
+
+// Grouped style section - wraps one `.docedit-style-grid` with a small
+// uppercase header so Body text / Section titles / Page read as clearly
+// delimited blocks instead of a single jumbled grid.
+.docedit-style-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+}
+.docedit-style-section + .docedit-style-section {
+  margin-top: var(--space-4);
+}
+.docedit-style-section__header {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+// Fields inside a group sit on the card surface, not the sunken group tint.
+.docedit-style-section .docedit-style-grid select,
+.docedit-style-section .docedit-style-grid input,
+.docedit-style-section .docedit-color-row {
+  background: var(--surface-1);
+}
+
+.docedit-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.docedit-field--full {
+  grid-column: 1 / -1;
+}
+.docedit-field__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+// Consistent control sizing for everything inside the style grid.
+.docedit-style-grid select,
+.docedit-style-grid input,
+.docedit-color-row {
+  height: var(--control-h, 36px);
+  min-height: var(--control-h, 36px);
+}
+.docedit-style-grid select,
+.docedit-style-grid input {
+  width: 100%;
+  padding: 0 var(--space-4);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+.docedit-style-grid select {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+// Short numeric fields (Size) read as compact boxes, not full-cell inputs.
+.docedit-style-grid input[type='number'] {
+  text-align: left;
+  max-width: 120px;
+}
+.docedit-style-grid select:focus,
+.docedit-style-grid input:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}

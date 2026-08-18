@@ -1,0 +1,18 @@
+// ---------------------------------------------------------------------------
+// Note / callout
+// ---------------------------------------------------------------------------
+
+.docedit-note {
+  background: var(--warning-tint, color-mix(in srgb, var(--warning) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--warning) 34%, transparent);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.docedit-note p {
+  margin: 0;
+}
+.docedit-note p + p {
+  margin-top: var(--space-1);
+}

@@ -1,0 +1,51 @@
+// ---------------------------------------------------------------------------
+// Card
+// ---------------------------------------------------------------------------
+
+.docedit-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5) var(--space-6);
+}
+.docedit-card + .docedit-card {
+  margin-top: var(--space-4);
+}
+
+.docedit-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.docedit-card__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+/** Explanatory line under a card's label - why the fields below matter. */
+.docedit-card__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.docedit-card__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}

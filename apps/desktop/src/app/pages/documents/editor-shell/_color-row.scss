@@ -1,0 +1,50 @@
+// ---------------------------------------------------------------------------
+// Color row - swatch + hex text as one bordered control
+// ---------------------------------------------------------------------------
+
+.docedit-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  max-width: 200px;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+.docedit-color-row:focus-within {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}
+.docedit-color-row input[type='color'] {
+  width: 38px;
+  height: 100%;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  background: transparent;
+  flex: 0 0 auto;
+  outline: none;
+}
+.docedit-color-row input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.docedit-color-row input[type='color']::-webkit-color-swatch {
+  border: var(--border-width) solid var(--border-default);
+  border-radius: 3px;
+}
+.docedit-color-row input[type='text'] {
+  border: none !important;
+  border-left: var(--border-width) solid var(--border-default) !important;
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 var(--space-3) !important;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  width: 92px !important;
+  outline: none !important;
+  height: 100%;
+}

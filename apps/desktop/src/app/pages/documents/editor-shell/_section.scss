@@ -1,0 +1,53 @@
+// ---------------------------------------------------------------------------
+// Content-section accordion (CV sections / cover-letter blocks)
+// ---------------------------------------------------------------------------
+
+.docedit-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5) var(--space-5) var(--space-5);
+}
+
+.docedit-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.docedit-section__head-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.docedit-section__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.docedit-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-1);
+  margin: 0;
+  cursor: pointer;
+  border-radius: var(--radius-input);
+}
+.docedit-section__title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+.docedit-section__toggle:hover .docedit-section__title {
+  color: var(--text-primary);
+}

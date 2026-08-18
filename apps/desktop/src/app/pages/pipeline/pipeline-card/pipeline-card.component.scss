@@ -1,0 +1,219 @@
+.card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.card__mono {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-input);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.card__id {
+  flex: 1;
+  min-width: 0;
+}
+
+.card__company {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__role {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs, 12px);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.card__flag {
+  flex: 0 0 auto;
+  display: flex;
+  color: var(--text-tertiary);
+
+  &[data-priority='low'] {
+    color: var(--text-accent);
+  }
+  &[data-priority='medium'] {
+    color: var(--warning);
+  }
+  &[data-priority='high'] {
+    color: var(--danger);
+  }
+}
+
+.card__loc {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  min-width: 0;
+
+  span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  lucide-icon {
+    flex: 0 0 auto;
+  }
+}
+
+/* Interview stage track */
+.card__track {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.card__track-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.card__track-dot {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--warning);
+
+  &[data-status='passed'] {
+    background: var(--success);
+  }
+  &[data-status='rejected'] {
+    background: var(--danger);
+  }
+  &[data-status='scheduled'] {
+    background: var(--text-accent);
+  }
+}
+
+.card__track-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__track-count {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  font-size: 10px;
+}
+
+.card__segs {
+  display: flex;
+  gap: 3px;
+}
+
+.card__seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+
+  &.is-filled {
+    background: var(--warning);
+  }
+}
+
+/* Footer */
+.card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.card__ats {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+
+  &.score--high {
+    color: var(--success);
+  }
+  &.score--mid {
+    color: var(--warning);
+  }
+  &.score--low {
+    color: var(--danger);
+  }
+}
+
+.card__ats-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.card__ats-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: currentColor;
+}
+
+.card__ats-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.card__noscore {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+.card__due {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.card__due--over {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-badge);
+  background: var(--warning-tint);
+  color: var(--warning);
+  font-size: 10px;
+  font-weight: 600;
+}

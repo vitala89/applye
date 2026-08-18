@@ -1,0 +1,63 @@
+<div class="card__top">
+  <span class="card__mono">{{ initials(card().company) }}</span>
+  <div class="card__id">
+    <div class="card__company">{{ card().company || placeholder }}</div>
+    <div class="card__role">{{ card().title || placeholder }}</div>
+  </div>
+  @if (card().priority) {
+    <span
+      class="card__flag"
+      [attr.data-priority]="card().priority"
+      [attr.title]="t()('pipeline.priority_' + card().priority)"
+    >
+      <lucide-icon [img]="icons.flag" [size]="14" />
+    </span>
+  }
+</div>
+
+@if (card().location) {
+  <div class="card__loc">
+    <lucide-icon [img]="icons.pin" [size]="11" />
+    <span>{{ card().location }}</span>
+  </div>
+}
+
+@if (showTrack() && card().currentStageOrder !== undefined) {
+  <div class="card__track">
+    <div class="card__track-head">
+      <span class="card__track-dot" [attr.data-status]="card().currentStageStatus"></span>
+      <span class="card__track-label">{{ card().currentStageLabel }}</span>
+      <span class="card__track-count">
+        {{ card().currentStageOrder }}/{{ stageTotal(card()) }}
+      </span>
+    </div>
+    <div class="card__segs">
+      @for (filled of segments(card()); track $index) {
+        <span class="card__seg" [class.is-filled]="filled"></span>
+      }
+    </div>
+  </div>
+}
+
+<div class="card__foot">
+  @if (card().score !== null && card().score !== undefined) {
+    <span class="card__ats" [class]="scoreClass(card().score)">
+      <span class="card__ats-dot"></span>
+      <span class="card__ats-val">{{ card().score }}</span>
+      <span class="card__ats-tag">ATS</span>
+    </span>
+  } @else {
+    <span class="card__noscore">{{ t()('pipeline.no_score') }}</span>
+  }
+  @if (card().overdue) {
+    <span class="card__due card__due--over">
+      <lucide-icon [img]="icons.alert" [size]="11" />
+      {{ t()('pipeline.overdue') }} · {{ formatDate(card().followUpAt) }}
+    </span>
+  } @else {
+    <span class="card__due">
+      <lucide-icon [img]="icons.clock" [size]="11" />
+      {{ formatDate(card().appliedAt ?? card().updatedAt) }}
+    </span>
+  }
+</div>

@@ -107,7 +107,7 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **6 files over budget**, down from 18 across ten watches.
+  concentrated.** The full audit reads **5 files over budget**, down from 18 across eleven watches.
   Two of the fifteen are in `pages/documents/cv-detail/`. `cv-live-style-panel.component.ts` was
   the largest source file in
   the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.
@@ -182,17 +182,35 @@
   what makes a re-shoot reproducible, and that is now in a header rather than a property you have to
   notice. 509 payload lines each side, nothing lost or gained. Two stale pointers went with it -
   `mira-cv.html` and `MEDIA_SHOTLIST.md` both said `PROFILE_MD` lives in `seed.mjs`.
-  **With this the over-budget list is six, and every remaining item has a decision or a shape
+  **With this the over-budget list is five, and every remaining item has a decision or a shape
   attached to it** rather than being unexamined. Three are blocked by decision -
   `cv-preview.component.html` 779/300 (the seventeen `@if (isEditingLeaf(...))` pairs, which need
   `aif-grilling`), `document.model.ts` 504/400 (a `libs/` public API, same gate) and `db.service.ts`
   461/400 (cut into per-domain gateways when the ratchet refuses the next method, not before). The
-  rest are stylesheets: `discover` 475, `_editor-shell` 460 and `pipeline` 456. **`pipeline` is
-  audited clean of dead rules** and needs a child extraction rather than a deletion pass - the same
-  shape `tracker` has just been through, and the same conclusion #467 reached for both;
-  `_editor-shell` is the shared global partial both document editors depend on, and changing what it
-  emits is not a size pass; `discover` was judged not worth it once, on grounds that still hold.
-  There is no unexamined source file left.
+  rest are two stylesheets: `discover` 475 and `_editor-shell` 460. **Both are decisions rather than
+  mechanics.** `_editor-shell` is the shared global partial both document editors depend on, and
+  changing what it emits is not a size pass; `discover` was judged not worth it once, on the grounds
+  that what remains is the page's own chrome and shrinking it means extracting components its
+  template does not need - **that judgement should be made again rather than inherited.** Every
+  stylesheet #467 audited clean has now been through a child extraction. There is no unexamined
+  source file left.
+
+- **The pipeline card leaves the board, and what stayed behind is the finding.**
+  `pipeline.component.scss` **456 to 269/400**, template **199 to 133/300**, class 192 to 162/400,
+  with `app-pipeline-card` extracted. **`.card` itself deliberately stays on the page**, written onto
+  the child's host element: three rules in `_drag.scss` depend on it being a page-declared class -
+  the preview clone the CDK appends outside every component view, the drop animation that must beat
+  it at equal specificity, and the drop list reaching into the card - and `drag-styles.spec.ts`
+  compiles the page sheet to assert that cascade. `cdkDrag` stays on the host for a second reason:
+  **`CdkDropList` finds its draggables through content children**, so a `cdkDrag` inside the child's
+  own view would not be content of the list and drag-and-drop would have stopped working **silently,
+  with every automated check green**. **An `<ng-content>` was written for the drag placeholder and
+  then deleted, because deleting it changed nothing:** `*cdkDragPlaceholder` renders nothing at its
+  declaration site, and `CdkDrag` keeps the `TemplateRef` and instantiates it itself. Mutation is
+  what said so - **a line no mutation can break is inert, not covered.** `quality:style-move` is
+  **lossless**; the cost is 0.53 kB in the `pipeline` lazy chunk. The page had no DOM spec at all,
+  only the stylesheet-cascade one, so eighteen assertions were written against the unsplit board
+  first, with the stage track **counted per column**.
 
 - **The tracker's grid comes out of the page, and the last audited-clean stylesheet reaches budget.**
   `tracker.component.scss` **433 to 207/400**, template **278 to 134/300**, class 259 to 213/400,

@@ -15,62 +15,75 @@ below.
 
 ## Where things stand
 
-`main` is at `b846db8a`. **No open pull requests.** Working tree clean.
+`main` is at `52edb637`. **No open pull requests.** Working tree clean.
 
-Twenty-eight pull requests merged, #449-#476. The last five were one session's:
+Twenty-nine pull requests merged, #449-#477. The last six:
 
 - **#472** `first-launch.component.ts` 419 to **38/400** - the view moved out of the class.
 - **#473** the Pipeline quick view, 537 to **343/400**, two children.
 - **#474** the dashboard's two list panels became one component, 506 to **360/400**.
 - **#475** the tracker grid left the page, 433 to **207/400**.
 - **#476** the pipeline card left the board, 456 to **269/400**.
+- **#477** Discover re-judged, 475 to **393/400** - two dead selectors deleted, four keyframes
+  relocated, the clear-feed dialog extracted.
 
-The audit reads **5 files over budget**, down from 18 across eleven watches. Get the current picture
-with `npm run quality:file-size:all` before planning anything - it is a report, not a gate, and
-always exits zero.
+The audit reads **4 files over budget**, down from 18 across twelve watches. Get the
+current picture with `npm run quality:file-size:all` before planning anything - it is a report, not a
+gate, and always exits zero.
 
-## The mechanical part of this campaign is finished
+## What is left, and what kind of thing each one is
 
-**Every stylesheet that could be fixed by extracting a child has been.** What is left is five items,
-and **not one of them is a size pass**:
+**Every stylesheet that could be fixed by extracting a child has been, and Discover has been
+re-judged.** Four items remain:
 
-| File                              | Size    | Why it is still there                                                                                                                                                                                                                                            |
-| --------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cv-preview.component.html`       | 779/300 | Looks like nine `ng-template` atoms and is not - they speak one inline-editing protocol repeated per field. The real seam is the **17 near-identical `@if (isEditingLeaf(...))` pairs**, which needs its own decision through `aif-grilling`. Largest file left. |
-| `libs/core/.../document.model.ts` | 504/400 | A `libs/` public API change, so the grilling gate.                                                                                                                                                                                                               |
-| `discover.component.scss`         | 475/400 | **The one open question - see below.**                                                                                                                                                                                                                           |
-| `db.service.ts`                   | 461/400 | Cut into per-domain gateways when the ratchet refuses the next method added to it, not before.                                                                                                                                                                   |
-| `_editor-shell.scss`              | 460/400 | The shared global partial both document editors depend on, load-bearing. Splitting it by responsibility is possible; changing what it emits is not a size pass.                                                                                                  |
+| File                              | Size    | What it needs                                     |
+| --------------------------------- | ------- | ------------------------------------------------- |
+| `_editor-shell.scss`              | 460/400 | **The only unblocked one. Do this first.**        |
+| `cv-preview.component.html`       | 779/300 | The maintainer's decision through `aif-grilling`. |
+| `libs/core/.../document.model.ts` | 504/400 | The same - it is a `libs/` public API.            |
+| `db.service.ts`                   | 461/400 | The same, plus its recorded rule to re-confirm.   |
 
-**The one open question is `discover.component.scss` 475/400.** It was judged not worth it once, on
-the grounds that what remains is the page's own chrome - header, console, strip, empty states,
-confirm modal, skeleton - and that shrinking it means extracting components the template, at 281/300,
-does not need. **That verdict predates five splits that measured what a child extraction actually
-costs.** Judge it again with those numbers rather than inheriting the conclusion. If it still holds,
-say so and stop - the honest next move is then not another size pass at all.
+**`_editor-shell.scss` 460/400 is a global partial**, `@use`d once from `apps/desktop/src/styles.scss`
+as `@use './app/pages/documents/editor-shell' as *`, and **eleven templates render `docedit-*`
+classes**. Both document editors depend on it, including #465's two cards' controls. Splitting the
+file by responsibility is a size pass; **changing what it emits is not**. `check-style-move` across
+the partial and every consumer sheet must come back lossless, and because the partial is emitted
+unwrapped into the global sheet, a mistake here shows on pages you did not touch.
+
+**The three gated items are decisions, not approvals.** `AGENTS.md` routes a `libs/` public-API
+change and any task with two readings through `aif-grilling`, and that means asking rather than
+choosing. Bring all three questions in **one** round:
+
+- **`cv-preview.component.html` 779/300** - it looks like nine `ng-template` atoms and is not: they
+  speak one inline-editing protocol repeated per field. The real seam is the **17 near-identical
+  `@if (isEditingLeaf(...))` pairs**. Largest file in the repository.
+- **`document.model.ts` 504/400** - splitting it changes a `libs/core` public API.
+- **`db.service.ts` 461/400** - the recorded rule is "cut into per-domain gateways when the ratchet
+  refuses the next method added to it, not before". Ask whether that rule still stands, rather than
+  assuming the maintainer's "do all the files" overrides it.
 
 ## The maintainer's decision, already taken
 
-**The maintainer has chosen to finish the file-size work first, then drive the native gate by hand.**
+**The maintainer has chosen to finish the file-size work first, then walk the application by hand.**
 Do not re-open that choice or re-recommend the gate - it is decided. They have also **authorised
 fixing bugs found along the way** rather than only filing them.
 
 What that means for you:
 
-- **Three of the five remaining files still need their decision, not their approval.** `AGENTS.md`
-  routes a `libs/` public-API change and any task with two readings through `aif-grilling`, and that
-  is asking rather than choosing. Do the unblocked work first, then bring all three questions in one
-  round so they answer once.
-- **`docs/internal/NATIVE_GATE_BACKLOG.md` holds 66 unticked checks across 13 sections.** They will
-  drive these themselves after the refactor lands. Your job at the end is to turn that file into one
-  walkable script: what rows the database needs, which screens in which order, what to look at. Five
-  of the sections came from the last session's splits:
-  **C4** the welcome screen's animation and reduced motion · **C5** the quick view's copied
-  `.btn-*`, `.qv__hint`, `.qv__error`, `.qv__link` · **C6** the dashboard's `:host` rule, its two
-  `@keyframes dash-shimmer` copies and the changed skeleton widths · **C7** the tracker grid's sticky
-  columns, overflow and pinning · **C8** the pipeline card's drag-and-drop, which jsdom cannot
-  exercise at all.
+- Three of the four remaining files need their **decision**, not their approval. Do the unblocked one
+  first, then bring all three questions in a single `aif-grilling` round.
+- **`docs/internal/NATIVE_GATE_BACKLOG.md` holds 73 unticked checks across 14 sections.** They will
+  drive these themselves once the refactor lands. **Six of the sections came from the recent splits**
+  and are the only way to close them: **C4** the welcome screen's animation and reduced motion ·
+  **C5** the quick view's copied `.btn-*`, `.qv__hint`, `.qv__error`, `.qv__link` · **C6** the
+  dashboard's `:host` rule, its two `@keyframes dash-shimmer` copies and the changed skeleton widths ·
+  **C7** the tracker grid's sticky columns, overflow and pinning · **C8** the pipeline card's
+  drag-and-drop, which jsdom cannot exercise at all · **C9** Discover's four relocated keyframes and
+  the clear-feed dialog's three cancel paths.
 - Keep adding new pending checks to that file as you go, rather than restating them in watch entries.
+- **The last deliverable of this whole stream is a walkable script** built from that backlog: what
+  rows the database needs, which screens in which order, what to look at. Write it when the files are
+  done. The maintainer drives it; you cannot.
 
 ## One open bug, filed and not fixed
 
@@ -92,7 +105,8 @@ Three test files are near the 600 budget and cannot take new cases:
 `cv-preview.editing.spec.ts` 571. New tests for those areas go in a new file.
 
 `onboarding.component.scss` is 391/400 and its template 291/300 - the next page to go over if
-anything is added to it.
+anything is added to it. `_discover-controls.scss` is 352/400 and `discover.component.scss` 393/400
+after #477 - real but not generous headroom on both.
 
 ## What the last session learned, which changes how you plan
 
@@ -133,6 +147,28 @@ child's host precisely so `_drag.scss` and `CdkDropList`'s content-children look
 
 **In a zoneless application `fixture.whenStable()` does not track a floating promise** started in a
 constructor. Two awaited macrotasks settle it. Two pages needed this before anything rendered.
+
+**Check "who declares it", not "who uses it", before deleting or moving a keyframe.** Angular does not
+scope keyframe names. The tracker had two declared in a page sheet that every consumer _also_
+declared identically, so deletion was safe. Discover had two declared in a page sheet the page never
+used, whose consumers declared **no** copy - deleting them would have silently stopped animations on
+two other files. Same shape of finding, opposite answer, and only the declaration check tells them
+apart.
+
+**Validate the reachability audit against a known answer before believing a negative result.**
+Compile the sheet so `&__x` resolves, flatten the selectors, and match each rightmost compound
+against the vocabulary the page's _own_ template declares. Run against
+`cv-detail.component.scss` at `f79c9b1e~1` it must flag the families #464 deleted. It has two known
+limits: it **skips at-rules**, and it reads `[class]="fn(...)"` as dead - Discover's five
+`.dv-console__line--*` modifiers are exactly that false positive and are alive.
+
+**"Nothing happened" has to be asserted in the state where it would have happened.** A cancel button
+wired to a destructive handler passed its test because the assertion did not drain the macrotask the
+destructive path needs. Drain the same way the positive path does.
+
+**A verdict recorded by an earlier session is evidence about that session, not about the file.**
+Discover's "not worth it" was right about component extraction and wrong about the file, and only
+measuring showed the difference. Re-judge rather than re-read.
 
 ## Workflow notes that cost time repeatedly
 
@@ -192,25 +228,21 @@ run the page sheet and every child sheet in **one** invocation, with `--base ori
 
 ## What to do first
 
-The maintainer wants every remaining file resolved before they start the manual gate. In order:
+The maintainer wants every remaining file resolved before they start the manual walk. In order:
 
-1. **`discover.component.scss` 475/400 - judge it again, then act on the judgement.** It was declined
-   once on the grounds that what remains is the page's own chrome and that shrinking it means
-   extracting components the template, at 281/300, does not need. **That verdict predates five splits
-   that measured what a child extraction actually costs.** Re-judge with those numbers. If a seam
-   exists, take it; if it genuinely does not, say so with the reason and record the file as settled
-   by decision rather than leaving it looking unexamined.
-2. **`_editor-shell.scss` 460/400 - split by responsibility without changing what it emits.** It is a
-   global partial `@use`d once from `styles.scss` and both document editors depend on it, including
-   #465's two cards' controls. Splitting the file is a size pass; changing the emitted CSS is not, so
-   `check-style-move` across every consumer must come back lossless.
-3. **Then bring the three gated decisions in one `aif-grilling` round**: `cv-preview.component.html`
-   779/300 (the seventeen `@if (isEditingLeaf(...))` pairs), `document.model.ts` 504/400 (a `libs/`
-   public API) and `db.service.ts` 461/400 (per-domain gateways, whose recorded rule is "when the
-   ratchet refuses the next method, not before" - so ask whether that rule still stands).
-4. **Fix the `cv-save-template-modal` unstyled buttons** described above. Authorised.
-5. **Last, write the manual gate script.** Turn `NATIVE_GATE_BACKLOG.md` into one walkable pass: the
-   database rows each section needs, the screens in order, what to look at. The maintainer drives it;
-   you cannot.
+1. **`_editor-shell.scss` 460/400 - split by responsibility without changing what it emits.** The
+   only unblocked item. It is `@use`d once from `apps/desktop/src/styles.scss` and eleven templates
+   render `docedit-*` classes, so the emitted CSS reaching every one of them must be identical:
+   `check-style-move` across the partial and every consumer sheet, in one invocation, lossless. A
+   mistake here shows on pages you did not touch, because the partial is emitted unwrapped into the
+   global sheet.
+2. **Then bring the three gated decisions in one `aif-grilling` round** - `cv-preview.component.html`
+   779/300, `document.model.ts` 504/400 and `db.service.ts` 461/400. Ask, do not choose. Include
+   whether `db.service.ts`'s recorded "not before the ratchet refuses" rule still stands.
+3. **Fix the `cv-save-template-modal` unstyled buttons** described above. Authorised, small, and a
+   real user-visible defect.
+4. **Last, write the manual gate script.** Turn `NATIVE_GATE_BACKLOG.md`'s 73 checks into one
+   walkable pass: the database rows each section needs, the screens in order, what to look at, and
+   which checks wipe data so they go last. This is the deliverable that ends the stream.
 
 Pick one thing at a time and finish it, including the Duty Watch handoff.

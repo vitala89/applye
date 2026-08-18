@@ -1,5 +1,6 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
+import { CvPreviewEditingService } from './cv-preview-editing.service';
 import { CvPreviewComponent } from './cv-preview.component';
 import { CvPreviewStyleService } from './cv-preview-style.service';
 import { createCvPreview } from './cv-preview.harness';
@@ -412,11 +413,13 @@ describe('CvPreviewComponent styling', () => {
       const emitted: unknown[] = [];
       component.sectionChange.subscribe((s) => emitted.push(s));
       const section = { key: 'summary', order: 0, visible: true, text: 'cut size by 25%' };
-      component.toggleSummaryWord(
-        section as never,
-        3,
-        new MouseEvent('click', { cancelable: true }),
-      );
+      // The rewrite moved to `CvPreviewEditingService` when the summary atom
+      // became a child component - the service owns the emit sink, and a child
+      // cannot reach the component's output. Reached through the component's
+      // own injector, so this still asserts the wiring end to end.
+      fixture.debugElement.injector
+        .get(CvPreviewEditingService)
+        .toggleSummaryWord(section as never, 3);
       expect(emitted).toEqual([{ ...section, text: 'cut size by **25%**' }]);
     });
 

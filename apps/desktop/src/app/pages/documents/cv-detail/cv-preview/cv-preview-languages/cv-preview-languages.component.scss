@@ -1,0 +1,27 @@
+// Shared atom affordances - selection ring, chip, hover, leaf editors. `@use`d
+// rather than inherited: Angular's emulated encapsulation stamps this markup
+// with THIS component's attribute, so the page sheet's copy of these rules does
+// not match it. See the partial's own header for the regression that proved it.
+@use '../cv-preview-atom';
+@use '../cv-preview-section';
+@use '../cv-preview-inline-editor';
+
+// The host box must not exist. `<lib-paginated-sheet>` measures each atom's
+// NATURAL HEIGHT off the wrapper it renders into, so an inline-by-default host
+// sitting between the two changes both the layout and the measured height - and
+// a wrong measurement re-paginates the document silently, with no error
+// anywhere. See `cv-preview-header.component.scss` for the four regressions
+// this has already cost.
+:host {
+  display: contents;
+}
+
+.cvpreview__languages {
+  color: var(--cv-section-body-color, var(--text-secondary));
+  margin: 0;
+}
+.cvpreview__languages-sep {
+  color: var(--cv-sep-color, var(--text-tertiary));
+  font-size: var(--cv-sep-size, inherit);
+  white-space: pre;
+}

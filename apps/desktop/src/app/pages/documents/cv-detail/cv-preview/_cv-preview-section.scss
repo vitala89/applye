@@ -1,0 +1,27 @@
+// The section frame every titled atom draws: the gap that opens a new section,
+// and the section title itself.
+//
+// `@use`d rather than left on the page sheet because encapsulation binds a rule
+// to the component that DECLARES the markup - see `_cv-preview-atom.scss` for
+// the regression that proved it. Four consumers: the page's own
+// `#sectionTitleTpl`, and the summary, skills and languages atoms.
+
+// Space above each new section. Uses padding (not margin) on the section's
+// first element so the paginated sheet - which measures each atom's
+// offsetHeight in isolation and can't see sibling margins across its
+// per-atom wrappers - includes the gap in its page-fit math.
+.cvpreview__section-start {
+  padding-top: var(--space-6);
+}
+.cvpreview__section-title {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding-bottom: var(--space-2);
+  margin: 0 0 var(--space-3);
+  // The title's underline rule is a `border-bottom`; the selectable/selected
+  // 4px `border-radius` would curve its ends inward (the "angled corners"
+  // artefact). Square the bottom corners so the rule runs straight edge to
+  // edge; the top corners stay rounded for the hover/selection tint.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}

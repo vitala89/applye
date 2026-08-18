@@ -1,0 +1,18 @@
+// Click-a-word-to-bold targets inside a selected summary/bullet (design). Only
+// rendered for the selected leaf, so they never reach the measurement pass.
+//
+// Two consumers, the summary and the experience bullet - the only two
+// markdown-backed editors. That is why this is its own partial rather than a
+// rule in `_cv-preview-atom.scss`, which is for what EVERY atom needs.
+
+.cvpreview__word {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 100ms ease;
+}
+.cvpreview__word:hover {
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 16%, transparent);
+}
+.cvpreview__word--bold {
+  font-weight: 700;
+}

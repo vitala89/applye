@@ -14,9 +14,15 @@ import {
 import { NgStyle } from '@angular/common';
 import { CvPreviewEditingService } from './cv-preview-editing.service';
 import { CvPreviewStyleService } from './cv-preview-style.service';
-import { CvPreviewSelectionService, type CvLeafFieldKey } from './cv-preview-selection.service';
+import { CvPreviewSelectionService } from './cv-preview-selection.service';
 import { CvPreviewEditModeService } from './cv-preview-edit-mode.service';
 import { CvPreviewHeaderComponent } from './cv-preview-header/cv-preview-header.component';
+import { CvPreviewLanguagesComponent } from './cv-preview-languages/cv-preview-languages.component';
+import { CvPreviewSummaryComponent } from './cv-preview-summary/cv-preview-summary.component';
+import { CvPreviewSkillsComponent } from './cv-preview-skills/cv-preview-skills.component';
+import { CvPreviewExpHeadComponent } from './cv-preview-exp-head/cv-preview-exp-head.component';
+import { CvPreviewExpBulletComponent } from './cv-preview-exp-bullet/cv-preview-exp-bullet.component';
+import { CvPreviewEduEntryComponent } from './cv-preview-edu-entry/cv-preview-edu-entry.component';
 import { buildCvAtoms } from './cv-preview-atoms';
 import type {
   CvExperienceSection,
@@ -24,22 +30,15 @@ import type {
   CvSectionKey,
   CvStyle,
   CvSummarySection,
-  CvTextRun,
   PhotoPlacement,
 } from '@applye/core';
 import {
   getBuiltinTheme,
-  leafPath,
   orderedVisibleSections,
-  parseInlineEmphasis,
-  replaceExperienceBullet,
   resolvePageSettings,
   sectionLabelKey,
   themeCssVars,
-  toggleWordBold,
   type CvPreviewSelection,
-  visiblePersonalContactFields,
-  wordTokens,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
@@ -56,7 +55,17 @@ import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@ap
   selector: 'app-cv-preview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgStyle, PaginatedSheetComponent, CvPreviewHeaderComponent],
+  imports: [
+    NgStyle,
+    PaginatedSheetComponent,
+    CvPreviewHeaderComponent,
+    CvPreviewSummaryComponent,
+    CvPreviewSkillsComponent,
+    CvPreviewExpHeadComponent,
+    CvPreviewExpBulletComponent,
+    CvPreviewEduEntryComponent,
+    CvPreviewLanguagesComponent,
+  ],
   templateUrl: './cv-preview.component.html',
   styleUrl: './cv-preview.component.scss',
   // Component-scoped: an in-progress draft belongs to this preview and must
@@ -146,10 +155,6 @@ export class CvPreviewComponent {
     this.sel.selectPart(sectionKey, part, renderMode, event, elementPath);
   }
 
-  selectLeaf(sectionKey: CvSectionKey, path: string, renderMode: unknown, event?: Event): void {
-    this.sel.selectLeaf(sectionKey, path, renderMode, event);
-  }
-
   onSelectKey(
     event: Event,
     sectionKey: CvSectionKey,
@@ -162,10 +167,6 @@ export class CvPreviewComponent {
 
   selectAriaLabel(sectionKey: CvSectionKey, part: 'body' | 'title'): string {
     return this.sel.selectAriaLabel(sectionKey, part);
-  }
-
-  leafAriaLabel(sectionKey: CvSectionKey, field: CvLeafFieldKey): string {
-    return this.sel.leafAriaLabel(sectionKey, field);
   }
 
   constructor() {
@@ -197,16 +198,8 @@ export class CvPreviewComponent {
     return this.mode.editing;
   }
 
-  isEditingLeaf(path: string): boolean {
-    return this.mode.isEditingLeaf(path);
-  }
-
   startEditing(): void {
     this.mode.startEditing();
-  }
-
-  finishLeafEdit(el: HTMLElement, sectionKey: CvSectionKey, part: 'body' | 'title'): void {
-    this.mode.finishLeafEdit(el, sectionKey, part);
   }
 
   /** The host listener has to live on the component - a service cannot carry
@@ -218,12 +211,6 @@ export class CvPreviewComponent {
   }
 
   protected readonly sectionLabelKey = sectionLabelKey;
-  protected readonly visiblePersonalContactFields = visiblePersonalContactFields;
-  /** Exposed for the template - see `leafPath`'s doc for why every leaf-id
-   * template literal now goes through this single builder instead of a raw
-   * string, so `leafDraft`'s draft key and `selectLeaf`/`selectPart`'s
-   * emitted `elementPath` can never drift apart. */
-  protected readonly leafPath = leafPath;
   /** Whether the currently-EDITING leaf supports `**bold**` - the summary body
    * and experience bullets are the only markdown-backed editors. Drives the
    * live-style panel's Bold button (the inline "B" was removed in favour of a
@@ -339,43 +326,6 @@ export class CvPreviewComponent {
     this.t()('documents.preview_page_of')
       .replace('{i}', String(page))
       .replace('{n}', String(total));
-
-  runs(text: string): CvTextRun[] {
-    return parseInlineEmphasis(text);
-  }
-
-  /** Exposed for the template: split a summary/bullet line into clickable word
-   * tokens (see `wordTokens`). Rendered only for the SELECTED body leaf, so
-   * clicking a word toggles its bold. */
-  protected readonly wordTokens = wordTokens;
-
-  /** Toggle bold for one word of the summary body - click-a-word-on-the-paper
-   * (design). Emits a new immutable summary section with the rewritten
-   * `**markdown**` text (export-safe, same model the resting render reads). */
-  toggleSummaryWord(section: CvSummarySection, wordIndex: number, event: Event): void {
-    event.stopPropagation();
-    this.sectionChange.emit({ ...section, text: toggleWordBold(section.text, wordIndex) });
-  }
-
-  /** Toggle bold for one word of an experience bullet - click-a-word (design).
-   * Emits a new immutable `CvExperienceSection` touching only that bullet. */
-  toggleBulletWord(
-    section: CvExperienceSection,
-    entryIndex: number,
-    bulletIndex: number,
-    wordIndex: number,
-    event: Event,
-  ): void {
-    event.stopPropagation();
-    const bullet = section.entries[entryIndex]?.bullets?.[bulletIndex] ?? '';
-    this.sectionChange.emit(
-      replaceExperienceBullet(section, entryIndex, bulletIndex, toggleWordBold(bullet, wordIndex)),
-    );
-  }
-
-  leafChipLabel(field: CvLeafFieldKey): string {
-    return this.sel.leafChipLabel(field);
-  }
 
   partChipLabel(part: 'body' | 'title'): string {
     return this.sel.partChipLabel(part);

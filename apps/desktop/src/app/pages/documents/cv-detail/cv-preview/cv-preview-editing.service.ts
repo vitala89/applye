@@ -20,6 +20,7 @@ import {
   replaceSkillGroupLabel,
   replaceSkillGroupValues,
   toggleBoldWrap,
+  toggleWordBold,
 } from '@applye/core';
 
 /**
@@ -176,6 +177,30 @@ export class CvPreviewEditingService {
         ),
       );
     }
+  }
+
+  /** Toggle bold for one word of the summary body - click-a-word-on-the-paper
+   * (design). Emits a new immutable summary section with the rewritten
+   * `**markdown**` text (export-safe, same model the resting render reads).
+   * Here rather than on a component because the emit sink is this service's:
+   * it is the same "rewrite a section and publish it" shape as every commit
+   * above, and the summary atom is a child component that cannot reach it. */
+  toggleSummaryWord(section: CvSummarySection, wordIndex: number): void {
+    this.emit({ ...section, text: toggleWordBold(section.text, wordIndex) });
+  }
+
+  /** Toggle bold for one word of an experience bullet - click-a-word (design).
+   * Emits a new immutable `CvExperienceSection` touching only that bullet. */
+  toggleBulletWord(
+    section: CvExperienceSection,
+    entryIndex: number,
+    bulletIndex: number,
+    wordIndex: number,
+  ): void {
+    const bullet = section.entries[entryIndex]?.bullets?.[bulletIndex] ?? '';
+    this.emit(
+      replaceExperienceBullet(section, entryIndex, bulletIndex, toggleWordBold(bullet, wordIndex)),
+    );
   }
 
   /** Commit a single experience bullet on blur: emits one new immutable

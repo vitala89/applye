@@ -1,0 +1,75 @@
+<!-- Moved verbatim from `cv-preview.component.html`'s `#summaryTpl`; the only
+     changes are the service prefixes the protocol now needs and the input
+     calls that replaced the outlet-context variables. -->
+<div class="cvpreview__section cvpreview__section-start" [ngStyle]="css.bodyCss('summary')">
+  <h3
+    class="cvpreview__section-title"
+    [class.cvpreview__selectable]="selectable()"
+    [class.cvpreview__selected]="sel.isSelected('summary', 'title') && selectable()"
+    [attr.role]="selectable() ? 'button' : null"
+    [attr.tabindex]="selectable() ? 0 : null"
+    [attr.aria-label]="selectable() ? sel.selectAriaLabel('summary', 'title') : null"
+    [attr.data-cv-select]="'summary:title'"
+    [attr.data-cv-chip]="sel.partChipLabel('title')"
+    (click)="sel.selectPart('summary', 'title', renderMode(), $event)"
+    (keydown.enter)="sel.selectPart('summary', 'title', renderMode(), $event)"
+    (keydown.space)="sel.onSelectKey($event, 'summary', 'title', renderMode())"
+    [ngStyle]="css.titleCss('summary')"
+    [style.borderBottom]="css.titleBorderCss('summary')"
+  >
+    {{ t()(sectionLabelKey('summary')) }}
+  </h3>
+  @if (mode.isEditingLeaf(leafPath('summary')) && selectable()) {
+    <textarea
+      #summaryEl
+      class="cvpreview__summary cvpreview__leaf-editor"
+      [class.cvpreview__selected]="true"
+      [class.cvpreview__element-selected]="sel.isElementSelected(leafPath('summary'))"
+      [ngStyle]="css.leafCss(leafPath('summary'))"
+      [value]="edit.leafDraft(leafPath('summary'), section().text)"
+      (input)="edit.onLeafInput(leafPath('summary'), $any($event.target).value)"
+      (blur)="edit.commitSummary(section(), section().text)"
+      (keydown.escape)="edit.onLeafEscape(leafPath('summary'))"
+      (keydown)="edit.onSummaryBoldKeydown($event, summaryEl, section().text)"
+    ></textarea>
+  } @else {
+    <p
+      class="cvpreview__summary"
+      [ngStyle]="css.leafCss(leafPath('summary'))"
+      [class.cvpreview__selectable]="selectable()"
+      [class.cvpreview__element-selected]="
+        sel.isElementSelected(leafPath('summary')) && selectable()
+      "
+      [attr.data-cv-chip]="sel.partChipLabel('body')"
+      [attr.role]="selectable() ? 'button' : null"
+      [attr.tabindex]="selectable() ? 0 : null"
+      [attr.aria-label]="selectable() ? sel.selectAriaLabel('summary', 'body') : null"
+      [attr.data-cv-select]="'summary:body'"
+      (click)="sel.selectPart('summary', 'body', renderMode(), $event, leafPath('summary'))"
+      (keydown.enter)="sel.selectPart('summary', 'body', renderMode(), $event, leafPath('summary'))"
+      (keydown.space)="
+        sel.onSelectKey($event, 'summary', 'body', renderMode(), leafPath('summary'))
+      "
+    >
+      @if (sel.isElementSelected(leafPath('summary')) && selectable()) {
+        @for (w of wordTokens(section().text); track w.index) {
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <span
+            class="cvpreview__word"
+            [class.cvpreview__word--bold]="w.bold"
+            (click)="toggleWord(w.index, $event)"
+            >{{ w.text }}</span
+          >
+        }
+      } @else {
+        @for (run of runs(section().text); track $index) {
+          @if (run.bold) {
+            <strong>{{ run.text }}</strong>
+          } @else {
+            {{ run.text }}
+          }
+        }
+      }
+    </p>
+  }
+</div>

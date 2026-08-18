@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-19, the native gate gets a route, and the file-size stream ends
+
+- **Status:** complete. `docs/internal/NATIVE_GATE_SCRIPT.md` written: the backlog's **81 checks across fifteen sections** ordered into **fifteen stations**, numbered 0 to 14, one sitting. This is the last deliverable of the file-size stream, and the point at which the work stops being an agent's.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. Triage **5/10** (radius 0 · ambiguity 1 · risk 1 · verify 1 · unknowns 2), unknowns 2 because the database rows each section needs are in `tools/capture/seed.mjs`, not in the backlog.
+- **Branch:** `docs/native-gate-script`, cut from `origin/main` at `48a3b4ec`.
+- **Objective:** the previous watch's next first action, and the thing every watch since 2026-08-14 has deferred.
+- **The ordering is the deliverable, not the list.** Three constraints decide it and are written down as the design rather than left to be inferred: **the welcome screen needs a database that has never been written to**, so C4 is walked before anything is seeded and each of its three launches needs its own fresh profile; everything else needs real rows, so one seed run carries the pass; and the destructive and paid checks are held to the end.
+- **What the seed cannot produce is produced by an earlier station.** `seed.mjs` writes the profile, eight jobs, applications, stages, history and a Discover source - and no documents. So station 3 creates the CV that stations 4, 5 and 6 all use, station 7 archives the tracker row it then needs, and station 8 makes a card overdue before opening the composer. That chain is why the stations are in the order they are rather than in backlog order.
+- **C4 needed splitting into three launches rather than one.** "Both ways out work" consumes the fresh state, and the short-window check has to be set up **before** launch, so one profile cannot serve all five of its checks. Reading the section as a single sitting would have burned the state on the first exit.
+- **Every check has exactly one station, and the file proves it.** A coverage table at the foot maps all fifteen sections to their stations, splitting the three that straddle one (A across 3/12/13, C across 4/5/6, C9 across 10/13, D across 11/12). Counted programmatically against the backlog: **81 in, 81 placed**.
+- **The two files keep different jobs, stated at the top of each.** The backlog is where a check is ticked; the watch log is where a failure is recorded; the script holds no state. The backlog now points at the script as its route.
+- **Not completed, and it is not completable here:** the walk itself. Every check in it exists precisely because synthetic clicks do not reach the Tauri webview and every `invoke` rejects outside it.
+- **Files or packages changed:** `docs/internal/NATIVE_GATE_SCRIPT.md` new (292 lines); `docs/internal/NATIVE_GATE_BACKLOG.md` gains a pointer to it; `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** documentation only, so the code gates do not apply and are **not** claimed. `npm run format:check` - clean. `npm run quality:file-size` - reports **"no changed source files to check"**, which is what it says on a documentation-only diff and is not a pass; `--all` is unchanged at one file over budget. `npm run quality:attribution` - passed. `git diff --check` - clean. Coverage counted programmatically from the backlog's checkboxes: 81 checks, 15 sections, each mapped once. **Not run and not applicable:** every `nx` target, `cargo check`, `check-style-move` - no source file changed.
+- **Privacy/security impact:** none. The script names a database path and a seed command the repository already documents; the seed writes invented companies and `example.com` addresses only.
+- **Decisions and assumptions:** the release check (E) is a separate station rather than part of the sitting, because it needs an installed `0.29.1` rather than a dev build. The paid checks are a station of their own with an explicit "skipping is a legitimate outcome, say so in the watch entry" - the alternative was leaving them looking done. Roughly ninety minutes is an estimate, not a measurement.
+- **Risks or compatibility impact:** none to the application. The risk is that the script goes stale: it is ordered around what `seed.mjs` produces today, so a change to the seed changes the setup half of several stations.
+- **Open issues or blockers:** the walk itself, which is the maintainer's. `db.service.ts` 461/400 remains the one file over budget, by decision.
+- **Next first action:** **walk it.** Start at station 0 with the backup command, because station 0 deletes the profile. Record failures in this file, tick `NATIVE_GATE_BACKLOG.md`, and delete a ticked item once driven - a ticked item left there reads as outstanding on the next read.
+- **Evidence:** the programmatic count of the backlog's checkboxes per section; `seed.mjs` and `seed-jobs.mjs` for what the seed actually writes; `first-launch.component.ts` for the `healthCheckSeen` gate that forces C4 to the front; `db.rs` for the app-data path the backup and fresh-profile commands use.
+
 ### 2026-08-18, the save-as-template dialog's buttons, and tests that asserted a name instead of a style
 
 - **Status:** complete. A user-visible defect fixed: the CV save-as-template dialog's Cancel and Save buttons had been rendering unstyled since the feature shipped. No file-size work; the last over-budget file, `db.service.ts` 461/400, stays by decision.

@@ -107,7 +107,10 @@
   shrinking it means extracting components the template no longer needs.
 
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
-  concentrated.** The full audit reads **1 file over budget**, down from 18 across fifteen watches:
+  concentrated.** The file-size stream is finished, and its last deliverable is
+  `docs/internal/NATIVE_GATE_SCRIPT.md`: the backlog's 81 checks ordered into one walkable pass of
+  fifteen stations, with the two paid checks and the two destructive ones held to the end. **The
+  maintainer drives it; no agent can.** The full audit reads **1 file over budget**, down from 18 across fifteen watches:
   `db.service.ts` 461/400, which **stays by decision**. No stylesheet, no template and no other
   source file is over budget.
   `cv-live-style-panel.component.ts` was

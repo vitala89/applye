@@ -20,6 +20,10 @@ state each item needs is built by the item before it.
 
 ## How to use this file
 
+**`docs/internal/NATIVE_GATE_SCRIPT.md` is the route.** It orders every check below into one sitting of **fifteen stations**, numbered 0 to 14 - what database rows each needs, which screens in which order, and what to look
+at - with the two paid checks and the two destructive ones held to the end. Read it first and walk
+it; this file is the list it walks, and the place to tick.
+
 1. `pgrep -fl "tauri dev"` to confirm nothing is already running, then:
 
 ```bash

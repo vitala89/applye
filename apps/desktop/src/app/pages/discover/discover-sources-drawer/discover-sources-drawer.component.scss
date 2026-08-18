@@ -343,3 +343,17 @@
     transition: none;
   }
 }
+
+/* Moved from the page sheet, which declared it and never used it: this drawer
+ * is its only consumer. Keyframe names are global either way, so this is a
+ * relocation rather than a behaviour change. */
+@keyframes dv-slidein {
+  from {
+    transform: translateX(24px);
+    opacity: 0.4;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

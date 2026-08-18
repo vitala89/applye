@@ -151,36 +151,11 @@
       (keydown.escape)="page.cancelClearFeed()"
       tabindex="-1"
     >
-      <div
-        class="dv-confirm"
-        role="dialog"
-        aria-modal="true"
-        [attr.aria-label]="t()('discover.clear_title')"
-        (click)="$event.stopPropagation()"
-        (keydown)="$event.stopPropagation()"
-        tabindex="-1"
-      >
-        <h3 class="dv-confirm__title">{{ t()('discover.clear_title') }}</h3>
-        <p class="dv-confirm__body">{{ t()('discover.clear_body') }}</p>
-        <div class="dv-confirm__actions">
-          <button
-            type="button"
-            class="dv-btn dv-btn--secondary"
-            [disabled]="page.clearing()"
-            (click)="page.cancelClearFeed()"
-          >
-            {{ t()('discover.clear_cancel') }}
-          </button>
-          <button
-            type="button"
-            class="dv-btn dv-btn--danger"
-            [disabled]="page.clearing()"
-            (click)="page.confirmClearFeed()"
-          >
-            {{ t()('discover.clear_yes') }}
-          </button>
-        </div>
-      </div>
+      <app-discover-clear-confirm
+        [busy]="page.clearing()"
+        (cancelled)="page.cancelClearFeed()"
+        (confirmed)="page.confirmClearFeed()"
+      />
     </div>
   }
 

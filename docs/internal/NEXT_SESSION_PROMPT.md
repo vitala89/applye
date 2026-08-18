@@ -1,229 +1,216 @@
-# Next session prompt - Applye
+# Next session prompt
 
-Paste everything below the line into a fresh Claude Code session.
+Copy everything below the line into a fresh session.
 
 ---
 
-Continue work on Applye. **The application-layer migration that drove the last two months is
-finished** - do not restart it. `ADR-0005` is now a rule the linter enforces rather than a campaign
-with a backlog: `COMPONENTS_STILL_USING_THE_GATEWAY` is gone, `type:data` has left `type:app`'s
-allowlist, and no component in the repository injects `DbService`, `AiService` or `JobSourceService`.
-What is left is the debt that migration did not reach.
+Continue the Applye file-size work. **No new features.** `ADR-0005` is finished - do not restart or
+re-plan that campaign. Everything below is debt.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
 `docs/product/CURRENT_STATE.md`, the recent `docs/internal/DUTY_WATCH.md` entries,
 `docs/governance/CODE_QUALITY.md` and `docs/governance/VALIDATION_MATRIX.md`. Read
-`docs/product/decisions/ADR-0005-application-layer-owns-page-state.md` before touching any page -
-everything below is downstream of it.
+`docs/architecture.md` too - the CSP rationale and the initial-bundle budget constrain the work
+below.
 
 ## Where things stand
 
-`main` is at `b987d882`, clean, **no open pull requests.** The last three merged are #444 (docs
-sync), #445 (silent-failure audit leftovers) and #446 (dead scaffolds and the gateway-doc
-correction).
+`main` is at `b846db8a`. **No open pull requests.** Working tree clean.
 
-The architecture is a **single Nx monorepo with enforced layer boundaries** - `apps/{desktop,web,
-mobile}` plus six `libs/`, five `@applye/*` aliases, and `@nx/enforce-module-boundaries` deciding
-every arrow rather than convention. That is the intended end state, and it was re-confirmed on
-2026-08-14 against the usual "split into multiple repos / adopt microfrontends" progression:
+Twenty-eight pull requests merged, #449-#476. The last five were one session's:
 
-- **Multi-repo is rejected** because its trigger is several business lines with separate teams,
-  roadmaps and pipelines. Applye has one product and one maintainer.
-- **Microfrontends are rejected on a technical ground, not a taste one.** `tauri.conf.json` sets
-  `script-src 'self'`, so a Module Federation remote entry cannot load without weakening the CSP of
-  an application holding API keys in the OS keychain and the user's database on disk. The app is
-  local-first and must work offline. And there is no independent deploy target for a fragment: a
-  release is a signed installer plus `latest.json`, so the role "ship part of the app without
-  rebuilding the shell" is already played by the updater. The 18 `loadComponent` routes provide the
-  part of the benefit that does apply here.
+- **#472** `first-launch.component.ts` 419 to **38/400** - the view moved out of the class.
+- **#473** the Pipeline quick view, 537 to **343/400**, two children.
+- **#474** the dashboard's two list panels became one component, 506 to **360/400**.
+- **#475** the tracker grid left the page, 433 to **207/400**.
+- **#476** the pipeline card left the board, 456 to **269/400**.
 
-**Do not reopen either decision without new facts.** If a task seems to need one, that is a grilling
-gate, not an implementation detail.
+The audit reads **5 files over budget**, down from 18 across eleven watches. Get the current picture
+with `npm run quality:file-size:all` before planning anything - it is a report, not a gate, and
+always exits zero.
 
-## Measure before planning
+## The mechanical part of this campaign is finished
 
-```bash
-npm run quality:file-size:all
-```
+**Every stylesheet that could be fixed by extracting a child has been.** What is left is five items,
+and **not one of them is a size pass**:
 
-**Use `:all`, not the plain `quality:file-size`, which is diff-scoped.** A file missing from the
-diff-scoped report means "not changed", **not** "under budget" - the 2026-08-14 Duty Watch entry
-calls `jobs.component.ts` "the only file the size gate reports", and that was the diff-scoped gate
-speaking. The full audit reads **22 files over budget and 42 near it.**
+| File                              | Size    | Why it is still there                                                                                                                                                                                                                                            |
+| --------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cv-preview.component.html`       | 779/300 | Looks like nine `ng-template` atoms and is not - they speak one inline-editing protocol repeated per field. The real seam is the **17 near-identical `@if (isEditingLeaf(...))` pairs**, which needs its own decision through `aif-grilling`. Largest file left. |
+| `libs/core/.../document.model.ts` | 504/400 | A `libs/` public API change, so the grilling gate.                                                                                                                                                                                                               |
+| `discover.component.scss`         | 475/400 | **The one open question - see below.**                                                                                                                                                                                                                           |
+| `db.service.ts`                   | 461/400 | Cut into per-domain gateways when the ratchet refuses the next method added to it, not before.                                                                                                                                                                   |
+| `_editor-shell.scss`              | 460/400 | The shared global partial both document editors depend on, load-bearing. Splitting it by responsibility is possible; changing what it emits is not a size pass.                                                                                                  |
 
-## The plan, in priority order
+**The one open question is `discover.component.scss` 475/400.** It was judged not worth it once, on
+the grounds that what remains is the page's own chrome - header, console, strip, empty states,
+confirm modal, skeleton - and that shrinking it means extracting components the template, at 281/300,
+does not need. **That verdict predates five splits that measured what a child extraction actually
+costs.** Judge it again with those numbers rather than inheriting the conclusion. If it still holds,
+say so and stop - the honest next move is then not another size pass at all.
 
-### 1. `jobs.component.ts`, 612/400 - two of three pull requests done
+## The maintainer's decision, already taken
 
-The last page still shaped like the pre-ADR-0005 era: view, state and orchestration in one class. It
-was 977. The document block left in PR 1 as `JobDocumentsStore`, `JobDocumentDraftsStore` and
-`JobFinalChecksStore`; the lifecycle block left in PR 2 as `JobDetailLifecycleStore`, with
-`JobTailoringStore` created alongside it. **One cut remains:**
+**The maintainer has chosen to finish the file-size work first, then drive the native gate by hand.**
+Do not re-open that choice or re-recommend the gate - it is decided. They have also **authorised
+fixing bugs found along the way** rather than only filing them.
 
-- **PR 3, the actions block and what is left of tailoring.** `saveJob`, `markApplied`,
-  `updateApplication` and the discard flow; then `startTailoring`'s pre-run resets, `onWizardStep`,
-  `resetWizard` and `startOver`. `JobTailoringStore` already exists and already holds the
-  `TailorContext` assembly plus `run`, `cancel` and `restoreFromCache` - the tailoring half lands
-  there rather than in a new file.
+What that means for you:
 
-`retailorFromFinalChecks` stays on the page until then by decision: it drives tailoring, rescoring
-and the documents at once.
+- **Three of the five remaining files still need their decision, not their approval.** `AGENTS.md`
+  routes a `libs/` public-API change and any task with two readings through `aif-grilling`, and that
+  is asking rather than choosing. Do the unblocked work first, then bring all three questions in one
+  round so they answer once.
+- **`docs/internal/NATIVE_GATE_BACKLOG.md` holds 66 unticked checks across 13 sections.** They will
+  drive these themselves after the refactor lands. Your job at the end is to turn that file into one
+  walkable script: what rows the database needs, which screens in which order, what to look at. Five
+  of the sections came from the last session's splits:
+  **C4** the welcome screen's animation and reduced motion · **C5** the quick view's copied
+  `.btn-*`, `.qv__hint`, `.qv__error`, `.qv__link` · **C6** the dashboard's `:host` rule, its two
+  `@keyframes dash-shimmer` copies and the changed skeleton widths · **C7** the tracker grid's sticky
+  columns, overflow and pinning · **C8** the pipeline card's drag-and-drop, which jsdom cannot
+  exercise at all.
+- Keep adding new pending checks to that file as you go, rather than restating them in watch entries.
 
-**The router stays on the page.** PR 2's pattern is the one to follow: the page reads
-`route.snapshot.queryParamMap` and hands the store a plain record of facts (`JobRouteEntry`), so no
-store injects `ActivatedRoute` and no store spec needs a `RouterTestingModule`.
+## One open bug, filed and not fixed
 
-**The store budget is 250 and `tailoring.service.ts` and `job-scoring.service.ts` sit at 250 and
-249**, so a new responsibility gets a new store rather than a line added to an existing one. PR 1
-learned that the hard way: written as two stores the documents half arrived at 278, and the fix was a
-third file, not shorter comments.
+`cv-save-template-modal.component.scss` opens by stating `.btn-ghost` and `.btn-primary` are
+"global, from `libs/ui`". **They are not.** `libs/ui/src/styles/_button.scss` declares the
+`.btn--ghost` BEM family, a different vocabulary; only two component sheets declare the hyphenated
+names and both are encapsulated; the only global match in the built sheet is `.profile .btn-ghost`,
+nested where it reaches nothing. **The CV save-as-template dialog's two buttons render unstyled.**
+`git log -S` shows the page's sheet never declared them, so it predates the #465 split. It is a small
+fix and it is not a size pass - prefer the `libs/ui` `ButtonDirective` over growing a sheet.
 
-Expect the budgets to converge as a consequence rather than as a separate exercise - that is the
-whole finding behind ADR-0005.
+## Pressure at the boundary
 
-### 2. The Rust command layer, which has the disease the frontend just cured
+`tailoring.service.ts` is **exactly 250/250**: the next line added to it fails the gate.
+`job-scoring.service.ts` is 249/250 and `job-identity-resolver.service.ts` 245/250.
 
-`AGENTS.md` says Tauri commands stay thin and Rust domains split into command, validation, parsing,
-domain, persistence and provider modules. Ten modules under `apps/desktop/src-tauri/src/commands/`
-run **598 to 851 non-empty lines against a budget of 500**, with the IPC handler and the domain logic
-in the same file: `documents.rs` 851, `applications.rs` 809, `tailoring.rs` 738, `interview.rs` 695,
-`job_paste.rs` 688, `job_identity_source.rs` 656, `discover_filter.rs` 639, `import.rs` 608,
-`legitimacy.rs` 599, `job_identity.rs` 598.
+Three test files are near the 600 budget and cannot take new cases:
+`cv-live-style-panel.entry-rule.spec.ts` **598/600**, `cv-preview.styling.spec.ts` 586,
+`cv-preview.editing.spec.ts` 571. New tests for those areas go in a new file.
 
-Take one module, not all ten. The seam is the same each time: the `#[tauri::command]` function parses
-arguments and calls a function in a sibling domain module that knows nothing about Tauri - which is
-also what makes the domain logic testable without a `tauri::test` harness. Use the `applye-rust`
-skill.
+`onboarding.component.scss` is 391/400 and its template 291/300 - the next page to go over if
+anything is added to it.
 
-### 3. `libs/skills` is invisible to the build graph
+## What the last session learned, which changes how you plan
 
-`apps/desktop/src-tauri/src/ai/skills.rs` reads 23 prompt files through
-`include_str!("../../../../../libs/skills/src/<name>/<name>.md")`, and `libs/skills` has **no
-`project.json`**. It is therefore not an nx project: editing a prompt does not invalidate any cache,
-does not appear in the graph, and is not covered by the boundary rules. It also means a renamed file
-fails at Rust compile time with a path error rather than anywhere useful.
+**A surviving mutation is a question, not an answer.** Check that it changed what you meant before
+concluding anything about coverage. Two of the last session's survivors were bad mutations: one
+rewrote the first of two identical strings and hit the wrong element; one deleted a line that was
+inert. Both cost a second run to find out - and both were still worth it, because the first exposed
+four untested navigation targets and the second exposed a line that should be deleted. **A line no
+mutation can break is inert rather than covered.**
 
-Either give it a `project.json` tagged `type:domain` / `scope:shared`, or write the coupling down
-somewhere a reader will find it. This is a small change with a real decision inside it, so settle the
-shape before writing code.
+**"X exists somewhere" is not a property when one component serves N call sites.** Count per call
+site, in both directions. The dashboard's pill must belong to Recent jobs _and not to_ Upcoming
+interviews; the pipeline's stage track to Interview and to no other column. This has now caught a
+real leak twice.
 
-### 4. `apps/mobile` is a placeholder
+**A count and the thing it counts must be asserted in the same state.** A column badge reading what
+the column holds rather than what the filter leaves visible survived every other assertion.
 
-One `README.md`, and `package.json` carries `"mobile:dev": "echo 'Mobile not scaffolded yet…'"`.
-Tauri 2 supports mobile targets. Either scaffold it or delete both the directory and the script - an
-`apps/` entry that builds nothing is a false signal in every architecture review that follows.
+**Restore a mutated file from a copy taken before mutating, never from `HEAD`.** `git checkout <file>`
+on a feature branch restores the _pre-refactor_ file and makes meaningless runs look like emphatic
+kills. This cost eleven confusing test failures once.
 
-### 5. Two documentation debts left deliberately by #446
+**A Sass variable is a dependency a selector-level check cannot see.** `check-style-move` compares
+flattened selectors, so a `$var` declared at the top of a page sheet and read by a block you are
+cutting out is a **crash inside `sass.dart.js`**, never a finding. Check the head of a sheet before
+cutting from the middle of it.
 
-- **The CSP rationale is nowhere.** `style-src 'unsafe-inline'` is required by Angular's inline
-  styles and is a real weakening of an otherwise strict policy, with no note saying so.
-  `tauri.conf.json` is JSON and takes no comments, so it belongs in `docs/architecture.md`. Inventing
-  a `_comment` key in a Tauri config is worse than leaving it.
-- **`dragDropEnabled` is unset** in the window config. If file drag-and-drop into the window is not a
-  feature, `"dragDropEnabled": false` stops the webview intercepting it. Check whether anything
-  depends on it first.
+**`quality:style-move` cannot see an inline-to-file move** - it reads `.scss` files, so rules that
+lived in a `styles: []` array read as "0 lost, N gained", which is a run with nothing to compare
+against rather than a clean bill. For those, diff the payload as a multiset instead.
 
-### 6. Carried over from #445
+**Angular does not scope `@keyframes` names.** A copy is a global declaration of the same name; two
+copies are fine only while they stay identical, and that is a manual check.
 
-- **Five `.status--error` declarations** across five stylesheets, with different values, could fold
-  into the `ui-error-text` utility in `libs/ui/src/styles/_status.scss`. The reason they were not
-  folded then is written into that file: `_profile-shell.scss` records that `status`,
-  `status--error`, `muted` and four more are generic names defined **with different values** across
-  eight files, so claiming the name globally would hand those pages a property they never set.
-- **Two rendered checks were never driven**: the ATS status line and the quick-view stage panel. Both
-  need real database rows, so a browser preview cannot substitute - outside Tauri every `invoke`
-  rejects. And **synthetic clicks do not reach the Tauri webview**: hover produces the hover state,
-  a click at the same coordinates does nothing, confirmed against three targets including the theme
-  toggle. These need a human at the keyboard. Say so rather than reporting them as covered.
+**A component host element carries the parent's content attribute**, which is what lets a page rule
+reach a child's host. That is load-bearing on the pipeline board: `.card` and `cdkDrag` sit on the
+child's host precisely so `_drag.scss` and `CdkDropList`'s content-children lookup keep working.
 
-## What is explicitly not in the plan
+**In a zoneless application `fixture.whenStable()` does not track a floating promise** started in a
+constructor. Two awaited macrotasks settle it. Two pages needed this before anything rendered.
 
-- **`cv-preview.component.html`, 779/300, is blocked by decision.** It looks like nine `ng-template`
-  atoms and is not: all speak one inline-editing protocol repeated per field. The real seam is the
-  17 near-identical `@if (isEditingLeaf(...)) { <input> } @else { <element> }` pairs - one
-  editable-leaf component or directive owning that protocol. A design change needing its own
-  decision, and **not** something the application layer solves. The header block was extracted in
-  #441 and the file went 895 to 779; that is the shape further work would take.
-- **`db.service.ts`, 461/400, stays as it is** and is internal to `libs/data`. Roughly six lines per
-  method is a mechanical mapping onto IPC, not complexity. It may not grow. It is cut into per-domain
-  gateways **when the ratchet refuses the next method added to it**, and not before.
-- **`libs/core/.../analytics.ts`** changing shape is a `libs/` public API decision and goes through
-  the grilling gate.
-- **Profile is finished at 445/400.** Settled through the grilling gate. A `ProfileFormStore` is what
-  ADR-0005 sanctions and it is legitimate, but it is not urgent and not first. Two seams inside it
-  stay rejected on their own merits: the compensation block (template already under budget, so a move
-  only grows the class) and the section-mirror collapse (`serialize(parse(x))` is not identity for
-  hand-typed raw markdown).
+## Workflow notes that cost time repeatedly
 
-## Traps that have actually fired
+**`npm run quality:file-size` reports "no changed source files to check" against an uncommitted or
+already-committed tree.** That is not a pass. Use
+`node tools/check-file-size-budgets.mjs --base origin/main` from the repository root.
 
-Each of these cost a real session. They are not hypothetical.
+**The Bash working directory persists between calls.** A `cd` into a subdirectory silently changes
+where every later relative path resolves.
 
-- **The host-element trap, three times.** Markup moved into a child component leaves behind any rule
-  that positions it: `flex`, `grid-column`, `align-self`, a direct-child width, or anything matching
-  by descendant or `>`. The new host element sits between the container and the target, and the rule
-  goes inert. Profile's paired fields fell to 173.5px in an 846px row this way. `quality:style-move`
-  **does not catch it** - no declaration was deleted. Use `display: contents` on the host when the
-  child must not become the flex item.
-- **Directives do not move with markup either.** Discover's `routerLink` stayed in the page's
-  `imports` when the markup moved into the drawer, so the attribute became literal: no `href`, no
-  navigation, and type-check, lint and the whole suite passed on it.
-- **A stylesheet only applies to markup its own component declares.** The CV preview header shipped
-  with none of its styling for exactly this reason, and `quality:style-move` correctly reported that
-  no rule had been deleted.
-- **`nx build` catches template type errors that `tsc --noEmit` misses.** `[notice]="columnsError()"`
-  passing `null` into a `string` input only fails in the Angular compiler. A type-check is not a
-  substitute for the build.
-- **The lint gate can pass on a stale cache.** Use `--skip-nx-cache` when the result matters.
-- **An unknown is not a zero.** A failed read that leaves a signal `null` looks exactly like an empty
-  result, and a form gated on `=== null` will then offer to write a first record over existing ones.
-  Gate on `!error() && empty()`, never on `empty()` alone.
-- **`npm run web:build` regenerates `apps/web/public/sitemap.xml`.** Use `nx build web`.
+**Pull requests here are squash-merged**, and `origin/main` moves under you mid-session. When it
+does: `git rebase --onto origin/main <old-parent>`, then **re-verify everything** - green before a
+rebase means nothing after one. Only the four shared documents ever conflict: `CHANGELOG.md`,
+`CURRENT_STATE.md`, `DUTY_WATCH.md` and `NATIVE_GATE_BACKLOG.md`. When two branches are in flight,
+**name your backlog section around the other branch's** so they do not collide.
 
-## Verification, and what it cannot reach
+**`docs/internal/DUTY_WATCH.md` conflicts on every concurrent merge** - entries are appended at the
+top. Keep both, newest first, then `prettier --write` the file.
 
-jsdom performs no layout, so widths, overlaps and computed colours cannot be asserted in a unit test -
-the _shape_ can. Print CSS hides everything outside `app-tracker-report`, so anything rendered above
-that subtree is invisible in the exported PDF while looking correct on screen. Six non-English
-locales do not share English word order, so an i18n key must be a whole sentence, never a fragment
-concatenated with a tail.
+**Audit removed lines with `git diff origin/main | grep -E '^-([^-]|$)'` before pushing**, comparing
+indentation-stripped multisets both ways. The naive `^-[^-]` pattern silently skips deleted markdown
+bullets.
 
-Gates before commit: `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop
---skip-nx-cache`, `nx test desktop`, **`nx build desktop`**, `cargo check` in `src-tauri` when
-anything under it or in `capabilities/` changed, `npm run quality:file-size`,
-`npm run quality:attribution`, `npm run format:check`, `git diff --check`.
+**The pre-commit hook catches orphaned imports an earlier lint run predated.** The tracker split
+orphaned five; the type-check did not see them. Do not treat an earlier green lint as covering later
+edits, which is also why `--skip-nx-cache` is mandatory.
 
-## When to stop and ask
+**`nx build desktop` is the gate for bundling and budgets.** `npm run type-check` runs `ngc --noEmit`
+and does see templates, but only the build catches budget regressions. Use `nx build web` for the web
+app, never `npm run web:build`, which regenerates `apps/web/public/sitemap.xml`.
 
-`CLAUDE.md` puts a decision behind the `aif-grilling` skill when it changes a `libs/` public API, a
-database schema, the privacy or security posture, or when the task has two readings leading to
-different work. Items 3 and 4 above are both in that category.
+**`libs/application` is imported by the eagerly-loaded shell, and 18 routes are `loadComponent`.**
+Moving a lazily-routed page's code down a layer moves it into the chunk every launch fetches.
 
-**Settle facts yourself before asking.** Whether `dialog:default` already grants `allow-open` was a
-lookup in the plugin's `permissions/default.toml`, not a question. Whether the three scaffold
-components had consumers was a search, not a question. The gate is for decisions, not for facts.
+**The web app's initial bundle is 4.25 kB over its 500 kB budget on `main`.** Pre-existing, recorded
+in `CURRENT_STATE.md`, not yours to fix.
 
-## Open follow-ups, not part of the plan
+## Standing items you cannot close
 
-- **A CV that finishes generating after its page was replaced does not appear until reopened.**
-  `LinkedDocumentsService` is component-scoped, so the result lands on the destroyed page's signals.
-  The document is written correctly; only the view is stale.
-- **A database newer than the running app aborts instead of explaining itself.** The
-  `.expect("initialize database")` in `lib.rs`'s `setup` runs inside tao's `did_finish_launching`, a
-  non-unwinding context, so a panic becomes an abort with a macOS crash dialog rather than a message.
-  Real for a user who reinstalls an older release.
-- **Projected content is created with the page's view even while hidden.** Measured on Discover's
-  filter menu: zero `.dv-geomenu__item` elements in the DOM while closed, but the bodies' bindings
-  evaluating anyway. Harmless there; worth knowing before projecting anything expensive.
-- **Dependabot: 1 open Rust alert**, `glib` RUSTSEC-2024-0429. Not fixable here - it arrives through
-  the gtk-rs 0.18 stack under `wry`/`webkit2gtk`, which Tauri pins, and it is Linux-only. It is
-  **deliberately left open rather than dismissed**, because it is what will tell us Tauri moved -
-  that reasoning is recorded in `DUTY_WATCH.md`, not in a suppression file, and there is no
-  `.cargo/audit.toml` in this repository. GitHub also reports npm advisories on the default branch; the last
-  audit found every one of them development-scope, with `npm audit --omit=dev` at 0.
+**Dependabot is at one open alert**, `glib` RUSTSEC-2024-0429 - Linux-only, through the gtk-rs stack
+Tauri pins, deliberately left open as the signal that Tauri has moved. `npm audit --omit=dev` reads 0. The five remaining npm advisories are one chain, `image-size` -> `less` -> build tooling, whose
+only npm-suggested remedy is a semver-major **downgrade** of `@angular-devkit/build-angular`; the
+repository contains zero `.less` files and both apps set `inlineStyleLanguage: scss`, so the parser
+never runs. Do not "fix" it.
 
-## Housekeeping
+No `npm run desktop:dev` process should be running - check with `pgrep -fl "tauri dev"`.
 
-No `npm run desktop:dev` process is running as of this handoff - check with `pgrep -fl "tauri dev"`.
-Start one before trying to verify anything that needs Tauri IPC, SQLite, the keychain, native
-dialogs, printing or the updater.
+## Gates before commit
+
+`nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop --skip-nx-cache`,
+`nx test desktop`, `nx test application` (only when a library changed), `nx build desktop`,
+`cargo check` in `src-tauri` when anything under it or in `capabilities/` changed,
+`npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`.
+Add `check-style-move.mjs` whenever markup moves between components or a rule moves between sheets -
+run the page sheet and every child sheet in **one** invocation, with `--base origin/main` and never
+`--base main`, which a fetch does not move. Skip it honestly when no stylesheet changed.
+
+## What to do first
+
+The maintainer wants every remaining file resolved before they start the manual gate. In order:
+
+1. **`discover.component.scss` 475/400 - judge it again, then act on the judgement.** It was declined
+   once on the grounds that what remains is the page's own chrome and that shrinking it means
+   extracting components the template, at 281/300, does not need. **That verdict predates five splits
+   that measured what a child extraction actually costs.** Re-judge with those numbers. If a seam
+   exists, take it; if it genuinely does not, say so with the reason and record the file as settled
+   by decision rather than leaving it looking unexamined.
+2. **`_editor-shell.scss` 460/400 - split by responsibility without changing what it emits.** It is a
+   global partial `@use`d once from `styles.scss` and both document editors depend on it, including
+   #465's two cards' controls. Splitting the file is a size pass; changing the emitted CSS is not, so
+   `check-style-move` across every consumer must come back lossless.
+3. **Then bring the three gated decisions in one `aif-grilling` round**: `cv-preview.component.html`
+   779/300 (the seventeen `@if (isEditingLeaf(...))` pairs), `document.model.ts` 504/400 (a `libs/`
+   public API) and `db.service.ts` 461/400 (per-domain gateways, whose recorded rule is "when the
+   ratchet refuses the next method, not before" - so ask whether that rule still stands).
+4. **Fix the `cv-save-template-modal` unstyled buttons** described above. Authorised.
+5. **Last, write the manual gate script.** Turn `NATIVE_GATE_BACKLOG.md` into one walkable pass: the
+   database rows each section needs, the screens in order, what to look at. The maintainer drives it;
+   you cannot.
+
+Pick one thing at a time and finish it, including the Duty Watch handoff.

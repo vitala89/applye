@@ -12,50 +12,6 @@
   }
 }
 
-@keyframes dv-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 var(--accent-tint);
-  }
-  50% {
-    box-shadow: 0 0 0 5px transparent;
-  }
-}
-
-@keyframes dv-fade {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes dv-slidein {
-  from {
-    transform: translateX(24px);
-    opacity: 0.4;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
-}
-
-@keyframes dv-shimmer {
-  0% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0.5;
-  }
-}
-
 .dv {
   /* Fill the page width (the shell `.content` already supplies the 32px
      gutter), matching Tracker/Documents instead of a narrow centred column. */
@@ -404,16 +360,6 @@
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-wide);
   color: var(--text-tertiary);
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-  }
-
-  &__confirm {
-    color: var(--text-secondary);
-  }
 }
 
 /* ---------------- load more ---------------- */
@@ -477,48 +423,9 @@
 
 /* ---------------- sources drawer ---------------- */
 
-.dv-confirm {
-  width: 380px;
-  max-width: 92vw;
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-lg, 0 12px 40px rgb(0 0 0 / 30%));
-  animation: dv-popin var(--dur-base) var(--ease-standard);
-
-  &__title {
-    margin: 0 0 var(--space-2);
-    font-size: var(--text-body);
-    font-weight: var(--weight-semibold);
-    color: var(--text-primary);
-  }
-
-  &__body {
-    margin: 0 0 var(--space-5);
-    font-size: var(--text-sm);
-    line-height: 1.5;
-    color: var(--text-secondary);
-  }
-
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2);
-  }
-}
-
-@keyframes dv-popin {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
+/* The clear-feed dialog's rules, and the `dv-popin` keyframe only it used,
+   moved with its markup into `discover-clear-confirm/`. The overlay behind
+   it stays here: a click outside is the page's own cancel. */
 
 @media (prefers-reduced-motion: reduce) {
   .dv-confirm {

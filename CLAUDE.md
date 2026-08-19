@@ -41,7 +41,7 @@ apps/desktop  ->  libs/application  ->  libs/data  ->  libs/core
 ```
 
 **A page component renders and delegates. It does not hold the state of its own screen, and it does
-not inject `DbService`.** Screen state - what is loaded, what is in flight, what the user selected -
+not inject a data gateway.** Screen state - what is loaded, what is in flight, what the user selected -
 belongs in a **signal store in `libs/application`**, budget **250 lines**. Plain `signal()` and
 `computed()`, never NgRx: `jobs.store.ts` records why, and the reason has not changed.
 
@@ -54,7 +54,9 @@ Three things a new session must know before writing code:
 1. **The rule binds new code now.** An existing page migrates when it is touched for another reason -
    the same trigger as the file-size budgets, and one stream of work with them.
 2. **Lint enforces it now, with no exceptions left.** A `*.component.ts` file (or `app.ts`) that
-   injects `DbService`, `AiService` or `JobSourceService` fails the build. The
+   injects `AiService`, `JobSourceService` or **any `*Gateway`** fails the build. It named
+   `DbService` until that class was deleted; it matches the pattern now, so the ninth gateway is
+   covered on the day it is written (ADR-0005, amendment sixty-five). The
    `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist is gone: `jobs` deleted its last entry
    (ADR-0005, amendment fifty-six). `type:data` also left `type:app`'s allowlist (amendment
    fifty-five), so `@nx/enforce-module-boundaries` now covers every app file, not just components.

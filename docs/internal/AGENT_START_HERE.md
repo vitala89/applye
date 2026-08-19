@@ -46,9 +46,9 @@ Before editing, state briefly:
 - whether the task affects privacy, security, data migration, Tauri IPC, AI providers, or external tools;
 - **where the work sits in the layering, and what owns its state.** A page component renders and
   delegates; screen state belongs in a signal store in `libs/application`, budget 250, and a page
-  does not inject `DbService` (`ADR-0005`). The rule binds new code now; an existing page migrates
+  does not inject a data gateway (`ADR-0005`). The rule binds new code now; an existing page migrates
   when it is touched for another reason. Lint enforces it for components with no exceptions left:
-  injecting `DbService`, `AiService` or `JobSourceService` in a `*.component.ts` is an error, and the
+  injecting `AiService`, `JobSourceService` or any `*Gateway` in a `*.component.ts` is an error, and the
   `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist is gone rather than empty - there is nothing to add
   a file to;
 - which touched files are near or above their code-size budgets, what responsibility each file owns, and where the new behavior will be tested.

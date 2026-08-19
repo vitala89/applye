@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-19, retiring `DbService` from the instruction set, and the handoff for a session with no stream
+
+- **Status:** complete. Documentation only - no source, no tests, no behaviour.
+- **Agent/tool:** Claude Code, Opus 5. No subagents.
+- **Branch:** `docs/retire-dbservice-from-instructions`, cut from `origin/main` at `0657daae`.
+- **Objective:** the gateway migration deleted `DbService`, but four **active** instructions still told agents not to inject it, and the handoff still described the migration as "6 of 8".
+- **The instructions were not merely stale, they were misleading in a specific way.** `CLAUDE.md`, `AGENTS.md`, `AGENT_START_HERE.md` and `CODE_QUALITY.md` all stated the ADR-0005 boundary as "a component may not inject `DbService`, `AiService` or `JobSourceService`". An agent reading that today greps for `DbService`, finds nothing, and reasonably concludes the rule is historical - while the rule is live and now matches `[A-Za-z]+Gateway`. All four now say what the lint rule actually enforces, and name amendment sixty-five for the change. `INSTRUCTIONS.md`'s commit-rhythm line lost its `DbService` wrapper reference too.
+- **One historical reference was rephrased rather than repointed.** `CODE_QUALITY.md`'s dependency-graph rule cites `geo-target.store.spec.ts` providing "the old token" for its `SettingsStore`; naming a gateway there would have made a true story about a deleted class into a false one about a live one.
+- **What was deliberately left alone:** `DUTY_WATCH.md` (a journal), `ADR-0005`'s earlier amendments, the `docs/superpowers/` plans and specs, `NATIVE_GATE_BACKLOG.md`'s note about `DraftsGateway`, and `CURRENT_STATE.md` below its current section - all of them accurate records of what was true when written. Correcting history to match the present is how a log stops being evidence.
+- **`NEXT_SESSION_PROMPT.md` rewritten for a session with no stream.** The previous version's first instruction was "continue the gateway migration"; there is nothing to continue. It now opens by saying both streams are closed and that **the remaining work is the maintainer's**, and its first instruction is to ask rather than to start a refactor because the last two sessions were refactors. The eight-PR table is complete, the two generalisable rules from the series are kept (order by churn; a guard that names a symbol outlives the symbol), and everything numeric was **re-measured on `0657daae`** rather than carried forward.
+- **What re-measuring changed:** budgets read **0 over in all seven categories** across 327 sources, 304 tests, 159 stylesheets, 145 stores, 133 templates and 63 Rust modules with their 63 inline test blocks. The tightest file is now **`job-scoring.service.ts` at 249/250**, one line of headroom, which the old handoff did not mention at all; `job-identity-resolver.service.ts` at 245/250 was also absent. The desktop suite's idle-machine time is **11 s**, not the 20 s recorded earlier. `pgrep -fl "tauri dev"` finds nothing. Dependabot is at one open alert, `glib` `GHSA-wrw7-89jp-8q8g`; `npm audit --omit=dev` reads 0.
+- **Files or packages changed:** `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`, `docs/internal/INSTRUCTIONS.md`, `docs/governance/CODE_QUALITY.md`, `docs/internal/NEXT_SESSION_PROMPT.md`. Six files, documentation only.
+- **Validation:** `nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache` - 0 errors, 1 pre-existing warning in an untouched file. `npm run format:check` - passed. `npm run quality:attribution` - passed. `git diff --check` - clean. `node tools/check-file-size-budgets.mjs --all` - 0 over budget in all seven categories.
+- **Not a pass, and named as such:** `npm run quality:file-size -- --staged` reports **"no changed source files to check"**, because this branch changes only `.md` files. That is the exact case the handoff warns about; it is recorded here rather than reported as green.
+- **Skipped, honestly:** every test target, `nx build desktop`, `nx build web`, `cargo check`, `check-style-move.mjs`, `desktop:type-check`. No source, template, stylesheet or Rust file is touched, so none of them has an input to read. Lint was run anyway because it is cheap and the branch was cut after a large source change.
+- **Privacy/security impact:** none. No code changed. The instruction correction is security-adjacent in the same sense the previous watch's lint repair was: the rule keeping data access out of components is now described accurately to the agents expected to follow it.
+- **Risks or compatibility impact:** none.
+- **Open issues or blockers:** unchanged - the two product questions from #488 are still the maintainer's, and the native gate still needs a human.
+- **Next first action:** none an agent can take unprompted. **Ask the maintainer what the next stream is.** If there is none, the work is theirs: walk `NATIVE_GATE_SCRIPT.md`, then answer the two product questions.
+- **Evidence:** the four active instructions naming a deleted class; the `--all` budget audit reading 0 across seven categories; `job-scoring.service.ts` at 249/250, absent from the previous handoff; the file-size gate's "no changed source files" line on a docs-only tree.
+
 ### 2026-08-19, the eighth gateway, and two guards that had been narrowing all along
 
 - **Status:** complete. `ProfileSettingsGateway` extracted and **`db.service.ts` deleted**. 461 lines to 0 in eight pull requests. **PR 8 of 8 - the migration is finished.**

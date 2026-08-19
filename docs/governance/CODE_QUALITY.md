@@ -208,7 +208,7 @@ Ordering by method count would have put the largest migration second. Re-measure
 request rather than trusting this list, since every migration changes it.
 
 **So `DbService` is a shrinking remainder, not a home.** A method still on it means its domain has
-not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to **349**); the
+not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to **307**); the
 file is deleted when the last domain leaves. New code reaches for the gateway if its domain has one,
 and for `DbService` only if it does not yet.
 
@@ -216,6 +216,12 @@ and for `DbService` only if it does not yet.
 documents, dashboard and jobs read it, so it goes to the system gateway rather than being duplicated
 into each domain that happens to key a cache on it. A service migrated before then injects both, and
 says so where it injects them.
+
+**Check what a spec provides for before swapping its token.** A spec provides for the subject's
+whole dependency graph, not for the subject alone: `geo-target.store.spec.ts` provides `DbService`
+for its `SettingsStore`, and `tracker-report.store.spec.ts` for its `TrackerRowsStore`. Both broke
+when the token was swapped wholesale, in two separate pull requests. Where both are genuinely
+needed, provide **one stub object under both tokens** rather than two fakes.
 
 **Each gateway carries a spec that asserts its command strings and argument shapes**, because every
 consumer stubs the gateway: a method invoking the wrong Rust command leaves the whole suite green and

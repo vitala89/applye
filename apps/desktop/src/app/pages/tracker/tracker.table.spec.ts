@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { TrackerRow } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, TrackerGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService, TrackerColumnsStore, TrackerRowEditorStore } from '@applye/application';
 import { TrackerComponent } from './tracker.component';
@@ -49,21 +49,22 @@ describe('TrackerComponent grid', () => {
     navigate = jest.fn();
     updateFields = jest.fn().mockResolvedValue(undefined);
     TestBed.resetTestingModule();
+    // One stub, two tokens: the grid's rows and archiving come from
+    // `TrackerGateway` now, and the rest is still `DbService`'s.
+    const dbStub = {
+      trackerRows: jest.fn().mockResolvedValue(rows),
+      getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),
+      trackerCustomColumns: jest.fn().mockResolvedValue([]),
+      updateApplicationTrackerFields: updateFields,
+      setApplicationArchived: jest.fn().mockResolvedValue(undefined),
+      setApplicationStatus: jest.fn().mockResolvedValue(undefined),
+      deleteJob: jest.fn().mockResolvedValue(undefined),
+    };
     TestBed.configureTestingModule({
       imports: [TrackerComponent],
       providers: [
-        {
-          provide: DbService,
-          useValue: {
-            trackerRows: jest.fn().mockResolvedValue(rows),
-            getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),
-            trackerCustomColumns: jest.fn().mockResolvedValue([]),
-            updateApplicationTrackerFields: updateFields,
-            setApplicationArchived: jest.fn().mockResolvedValue(undefined),
-            setApplicationStatus: jest.fn().mockResolvedValue(undefined),
-            deleteJob: jest.fn().mockResolvedValue(undefined),
-          },
-        },
+        { provide: DbService, useValue: dbStub },
+        { provide: TrackerGateway, useValue: dbStub },
         { provide: Router, useValue: { navigate } },
         TranslateService,
         ToastService,

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { SupportedLanguage } from '@applye/core';
-import { DbService } from '@applye/data';
+import { TrackerGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TrackerColumnsStore } from './tracker-columns.store';
 import { trackerColumnWidth } from './tracker-columns';
@@ -39,7 +39,7 @@ export type TrackerSavePathChooser = (defaultName: string) => Promise<string | n
  */
 @Injectable()
 export class TrackerReportStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(TrackerGateway);
   private readonly i18n = inject(TranslateService);
   private readonly columnsStore = inject(TrackerColumnsStore);
   private readonly rowsStore = inject(TrackerRowsStore);

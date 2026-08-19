@@ -44,6 +44,35 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-19, the fourth gateway, and the flakiness turns out to have been the machine
+
+- **Status:** complete. `TrackerGateway` extracted; `db.service.ts` **349 to 307/400**. **PR 4 of 8.** The flakiness investigation the previous watch scheduled ran first and **found no repository defect**; the correction is below and it supersedes that watch's next action.
+- **Agent/tool:** Claude Code, Opus 5. No subagents. Triage **7/10** for the investigation (unknowns 2), **6/10** for the gateway.
+- **Branch:** `refactor/tracker-gateway`, cut from `origin/main` at `bce48076`.
+
+**The flakiness, corrected.** The previous two watches reported the desktop suite as flaky and pointed at a zoneless promise-ordering bug, citing this repository's own recorded lesson. **That reading was wrong, and it was wrong because it was made from test names rather than from error messages.** The actual messages are `Exceeded timeout of 5000 ms for a test` and `for a hook`. **No assertion failed in any of the observed runs.** What was measured:
+
+- the failing run took **133 s**, with its two heaviest suites at **28 s** and **37 s**;
+- the same suite on an idle machine, at the default worker count, takes **20 s** and passes twice;
+- capped at **two workers** while the machine was loaded, it passes twice, at 79 s and 62 s;
+- `tracker.table.spec.ts` alone runs 19 tests in **4 s**, nowhere near the 5 s per-test limit;
+- during the failures, `ps` showed Chrome at 74%, WindowServer at 65%, Cursor at 45% and Claude at 44%.
+
+Jest defaults to **nine workers on ten cores** that were already about 70% consumed, so the heaviest component specs did not finish inside the default per-test timeout. **The cause is environmental. No repository change was made**, on the maintainer's decision, and the branch opened for it was deleted unused. Two real but separate observations remain: `cv-detail.cards.spec.ts:90` calls `detectChanges()` on a destroyed fixture (`NG0406`, currently harmless), and jest reports a worker failing to exit gracefully, which points at leaked timers. **Neither causes what was seen.** If it recurs, check the machine's load before the code.
+
+- **The score cache did not travel with the tracker, and the domain list was wrong rather than the boundary.** `scoreCacheGet`, `scoreCacheLatest` and `scoreCacheSave` were described as tracker's when the eight gateways were agreed; their only consumers are `job-scoring.service.ts` and `job-intake.service.ts`, and nothing in the tracker touches them. They go to the jobs gateway. **The description came from me, so this is a correction rather than a discovery.**
+- **The seven methods that did move were interleaved through the Jobs section**, not gathered under a banner - the third gateway in a row to find its methods mis-filed.
+- **The same spec mistake happened twice in two pull requests, so it is now in `CODE_QUALITY.md`.** `TrackerReportStore` needs only the gateway, but injects `TrackerRowsStore`, which still reads `getSettings` and `deleteJob` through `DbService`; swapping the token wholesale broke three assertions, exactly as `geo-target.store.spec.ts` did during the discover migration. **A spec provides for the subject's dependency graph, not for the subject alone** - and my own previous watch entry said to check this, which is what makes repeating it worth recording.
+- **Not completed, and named:** four gateways remain - system, jobs, documents, profile and settings.
+- **Files or packages changed:** `tracker.gateway.ts` and `tracker.gateway.spec.ts` new; `db.service.ts` -42 lines and two orphaned imports removed; `libs/data/src/index.ts`; four stores and six specs; `docs/governance/CODE_QUALITY.md`; `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` - clean. `nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache` - clean; two orphaned imports were caught by lint after the type-check passed, which is the third time that has happened in this series. `nx test data --skip-nx-cache` - 6 suites, **41 tests** (6 new). `nx test application --skip-nx-cache` - 129 suites, **1642 tests**. `nx test desktop --skip-nx-cache` - 120 suites, **1148 tests**. `nx build desktop` - succeeded, initial total 1.50 MB / 280.14 kB, no budget error. Mutation on the missing `db_` prefix - killed. `quality:file-size` - passed; `db.service.ts` 307 against base 349. `quality:attribution`, `format:check`, `git diff --check` - clean. **Not run and not applicable:** `nx test core`, `cargo check`, `check-style-move`, `nx build web`.
+- **Privacy/security impact:** none. Same seven commands, same arguments, same handlers.
+- **Decisions and assumptions:** the score cache goes to jobs on the evidence rather than to tracker on the agreed description; stated in the gateway's own header so the jobs migration inherits it.
+- **Risks or compatibility impact:** low. Nothing renders differently; the backlog stays at **83**.
+- **Open issues or blockers:** none. The two secondary test observations are recorded and unowned by choice.
+- **Next first action:** **PR 5, `SystemGateway`** - import, backup, health, the file operations and `hashText`, 10 methods across roughly 39 files. Re-measure the churn table first. **Check every spec for what it provides for before swapping a token** - twice now that has been the thing that broke, and the system gateway touches the widest set of consumers so far. `hashText` finally lands here, which is what lets the three draft services and several others drop `DbService` entirely.
+- **Evidence:** the timeout messages rather than assertion failures; the four timing measurements above; `ps` output during the failures; the killed mutation on the command prefix; the two spec breakages that produced the new `CODE_QUALITY.md` rule.
+
 ### 2026-08-19, the third gateway, and the flaky suite becomes a decision
 
 - **Status:** complete. `InterviewGateway` extracted; `db.service.ts` **381 to 349/400**. **PR 3 of 8.**

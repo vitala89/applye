@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Settings, TrackerRow } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, TrackerGateway } from '@applye/data';
 import {
   TrackerRange,
   TrackerSegment,
@@ -26,6 +26,9 @@ import {
 @Injectable()
 export class TrackerRowsStore {
   private readonly db = inject(DbService);
+  /** Rows and archiving come from `TrackerGateway`; `db` stays for
+   * `deleteJob` and `getSettings`, whose domains have not moved. */
+  private readonly tracker = inject(TrackerGateway);
 
   readonly all = signal<TrackerRow[]>([]);
   readonly settings = signal<Settings | null>(null);
@@ -70,7 +73,10 @@ export class TrackerRowsStore {
     this.loading.set(true);
     this.loadError.set(false);
     try {
-      const [rows, settings] = await Promise.all([this.db.trackerRows(), this.db.getSettings()]);
+      const [rows, settings] = await Promise.all([
+        this.tracker.trackerRows(),
+        this.db.getSettings(),
+      ]);
       this.all.set(rows);
       this.settings.set(settings);
     } catch {
@@ -85,7 +91,7 @@ export class TrackerRowsStore {
    * place rather than re-reading the whole list. A gateway error propagates and
    * the row is left where it was. */
   async setArchived(row: TrackerRow, archived: boolean): Promise<void> {
-    await this.db.setApplicationArchived(row.id, archived);
+    await this.tracker.setApplicationArchived(row.id, archived);
     this.all.update((rows) => rows.map((r) => (r.id === row.id ? { ...r, archived } : r)));
   }
 

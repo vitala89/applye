@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { TrackerCustomColumn } from '@applye/core';
-import { DbService } from '@applye/data';
+import { TrackerGateway } from '@applye/data';
 import { TrackerColumnsStore } from './tracker-columns.store';
 
 function column(over: Partial<TrackerCustomColumn> = {}): TrackerCustomColumn {
@@ -19,7 +19,7 @@ function createStore(stored: TrackerCustomColumn[] = []) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [TrackerColumnsStore, { provide: DbService, useValue: db }],
+    providers: [TrackerColumnsStore, { provide: TrackerGateway, useValue: db }],
   });
   return { store: TestBed.inject(TrackerColumnsStore), db };
 }

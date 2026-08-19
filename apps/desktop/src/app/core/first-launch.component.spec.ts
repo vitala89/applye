@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { BootGateStore } from '@applye/application';
 import { FirstLaunchComponent, type FirstLaunchDismiss } from './first-launch.component';
@@ -32,17 +32,18 @@ describe('FirstLaunchComponent', () => {
     updateSettings = jest.fn(() =>
       dismissFails ? Promise.reject(new Error('disk full')) : Promise.resolve(),
     );
+    // One stub, two tokens - `SystemGateway` now serves the shared
+    // operations, and the rest of this stub is still `DbService`'s.
+    const dbStub = {
+      updateSettings,
+      healthCheck: jest.fn(() => Promise.resolve({ items: [] })),
+    };
     TestBed.configureTestingModule({
       imports: [FirstLaunchComponent],
       providers: [
         TranslateService,
-        {
-          provide: DbService,
-          useValue: {
-            updateSettings,
-            healthCheck: jest.fn(() => Promise.resolve({ items: [] })),
-          },
-        },
+        { provide: DbService, useValue: dbStub },
+        { provide: SystemGateway, useValue: dbStub },
       ],
     });
     fixture = TestBed.createComponent(FirstLaunchComponent);

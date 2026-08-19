@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AiService, DbService, DraftsGateway } from '@applye/data';
+import { AiService, DraftsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { WizardActivityService } from './wizard-activity.service';
 import { ToastService } from '../shell/toast.service';
@@ -37,7 +37,7 @@ export type { PassResult, TailorContext };
  */
 @Injectable()
 export class TailoringService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(SystemGateway);
   /** The tailoring cache moved to its own gateway; `db` stays for `hashText`,
    * which is cross-cutting and has not been migrated yet. */
   private readonly drafts = inject(DraftsGateway);

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvSection, DocumentLibraryItem } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, SystemGateway } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import { CvPhotoStore } from './cv-photo.store';
 import { CvStyleStore } from './cv-style.store';
@@ -54,6 +54,7 @@ describe('CvRegenerationStore', () => {
         CvPhotoStore,
         CvStyleStore,
         { provide: DbService, useValue: db },
+        { provide: SystemGateway, useValue: db },
         { provide: AiService, useValue: ai },
       ],
     });

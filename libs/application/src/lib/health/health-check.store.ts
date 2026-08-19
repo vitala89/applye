@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { HealthCheckItem } from '@applye/core';
-import { DbService } from '@applye/data';
+import { SystemGateway } from '@applye/data';
 
 /**
  * The deterministic (0-token) health check: whether it is running and what it
@@ -20,7 +20,7 @@ import { DbService } from '@applye/data';
  */
 @Injectable()
 export class HealthCheckStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(SystemGateway);
 
   readonly loading = signal(true);
   readonly items = signal<HealthCheckItem[]>([]);

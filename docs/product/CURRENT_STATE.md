@@ -111,7 +111,8 @@
   request each, smallest domain first - the maintainer superseded the recorded "not before the
   ratchet refuses" rule on 2026-08-19. `DraftsGateway` was first (461 to 426), `DiscoverGateway`
   second (426 to 381) `InterviewGateway` third (381 to 349)
-  and `TrackerGateway` fourth: **349 to 307/400**, so the file is **under budget** from the second of eight pull requests
+  `TrackerGateway` fourth (349 to 307)
+  and `SystemGateway` fifth: **307 to 220/400**, so the file is **under budget** from the second of eight pull requests
   - six earlier than the ratchet would have forced it. The order of the rest was re-judged on files
     touched rather than method count, which are almost uncorrelated: profile and settings is seven
     methods and sixty-eight files and now goes last. The file-size stream is otherwise

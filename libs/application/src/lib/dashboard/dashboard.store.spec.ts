@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { JobOverview, PipelineCard, Profile } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { DashboardStore } from './dashboard.store';
 
 const card = (over: Partial<PipelineCard> = {}): PipelineCard =>
@@ -25,7 +25,11 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [DashboardStore, { provide: DbService, useValue: db }],
+    providers: [
+      DashboardStore,
+      { provide: DbService, useValue: db },
+      { provide: SystemGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(DashboardStore), db };
 }

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Profile } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { ProfileFormStore } from './profile-form.store';
 import { ProfileStore } from './profile.store';
 
@@ -18,7 +18,12 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [ProfileFormStore, ProfileStore, { provide: DbService, useValue: db }],
+    providers: [
+      ProfileFormStore,
+      ProfileStore,
+      { provide: DbService, useValue: db },
+      { provide: SystemGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(ProfileStore), db };
 }

@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService } from '@applye/data';
+import { SystemGateway } from '@applye/data';
 import {
   CoverLetterContent,
   CvContent,
@@ -51,7 +51,7 @@ export interface FinalCheckInputs {
  */
 @Injectable()
 export class FinalChecksService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(SystemGateway);
   private readonly i18n = inject(TranslateService);
 
   private readonly t = this.i18n.t;

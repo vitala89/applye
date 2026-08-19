@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { ImportPreviewRow, ImportRawRow, ImportSkipped } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, SystemGateway } from '@applye/data';
 import { parseImportResponse, toRawRows } from './tracklist-import';
 
 export type ImportStep = 'pick' | 'preview' | 'done';
@@ -32,6 +32,7 @@ export interface ImportResult {
 @Injectable()
 export class TracklistImportStore {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
 
   readonly open = signal(false);
@@ -84,7 +85,7 @@ export class TracklistImportStore {
     this.busy.set(true);
     this.error.set('');
     try {
-      const file = await this.db.importReadFile(path);
+      const file = await this.system.importReadFile(path);
       this.fileType.set(file.fileType);
 
       const settings = await this.db.getSettings();
@@ -104,7 +105,7 @@ export class TracklistImportStore {
       });
 
       const parsed = parseImportResponse(res.text);
-      const preview = await this.db.importPreview(toRawRows(parsed));
+      const preview = await this.system.importPreview(toRawRows(parsed));
 
       this.rows.set(preview.map((r) => ({ ...r, selected: !r.isDuplicate })));
       this.skipped.set(parsed.skipped ?? []);
@@ -146,7 +147,7 @@ export class TracklistImportStore {
         nextActionAt: r.nextActionAt,
         salaryRange: r.salaryRange,
       }));
-      const result = await this.db.importConfirm(
+      const result = await this.system.importConfirm(
         rows,
         `import_${this.fileType()}`,
         settings.followupDaysAfterApply ?? 7,

@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { AiService, DbService, DraftsGateway } from '@applye/data';
+import { AiService, DraftsGateway, SystemGateway } from '@applye/data';
 import { Job, Profile, Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../shell/toast.service';
@@ -21,7 +21,7 @@ export interface PortalAnswerDraft {
  */
 @Injectable()
 export class PortalAnswersService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(SystemGateway);
   /** Portal drafts moved to their own gateway; `db` stays for `hashText`. */
   private readonly drafts = inject(DraftsGateway);
   private readonly ai = inject(AiService);

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvSection } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { CvPhotoStore } from './cv-photo.store';
 import { photoSectionOf } from './cv-photo-sections';
 
@@ -16,7 +16,11 @@ function createStore(profile: { photoDataUri?: string | null } | null = null) {
   const db = { getProfile: jest.fn().mockResolvedValue(profile) };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [CvPhotoStore, { provide: DbService, useValue: db }],
+    providers: [
+      CvPhotoStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(CvPhotoStore), db };
 }

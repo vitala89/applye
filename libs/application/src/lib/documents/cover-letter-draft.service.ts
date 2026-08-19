@@ -11,7 +11,7 @@ import {
   SupportedLanguage,
   cleanJsonText,
 } from '@applye/core';
-import { AiService, DbService, SystemGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
 
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
@@ -76,6 +76,7 @@ export interface CoverLetterDraftResult {
 @Injectable()
 export class CoverLetterDraftService {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly docGen = inject(DocumentGenService);
@@ -146,7 +147,7 @@ export class CoverLetterDraftService {
         ctx.region,
       ),
     );
-    const document = await this.db.documentLibraryUpsert({
+    const document = await this.docs.documentLibraryUpsert({
       // One cover letter per application (ADR-0003): reuse the linked row so
       // retailor/regenerate update in place instead of stacking duplicate
       // "<Company> - Cover Letter" entries.

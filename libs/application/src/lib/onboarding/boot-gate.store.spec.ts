@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { BootGateStore } from './boot-gate.store';
 
 function createStore(over: Record<string, jest.Mock> = {}) {
@@ -10,7 +10,11 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [BootGateStore, { provide: DbService, useValue: db }],
+    providers: [
+      BootGateStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(BootGateStore), db };
 }

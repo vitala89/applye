@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CvContent, DocumentLibraryItem, withCvPhoto } from '@applye/core';
 
-import { DbService } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { DocumentRegionTag } from './job-document-defaults';
 
@@ -20,7 +20,7 @@ import { DocumentRegionTag } from './job-document-defaults';
  */
 @Injectable()
 export class CvPhotoPromptService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
   private readonly t = this.i18n.t;

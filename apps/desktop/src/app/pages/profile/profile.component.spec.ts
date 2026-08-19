@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { serializeProfileForm, parseProfileMd, EMPTY_FORM } from '@applye/core';
-import { AiService, DbService, SystemGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '@applye/application';
@@ -23,6 +23,7 @@ function createFixture(): ComponentFixture<ProfileComponent> {
     imports: [ProfileComponent],
     providers: [
       { provide: DbService, useValue: dbStub },
+      { provide: DocumentsGateway, useValue: dbStub },
       { provide: SystemGateway, useValue: dbStub },
       {
         provide: AiService,

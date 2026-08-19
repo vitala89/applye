@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Application, DocumentLibraryItem, Job, Profile, Settings } from '@applye/core';
-import { DbService, JobsStore } from '@applye/data';
+import { DbService, DocumentsGateway, JobsStore } from '@applye/data';
 import { JobDetailStore } from './job-detail.store';
 import { ToastService } from '../shell/toast.service';
 
@@ -36,6 +36,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
     providers: [
       JobDetailStore,
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
       { provide: JobsStore, useValue: jobs },
       { provide: ToastService, useValue: toast },
     ],

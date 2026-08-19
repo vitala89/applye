@@ -7,7 +7,7 @@ import type {
   DocumentLibraryItem,
 } from '@applye/core';
 import { normalizeCvContent } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 import { CvPhotoStore } from './cv-photo.store';
 import { CvStyleStore } from './cv-style.store';
 import { buildCvUpsert, cvSiblingsToUndefault } from './cv-document-record';
@@ -30,7 +30,7 @@ import { moveCvSection, reorderCvSections, replaceCvSection } from './cv-section
  */
 @Injectable()
 export class CvDocumentStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
   private readonly photo = inject(CvPhotoStore);
   private readonly style = inject(CvStyleStore);
 

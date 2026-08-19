@@ -44,6 +44,32 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-19, the sixth gateway, and a spec migration that failed three times
+
+- **Status:** complete. `DocumentsGateway` extracted; `db.service.ts` **220 to 142/400** - under a third of the 461 it started at. **PR 6 of 8.**
+- **Agent/tool:** Claude Code, Opus 5. No subagents. Triage **7/10** (radius 2 · ambiguity 0 · risk 1 · verify 2 · unknowns 2).
+- **Branch:** `refactor/documents-gateway`, cut from `origin/main` at `d32da658`.
+- **Objective:** the largest domain migrated so far - fifteen methods, twenty-three source files, thirty-four specs. Churn re-measured first: documents 56, jobs 58, profile and settings 68.
+- **Nine stores drop `DbService` entirely**, including `document-export.service.ts` and `tracker-print.store.ts`, which only still held it because their other methods had already left in earlier pull requests. That is the migration compounding rather than accumulating.
+- **`printWindowReady` travels with the exports, not with the system operations.** It is one half of the WYSIWYG print handshake - the renderer telling Rust the print window has painted - and the two `...PdfWysiwyg` methods are the other half. Splitting them would put one protocol behind two tokens.
+- **The spec migration failed three times, each on a shape the previous pass had not met.** This is the finding of the watch, and it is now a rule in `CODE_QUALITY.md`:
+  1. **A method-name grep** missed specs whose subject injects the gateway without naming any method - `cv-regeneration.store.spec.ts` was the first to fail.
+  2. **A subject-name grep** missed desktop page specs that mount a component without ever naming the store in its graph - `cover-letter-detail.component.spec.ts` failed with `tauriInvoke called outside Tauri context (command: check_style_safety)`, which is the clearest failure mode this migration produces.
+  3. **The uniform "every spec that provides `DbService`" pass still missed two shapes:** a **single-line** inline provider literal, matched by neither the named-stub nor the multi-line pattern (eleven files), and `onboarding.harness.ts` - a shared helper that is **not a `.spec.ts`**, so no spec-only glob could ever have found it.
+     The rule is now: grep `provide: DbService` across `*.ts`, and expect four provider shapes.
+- **One break was self-inflicted and worth naming.** The hoist computed a line's indentation as everything between the line start and `TestBed.configureTestingModule(`. On an `await TestBed...` line that captured the `await`, which was then written onto every hoisted line, producing `await const docsStub = {`. Two files, caught by the suite, repaired. **A regex that assumes indentation is whitespace should assert it.**
+- **`libs/data`'s own `jobs.store.spec.ts` got a token it does not need** from the repo-wide pass, and its import went missing because that file imports `DbService` by relative path rather than through `@applye/data`. Reverted rather than patched - nothing in that graph touches documents.
+- **The gateway's own trap is symmetry.** Four export methods share two signatures, `(id, format, savePath)` and `(id, savePath)`, and **only the command string separates a CV export from a cover-letter one** - a copy-paste between them type-checks. All four are asserted rather than sampled, and the mutation confirms it.
+- **Not completed, and named:** two gateways remain - jobs (58) and profile and settings (68).
+- **Files or packages changed:** `documents.gateway.ts` and `documents.gateway.spec.ts` new; `db.service.ts` -78 lines and one orphaned import block removed; `libs/data/src/index.ts`; twenty-three source files, fifty-seven specs and one test harness; `docs/governance/CODE_QUALITY.md`; `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` - clean. `nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache` - clean. `nx test data --skip-nx-cache` - 8 suites, **54 tests** (8 new). `nx test application --skip-nx-cache` - 129 suites, **1642 tests**. `nx test desktop --skip-nx-cache` - 120 suites, **1148 tests**, green on two consecutive runs; one earlier failure was `profile.component.spec.ts` timing out under load, which passed alone and in both later runs - the contention this watch series has already characterised. `nx build desktop` - succeeded, initial total 1.50 MB / 280.17 kB, no budget error. Mutation swapping a cover-letter export for its CV twin - killed by 2 tests. `quality:file-size` - passed; `db.service.ts` 142 against base 220. `quality:attribution`, `format:check`, `git diff --check` - clean; `format:check` caught the reverted file before the commit did. **Not run and not applicable:** `nx test core`, `cargo check`, `check-style-move`, `nx build web`.
+- **Privacy/security impact:** none. The same fifteen commands with the same arguments reach the same handlers.
+- **Decisions and assumptions:** `printWindowReady` stays with the exports on the handshake argument above rather than with the system operations, where its name would suggest it belongs.
+- **Risks or compatibility impact:** low. Nothing renders differently; the backlog stays at **83**. The document export paths are covered by the manual script's station 6, which is where a wrong command string would show.
+- **Open issues or blockers:** the two product questions from the previous watch are still open - whether `db_export` lost its UI or never had one, and whether the tailoring-journal export path is meant to be gone.
+- **Next first action:** **PR 7, `JobsGateway`** - jobs, applications and the score cache, seventeen methods across roughly 58 files. Re-measure the table first. **Use the four-shape rule** from `CODE_QUALITY.md` when migrating the specs; this watch lost three passes to discovering those shapes one at a time.
+- **Evidence:** the three failed spec passes and what each missed; the `await const docsStub` corruption and its cause; the killed mutation on the export twins; `quality:file-size`'s 142-against-220 line.
+
 ### 2026-08-19, the fifth gateway, and four wrappers nothing was calling
 
 - **Status:** complete. `SystemGateway` extracted; `db.service.ts` **307 to 220/400** - **less than half** its 461 at the start of the migration. **PR 5 of 8.**

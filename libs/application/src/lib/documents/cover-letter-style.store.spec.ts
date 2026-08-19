@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { StyleNote } from '@applye/core';
 import { COVER_LETTER_STYLE_DEFAULT } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { CoverLetterStyleStore } from './cover-letter-style.store';
 
 function note(kind: StyleNote['kind'], detail: string): StyleNote {
@@ -12,7 +12,11 @@ function createStore(notes: StyleNote[] = []) {
   const db = { checkStyleSafety: jest.fn().mockResolvedValue(notes) };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [CoverLetterStyleStore, { provide: DbService, useValue: db }],
+    providers: [
+      CoverLetterStyleStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(CoverLetterStyleStore), db };
 }

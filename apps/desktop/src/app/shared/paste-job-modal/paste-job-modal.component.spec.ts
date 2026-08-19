@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { DbService, JobSourceService } from '@applye/data';
+import { DbService, DocumentsGateway, JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { JobIdentityResolverService, PasteJobStore } from '@applye/application';
 import { PasteJobModalComponent } from './paste-job-modal.component';
@@ -24,10 +24,13 @@ describe('PasteJobModalComponent', () => {
     navigated = [];
     jobId = 5;
 
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = {};
     TestBed.configureTestingModule({
       providers: [
         TranslateService,
-        { provide: DbService, useValue: {} },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: JobSourceService, useValue: {} },
         { provide: JobIdentityResolverService, useValue: { start: () => undefined } },
         { provide: Router, useValue: { navigate: (c: unknown[]) => navigated.push(c) } },

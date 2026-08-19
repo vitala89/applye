@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { TrackerRow } from '@applye/core';
-import { DbService, TrackerGateway } from '@applye/data';
+import { DbService, DocumentsGateway, TrackerGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService, TrackerColumnsStore, TrackerRowEditorStore } from '@applye/application';
 import { TrackerComponent } from './tracker.component';
@@ -64,6 +64,7 @@ describe('TrackerComponent grid', () => {
       imports: [TrackerComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: TrackerGateway, useValue: dbStub },
         { provide: Router, useValue: { navigate } },
         TranslateService,

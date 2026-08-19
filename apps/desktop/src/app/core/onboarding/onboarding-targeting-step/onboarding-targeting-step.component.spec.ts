@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingTargetingStore } from '@applye/application';
 import { OnboardingTargetingStepComponent } from './onboarding-targeting-step.component';
@@ -13,12 +13,15 @@ describe('OnboardingTargetingStepComponent', () => {
   }
 
   beforeEach(() => {
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = {};
     TestBed.configureTestingModule({
       imports: [OnboardingTargetingStepComponent],
       providers: [
         OnboardingTargetingStore,
         TranslateService,
-        { provide: DbService, useValue: {} },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
       ],
     });

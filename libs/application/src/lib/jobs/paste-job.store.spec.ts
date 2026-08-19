@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { UrlClassification } from '@applye/core';
-import { DbService, JobSourceService } from '@applye/data';
+import { DbService, DocumentsGateway, JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 import { PasteJobStore, looksLikeJobDescription } from './paste-job.store';
@@ -29,10 +29,13 @@ describe('PasteJobStore', () => {
       },
     };
 
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = {};
     TestBed.configureTestingModule({
       providers: [
         TranslateService,
-        { provide: DbService, useValue: {} },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: JobSourceService, useValue: source },
         {
           provide: JobIdentityResolverService,

@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { CoverLetterStyle, CvSectionStyle, StyleNote } from '@applye/core';
 import { COVER_LETTER_STYLE_DEFAULT } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 import { reindexParagraphStyleKeys } from './cover-letter-content';
 import { STYLE_CHECK_DEBOUNCE_MS, dedupeStyleNotes } from './document-style-safety';
 
@@ -28,7 +28,7 @@ import { STYLE_CHECK_DEBOUNCE_MS, dedupeStyleNotes } from './document-style-safe
  */
 @Injectable()
 export class CoverLetterStyleStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
 
   readonly style = signal<CoverLetterStyle>({ ...COVER_LETTER_STYLE_DEFAULT });
   readonly styleNotes = signal<StyleNote[]>([]);

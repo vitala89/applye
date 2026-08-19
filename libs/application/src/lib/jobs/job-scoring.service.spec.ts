@@ -1,5 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { AiService, AtsService, DbService, JobsStore, SystemGateway } from '@applye/data';
+import {
+  AiService,
+  AtsService,
+  DbService,
+  DocumentsGateway,
+  JobsStore,
+  SystemGateway,
+} from '@applye/data';
 import { JobScoringService, ScoreContext, parseScoreResponse } from './job-scoring.service';
 import { TailorScoreService } from './tailor-score.service';
 import { WizardActivityService } from './wizard-activity.service';
@@ -66,6 +73,7 @@ describe('JobScoringService', () => {
         TailorScoreService,
         WizardActivityService,
         { provide: DbService, useValue: db },
+        { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: AiService, useValue: ai },
         { provide: AtsService, useValue: ats },

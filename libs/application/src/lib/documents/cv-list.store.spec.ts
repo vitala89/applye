@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Application, CvTemplate, DocumentLibraryItem, Job } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { CvListStore } from './cv-list.store';
 
 const CVS = [
@@ -26,7 +26,11 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [CvListStore, { provide: DbService, useValue: db }],
+    providers: [
+      CvListStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(CvListStore), db };
 }

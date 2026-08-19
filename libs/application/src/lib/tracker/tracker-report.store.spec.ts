@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { TrackerCustomColumn, TrackerRow } from '@applye/core';
-import { DbService, TrackerGateway } from '@applye/data';
+import { DbService, DocumentsGateway, TrackerGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TrackerColumnsStore } from './tracker-columns.store';
 import { TrackerReportStore } from './tracker-report.store';
@@ -36,6 +36,7 @@ function createStore(rows: TrackerRow[] = [], customColumns: TrackerCustomColumn
       // `deleteJob` through `DbService` - a spec provides for the dependency
       // graph, not for the subject alone.
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },
       { provide: TranslateService, useValue: i18n },
     ],

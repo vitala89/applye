@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { JobGapFillService, jobDocLabel } from './job-gap-fill.service';
 
@@ -50,7 +50,12 @@ describe('JobGapFillService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [JobGapFillService, CvGapDialogService, { provide: DbService, useValue: db }],
+      providers: [
+        JobGapFillService,
+        CvGapDialogService,
+        { provide: DbService, useValue: db },
+        { provide: DocumentsGateway, useValue: db },
+      ],
     });
 
     svc = TestBed.inject(JobGapFillService);

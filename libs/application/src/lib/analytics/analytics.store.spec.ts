@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { AnalyticsApplication, AnalyticsFacts } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { AnalyticsStore } from './analytics.store';
 
 const app = (over: Partial<AnalyticsApplication> = {}): AnalyticsApplication =>
@@ -16,7 +16,11 @@ function createStore(getAnalyticsFacts: jest.Mock) {
   const db = { getAnalyticsFacts };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [AnalyticsStore, { provide: DbService, useValue: db }],
+    providers: [
+      AnalyticsStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(AnalyticsStore), db };
 }

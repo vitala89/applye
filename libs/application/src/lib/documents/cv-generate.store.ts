@@ -7,7 +7,7 @@ import {
   parseArchetypes,
   parseCvSkillResponse,
 } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 
 /**
  * What one generation attempt did. Each is a different fact, and none of them
@@ -53,6 +53,7 @@ const DEFAULT_REGION_TAG = 'de';
 @Injectable()
 export class CvGenerateStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
 
   readonly open = signal(false);
@@ -156,7 +157,7 @@ export class CvGenerateStore {
         return 'bad-json';
       }
 
-      const created: DocumentLibraryItem = await this.db.documentLibraryUpsert({
+      const created: DocumentLibraryItem = await this.docs.documentLibraryUpsert({
         docType: 'cv',
         source: 'generated',
         label: labels.documentLabel,

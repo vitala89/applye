@@ -12,7 +12,7 @@ import {
   cleanJsonText,
   readBaseLetter,
 } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../shell/toast.service';
 
@@ -51,6 +51,7 @@ export interface CoverLetterTailorResult {
 @Injectable()
 export class CoverLetterTailorService {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
@@ -73,7 +74,7 @@ export class CoverLetterTailorService {
     this.modalOpen.set(true);
 
     try {
-      const letters = await this.db.documentLibraryList('cover_letter');
+      const letters = await this.docs.documentLibraryList('cover_letter');
       this.language.set(settings?.defaultDocLanguage ?? 'en');
       const lang = this.language();
       const defaultDoc =
@@ -121,7 +122,7 @@ export class CoverLetterTailorService {
         today,
       );
 
-      const document = await this.db.documentLibraryUpsert({
+      const document = await this.docs.documentLibraryUpsert({
         docType: 'cover_letter',
         source: 'generated',
         label: ctx.label(job),

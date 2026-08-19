@@ -9,7 +9,7 @@ import {
   themeStyleSeed,
   themeTitleRule,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 import { STYLE_CHECK_DEBOUNCE_MS, dedupeStyleNotes } from './document-style-safety';
 
 /** How long a burst of style edits settles before the ATS safety re-check runs.
@@ -45,7 +45,7 @@ import { STYLE_CHECK_DEBOUNCE_MS, dedupeStyleNotes } from './document-style-safe
  */
 @Injectable()
 export class CvStyleStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
 
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
   readonly themeId = signal<number>(1);

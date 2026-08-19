@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { provideRouter } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import { AiService, DbService, InterviewGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, InterviewGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { PipelineComponent } from './pipeline.component';
@@ -58,6 +58,7 @@ describe('PipelineComponent board', () => {
       providers: [
         provideRouter([]),
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: InterviewGateway, useValue: dbStub },
         { provide: AiService, useValue: { renderSkill: jest.fn(), run: jest.fn() } },
         TranslateService,
@@ -303,6 +304,7 @@ describe('PipelineComponent board', () => {
         providers: [
           provideRouter([]),
           { provide: DbService, useValue: dbStub2 },
+          { provide: DocumentsGateway, useValue: dbStub2 },
           { provide: InterviewGateway, useValue: dbStub2 },
           { provide: AiService, useValue: {} },
           TranslateService,

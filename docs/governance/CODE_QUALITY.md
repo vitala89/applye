@@ -208,7 +208,7 @@ Ordering by method count would have put the largest migration second. Re-measure
 request rather than trusting this list, since every migration changes it.
 
 **So `DbService` is a shrinking remainder, not a home.** A method still on it means its domain has
-not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to 307), `SystemGateway` fifth (307 to **220**); the
+not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to 307), `SystemGateway` fifth (307 to 220), `DocumentsGateway` sixth (220 to **142**); the
 file is deleted when the last domain leaves. New code reaches for the gateway if its domain has one,
 and for `DbService` only if it does not yet.
 
@@ -216,6 +216,12 @@ and for `DbService` only if it does not yet.
 documents, dashboard and jobs read it, so it goes to the system gateway rather than being duplicated
 into each domain that happens to key a cache on it. A service migrated before then injects both, and
 says so where it injects them.
+
+**Add the new token to every spec and test helper that provides `DbService`, not to a filtered
+subset.** Four provider shapes exist - a named stub, a multi-line inline literal, a **single-line**
+inline literal, and a shared `*.harness.ts` that is not a `.spec.ts` at all - and the documents
+migration was broken once by each of the last two. Grep for `provide: DbService` across `*.ts`, not
+for method names and not for `*.spec.ts` only.
 
 **Check what a spec provides for before swapping its token.** A spec provides for the subject's
 whole dependency graph, not for the subject alone: `geo-target.store.spec.ts` provides `DbService`

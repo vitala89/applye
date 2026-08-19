@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvContent, CvParsedContent } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { OnboardingFinishStore } from './onboarding-finish.store';
 import { OnboardingResumeStore } from './onboarding-resume.store';
 import { OnboardingReviewStore } from './onboarding-review.store';
@@ -33,23 +33,24 @@ describe('OnboardingFinishStore', () => {
     documentLibraryList = jest.fn().mockResolvedValue([]);
     documentLibraryUpsert = jest.fn().mockResolvedValue({ id: 1 });
 
+    // One stub, two tokens - the document library and its exports come from
+    // `DocumentsGateway` now; the rest of this stub is still `DbService`'s.
+    const docsStub = {
+      getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),
+      getProfile: jest.fn().mockResolvedValue(null),
+      upsertProfile: jest.fn().mockResolvedValue({ id: 1 }),
+      cvTemplatesList: jest.fn().mockResolvedValue([]),
+      documentLibraryList,
+      documentLibraryUpsert,
+    };
     TestBed.configureTestingModule({
       providers: [
         OnboardingFinishStore,
         OnboardingResumeStore,
         OnboardingReviewStore,
         OnboardingTargetingStore,
-        {
-          provide: DbService,
-          useValue: {
-            getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),
-            getProfile: jest.fn().mockResolvedValue(null),
-            upsertProfile: jest.fn().mockResolvedValue({ id: 1 }),
-            cvTemplatesList: jest.fn().mockResolvedValue([]),
-            documentLibraryList,
-            documentLibraryUpsert,
-          },
-        },
+        { provide: DbService, useValue: docsStub },
+        { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
       ],
     });

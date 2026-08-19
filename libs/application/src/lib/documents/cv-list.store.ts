@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Application, CvTemplate, DocumentLibraryItem, Job } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 
 /**
  * The CV library: the documents, the templates every creation flow picks from,
@@ -23,6 +23,7 @@ import { DbService } from '@applye/data';
 @Injectable()
 export class CvListStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
 
   readonly cvs = signal<DocumentLibraryItem[]>([]);
   readonly templates = signal<CvTemplate[]>([]);
@@ -46,8 +47,8 @@ export class CvListStore {
     this.error.set('');
     try {
       const [cvs, templates, jobs, applications] = await Promise.all([
-        this.db.documentLibraryList('cv'),
-        this.db.cvTemplatesList(),
+        this.docs.documentLibraryList('cv'),
+        this.docs.cvTemplatesList(),
         this.db.listJobs(),
         this.db.listApplications(),
       ]);
@@ -81,7 +82,7 @@ export class CvListStore {
   async duplicate(item: DocumentLibraryItem, label: string): Promise<boolean> {
     this.error.set('');
     try {
-      await this.db.documentLibraryUpsert({
+      await this.docs.documentLibraryUpsert({
         docType: 'cv',
         source: item.source,
         label,
@@ -119,9 +120,9 @@ export class CvListStore {
     this.exportBusyId.set(item.id);
     try {
       if (format === 'pdf') {
-        await this.db.cvDocumentExportPdfWysiwyg(item.id, path);
+        await this.docs.cvDocumentExportPdfWysiwyg(item.id, path);
       } else {
-        await this.db.cvDocumentExport(item.id, format, path);
+        await this.docs.cvDocumentExport(item.id, format, path);
       }
       return true;
     } catch (e) {
@@ -147,7 +148,7 @@ export class CvListStore {
     if (!item || this.deleting()) return null;
     this.deleting.set(true);
     try {
-      await this.db.documentLibraryDelete(item.id);
+      await this.docs.documentLibraryDelete(item.id);
       this.deleteTarget.set(null);
       await this.load();
       return true;

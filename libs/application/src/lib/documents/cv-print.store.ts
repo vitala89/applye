@@ -9,7 +9,7 @@ import {
   type CvStyle,
   type PhotoPlacement,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 
 /**
  * What the hidden print window renders for a CV, and the one call that tells
@@ -21,7 +21,7 @@ import { DbService } from '@applye/data';
  */
 @Injectable()
 export class CvPrintStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
 
   readonly loaded = signal(false);
   readonly sections = signal<CvSection[]>([]);

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AiService, DbService, KeysService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, KeysService } from '@applye/data';
 import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
 import { OnboardingAiSetupStore } from './onboarding-ai-setup.store';
 import { OnboardingCliBridgeStore } from './onboarding-cli-bridge.store';
@@ -14,12 +14,15 @@ describe('OnboardingAiSetupStore', () => {
     getSettings = jest.fn().mockResolvedValue({ aiMode: 'api', provider: 'claude' });
     updateSettings = jest.fn().mockResolvedValue({});
 
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = { getSettings, updateSettings };
     TestBed.configureTestingModule({
       providers: [
         OnboardingAiKeyStore,
         OnboardingAiSetupStore,
         OnboardingCliBridgeStore,
-        { provide: DbService, useValue: { getSettings, updateSettings } },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: { probeClis: jest.fn().mockResolvedValue([]) } },
         { provide: KeysService, useValue: { hasProviderKey: jest.fn().mockResolvedValue(false) } },
       ],

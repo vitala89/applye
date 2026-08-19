@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, JobsStore } from '@applye/data';
+import { DbService, DocumentsGateway, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../shell/toast.service';
 import { JobActionsService } from './job-actions.service';
@@ -65,6 +65,7 @@ describe('JobActionsService', () => {
         JobActionsService,
         TranslateService,
         { provide: DbService, useValue: db },
+        { provide: DocumentsGateway, useValue: db },
         { provide: JobsStore, useValue: store },
         { provide: ToastService, useValue: toast },
         {

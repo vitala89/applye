@@ -5,7 +5,7 @@ import {
   encodeGeoScopes,
   encodeLocalMarkets,
 } from '@applye/core';
-import { DbService, DiscoverGateway, KeysService } from '@applye/data';
+import { DbService, DiscoverGateway, DocumentsGateway, KeysService } from '@applye/data';
 import { GeoTargetStore } from './geo-target.store';
 import { SettingsStore } from './settings.store';
 
@@ -33,6 +33,7 @@ function createStore(row: Partial<Settings> = {}, over: Record<string, jest.Mock
       // `DiscoverGateway`, and its `SettingsStore` dependency still writes
       // settings through `DbService`, which has not moved.
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
       { provide: DiscoverGateway, useValue: db },
       { provide: KeysService, useValue: {} },
     ],

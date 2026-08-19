@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Settings } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { ShellStore } from './shell.store';
 
 const SIDEBAR_KEY = 'applye.sidebar.collapsed';
@@ -12,7 +12,11 @@ function createStore(getSettings: jest.Mock) {
   const db = { getSettings };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [ShellStore, { provide: DbService, useValue: db }],
+    providers: [
+      ShellStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(ShellStore), db };
 }

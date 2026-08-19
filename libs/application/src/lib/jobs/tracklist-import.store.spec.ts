@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { ImportPreviewRow } from '@applye/core';
-import { AiService, DbService, SystemGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
 import { TracklistImportStore } from './tracklist-import.store';
 
 const preview = (over: Partial<ImportPreviewRow> = {}): ImportPreviewRow =>
@@ -58,6 +58,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
     providers: [
       TracklistImportStore,
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
       { provide: AiService, useValue: ai },
     ],

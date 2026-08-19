@@ -179,7 +179,7 @@ they read as engineering discipline in the public history later.
 
 - After scaffolding compiles/runs.
 - After each table+migration set works.
-- After each Tauri command + its `DbService` wrapper round-trips.
+- After each Tauri command + its gateway wrapper round-trips.
 - After each screen matches the design and is wired.
 - After tokens are extracted into `libs/ui`.
 - Before AND after any risky change (so you can revert cleanly).

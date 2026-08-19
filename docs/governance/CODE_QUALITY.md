@@ -177,7 +177,9 @@ take the page, move its state into stores, and the budgets converge as a consequ
 
 **The enforcement is switched on for components, and the migration it ratcheted is finished.**
 `eslint.config.mjs` carries a `no-restricted-syntax` rule over `*.component.ts` and `app.ts`: injecting
-`DbService`, `AiService` or `JobSourceService` is an **error**, with no exceptions. The rule began as a
+`AiService`, `JobSourceService` or **any `*Gateway`** is an **error**, with no exceptions. It listed
+`DbService` by name until the eight-gateway migration deleted that class; a list would have gone stale
+once per gateway, so it matches `[A-Za-z]+Gateway` (ADR-0005, amendment sixty-five). The rule began as a
 ratchet with an allowlist of 26 components; every migrated page deleted its own line, `jobs` deleted the
 last one, and `COMPONENTS_STILL_USING_THE_GATEWAY` is gone with it (ADR-0005, amendment fifty-six).
 
@@ -253,7 +255,7 @@ providers whose spec named none of the six methods; two of them were live, and s
 the check said otherwise. Removing a provider is only safe with the suite as the evidence.
 
 **Check what a spec provides for before swapping its token.** A spec provides for the subject's
-whole dependency graph, not for the subject alone: `geo-target.store.spec.ts` provides `DbService`
+whole dependency graph, not for the subject alone: `geo-target.store.spec.ts` provided the old token
 for its `SettingsStore`, and `tracker-report.store.spec.ts` for its `TrackerRowsStore`. Both broke
 when the token was swapped wholesale, in two separate pull requests. Where both are genuinely
 needed, provide **one stub object under both tokens** rather than two fakes.

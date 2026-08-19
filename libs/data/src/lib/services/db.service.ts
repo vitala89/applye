@@ -16,13 +16,6 @@ import {
   PipelineCard,
   Priority,
 } from '@applye/core';
-import {
-  CreateInterviewStageInput,
-  InterviewPrep,
-  InterviewStage,
-  SaveInterviewPrepBatchInput,
-  UpdateInterviewStageInput,
-} from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import {
@@ -192,6 +185,13 @@ export class DbService {
     return tauriInvoke<ScoringCache>('score_cache_save', { input });
   }
 
+  /** Hard delete - removes the job and every dependent row (applications,
+   *  scoring, tailoring, interview data). Irreversible; caller must confirm
+   *  with the user first. */
+  async deleteJob(id: number): Promise<void> {
+    return tauriInvoke<void>('db_delete_job', { id });
+  }
+
   // --- Applications ---
   async listApplications(): Promise<Application[]> {
     return tauriInvoke<Application[]>('db_list_applications');
@@ -234,44 +234,6 @@ export class DbService {
   /** Oldest → newest, for the quick-view comment feed. */
   async listApplicationComments(applicationId: number): Promise<Comment[]> {
     return tauriInvoke<Comment[]>('list_application_comments', { applicationId });
-  }
-
-  // --- Interview stages ---
-  async createInterviewStage(input: CreateInterviewStageInput): Promise<InterviewStage> {
-    return tauriInvoke<InterviewStage>('create_interview_stage', { input });
-  }
-
-  /** Partial patch - only stageId is required; other fields keep their current value. */
-  async updateInterviewStage(input: UpdateInterviewStageInput): Promise<InterviewStage> {
-    return tauriInvoke<InterviewStage>('update_interview_stage', { input });
-  }
-
-  async deleteInterviewStage(stageId: number): Promise<void> {
-    return tauriInvoke<void>('delete_interview_stage', { stageId });
-  }
-
-  /** Hard delete - removes the job and every dependent row (applications,
-   *  scoring, tailoring, interview data). Irreversible; caller must confirm
-   *  with the user first. */
-  async deleteJob(id: number): Promise<void> {
-    return tauriInvoke<void>('db_delete_job', { id });
-  }
-
-  /** Ordered by id ascending - insertion order across every generated batch. */
-  async listInterviewPrep(stageId: number): Promise<InterviewPrep[]> {
-    return tauriInvoke<InterviewPrep[]>('list_interview_prep', { stageId });
-  }
-
-  /** Inserts one row per card, all sharing inputHash. The caller checks
-   *  listInterviewPrep for an existing hash before calling AI at all - this
-   *  command never dedupes, so it must not be called on a cache hit. */
-  async saveInterviewPrepBatch(input: SaveInterviewPrepBatchInput): Promise<InterviewPrep[]> {
-    return tauriInvoke<InterviewPrep[]>('save_interview_prep_batch', { input });
-  }
-
-  /** Ordered by stageOrder ascending. */
-  async listInterviewStages(applicationId: number): Promise<InterviewStage[]> {
-    return tauriInvoke<InterviewStage[]>('list_interview_stages', { applicationId });
   }
 
   // --- Documents library (CV / Cover Letter) ---

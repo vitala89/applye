@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Application, ApplicationStatus, InterviewStage, PipelineCard } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 import { PipelineStore } from './pipeline.store';
 
 const COLUMNS: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected', 'cancelled'];
@@ -25,7 +25,11 @@ function createStore(cards: PipelineCard[], over: Partial<Record<string, jest.Mo
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [PipelineStore, { provide: DbService, useValue: db }],
+    providers: [
+      PipelineStore,
+      { provide: DbService, useValue: db },
+      { provide: InterviewGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(PipelineStore), db };
 }

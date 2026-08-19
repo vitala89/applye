@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { InterviewStage, StageType } from '@applye/core';
-import { DbService } from '@applye/data';
+import { InterviewGateway } from '@applye/data';
 
 /** The stage types the quick-add form offers, in the order it offers them. */
 export const STAGE_TYPES: StageType[] = [
@@ -30,7 +30,7 @@ export const STAGE_TYPES: StageType[] = [
  */
 @Injectable()
 export class StageQuickAddStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(InterviewGateway);
 
   readonly stageType = signal<StageType>('hr_screen');
   readonly stageLabel = signal('');

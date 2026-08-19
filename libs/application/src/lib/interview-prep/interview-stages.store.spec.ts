@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { InterviewStage } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 import { InterviewStagesStore } from './interview-stages.store';
 
 const stage = (over: Partial<InterviewStage> = {}): InterviewStage =>
@@ -29,7 +29,11 @@ function createStore(over: Record<string, jest.Mock> = {}, stages: InterviewStag
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [InterviewStagesStore, { provide: DbService, useValue: db }],
+    providers: [
+      InterviewStagesStore,
+      { provide: DbService, useValue: db },
+      { provide: InterviewGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(InterviewStagesStore), db };
 }

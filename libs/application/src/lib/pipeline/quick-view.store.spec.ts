@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Application, Comment, InterviewStage } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 import { QuickViewStore } from './quick-view.store';
 
 const comment = (over: Partial<Comment> = {}): Comment =>
@@ -26,7 +26,11 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [QuickViewStore, { provide: DbService, useValue: db }],
+    providers: [
+      QuickViewStore,
+      { provide: DbService, useValue: db },
+      { provide: InterviewGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(QuickViewStore), db };
 }

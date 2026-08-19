@@ -109,8 +109,8 @@
 - **The file-size stream moved to the CV detail cluster, which is where the remaining debt is
   concentrated.** **`db.service.ts` is now being cut into eight per-domain gateways**, one pull
   request each, smallest domain first - the maintainer superseded the recorded "not before the
-  ratchet refuses" rule on 2026-08-19. `DraftsGateway` was first (461 to 426) and `DiscoverGateway`
-  second: **426 to 381/400**, so the file is **under budget** from the second of eight pull requests
+  ratchet refuses" rule on 2026-08-19. `DraftsGateway` was first (461 to 426), `DiscoverGateway`
+  second (426 to 381) and `InterviewGateway` third: **381 to 349/400**, so the file is **under budget** from the second of eight pull requests
   - six earlier than the ratchet would have forced it. The order of the rest was re-judged on files
     touched rather than method count, which are almost uncorrelated: profile and settings is seven
     methods and sixty-eight files and now goes last. The file-size stream is otherwise

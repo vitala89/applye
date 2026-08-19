@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { InterviewStage, InterviewStageStatus, PipelineCard } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, InterviewGateway } from '@applye/data';
 import { type StageFormValue, emptyStageForm, stageGatewayFields } from './interview-stage-form';
 
 /**
@@ -21,6 +21,9 @@ import { type StageFormValue, emptyStageForm, stageGatewayFields } from './inter
 @Injectable()
 export class InterviewStagesStore {
   private readonly db = inject(DbService);
+  /** Every stage operation comes from `InterviewGateway`; `db` stays for the
+   * cards this store reads to find the application. */
+  private readonly interview = inject(InterviewGateway);
 
   /** Set by `load`, so `create` does not need it threaded through. Routing
    * stays on the page: it reads the route and hands the id over. */
@@ -49,7 +52,7 @@ export class InterviewStagesStore {
     try {
       const [cards, stages] = await Promise.all([
         this.db.listPipelineCards(),
-        this.db.listInterviewStages(id),
+        this.interview.listInterviewStages(id),
       ]);
       this.application.set(cards.find((c) => c.id === id) ?? null);
       this.stages.set(stages);
@@ -120,7 +123,7 @@ export class InterviewStagesStore {
     try {
       if (this.modalMode() === 'add') {
         const nextOrder = this.stages().reduce((max, s) => Math.max(max, s.stageOrder), 0) + 1;
-        const stage = await this.db.createInterviewStage({
+        const stage = await this.interview.createInterviewStage({
           applicationId: this.applicationId(),
           stageOrder: nextOrder,
           ...stageGatewayFields(form, label),
@@ -129,7 +132,7 @@ export class InterviewStagesStore {
       } else {
         const id = this.editingId();
         if (id == null) return null;
-        const updated = await this.db.updateInterviewStage({
+        const updated = await this.interview.updateInterviewStage({
           stageId: id,
           ...stageGatewayFields(form, label),
         });
@@ -161,7 +164,7 @@ export class InterviewStagesStore {
     this.error.set('');
     if (status === stage.status) return null;
     try {
-      const updated = await this.db.updateInterviewStage({ stageId: stage.id, status });
+      const updated = await this.interview.updateInterviewStage({ stageId: stage.id, status });
       this.stages.set(this.stages().map((s) => (s.id === stage.id ? updated : s)));
       return true;
     } catch (e) {
@@ -186,7 +189,7 @@ export class InterviewStagesStore {
     const stage = this.confirmStage();
     if (!stage) return null;
     try {
-      await this.db.deleteInterviewStage(stage.id);
+      await this.interview.deleteInterviewStage(stage.id);
       this.stages.set(this.stages().filter((s) => s.id !== stage.id));
       return true;
     } catch (e) {
@@ -222,8 +225,8 @@ export class InterviewStagesStore {
     this.error.set('');
     try {
       const [updatedA, updatedB] = await Promise.all([
-        this.db.updateInterviewStage({ stageId: stageA.id, stageOrder: stageB.stageOrder }),
-        this.db.updateInterviewStage({ stageId: stageB.id, stageOrder: stageA.stageOrder }),
+        this.interview.updateInterviewStage({ stageId: stageA.id, stageOrder: stageB.stageOrder }),
+        this.interview.updateInterviewStage({ stageId: stageB.id, stageOrder: stageA.stageOrder }),
       ]);
       const next = [...list];
       next[a] = updatedB;

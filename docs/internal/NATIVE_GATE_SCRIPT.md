@@ -33,11 +33,19 @@ pgrep -fl "tauri dev"
 ```
 
 Nothing should print. Then take a copy of the database you actually use, because station 0 deletes
-it and station 1 overwrites it:
+it and station 1 overwrites it.
+
+**Copy it with `sqlite3`, not with `cp`.** The database runs in WAL mode, so recent writes live in
+`applye.db-wal` and not in `applye.db` - copying the one file alone can hand you a backup that is
+almost empty while the real data sits in the journal beside it. This is not hypothetical: it happened
+on the 2026-08-20 walk, and produced a 4 KB "backup" of a 1.6 MB database.
 
 ```bash
-cp -v ~/Library/"Application Support"/dev.applye.app/applye.db ~/Desktop/applye-backup-$(date +%Y%m%d-%H%M).db
+sqlite3 ~/Library/"Application Support"/dev.applye.app/applye.db ".backup '$HOME/Desktop/applye-backup-$(date +%Y%m%d-%H%M).db'"
 ```
+
+`.backup` checkpoints the journal into the copy, so the result is one self-contained file. Check the
+size before trusting it - a backup far smaller than the original means the journal was not folded in.
 
 Two commands you will use repeatedly:
 
@@ -312,15 +320,24 @@ Covers **D** (1 of 2). Free, and it is a real bug's regression check.
 Open an application with **no stages**: the quick-add form is offered. Then make the stage read
 **fail** - quit the app, move the database aside, relaunch, and open the panel:
 
+**Hiding the whole database does not produce this state, and the instruction to do so was wrong.**
+With no database the app makes an empty one, so there is no application to open the panel on - the
+check cannot run at all. That is how the 2026-08-20 walk lost two stations to it.
+
+What the check needs is an application that **exists** while the stage read **fails**. Rename the one
+table, with the app quit:
+
 ```bash
-mv ~/Library/"Application Support"/dev.applye.app/applye.db /tmp/applye-hidden.db
+sqlite3 ~/Library/"Application Support"/dev.applye.app/applye.db "ALTER TABLE interview_stages RENAME TO interview_stages_hidden;"
 ```
 
 The panel shows **the failure and does not offer the form**. Accepting the form there would have
 written a duplicate first stage, which is the bug that was fixed. Put it back:
 
+Quit the app, then put the table back:
+
 ```bash
-mv /tmp/applye-hidden.db ~/Library/"Application Support"/dev.applye.app/applye.db
+sqlite3 ~/Library/"Application Support"/dev.applye.app/applye.db "ALTER TABLE interview_stages_hidden RENAME TO interview_stages;"
 ```
 
 → D "the interview stage panel".
@@ -355,17 +372,31 @@ Both wipe data the earlier stations depended on.
 
 Restore your own database when the pass is over:
 
+Quit the app first. **Name the backup file explicitly rather than using a glob** - the wildcard
+expands in alphabetical order, so a later, smaller or accidental backup wins over the one you want,
+and you overwrite good data with it. Delete the journal too, or SQLite replays the walk's writes over
+the file you just restored.
+
 ```bash
-cp -v ~/Desktop/applye-backup-*.db ~/Library/"Application Support"/dev.applye.app/applye.db
+rm -f ~/Library/"Application Support"/dev.applye.app/applye.db* && cp -v ~/Desktop/applye-backup-<the-one-you-made>.db ~/Library/"Application Support"/dev.applye.app/applye.db
 ```
 
 ## Station 14. Release - separate machine state
 
-Covers **E** (1). Not part of the sitting above: it needs an installed `0.29.1`, not a dev build.
+Covers **E** (1). Not part of the sitting above: it needs an **installed** build, not a dev one.
 
-Install `0.29.1` from its dmg, launch it, and **let it offer the `0.29.2` update**. Take the update.
-The signature chain and the manifest were both verified mechanically; what has never happened is an
-update being _taken_. → E.
+**This station cannot run as originally written, and it is nobody's fault but the release history.**
+It said to install `0.29.1` and let it offer `0.29.2`. That draft release was deleted as superseded -
+only its tag remains - so there is nothing to install, and the copy that exists locally is the broken
+build that would not open, which is why it was superseded in the first place.
+
+**Deferred to the next release, deliberately.** When `0.29.3` ships, install the published `0.29.2`,
+launch it, and **let it offer the `0.29.3` update**. Take the update. The signature chain and the
+manifest have both been verified mechanically; what has never happened is an update being _taken_,
+and that is the whole point of the check.
+
+Doing it this way is also a better test than the original: it upgrades **from a release that is
+actually published**, which is the path a real user is on. → E.
 
 ## Coverage
 

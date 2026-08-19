@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { AnalyticsFacts, Job, JobOverview, ScoringCache } from '@applye/core';
-import { ImportPreviewRow, ImportRawRow, ImportResult } from '@applye/core';
 import {
   Application,
   ApplicationStatus,
@@ -20,8 +19,6 @@ import {
   UpsertCvTemplateInput,
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
-import { GeneratedDoc } from '@applye/core';
-import { HealthReport } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /** Typed wrappers over the Rust db_* commands. The frontend stays SQL-free. */
@@ -47,10 +44,6 @@ export class DbService {
    * `upsertProfile` so an ordinary profile save cannot wipe it. */
   async setProfilePhoto(photoDataUri: string | null): Promise<Profile> {
     return tauriInvoke<Profile>('db_set_profile_photo', { photoDataUri });
-  }
-
-  hashText(text: string): Promise<string> {
-    return tauriInvoke<string>('hash_text', { text });
   }
 
   /** Layer-1 archetype overlap (0 tokens). True = on-archetype or no archetypes defined. */
@@ -262,89 +255,5 @@ export class DbService {
    * array when `styleJson` is unset or already at the safe default. */
   async checkStyleSafety(styleJson?: string): Promise<StyleNote[]> {
     return tauriInvoke<StyleNote[]>('check_style_safety', { styleJson });
-  }
-
-  // --- Document export ---
-  async generatedDocGet(
-    jobId: number,
-    inputHash: string,
-    exportFormat: string,
-  ): Promise<GeneratedDoc | null> {
-    return tauriInvoke<GeneratedDoc | null>('generated_doc_get', {
-      jobId,
-      inputHash,
-      exportFormat,
-    });
-  }
-
-  async exportDocx(
-    jobId: number,
-    contentMd: string,
-    company: string,
-    jobTitle: string,
-    inputHash: string,
-  ): Promise<GeneratedDoc> {
-    return tauriInvoke<GeneratedDoc>('export_docx', {
-      jobId,
-      contentMd,
-      company,
-      jobTitle,
-      inputHash,
-    });
-  }
-
-  async exportPdf(
-    jobId: number,
-    contentMd: string,
-    company: string,
-    jobTitle: string,
-    inputHash: string,
-  ): Promise<GeneratedDoc> {
-    return tauriInvoke<GeneratedDoc>('export_pdf', {
-      jobId,
-      contentMd,
-      company,
-      jobTitle,
-      inputHash,
-    });
-  }
-
-  openFile(path: string): Promise<void> {
-    return tauriInvoke<void>('open_file', { path });
-  }
-
-  revealInFolder(path: string): Promise<void> {
-    return tauriInvoke<void>('reveal_in_folder', { path });
-  }
-
-  // --- Backup / export ---
-  async exportDatabase(targetPath: string): Promise<string> {
-    return tauriInvoke<string>('db_export', { targetPath });
-  }
-
-  // --- Import tracklist (Phase 6.4) ---
-  importReadFile(path: string): Promise<{ fileType: string; content: string }> {
-    return tauriInvoke<{ fileType: string; content: string }>('import_read_file', { path });
-  }
-
-  importPreview(rows: ImportRawRow[]): Promise<ImportPreviewRow[]> {
-    return tauriInvoke<ImportPreviewRow[]>('import_preview', { rows });
-  }
-
-  importConfirm(
-    rows: ImportRawRow[],
-    importedFrom: string,
-    followupDaysAfterApply: number,
-  ): Promise<ImportResult> {
-    return tauriInvoke<ImportResult>('import_confirm', {
-      rows,
-      importedFrom,
-      followupDaysAfterApply,
-    });
-  }
-
-  // --- Health check (Phase 6.7) ---
-  healthCheck(): Promise<HealthReport> {
-    return tauriInvoke<HealthReport>('health_check');
   }
 }

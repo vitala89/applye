@@ -11,7 +11,7 @@ import {
   scoringState as computeScoringState,
   serializeArchetypes,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { ProfileFormStore } from './profile-form.store';
 
 /** Every collapsible section on the profile page. */
@@ -41,6 +41,7 @@ export type ProfileSectionKey =
 @Injectable()
 export class ProfileStore {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   readonly editor = inject(ProfileFormStore);
 
   readonly profile = signal<Profile | null>(null);
@@ -176,7 +177,7 @@ export class ProfileStore {
       return;
     }
     try {
-      this.savedMdHash.set(await this.db.hashText(text));
+      this.savedMdHash.set(await this.system.hashText(text));
     } catch {
       this.savedMdHash.set(null);
     }
@@ -212,7 +213,7 @@ export class ProfileStore {
   /** IPC, so it cannot live in a computed. Used by the artefact store to key
    * its cache on exactly the text it is about to send. */
   hashText(text: string): Promise<string> {
-    return this.db.hashText(text);
+    return this.system.hashText(text);
   }
 
   /** Saves the form. Returns false on failure, with `error` filled. */

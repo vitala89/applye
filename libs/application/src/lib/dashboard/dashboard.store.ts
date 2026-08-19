@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { JobOverview, PipelineCard, Profile } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { MS_HOUR, SOON_HOURS, monogram, scheduledMs, whenLabel } from './dashboard.util';
 
 /** One upcoming interview, ready for the list to render. */
@@ -36,6 +36,7 @@ export type ProgressJobId = () => number | null | undefined;
 @Injectable()
 export class DashboardStore {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
 
   readonly loading = signal(true);
   readonly cards = signal<PipelineCard[]>([]);
@@ -76,7 +77,7 @@ export class DashboardStore {
       this.profile.set(profile);
       this.resumeJobLabel.set(await this.describeProgressJob(overview, progressJobId()));
       const text = (profile?.fullMd ?? '').trim();
-      this.savedMdHash.set(text ? await this.db.hashText(text) : null);
+      this.savedMdHash.set(text ? await this.system.hashText(text) : null);
       this.now.set(Date.now());
       return true;
     } catch {

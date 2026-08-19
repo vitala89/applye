@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { CvSectionKey, Settings } from '@applye/core';
 import { mergeRegeneratedSection, parseCvSkillResponse } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, SystemGateway } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import {
   CvNoProfileError,
@@ -31,6 +31,7 @@ const MAX_TOKENS = 8192;
 @Injectable()
 export class CvRegenerationStore {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly document = inject(CvDocumentStore);
 
@@ -84,7 +85,7 @@ export class CvRegenerationStore {
       const regionTag = this.document.regionTag();
       const archetypeTag = doc.archetypeTag ?? 'generalist';
 
-      const sourceHash = await this.db.hashText(
+      const sourceHash = await this.system.hashText(
         regenerationHashInput(profile.fullMd, regionTag, archetypeTag, language, key),
       );
       // Same inputs as last time: the model would return the same section, so

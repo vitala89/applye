@@ -14,7 +14,7 @@ import {
 } from '@applye/core';
 
 import { GapFillHooks, foldInGapAnswers, saveBlockBestEffort } from './gap-fill';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
@@ -116,6 +116,7 @@ export function applyDateAnswers(parsed: ParsedCv, answers: CvGapAnswer[]): void
 @Injectable()
 export class CvDraftService {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly docGen = inject(DocumentGenService);
   private readonly gapSvc = inject(CvGapDialogService);
@@ -134,7 +135,7 @@ export class CvDraftService {
     try {
       const app = await ctx.ensureApplication();
       const cvSourceText = await foldInGapAnswers(ctx.tailoredMd, ctx, this.gapSvc.analyzing);
-      const inputHash = await this.db.hashText(
+      const inputHash = await this.system.hashText(
         cvDraftHashInput(jobId, ctx.tailoredMd, ctx.language, ctx.region),
       );
       const parsed = await this.structure(ctx, cvSourceText);

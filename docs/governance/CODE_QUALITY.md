@@ -208,7 +208,7 @@ Ordering by method count would have put the largest migration second. Re-measure
 request rather than trusting this list, since every migration changes it.
 
 **So `DbService` is a shrinking remainder, not a home.** A method still on it means its domain has
-not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to **307**); the
+not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to 307), `SystemGateway` fifth (307 to **220**); the
 file is deleted when the last domain leaves. New code reaches for the gateway if its domain has one,
 and for `DbService` only if it does not yet.
 

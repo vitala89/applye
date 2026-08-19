@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { exportFileName } from './export-filename';
 import { TranslateService } from '@applye/i18n';
@@ -27,6 +27,7 @@ export interface LastExport {
 @Injectable()
 export class DocumentExportService {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   private readonly i18n = inject(TranslateService);
 
   private readonly t = this.i18n.t;
@@ -102,11 +103,11 @@ export class DocumentExportService {
   }
 
   openFile(path: string): void {
-    void this.db.openFile(path);
+    void this.system.openFile(path);
   }
 
   revealFile(path: string): void {
-    void this.db.revealInFolder(path);
+    void this.system.revealInFolder(path);
   }
 
   /** Suggested save name - see `export-filename.ts` for the rule and why. */

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { WizardProgressService } from '@applye/application';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
@@ -59,20 +59,21 @@ describe('DashboardComponent list panels', () => {
     sessionStorage.clear();
     navigate = jest.fn();
     TestBed.resetTestingModule();
+    // One stub, two tokens - `SystemGateway` now serves the shared
+    // operations, and the rest of this stub is still `DbService`'s.
+    const dbStub = {
+      listPipelineCards: jest.fn().mockResolvedValue(cards),
+      listJobsOverview: jest.fn().mockResolvedValue(jobs),
+      getProfile: jest.fn().mockResolvedValue({ id: 1, fullMd: '# Someone' }),
+      hashText: jest.fn().mockResolvedValue('hash'),
+      getJob: jest.fn().mockResolvedValue(null),
+    };
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
         provideRouter([]),
-        {
-          provide: DbService,
-          useValue: {
-            listPipelineCards: jest.fn().mockResolvedValue(cards),
-            listJobsOverview: jest.fn().mockResolvedValue(jobs),
-            getProfile: jest.fn().mockResolvedValue({ id: 1, fullMd: '# Someone' }),
-            hashText: jest.fn().mockResolvedValue('hash'),
-            getJob: jest.fn().mockResolvedValue(null),
-          },
-        },
+        { provide: DbService, useValue: dbStub },
+        { provide: SystemGateway, useValue: dbStub },
         { provide: PasteJobModalService, useValue: { open: jest.fn() } },
         TranslateService,
         WizardProgressService,
@@ -225,20 +226,21 @@ describe('DashboardComponent KPI tiles and queue', () => {
   async function mount(cards: Record<string, unknown>[] = []): Promise<void> {
     sessionStorage.clear();
     TestBed.resetTestingModule();
+    // One stub, two tokens - `SystemGateway` now serves the shared
+    // operations, and the rest of this stub is still `DbService`'s.
+    const dbStub2 = {
+      listPipelineCards: jest.fn().mockResolvedValue(cards),
+      listJobsOverview: jest.fn().mockResolvedValue([]),
+      getProfile: jest.fn().mockResolvedValue({ id: 1, fullMd: '# Someone' }),
+      hashText: jest.fn().mockResolvedValue('hash'),
+      getJob: jest.fn().mockResolvedValue(null),
+    };
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
         provideRouter([]),
-        {
-          provide: DbService,
-          useValue: {
-            listPipelineCards: jest.fn().mockResolvedValue(cards),
-            listJobsOverview: jest.fn().mockResolvedValue([]),
-            getProfile: jest.fn().mockResolvedValue({ id: 1, fullMd: '# Someone' }),
-            hashText: jest.fn().mockResolvedValue('hash'),
-            getJob: jest.fn().mockResolvedValue(null),
-          },
-        },
+        { provide: DbService, useValue: dbStub2 },
+        { provide: SystemGateway, useValue: dbStub2 },
         { provide: PasteJobModalService, useValue: { open: jest.fn() } },
         TranslateService,
         WizardProgressService,

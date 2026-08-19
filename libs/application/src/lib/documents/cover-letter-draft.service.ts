@@ -11,7 +11,7 @@ import {
   SupportedLanguage,
   cleanJsonText,
 } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, SystemGateway } from '@applye/data';
 
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
@@ -76,6 +76,7 @@ export interface CoverLetterDraftResult {
 @Injectable()
 export class CoverLetterDraftService {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly docGen = inject(DocumentGenService);
   private readonly gapSvc = inject(CvGapDialogService);
@@ -136,7 +137,7 @@ export class CoverLetterDraftService {
     // Keyed on the profile as saved, not on the gap-augmented text, so
     // answering the dialog does not make an otherwise identical run look like a
     // different input - the same rule the CV draft follows.
-    const inputHash = await this.db.hashText(
+    const inputHash = await this.system.hashText(
       coverLetterDraftHashInput(
         ctx.job.id as number,
         ctx.profile.fullMd,

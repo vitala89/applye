@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { Settings, SupportedLanguage } from '@applye/core';
 import { parseCoverLetterResponse } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, SystemGateway } from '@applye/data';
 import { CoverLetterContentStore } from './cover-letter-content.store';
 import { CoverLetterDocumentStore } from './cover-letter-document.store';
 import {
@@ -36,6 +36,7 @@ import {
 @Injectable()
 export class CoverLetterAiStore {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly letter = inject(CoverLetterContentStore);
   private readonly document = inject(CoverLetterDocumentStore);
@@ -131,7 +132,7 @@ export class CoverLetterAiStore {
       if (!profile?.fullMd) throw new CoverLetterNoProfileError();
 
       const ctx = this.context(doc.language, settings);
-      const sourceHash = await this.db.hashText(
+      const sourceHash = await this.system.hashText(
         coverLetterHashInput(
           profile.fullMd,
           ctx.jobDescription,

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { DashboardStore } from '@applye/application';
 import { DashboardComponent } from './dashboard.component';
@@ -76,6 +76,7 @@ describe('DashboardComponent resume card', () => {
       providers: [
         provideRouter([]),
         { provide: DbService, useValue: dbStub },
+        { provide: SystemGateway, useValue: dbStub },
         { provide: PasteJobModalService, useValue: { open: jest.fn() } },
         TranslateService,
         WizardProgressService,

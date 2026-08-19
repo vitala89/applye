@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { LinkedDocumentsService } from './linked-documents.service';
 
 describe('LinkedDocumentsService', () => {
@@ -40,7 +40,11 @@ describe('LinkedDocumentsService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [LinkedDocumentsService, { provide: DbService, useValue: db }],
+      providers: [
+        LinkedDocumentsService,
+        { provide: DbService, useValue: db },
+        { provide: SystemGateway, useValue: db },
+      ],
     });
     svc = TestBed.inject(LinkedDocumentsService);
   });

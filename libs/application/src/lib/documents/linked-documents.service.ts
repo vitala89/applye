@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application, DocumentLibraryItem, SupportedLanguage } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ReviewDocumentKind } from './document-gen.service';
 
@@ -25,6 +25,7 @@ export interface LinkResult {
 @Injectable()
 export class LinkedDocumentsService {
   private readonly db = inject(DbService);
+  private readonly system = inject(SystemGateway);
   private readonly t = inject(TranslateService).t;
 
   /** Writable so the page can alias them straight onto the template. */
@@ -126,6 +127,6 @@ export class LinkedDocumentsService {
   async isStale(kind: ReviewDocumentKind, hashInput: string): Promise<boolean> {
     const doc = this.current(kind);
     if (!doc) return false;
-    return (await this.db.hashText(hashInput)) !== doc.inputHash;
+    return (await this.system.hashText(hashInput)) !== doc.inputHash;
   }
 }

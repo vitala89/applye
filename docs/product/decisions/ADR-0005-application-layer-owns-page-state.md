@@ -3504,6 +3504,33 @@ that was already in those lines. Seven mutations, all killed; the one needing a 
 `setSectionStyle` bypassing `applyStyle`, which still writes the right style and only loses the
 debounced ATS re-check, so nothing asserting the result could see it.
 
+## Amendment sixty-five: `DbService` is deleted, and the lint rule stops naming a class that no longer exists
+
+**Done: the eight-gateway migration is finished.** `ProfileSettingsGateway` took the last six methods
+and `libs/data/src/lib/services/db.service.ts` was deleted with its barrel export. The file was 461
+lines when the migration started on 2026-08-19 and reached 0 in eight pull requests, #484 through
+#492, one domain each and none of them leaving a gateway delegating back.
+
+**The finding that belongs in this ADR is what that did to amendment fifty-six's rule.**
+`GATEWAY_INJECTION` was a list - `['DbService', 'AiService', 'JobSourceService']` - and `DbService`
+was the entry that carried the whole ADR-0005 boundary: it was the god-service every page used to
+inject. Deleting the class without touching the rule would have left the rule **passing on a
+component that injects `JobsGateway`**, which is exactly the thing it exists to forbid. The failure
+mode is the worst kind: a rule that reads like cover, is cited in the file header as the reason nx's
+tag check is not enough, and quietly enforces less every time a gateway lands.
+
+**It matches `[A-Za-z]+Gateway` now**, not a list. The reason for a pattern rather than eight names is
+that eight names would have gone stale once per pull request during the migration and once more for
+the ninth gateway, and a list is only as good as the discipline of whoever adds the next file to
+`libs/data`. Verified by mutation rather than by reading: `inject(JobsGateway)` added to
+`analytics.component.ts` fails `desktop:lint` with the ADR-0005 message, and passes again when
+removed.
+
+**`@nx/enforce-module-boundaries` was already catching this**, as amendment fifty-five's note says -
+so the rule's value here is the message and the re-export path, not the coverage. That is precisely
+why it had to be repaired rather than dropped: a newcomer who injects a gateway into a component
+should read a sentence naming this ADR, not a list of project tags.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

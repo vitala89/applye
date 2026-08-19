@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { FinalCheckInputs, FinalChecksService } from './final-checks.service';
@@ -85,7 +85,6 @@ describe('FinalChecksService', () => {
     TestBed.configureTestingModule({
       providers: [
         FinalChecksService,
-        { provide: DbService, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },

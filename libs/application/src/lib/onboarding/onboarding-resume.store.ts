@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { AiMode, AiProvider } from '@applye/core';
 import { parseCvSkillResponse } from '@applye/core';
-import { AiService, DbService, DocumentsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, ProfileSettingsGateway } from '@applye/data';
 import { OnboardingReviewStore } from './onboarding-review.store';
 
 /** How the user is giving the wizard their history, if at all. */
@@ -36,7 +36,7 @@ export interface OnboardingAiDispatch {
  */
 @Injectable()
 export class OnboardingResumeStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
   private readonly review = inject(OnboardingReviewStore);

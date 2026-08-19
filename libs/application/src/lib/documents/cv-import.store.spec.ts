@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvParsedContent, CvTemplate, DocumentLibraryItem } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { CvImportStore } from './cv-import.store';
 
 const CVS = [
@@ -54,7 +54,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   TestBed.configureTestingModule({
     providers: [
       CvImportStore,
-      { provide: DbService, useValue: db },
+      { provide: ProfileSettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: AiService, useValue: ai },

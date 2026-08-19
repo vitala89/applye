@@ -6,7 +6,7 @@ import {
   serializeCompensation,
   type Profile,
 } from '@applye/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DocumentsGateway, ProfileSettingsGateway } from '@applye/data';
 import {
   appendCompensation,
   applyContactOverrides,
@@ -39,7 +39,7 @@ export type OnboardingCvSaveOutcome = 'saved' | 'skipped' | 'failed';
  */
 @Injectable()
 export class OnboardingFinishStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly resume = inject(OnboardingResumeStore);
   private readonly review = inject(OnboardingReviewStore);

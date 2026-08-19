@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { AiMode, AiProvider } from '@applye/core';
-import { DbService } from '@applye/data';
+import { ProfileSettingsGateway } from '@applye/data';
 import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
 import { OnboardingCliBridgeStore } from './onboarding-cli-bridge.store';
 import { ONBOARDING_CLI_PROVIDERS } from './onboarding-cli.util';
@@ -19,7 +19,7 @@ import type { OnboardingAiDispatch } from './onboarding-resume.store';
  */
 @Injectable()
 export class OnboardingAiSetupStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly aiKey = inject(OnboardingAiKeyStore);
   private readonly cli = inject(OnboardingCliBridgeStore);
 
@@ -147,7 +147,7 @@ export class OnboardingAiSetupStore {
    * who tries CLI mode and switches back to API within the same run would
    * otherwise be left with the blanked ids and no model to call.
    *
-   * Written through `DbService` rather than `SettingsStore`, whose `persist()`
+   * Written through `ProfileSettingsGateway` rather than `SettingsStore`, whose `persist()`
    * answers `false` until something has called `load()` - which the wizard, an
    * overlay over whatever route is behind it, never does. */
   async persistChoice(): Promise<void> {

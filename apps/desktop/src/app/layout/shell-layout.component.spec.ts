@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ShellLayoutComponent } from './shell-layout.component';
 import { UPDATE_BACKEND, UpdaterService } from '../core/updater.service';
@@ -21,7 +21,7 @@ describe('ShellLayoutComponent update badge', () => {
   }
 
   beforeEach(async () => {
-    const dbStub: Partial<DbService> = {
+    const dbStub: Partial<ProfileSettingsGateway> = {
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en', aiMode: 'api' }),
       getProfile: jest.fn().mockResolvedValue(null),
     };
@@ -30,7 +30,7 @@ describe('ShellLayoutComponent update badge', () => {
       imports: [ShellLayoutComponent],
       providers: [
         provideRouter([]),
-        { provide: DbService, useValue: dbStub },
+        { provide: ProfileSettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         TranslateService,

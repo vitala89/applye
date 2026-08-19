@@ -1,7 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CvParsedContent } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway, KeysService } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  KeysService,
+  ProfileSettingsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ThemeService } from '../theme.service';
 import { ToastService } from '@applye/application';
@@ -79,7 +85,7 @@ export async function createOnboarding(): Promise<OnboardingHarness> {
     .fn()
     .mockResolvedValue({ text: '{"archetypes":["Staff FE"],"compRange":"EUR 90-120K"}' });
 
-  const dbStub: Partial<DbService> = {
+  const dbStub: Partial<ProfileSettingsGateway> = {
     getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en', aiMode: 'api' }),
     documentLibraryList: jest.fn().mockResolvedValue([]),
     cvTemplatesList: jest.fn().mockResolvedValue([]),
@@ -92,7 +98,7 @@ export async function createOnboarding(): Promise<OnboardingHarness> {
   await TestBed.configureTestingModule({
     imports: [OnboardingComponent],
     providers: [
-      { provide: DbService, useValue: dbStub },
+      { provide: ProfileSettingsGateway, useValue: dbStub },
       { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       {

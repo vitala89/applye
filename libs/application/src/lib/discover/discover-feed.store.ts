@@ -31,8 +31,8 @@ export const FEED_PAGE = 30;
 @Injectable()
 export class DiscoverFeedStore {
   private readonly db = inject(JobsGateway);
-  /** Feed reads and the dismiss/clear writes; `db` stays only for
-   * `upsertApplication`, which belongs to the jobs domain and has not moved. */
+  /** Feed reads and the dismiss/clear writes; `db` is `JobsGateway`, for
+   * `upsertApplication` alone. */
   private readonly discover = inject(DiscoverGateway);
 
   private readonly rowsState = signal<FeedRow[]>([]);

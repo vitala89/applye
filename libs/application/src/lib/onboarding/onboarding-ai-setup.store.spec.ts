@@ -1,5 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { AiService, DbService, DocumentsGateway, JobsGateway, KeysService } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  KeysService,
+  ProfileSettingsGateway,
+} from '@applye/data';
 import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
 import { OnboardingAiSetupStore } from './onboarding-ai-setup.store';
 import { OnboardingCliBridgeStore } from './onboarding-cli-bridge.store';
@@ -21,7 +27,7 @@ describe('OnboardingAiSetupStore', () => {
         OnboardingAiKeyStore,
         OnboardingAiSetupStore,
         OnboardingCliBridgeStore,
-        { provide: DbService, useValue: dbStub },
+        { provide: ProfileSettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: { probeClis: jest.fn().mockResolvedValue([]) } },

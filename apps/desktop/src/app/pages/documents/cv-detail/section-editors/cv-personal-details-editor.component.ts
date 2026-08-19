@@ -31,7 +31,7 @@ type CvPersonalDetailsField = Exclude<
  * Every field edit emits a brand-new `CvPersonalDetailsSection` via
  * `sectionChange` (immutable), matching the other extracted section
  * editors. The AI "pull from profile" call stays in the parent
- * (`AiService`/`DbService` access) - this component only emits
+ * (`AiService`/data-gateway access) - this component only emits
  * `pullProfile` and reflects the in-flight state via the `pulling` input.
  */
 @Component({

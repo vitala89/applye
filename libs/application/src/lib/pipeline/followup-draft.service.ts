@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AiService, DbService, DraftsGateway, SystemGateway } from '@applye/data';
+import { AiService, DraftsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
 import { PipelineCard, SupportedLanguage } from '@applye/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -45,7 +45,7 @@ export function parseFollowupDraft(text: string): { subject: string; body: strin
  */
 @Injectable()
 export class FollowupDraftService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly system = inject(SystemGateway);
   /** Follow-up drafts moved to their own gateway; `db` stays for `hashText`
    * and `getSettings`. */

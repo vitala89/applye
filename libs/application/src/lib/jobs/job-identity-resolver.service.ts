@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Job } from '@applye/core';
-import { AiService, DbService, JobSourceService, KeysService } from '@applye/data';
+import { AiService, JobSourceService, KeysService, ProfileSettingsGateway } from '@applye/data';
 import { JobIdentityPromptService } from './job-identity-prompt.service';
 
 /** How an identify call ended, for the dialog to report honestly. */
@@ -45,7 +45,7 @@ const IDENTIFY_TIMEOUT_MS = 45_000;
 export class JobIdentityResolverService {
   private readonly ai = inject(AiService);
   private readonly keys = inject(KeysService);
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly source = inject(JobSourceService);
   private readonly prompt = inject(JobIdentityPromptService);
 

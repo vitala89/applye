@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT, resolvePageSettings } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvStyleStore, ToastService } from '@applye/application';
 import { CvDetailComponent } from './cv-detail.component';
@@ -50,8 +50,9 @@ describe('CvDetailComponent card wiring', () => {
         ],
       }),
     };
-    // One stub, two tokens - the document library and its exports come from
-    // `DocumentsGateway` now; the rest of this stub is still `DbService`'s.
+    // One stub object, several tokens - the document library and its exports
+    // come from `DocumentsGateway`, the rest from the gateways this component's
+    // dependency graph reaches.
     const docsStub = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
@@ -69,7 +70,7 @@ describe('CvDetailComponent card wiring', () => {
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: DbService, useValue: docsStub },
+        { provide: ProfileSettingsGateway, useValue: docsStub },
         { provide: JobsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },

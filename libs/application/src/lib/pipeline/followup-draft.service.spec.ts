@@ -2,10 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { PipelineCard } from '@applye/core';
 import {
   AiService,
-  DbService,
   DocumentsGateway,
   DraftsGateway,
   JobsGateway,
+  ProfileSettingsGateway,
   SystemGateway,
 } from '@applye/data';
 import { FollowupDraftService, parseFollowupDraft } from './followup-draft.service';
@@ -54,7 +54,7 @@ describe('FollowupDraftService', () => {
     TestBed.configureTestingModule({
       providers: [
         FollowupDraftService,
-        { provide: DbService, useValue: db },
+        { provide: ProfileSettingsGateway, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },

@@ -1,6 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService, DiscoverGateway, DocumentsGateway, JobsGateway } from '@applye/data';
+import {
+  DiscoverGateway,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileSettingsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
 import { ToastService } from '@applye/application';
@@ -47,9 +52,9 @@ async function createFixture(
   feed: DiscoverFeedItem[],
   profile: { targetArchetypes?: string; fullMd?: string } | null = null,
 ): Promise<ComponentFixture<DiscoverComponent>> {
-  // One stub, two tokens. The page's stores read sources and the feed through
-  // `DiscoverGateway` now, and still read the profile and the settings through
-  // `DbService` - neither of those domains has moved yet.
+  // One stub object, several tokens. The page's stores read sources and the feed
+  // through `DiscoverGateway`, and the profile and the settings through
+  // `ProfileSettingsGateway`.
   const db = {
     listSources: jest.fn().mockResolvedValue(sources),
     discoverFeed: jest.fn().mockResolvedValue(feed),
@@ -66,7 +71,7 @@ async function createFixture(
     imports: [DiscoverComponent],
     providers: [
       provideRouter([]),
-      { provide: DbService, useValue: db },
+      { provide: ProfileSettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: DiscoverGateway, useValue: db },

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { CoverLetterDetailComponent } from './cover-letter-detail.component';
@@ -12,7 +12,7 @@ describe('CoverLetterDetailComponent preview atoms', () => {
   let fixture: ComponentFixture<CoverLetterDetailComponent>;
 
   beforeEach(async () => {
-    const dbStub: Partial<DbService> = {
+    const dbStub: Partial<ProfileSettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
     };
@@ -20,7 +20,6 @@ describe('CoverLetterDetailComponent preview atoms', () => {
     await TestBed.configureTestingModule({
       imports: [CoverLetterDetailComponent],
       providers: [
-        { provide: DbService, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
@@ -106,7 +105,7 @@ describe('CoverLetterDetailComponent preview atoms', () => {
 
 describe('CoverLetterDetailComponent back navigation', () => {
   async function setup(params: Record<string, string | null>) {
-    const dbStub: Partial<DbService> = {
+    const dbStub: Partial<ProfileSettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
     };
@@ -115,7 +114,6 @@ describe('CoverLetterDetailComponent back navigation', () => {
     await TestBed.configureTestingModule({
       imports: [CoverLetterDetailComponent],
       providers: [
-        { provide: DbService, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },

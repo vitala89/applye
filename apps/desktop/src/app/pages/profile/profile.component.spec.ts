@@ -1,6 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { serializeProfileForm, parseProfileMd, EMPTY_FORM } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileSettingsGateway,
+  SystemGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '@applye/application';
@@ -9,8 +15,8 @@ import { ProfileComponent } from './profile.component';
 
 function createFixture(): ComponentFixture<ProfileComponent> {
   TestBed.resetTestingModule();
-  // One stub, two tokens - `SystemGateway` now serves the shared
-  // operations, and the rest of this stub is still `DbService`'s.
+  // One stub object, several tokens - `SystemGateway` serves the shared
+  // operations and `ProfileSettingsGateway` the profile row.
   const dbStub = {
     getProfile: jest.fn().mockResolvedValue(null),
     getSettings: jest
@@ -22,7 +28,7 @@ function createFixture(): ComponentFixture<ProfileComponent> {
   TestBed.configureTestingModule({
     imports: [ProfileComponent],
     providers: [
-      { provide: DbService, useValue: dbStub },
+      { provide: ProfileSettingsGateway, useValue: dbStub },
       { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: SystemGateway, useValue: dbStub },

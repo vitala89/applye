@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingTargetingStore } from '@applye/application';
 import { OnboardingTargetingStepComponent } from './onboarding-targeting-step.component';
@@ -20,7 +20,6 @@ describe('OnboardingTargetingStepComponent', () => {
       providers: [
         OnboardingTargetingStore,
         TranslateService,
-        { provide: DbService, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },

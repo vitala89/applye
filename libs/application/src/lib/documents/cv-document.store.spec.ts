@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvSection, DocumentLibraryItem } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import { CvPhotoStore } from './cv-photo.store';
 import { CvStyleStore } from './cv-style.store';
@@ -47,9 +47,9 @@ describe('CvDocumentStore', () => {
         CvDocumentStore,
         CvPhotoStore,
         CvStyleStore,
-        { provide: DbService, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
+        { provide: ProfileSettingsGateway, useValue: db },
       ],
     });
     store = TestBed.inject(CvDocumentStore);

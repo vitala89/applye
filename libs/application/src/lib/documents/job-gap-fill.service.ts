@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Job, Profile, Settings, SupportedLanguage } from '@applye/core';
-import { DbService } from '@applye/data';
+import { ProfileSettingsGateway } from '@applye/data';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { GapFillHooks } from './gap-fill';
 
@@ -36,7 +36,7 @@ export interface JobGapFillContext {
  */
 @Injectable()
 export class JobGapFillService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly gapSvc = inject(CvGapDialogService);
 
   /**

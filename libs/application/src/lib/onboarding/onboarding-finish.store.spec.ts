@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvContent, CvParsedContent } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { OnboardingFinishStore } from './onboarding-finish.store';
 import { OnboardingResumeStore } from './onboarding-resume.store';
 import { OnboardingReviewStore } from './onboarding-review.store';
@@ -33,8 +33,9 @@ describe('OnboardingFinishStore', () => {
     documentLibraryList = jest.fn().mockResolvedValue([]);
     documentLibraryUpsert = jest.fn().mockResolvedValue({ id: 1 });
 
-    // One stub, two tokens - the document library and its exports come from
-    // `DocumentsGateway` now; the rest of this stub is still `DbService`'s.
+    // One stub object, several tokens - the document library comes from
+    // `DocumentsGateway` and the profile and settings rows from
+    // `ProfileSettingsGateway`.
     const docsStub = {
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),
       getProfile: jest.fn().mockResolvedValue(null),
@@ -49,7 +50,7 @@ describe('OnboardingFinishStore', () => {
         OnboardingResumeStore,
         OnboardingReviewStore,
         OnboardingTargetingStore,
-        { provide: DbService, useValue: docsStub },
+        { provide: ProfileSettingsGateway, useValue: docsStub },
         { provide: JobsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },

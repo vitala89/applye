@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService } from '@applye/data';
+import { ProfileSettingsGateway } from '@applye/data';
 import { shouldAutoOpenOnboarding } from './onboarding-gate.util';
 
 /** Which of the three things the app shows on open. */
@@ -12,7 +12,7 @@ export type BootScreen = 'first-launch' | 'onboarding' | 'app';
  * Both halves read and write the same two settings flags - `healthCheckSeen`
  * and `onboardingSeen` - so keeping them apart meant one layer wrote what
  * another read. The write half has been here since amendment thirty-five (as
- * `FirstLaunchStore`); the read half was the last `inject(DbService)` in a
+ * `FirstLaunchStore`); the read half was the last `inject(ProfileSettingsGateway)` in a
  * component anywhere in the app, and the lint rule could not see it because the
  * file is called `app.ts` rather than `app.component.ts`.
  *
@@ -29,7 +29,7 @@ export type BootScreen = 'first-launch' | 'onboarding' | 'app';
  */
 @Injectable()
 export class BootGateStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
 
   /**
    * Filled by a failed write. The screen deliberately ignores it: a user who

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { PipelineCard } from '@applye/core';
-import { DbService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
 import { InterviewPrepStore } from './interview-prep.store';
 
 const card = (over: Partial<PipelineCard> = {}): PipelineCard =>
@@ -21,7 +21,6 @@ function createStore(cards: PipelineCard[], over: Partial<Record<string, jest.Mo
   TestBed.configureTestingModule({
     providers: [
       InterviewPrepStore,
-      { provide: DbService, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: InterviewGateway, useValue: db },

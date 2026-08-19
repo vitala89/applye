@@ -1,13 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import {
-  AiService,
-  DbService,
-  DocumentsGateway,
-  InterviewGateway,
-  JobsGateway,
-} from '@applye/data';
+import { AiService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { QuickViewModalComponent } from './quick-view-modal.component';
@@ -46,8 +40,7 @@ async function createFixture(
   navigate.mockClear();
   TestBed.resetTestingModule();
   // One stub, two tokens: the interview stages come from `InterviewGateway`
-  // now, and the rest of this stub is still `DbService`'s - those domains
-  // have not moved.
+  // and the applications, their status and their comments from `JobsGateway`.
   const dbStub = {
     listInterviewStages: stagesRejectWith
       ? jest.fn().mockRejectedValue(stagesRejectWith)
@@ -57,7 +50,6 @@ async function createFixture(
   TestBed.configureTestingModule({
     imports: [QuickViewModalComponent],
     providers: [
-      { provide: DbService, useValue: dbStub },
       { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: InterviewGateway, useValue: dbStub },

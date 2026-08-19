@@ -11,8 +11,8 @@ import { tauriInvoke } from '../tauri.invoke';
 /**
  * Getting a job into the system: from raw pasted text, or from a link.
  *
- * Split out of `DbService`, which is a flat wrapper over every `db_*` command
- * and is well past its size budget. These three belong together for a reason
+ * Split out of `DbService`, the flat wrapper over every `db_*` command that was
+ * then well past its size budget and has since been cut into eight gateways. These three belong together for a reason
  * beyond arithmetic - they are the one path where a job's identity is decided
  * rather than read back, which is what makes `precedence` below meaningful.
  */

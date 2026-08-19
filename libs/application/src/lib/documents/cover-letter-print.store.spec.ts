@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { COVER_LETTER_LENGTH_DEFAULT, COVER_LETTER_TONE_DEFAULT } from '@applye/core';
 import type { DocumentLibraryItem } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { CoverLetterPrintStore } from './cover-letter-print.store';
 
 const item = (over: Partial<DocumentLibraryItem> = {}): DocumentLibraryItem =>
@@ -23,7 +23,6 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   TestBed.configureTestingModule({
     providers: [
       CoverLetterPrintStore,
-      { provide: DbService, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

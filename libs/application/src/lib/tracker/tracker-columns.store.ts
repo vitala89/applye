@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { TrackerCustomColumn } from '@applye/core';
-import { DbService } from '@applye/data';
+import { TrackerGateway } from '@applye/data';
 import {
   TRACKER_ESSENTIAL_COLUMNS,
   TRACKER_OPTIONAL_COLUMNS,
@@ -29,7 +29,7 @@ import {
  */
 @Injectable()
 export class TrackerColumnsStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(TrackerGateway);
 
   /** Built-in columns, constant. Exposed so the visibility panel can list the
    * two groups without re-deriving them on every change detection pass. */

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { TrackerRow } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, TrackerGateway } from '@applye/data';
 import {
   TrackerSummary,
   reportTrackerRows,
@@ -27,6 +27,9 @@ import {
 @Injectable()
 export class TrackerPrintStore {
   private readonly db = inject(DbService);
+  /** Rows come from `TrackerGateway`; `db` stays for `printWindowReady`,
+   * which belongs to the documents domain. */
+  private readonly tracker = inject(TrackerGateway);
 
   readonly rows = signal<TrackerRow[]>([]);
   readonly summary = signal<TrackerSummary>({ total: 0, rate: 0, avg: 0 });
@@ -40,7 +43,7 @@ export class TrackerPrintStore {
   async load(period: string): Promise<void> {
     let all: TrackerRow[];
     try {
-      all = await this.db.trackerRows();
+      all = await this.tracker.trackerRows();
     } catch {
       all = [];
     }

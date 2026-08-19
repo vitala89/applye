@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { TrackerRow } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, TrackerGateway } from '@applye/data';
 import { TrackerPrintStore } from './tracker-print.store';
 
 function row(over: Partial<TrackerRow> = {}): TrackerRow {
@@ -14,7 +14,11 @@ function createStore(rows: TrackerRow[] = []) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [TrackerPrintStore, { provide: DbService, useValue: db }],
+    providers: [
+      TrackerPrintStore,
+      { provide: DbService, useValue: db },
+      { provide: TrackerGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(TrackerPrintStore), db };
 }

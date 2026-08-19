@@ -4,7 +4,7 @@ import {
   CoverLetterDocumentStore,
   CoverLetterStyleStore,
 } from '@applye/application';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { CoverLetterAvailabilityCardComponent } from './cover-letter-availability-card.component';
 
 describe('CoverLetterAvailabilityCardComponent', () => {
@@ -22,6 +22,7 @@ describe('CoverLetterAvailabilityCardComponent', () => {
         CoverLetterDocumentStore,
         CoverLetterStyleStore,
         { provide: DbService, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
       ],
     }).compileComponents();

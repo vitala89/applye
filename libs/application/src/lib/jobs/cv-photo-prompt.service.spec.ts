@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { DocumentLibraryItem } from '@applye/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
 
@@ -31,6 +31,7 @@ describe('CvPhotoPromptService', () => {
         CvPhotoPromptService,
         TranslateService,
         { provide: DbService, useValue: db },
+        { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         {
           provide: Router,

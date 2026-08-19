@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application } from '@applye/core';
-import { DbService, JobsStore } from '@applye/data';
+import { JobsGateway, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../shell/toast.service';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
@@ -18,7 +18,7 @@ import { JobIdentityResolverService } from './job-identity-resolver.service';
  */
 @Injectable()
 export class JobActionsService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly jobsStore = inject(JobsStore);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);

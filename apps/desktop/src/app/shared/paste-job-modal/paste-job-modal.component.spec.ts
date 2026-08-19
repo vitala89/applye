@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { DbService, DocumentsGateway, JobSourceService } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway, JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { JobIdentityResolverService, PasteJobStore } from '@applye/application';
 import { PasteJobModalComponent } from './paste-job-modal.component';
@@ -30,6 +30,7 @@ describe('PasteJobModalComponent', () => {
       providers: [
         TranslateService,
         { provide: DbService, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: JobSourceService, useValue: {} },
         { provide: JobIdentityResolverService, useValue: { start: () => undefined } },

@@ -5,7 +5,7 @@ import {
   type AnalyticsView,
   computeAnalytics,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { JobsGateway } from '@applye/data';
 
 /** What the page renders when nothing has loaded, and after a failed read. */
 const NO_FACTS: AnalyticsFacts = { applications: [], followups: [] };
@@ -25,7 +25,7 @@ const NO_FACTS: AnalyticsFacts = { applications: [], followups: [] };
  */
 @Injectable()
 export class AnalyticsStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
 
   readonly loading = signal(true);
   readonly facts = signal<AnalyticsFacts | null>(null);

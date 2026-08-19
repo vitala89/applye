@@ -113,17 +113,19 @@
   second (426 to 381) `InterviewGateway` third (381 to 349)
   `TrackerGateway` fourth (349 to 307)
   `SystemGateway` fifth (307 to 220)
-  and `DocumentsGateway` sixth: **220 to 142/400**, so the file is **under budget** from the second of eight pull requests
-  - six earlier than the ratchet would have forced it. The order of the rest was re-judged on files
-    touched rather than method count, which are almost uncorrelated: profile and settings is seven
-    methods and sixty-eight files and now goes last. The file-size stream is otherwise
+  `DocumentsGateway` sixth (220 to 142)
+  and `JobsGateway` seventh: **142 to 50/400**, so the file is **under budget** from the second of eight pull requests
+  - six earlier than the ratchet would have forced it. **One domain is left**: profile and settings,
+    six methods, and `db.service.ts` is deleted with them. The order of the rest was re-judged on files
+    touched rather than method count, which are almost uncorrelated: profile and settings is the
+    fewest methods and the most files, and goes last. The file-size stream is otherwise
     finished, and its last deliverable is
     `docs/internal/NATIVE_GATE_SCRIPT.md`: the backlog's 81 checks ordered into one walkable pass of
     fifteen stations, with the two paid checks and the two destructive ones held to the end. **The
     maintainer drives it; no agent can.** The full audit reads **0 files over budget**, down from 18 across sixteen watches:
     nothing. `db.service.ts` reached **381/400** with the second gateway, so **no file in the
     repository is over budget** for the first time since the campaign began. It keeps shrinking as the
-    remaining six domains leave.
+    remaining domain leaves.
     `cv-live-style-panel.component.ts` was
     the largest source file in
     the repository at 704/400 and is **344/400**, its rules split into two page-local pure modules.

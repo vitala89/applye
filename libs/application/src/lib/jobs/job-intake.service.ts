@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Job, ScoringCache, archetypeNames, parseArchetypes } from '@applye/core';
-import { DbService, JobSourceService } from '@applye/data';
+import { JobsGateway, JobSourceService } from '@applye/data';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 /** Everything a parse run reads, snapshotted by the caller at click time. */
@@ -47,7 +47,7 @@ export interface JobIntakeResult {
  */
 @Injectable()
 export class JobIntakeService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly source = inject(JobSourceService);
   private readonly identity = inject(JobIdentityResolverService);
 

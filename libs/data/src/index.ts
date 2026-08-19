@@ -5,6 +5,7 @@ export * from './lib/services/discover.gateway';
 export * from './lib/services/documents.gateway';
 export * from './lib/services/drafts.gateway';
 export * from './lib/services/interview.gateway';
+export * from './lib/services/jobs.gateway';
 export * from './lib/services/system.gateway';
 export * from './lib/services/tracker.gateway';
 export * from './lib/services/job-source.service';

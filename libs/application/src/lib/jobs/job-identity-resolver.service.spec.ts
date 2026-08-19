@@ -4,6 +4,7 @@ import {
   AiService,
   DbService,
   DocumentsGateway,
+  JobsGateway,
   JobSourceService,
   KeysService,
 } from '@applye/data';
@@ -103,6 +104,7 @@ describe('JobIdentityResolverService', () => {
         { provide: AiService, useValue: ai },
         { provide: KeysService, useValue: { hasProviderKey: () => Promise.resolve(hasKey) } },
         { provide: DbService, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: JobIdentityPromptService, useValue: prompt },
       ],

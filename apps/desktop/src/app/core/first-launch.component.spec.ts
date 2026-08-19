@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway, SystemGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { BootGateStore } from '@applye/application';
 import { FirstLaunchComponent, type FirstLaunchDismiss } from './first-launch.component';
@@ -43,6 +43,7 @@ describe('FirstLaunchComponent', () => {
       providers: [
         TranslateService,
         { provide: DbService, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: SystemGateway, useValue: dbStub },
       ],

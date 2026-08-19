@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application, DocumentLibraryItem } from '@applye/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
 import { TailorScoreService } from './tailor-score.service';
@@ -37,7 +37,7 @@ export interface TailoringDiscardContext {
  */
 @Injectable()
 export class TailoringDiscardService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly tailorScore = inject(TailorScoreService);

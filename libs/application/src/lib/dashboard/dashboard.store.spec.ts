@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { JobOverview, PipelineCard, Profile } from '@applye/core';
-import { DbService, DocumentsGateway, SystemGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { DashboardStore } from './dashboard.store';
 
 const card = (over: Partial<PipelineCard> = {}): PipelineCard =>
@@ -28,6 +28,7 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
     providers: [
       DashboardStore,
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
     ],

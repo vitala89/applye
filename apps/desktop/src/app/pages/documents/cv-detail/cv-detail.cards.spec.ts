@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT, resolvePageSettings } from '@applye/core';
-import { AiService, DbService, DocumentsGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvStyleStore, ToastService } from '@applye/application';
 import { CvDetailComponent } from './cv-detail.component';
@@ -70,6 +70,7 @@ describe('CvDetailComponent card wiring', () => {
       imports: [CvDetailComponent],
       providers: [
         { provide: DbService, useValue: docsStub },
+        { provide: JobsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
         TranslateService,

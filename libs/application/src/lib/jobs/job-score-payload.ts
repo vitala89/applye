@@ -43,7 +43,7 @@ export interface ScoreContext {
   reviewRegion: string;
 }
 
-/** What `DbService.scoreCacheSave` accepts. Declared here so the payloads can be
+/** What `JobsGateway.scoreCacheSave` accepts. Declared here so the payloads can be
  * built and asserted without reaching the gateway. */
 export interface ScoreCacheSaveInput {
   jobId: number;

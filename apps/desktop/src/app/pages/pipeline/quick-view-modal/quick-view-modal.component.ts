@@ -35,7 +35,7 @@ const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
 // link out. Deliberately shallow: no score/JD/tailoring/portal-answers here,
 // that depth stays on /jobs/:id. Status changes go through the SAME
 // db_set_application_status command the kanban drag-and-drop uses (via
-// DbService.setApplicationStatus) - there is no second status-update path.
+// JobsGateway.setApplicationStatus) - there is no second status-update path.
 @Component({
   selector: 'app-quick-view-modal',
   standalone: true,

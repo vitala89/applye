@@ -12,7 +12,7 @@ import {
   cleanJsonText,
   readBaseLetter,
 } from '@applye/core';
-import { AiService, DbService, DocumentsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../shell/toast.service';
 
@@ -50,7 +50,7 @@ export interface CoverLetterTailorResult {
  */
 @Injectable()
 export class CoverLetterTailorService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
   private readonly toast = inject(ToastService);

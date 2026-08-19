@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { ProfilePhotoStore } from './profile-photo.store';
 
 function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
@@ -13,6 +13,7 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
     providers: [
       ProfilePhotoStore,
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],
   });

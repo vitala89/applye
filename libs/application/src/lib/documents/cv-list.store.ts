@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Application, CvTemplate, DocumentLibraryItem, Job } from '@applye/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 
 /**
  * The CV library: the documents, the templates every creation flow picks from,
@@ -22,7 +22,7 @@ import { DbService, DocumentsGateway } from '@applye/data';
  */
 @Injectable()
 export class CvListStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
 
   readonly cvs = signal<DocumentLibraryItem[]>([]);

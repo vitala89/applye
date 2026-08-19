@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Application, CvTemplate, DocumentLibraryItem, Job } from '@applye/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { CvListStore } from './cv-list.store';
 
 const CVS = [
@@ -29,6 +29,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
     providers: [
       CvListStore,
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],
   });

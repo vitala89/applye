@@ -4,6 +4,7 @@ import {
   AtsService,
   DbService,
   DocumentsGateway,
+  JobsGateway,
   JobsStore,
   SystemGateway,
 } from '@applye/data';
@@ -73,6 +74,7 @@ describe('JobScoringService', () => {
         TailorScoreService,
         WizardActivityService,
         { provide: DbService, useValue: db },
+        { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: AiService, useValue: ai },

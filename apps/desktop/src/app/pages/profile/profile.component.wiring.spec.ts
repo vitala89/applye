@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Profile } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '@applye/application';
@@ -73,6 +73,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
       imports: [ProfileComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: SystemGateway, useValue: dbStub },
         {

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AiService, DbService, DocumentsGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingResumeStore } from '@applye/application';
 import { OnboardingReviewStore } from '@applye/application';
@@ -23,6 +23,7 @@ describe('OnboardingResumeStepComponent', () => {
         OnboardingReviewStore,
         TranslateService,
         { provide: DbService, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
       ],

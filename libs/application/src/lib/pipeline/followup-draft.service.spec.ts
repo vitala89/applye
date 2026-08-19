@@ -1,6 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { PipelineCard } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, DraftsGateway, SystemGateway } from '@applye/data';
+import {
+  AiService,
+  DbService,
+  DocumentsGateway,
+  DraftsGateway,
+  JobsGateway,
+  SystemGateway,
+} from '@applye/data';
 import { FollowupDraftService, parseFollowupDraft } from './followup-draft.service';
 
 jest.mock('@tauri-apps/plugin-opener', () => ({ openUrl: jest.fn() }));
@@ -48,6 +55,7 @@ describe('FollowupDraftService', () => {
       providers: [
         FollowupDraftService,
         { provide: DbService, useValue: db },
+        { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: DraftsGateway, useValue: drafts },

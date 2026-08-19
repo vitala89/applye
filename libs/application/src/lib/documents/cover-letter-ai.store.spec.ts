@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CoverLetterContent, DocumentLibraryItem } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { CoverLetterAiStore } from './cover-letter-ai.store';
 import { CoverLetterContentStore } from './cover-letter-content.store';
 import { CoverLetterDocumentStore } from './cover-letter-document.store';
@@ -55,6 +55,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
       // paths never touch it, but the injector still has to resolve it.
       CoverLetterStyleStore,
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
       { provide: AiService, useValue: ai },

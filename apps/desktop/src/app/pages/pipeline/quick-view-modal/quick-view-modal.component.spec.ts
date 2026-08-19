@@ -1,7 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, InterviewGateway } from '@applye/data';
+import {
+  AiService,
+  DbService,
+  DocumentsGateway,
+  InterviewGateway,
+  JobsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { QuickViewModalComponent } from './quick-view-modal.component';
@@ -52,6 +58,7 @@ async function createFixture(
     imports: [QuickViewModalComponent],
     providers: [
       { provide: DbService, useValue: dbStub },
+      { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: InterviewGateway, useValue: dbStub },
       { provide: AiService, useValue: { renderSkill: jest.fn(), run: jest.fn() } },

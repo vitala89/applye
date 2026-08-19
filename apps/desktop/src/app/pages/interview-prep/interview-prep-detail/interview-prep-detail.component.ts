@@ -144,6 +144,6 @@ export class InterviewPrepDetailComponent implements OnInit {
 
 // Interview Prep AI generation UI was removed intentionally (button hung on
 // "Generating..." in native testing). Backend stays intact for a future,
-// larger interview-prep section: DbService.listInterviewPrep /
+// larger interview-prep section: InterviewGateway.listInterviewPrep /
 // saveInterviewPrepBatch, the `interview_prep` table, and the
 // interview-hr / interview-technical / star-r skills.

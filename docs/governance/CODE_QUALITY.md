@@ -205,12 +205,19 @@ back to `DbService`: the dependency never points the wrong way, not even tempora
 point of going smallest-first is a reviewable diff. Measured: discover 11 files · interview 14 ·
 tracker 14 · system 39 · jobs 54 · documents 56 · **profile and settings 68**, on seven methods.
 Ordering by method count would have put the largest migration second. Re-measure before each pull
-request rather than trusting this list, since every migration changes it.
+request rather than trusting this list, since every migration changes it - re-measured before the
+jobs pull request, the last two read 57 and 66 rather than 54 and 68, and the order held.
 
 **So `DbService` is a shrinking remainder, not a home.** A method still on it means its domain has
-not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to 307), `SystemGateway` fifth (307 to 220), `DocumentsGateway` sixth (220 to **142**); the
+not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to 307), `SystemGateway` fifth (307 to 220), `DocumentsGateway` sixth (220 to **142**), `JobsGateway` seventh (142 to **50**); the
 file is deleted when the last domain leaves. New code reaches for the gateway if its domain has one,
 and for `DbService` only if it does not yet.
+
+**Check the banners before cutting; four gateways in a row found a method under the wrong one.**
+Six application methods sat under Discover, `deleteJob` under Interview, the tracker's seven
+interleaved through Jobs, and `checkArchetypeMatch` under Profile - it reads no profile row, takes
+its archetypes as an already-parsed argument, and is called only by `job-intake.service.ts`, so it
+went to jobs. Restore the banner or move the method, and say which in the pull request.
 
 `hashText` is the one method deliberately not going to a domain: a dozen callers across profile,
 documents, dashboard and jobs read it, so it goes to the system gateway rather than being duplicated
@@ -221,7 +228,11 @@ says so where it injects them.
 subset.** Four provider shapes exist - a named stub, a multi-line inline literal, a **single-line**
 inline literal, and a shared `*.harness.ts` that is not a `.spec.ts` at all - and the documents
 migration was broken once by each of the last two. Grep for `provide: DbService` across `*.ts`, not
-for method names and not for `*.spec.ts` only.
+for method names and not for `*.spec.ts` only. Applied as one pass, this rule got the jobs migration
+green on its first run. **Inside `libs/data` there is a fifth shape**: `jobs.store.spec.ts` imports
+`DbService` by relative path rather than from `@applye/data`, and puts the provider inline in the
+`providers:` array on the same line - so a pass keyed on the barrel import, or on a provider owning a
+line of its own, skips it silently.
 
 **Check what a spec provides for before swapping its token.** A spec provides for the subject's
 whole dependency graph, not for the subject alone: `geo-target.store.spec.ts` provides `DbService`

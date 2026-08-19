@@ -11,7 +11,7 @@ import {
   SupportedLanguage,
   cleanJsonText,
 } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
@@ -75,7 +75,7 @@ export interface CoverLetterDraftResult {
  */
 @Injectable()
 export class CoverLetterDraftService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);

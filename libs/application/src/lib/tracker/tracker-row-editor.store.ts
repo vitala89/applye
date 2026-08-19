@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { ApplicationStatus, TrackerRow } from '@applye/core';
-import { DbService } from '@applye/data';
+import { JobsGateway } from '@applye/data';
 import { TrackerColumnDef, trackerCustomValues } from './tracker-columns';
 import {
   buildTrackerFieldsInput,
@@ -36,7 +36,7 @@ export type TrackerEditReload = () => Promise<void>;
  */
 @Injectable()
 export class TrackerRowEditorStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly rows = inject(TrackerRowsStore);
 
   readonly editId = signal<number | null>(null);

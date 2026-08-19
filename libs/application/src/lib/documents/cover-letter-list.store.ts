@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Application, DocumentLibraryItem, Job } from '@applye/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 
 /**
  * The cover-letter library: the documents, the two lists needed to name which
@@ -16,7 +16,7 @@ import { DbService, DocumentsGateway } from '@applye/data';
  */
 @Injectable()
 export class CoverLetterListStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
 
   readonly coverLetters = signal<DocumentLibraryItem[]>([]);

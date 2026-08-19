@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { DiscoverFeedItem } from '@applye/core';
-import { DbService, DiscoverGateway, DocumentsGateway } from '@applye/data';
+import { DbService, DiscoverGateway, DocumentsGateway, JobsGateway } from '@applye/data';
 import { DiscoverFeedStore, FEED_PAGE } from './discover-feed.store';
 
 function item(): DiscoverFeedItem {
@@ -39,6 +39,7 @@ function createStore(over: Partial<Db> = {}): { store: DiscoverFeedStore; db: Db
       // `DiscoverGateway` and still saves an application through `DbService`,
       // which belongs to the jobs domain and has not moved.
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: DiscoverGateway, useValue: db },
     ],

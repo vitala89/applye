@@ -7,7 +7,7 @@ import {
   extractSalaryFromJd,
   parseJdBlocks,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { JobsGateway } from '@applye/data';
 
 /** How a raw keyword-fit score reads to the user. Null when it cannot be computed. */
 export type DetailVerdict = 'strong' | 'good' | 'partial' | null;
@@ -48,7 +48,7 @@ export interface DetailContext {
  */
 @Injectable()
 export class DiscoverDetailStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
 
   private readonly idState = signal<number | null>(null);
   private readonly blocksState = signal<JdBlock[] | null>(null);

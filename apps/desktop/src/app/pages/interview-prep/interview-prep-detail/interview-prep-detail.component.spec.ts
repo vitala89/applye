@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InterviewStage } from '@applye/core';
-import { DbService, DocumentsGateway, InterviewGateway } from '@applye/data';
+import { DbService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { InterviewStagesStore } from '@applye/application';
@@ -39,6 +39,7 @@ function buildComponent(overrides: { db?: Partial<DbService> } = {}): {
     imports: [InterviewPrepDetailComponent],
     providers: [
       { provide: DbService, useValue: dbStub },
+      { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: InterviewGateway, useValue: dbStub },
       TranslateService,

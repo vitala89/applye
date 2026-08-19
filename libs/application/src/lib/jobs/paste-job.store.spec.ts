@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { UrlClassification } from '@applye/core';
-import { DbService, DocumentsGateway, JobSourceService } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway, JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 import { PasteJobStore, looksLikeJobDescription } from './paste-job.store';
@@ -35,6 +35,7 @@ describe('PasteJobStore', () => {
       providers: [
         TranslateService,
         { provide: DbService, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: JobSourceService, useValue: source },
         {

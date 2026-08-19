@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Profile } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { ProfileArtifactStore } from './profile-artifact.store';
 import { ProfileFormStore } from './profile-form.store';
 import { ProfileStore } from './profile.store';
@@ -35,6 +35,7 @@ function createStores(over: Record<string, jest.Mock> = {}, row: Partial<Profile
       ProfileStore,
       ProfileArtifactStore,
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
       { provide: AiService, useValue: ai },

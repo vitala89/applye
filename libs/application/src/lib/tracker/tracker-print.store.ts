@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { TrackerRow } from '@applye/core';
-import { DbService, TrackerGateway } from '@applye/data';
+import { DocumentsGateway, TrackerGateway } from '@applye/data';
 import {
   TrackerSummary,
   reportTrackerRows,
@@ -26,7 +26,7 @@ import {
  */
 @Injectable()
 export class TrackerPrintStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
   /** Rows come from `TrackerGateway`; `db` stays for `printWindowReady`,
    * which belongs to the documents domain. */
   private readonly tracker = inject(TrackerGateway);

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application, DocumentLibraryItem, SupportedLanguage } from '@applye/core';
-import { DbService, SystemGateway } from '@applye/data';
+import { DbService, DocumentsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ReviewDocumentKind } from './document-gen.service';
 
@@ -25,6 +25,7 @@ export interface LinkResult {
 @Injectable()
 export class LinkedDocumentsService {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly system = inject(SystemGateway);
   private readonly t = inject(TranslateService).t;
 
@@ -52,9 +53,9 @@ export class LinkedDocumentsService {
   /** Read both documents an application points at. Either side may be absent. */
   async load(app: Application | null): Promise<void> {
     const [cv, letter] = await Promise.all([
-      app?.cvDocumentId ? this.db.documentLibraryGet(app.cvDocumentId) : Promise.resolve(null),
+      app?.cvDocumentId ? this.docs.documentLibraryGet(app.cvDocumentId) : Promise.resolve(null),
       app?.coverLetterDocumentId
-        ? this.db.documentLibraryGet(app.coverLetterDocumentId)
+        ? this.docs.documentLibraryGet(app.coverLetterDocumentId)
         : Promise.resolve(null),
     ]);
     this.cv.set(cv);
@@ -77,7 +78,7 @@ export class LinkedDocumentsService {
     app: Application,
     fallbackLanguage: SupportedLanguage,
   ): Promise<LinkResult | null> {
-    const item = await this.db.documentLibraryGet(id);
+    const item = await this.docs.documentLibraryGet(id);
     if (!item) return null;
     const application = await this.db.upsertApplication({
       ...app,
@@ -102,7 +103,7 @@ export class LinkedDocumentsService {
     if (!item || !item.isApplicationDraft) return;
     this.commitError.set(null);
     try {
-      const committed = await this.db.documentLibraryCommit(item.id);
+      const committed = await this.docs.documentLibraryCommit(item.id);
       if (!committed) return;
       this.set(kind, committed);
     } catch (e) {

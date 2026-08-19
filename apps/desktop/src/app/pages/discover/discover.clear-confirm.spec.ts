@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService, DiscoverGateway } from '@applye/data';
+import { DbService, DiscoverGateway, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
 import { ToastService } from '@applye/application';
@@ -76,6 +76,7 @@ describe('Discover: the clear-feed confirmation', () => {
         // through `DiscoverGateway` now, and still read the profile and the
         // settings through `DbService` - neither domain has moved yet.
         { provide: DbService, useValue: db },
+        { provide: DocumentsGateway, useValue: db },
         { provide: DiscoverGateway, useValue: db },
         TranslateService,
         ToastService,

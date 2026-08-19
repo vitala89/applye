@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 
 /**
  * The profile headshot's pick-crop-save flow: whether a save is running, the
@@ -21,6 +21,7 @@ import { DbService } from '@applye/data';
 @Injectable()
 export class ProfilePhotoStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
 
   readonly saving = signal(false);
   /** Source image awaiting a crop; non-null opens the crop modal. */
@@ -35,7 +36,7 @@ export class ProfilePhotoStore {
   async readForCrop(path: string): Promise<boolean> {
     this.error.set('');
     try {
-      this.cropSourceUri.set(await this.db.cvPhotoReadFile(path));
+      this.cropSourceUri.set(await this.docs.cvPhotoReadFile(path));
       return true;
     } catch (e) {
       this.error.set(String(e));

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { DocumentLibraryItem } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { CoverLetterContentStore } from './cover-letter-content.store';
 import { CoverLetterDocumentStore } from './cover-letter-document.store';
 import { CoverLetterStyleStore } from './cover-letter-style.store';
@@ -33,6 +33,7 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
       CoverLetterContentStore,
       CoverLetterStyleStore,
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
     ],
   });
   return {

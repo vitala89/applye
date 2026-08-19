@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Application, CvTemplate, Job } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { CvGenerateStore } from './cv-generate.store';
 
 const JOBS = [{ id: 5, company: 'Acme', title: 'Engineer', jdText: 'Build things' }] as Job[];
@@ -43,6 +43,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
     providers: [
       CvGenerateStore,
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
       { provide: AiService, useValue: ai },
     ],
   });

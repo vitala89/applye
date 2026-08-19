@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CoverLetterStyleStore } from '@applye/application';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover.component';
 
 describe('CoverLetterStylePopoverComponent', () => {
@@ -8,11 +8,14 @@ describe('CoverLetterStylePopoverComponent', () => {
   let styles: CoverLetterStyleStore;
 
   beforeEach(async () => {
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = { checkStyleSafety: jest.fn().mockResolvedValue([]) };
     await TestBed.configureTestingModule({
       imports: [CoverLetterStylePopoverComponent],
       providers: [
         CoverLetterStyleStore,
-        { provide: DbService, useValue: { checkStyleSafety: jest.fn().mockResolvedValue([]) } },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
       ],
     }).compileComponents();
 

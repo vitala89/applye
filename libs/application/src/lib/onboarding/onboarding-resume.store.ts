@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { AiMode, AiProvider } from '@applye/core';
 import { parseCvSkillResponse } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { OnboardingReviewStore } from './onboarding-review.store';
 
 /** How the user is giving the wizard their history, if at all. */
@@ -37,6 +37,7 @@ export interface OnboardingAiDispatch {
 @Injectable()
 export class OnboardingResumeStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
   private readonly review = inject(OnboardingReviewStore);
 
@@ -88,7 +89,7 @@ export class OnboardingResumeStore {
     this.failed.set(false);
     this.failureDetail.set(null);
     try {
-      const file = await this.db.cvImportReadFile(path);
+      const file = await this.docs.cvImportReadFile(path);
       this.text.set(file.text);
       this.inputHash.set(file.inputHash);
       this.fileName.set(path.split(/[/\\]/).pop() ?? path);

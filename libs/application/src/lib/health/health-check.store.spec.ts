@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, SystemGateway } from '@applye/data';
+import { DbService, DocumentsGateway, SystemGateway } from '@applye/data';
 import { HealthCheckStore } from './health-check.store';
 
 function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
@@ -14,6 +14,7 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
     providers: [
       HealthCheckStore,
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
     ],
   });

@@ -14,7 +14,7 @@ import {
 } from '@applye/core';
 
 import { GapFillHooks, foldInGapAnswers, saveBlockBestEffort } from './gap-fill';
-import { AiService, DbService, SystemGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
@@ -116,6 +116,7 @@ export function applyDateAnswers(parsed: ParsedCv, answers: CvGapAnswer[]): void
 @Injectable()
 export class CvDraftService {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly docGen = inject(DocumentGenService);
@@ -185,7 +186,7 @@ export class CvDraftService {
     parsed: ParsedCv,
     inputHash: string,
   ): Promise<CvDraftResult> {
-    const document = await this.db.documentLibraryUpsert({
+    const document = await this.docs.documentLibraryUpsert({
       // One CV per application (ADR-0003): reuse the already-linked document
       // whenever there is one, so a first tailor and every later
       // retailor/regenerate update the same row instead of creating duplicate

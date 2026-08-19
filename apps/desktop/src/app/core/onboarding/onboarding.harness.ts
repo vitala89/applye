@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CvParsedContent } from '@applye/core';
-import { AiService, DbService, KeysService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ThemeService } from '../theme.service';
 import { ToastService } from '@applye/application';
@@ -93,6 +93,7 @@ export async function createOnboarding(): Promise<OnboardingHarness> {
     imports: [OnboardingComponent],
     providers: [
       { provide: DbService, useValue: dbStub },
+      { provide: DocumentsGateway, useValue: dbStub },
       {
         provide: AiService,
         useValue: {

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CvPhotoStore, CvStyleStore } from '@applye/application';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 
@@ -35,6 +35,7 @@ describe('CvDetailComponent per-section style', () => {
       imports: [CvDetailComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,

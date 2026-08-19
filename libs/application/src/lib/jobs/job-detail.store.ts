@@ -7,7 +7,7 @@ import type {
   Settings,
   SupportedLanguage,
 } from '@applye/core';
-import { DbService, JobsStore } from '@applye/data';
+import { DbService, DocumentsGateway, JobsStore } from '@applye/data';
 import { baseCvChoices } from './job-document-defaults';
 import { ToastService } from '../shell/toast.service';
 import { TranslateService } from '@applye/i18n';
@@ -37,6 +37,7 @@ import { TranslateService } from '@applye/i18n';
 @Injectable()
 export class JobDetailStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly jobs = inject(JobsStore);
   private readonly toast = inject(ToastService);
   private readonly t = inject(TranslateService).t;
@@ -126,8 +127,8 @@ export class JobDetailStore {
     const job = this.job();
     if (!job) return;
     const [cvs, coverLetters] = await Promise.all([
-      this.db.documentLibraryList('cv'),
-      this.db.documentLibraryList('cover_letter'),
+      this.docs.documentLibraryList('cv'),
+      this.docs.documentLibraryList('cover_letter'),
     ]);
     this.coverLetters.set(coverLetters);
     const choices = baseCvChoices(

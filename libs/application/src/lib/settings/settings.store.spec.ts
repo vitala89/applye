@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Settings } from '@applye/core';
-import { DbService, KeysService } from '@applye/data';
+import { DbService, DocumentsGateway, KeysService } from '@applye/data';
 import { SettingsStore } from './settings.store';
 
 const ROW = { provider: 'claude', aiMode: 'api', uiLanguage: 'en' } as Settings;
@@ -21,6 +21,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
     providers: [
       SettingsStore,
       { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
       { provide: KeysService, useValue: keys },
     ],
   });

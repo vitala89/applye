@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { CoverLetterDetailComponent } from './cover-letter-detail.component';
@@ -21,6 +21,7 @@ describe('CoverLetterDetailComponent preview atoms', () => {
       imports: [CoverLetterDetailComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,
@@ -114,6 +115,7 @@ describe('CoverLetterDetailComponent back navigation', () => {
       imports: [CoverLetterDetailComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,

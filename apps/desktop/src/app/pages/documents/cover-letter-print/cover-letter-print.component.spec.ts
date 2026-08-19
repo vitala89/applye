@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type { ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { CoverLetterPrintStore } from '@applye/application';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CoverLetterPrintComponent } from './cover-letter-print.component';
 
@@ -49,6 +49,7 @@ describe('CoverLetterPrintComponent', () => {
       imports: [CoverLetterPrintComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         TranslateService,
         {
           provide: ActivatedRoute,

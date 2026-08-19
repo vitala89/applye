@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { DocumentLibraryItem } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 import { CoverLetterContentStore } from './cover-letter-content.store';
 import { CoverLetterStyleStore } from './cover-letter-style.store';
 import { buildCoverLetterUpsert } from './cover-letter-record';
@@ -22,7 +22,7 @@ import { siblingsToUndefault } from './document-record';
  */
 @Injectable()
 export class CoverLetterDocumentStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
   private readonly letter = inject(CoverLetterContentStore);
   private readonly styles = inject(CoverLetterStyleStore);
 

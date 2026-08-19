@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { InterviewPrepStore } from '@applye/application';
@@ -29,10 +29,13 @@ const navigate = jest.fn();
 async function createFixture(): Promise<ComponentFixture<InterviewPrepComponent>> {
   navigate.mockClear();
   TestBed.resetTestingModule();
+  // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+  const dbStub = { listPipelineCards: jest.fn().mockResolvedValue([CARD]) };
   TestBed.configureTestingModule({
     imports: [InterviewPrepComponent],
     providers: [
-      { provide: DbService, useValue: { listPipelineCards: jest.fn().mockResolvedValue([CARD]) } },
+      { provide: DbService, useValue: dbStub },
+      { provide: DocumentsGateway, useValue: dbStub },
       { provide: Router, useValue: { navigate } },
       TranslateService,
       ToastService,

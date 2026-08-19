@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ShellLayoutComponent } from './shell-layout.component';
 import { UPDATE_BACKEND, UpdaterService } from '../core/updater.service';
@@ -31,6 +31,7 @@ describe('ShellLayoutComponent update badge', () => {
       providers: [
         provideRouter([]),
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         TranslateService,
         {
           provide: UPDATE_BACKEND,

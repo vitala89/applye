@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingResumeStore } from '@applye/application';
 import { OnboardingReviewStore } from '@applye/application';
@@ -14,13 +14,16 @@ describe('OnboardingResumeStepComponent', () => {
   }
 
   beforeEach(() => {
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = { cvImportReadFile: jest.fn() };
     TestBed.configureTestingModule({
       imports: [OnboardingResumeStepComponent],
       providers: [
         OnboardingResumeStore,
         OnboardingReviewStore,
         TranslateService,
-        { provide: DbService, useValue: { cvImportReadFile: jest.fn() } },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
       ],
     });

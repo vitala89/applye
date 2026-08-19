@@ -6,7 +6,7 @@ import {
   serializeCompensation,
   type Profile,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import {
   appendCompensation,
   applyContactOverrides,
@@ -40,6 +40,7 @@ export type OnboardingCvSaveOutcome = 'saved' | 'skipped' | 'failed';
 @Injectable()
 export class OnboardingFinishStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly resume = inject(OnboardingResumeStore);
   private readonly review = inject(OnboardingReviewStore);
   private readonly targeting = inject(OnboardingTargetingStore);
@@ -118,12 +119,12 @@ export class OnboardingFinishStore {
       // Re-running the wizard on the same file must not stack up copies. The
       // existing document wins: it may already carry edits made in Documents,
       // and silently overwriting those would cost more than a skipped rewrite.
-      if (hasCvForInputHash(await this.db.documentLibraryList('cv'), inputHash)) return 'skipped';
-      await this.db.documentLibraryUpsert(
+      if (hasCvForInputHash(await this.docs.documentLibraryList('cv'), inputHash)) return 'skipped';
+      await this.docs.documentLibraryUpsert(
         buildOnboardingCvInput({
           parsed,
           overrides: this.review.overrides(),
-          templates: await this.db.cvTemplatesList(),
+          templates: await this.docs.cvTemplatesList(),
           regionTag: regionTagForUiLanguage(settings.uiLanguage),
           language: settings.defaultDocLanguage ?? 'en',
           fallbackLabel: args.fallbackLabel,

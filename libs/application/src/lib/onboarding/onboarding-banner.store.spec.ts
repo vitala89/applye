@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Profile, Settings } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { OnboardingBannerStore } from './onboarding-banner.store';
 
 const settings = (over: Partial<Settings> = {}): Settings =>
@@ -15,7 +15,11 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [OnboardingBannerStore, { provide: DbService, useValue: db }],
+    providers: [
+      OnboardingBannerStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(OnboardingBannerStore), db };
 }

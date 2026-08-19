@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService, CvStyleStore } from '@applye/application';
 import { mergePersonalField } from '@applye/application';
@@ -63,6 +63,7 @@ describe('CvDetailComponent personal-details top card visibility', () => {
       imports: [CvDetailComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,
@@ -230,6 +231,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
       imports: [CvDetailComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,
@@ -340,6 +342,7 @@ describe('CvDetailComponent export/print hardening', () => {
       imports: [CvDetailComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,
@@ -438,6 +441,7 @@ describe('CvDetailComponent back navigation', () => {
       imports: [CvDetailComponent],
       providers: [
         { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,

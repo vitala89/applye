@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { CoverLetterContent, DocumentLibraryItem, Job, SupportedLanguage } from '@applye/core';
 import { parseCoverLetterResponse } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import {
   COVER_LETTER_GENERIC_JD,
   COVER_LETTER_SECTION_ALL,
@@ -41,6 +41,7 @@ export interface GenerateLabels {
 @Injectable()
 export class CoverLetterGenerateStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
 
   readonly open = signal(false);
@@ -124,7 +125,7 @@ export class CoverLetterGenerateStore {
         return 'bad-json';
       }
 
-      const created: DocumentLibraryItem = await this.db.documentLibraryUpsert({
+      const created: DocumentLibraryItem = await this.docs.documentLibraryUpsert({
         docType: 'cover_letter',
         source: 'generated',
         label: labels.documentLabel,

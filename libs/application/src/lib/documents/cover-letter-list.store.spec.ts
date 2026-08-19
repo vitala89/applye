@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { DocumentLibraryItem } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { CoverLetterListStore } from './cover-letter-list.store';
 
 const item = (over: Partial<DocumentLibraryItem> = {}): DocumentLibraryItem =>
@@ -25,7 +25,11 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [CoverLetterListStore, { provide: DbService, useValue: db }],
+    providers: [
+      CoverLetterListStore,
+      { provide: DbService, useValue: db },
+      { provide: DocumentsGateway, useValue: db },
+    ],
   });
   return { store: TestBed.inject(CoverLetterListStore), db };
 }

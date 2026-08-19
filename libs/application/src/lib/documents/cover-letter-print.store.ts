@@ -6,7 +6,7 @@ import {
   type CoverLetterContent,
   type CoverLetterStyle,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 
 /**
  * What the hidden print window renders for a cover letter, and the one call
@@ -22,7 +22,7 @@ import { DbService } from '@applye/data';
  */
 @Injectable()
 export class CoverLetterPrintStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
 
   readonly loaded = signal(false);
   readonly content = signal<CoverLetterContent>({

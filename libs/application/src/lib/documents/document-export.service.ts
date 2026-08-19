@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService, SystemGateway } from '@applye/data';
+import { DocumentsGateway, SystemGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { exportFileName } from './export-filename';
 import { TranslateService } from '@applye/i18n';
@@ -26,7 +26,7 @@ export interface LastExport {
  */
 @Injectable()
 export class DocumentExportService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(DocumentsGateway);
   private readonly system = inject(SystemGateway);
   private readonly i18n = inject(TranslateService);
 

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { CoverLetterTailorContext, CoverLetterTailorService } from './cover-letter-tailor.service';
 
 describe('CoverLetterTailorService', () => {
@@ -76,6 +76,7 @@ describe('CoverLetterTailorService', () => {
       providers: [
         CoverLetterTailorService,
         { provide: DbService, useValue: db },
+        { provide: DocumentsGateway, useValue: db },
         { provide: AiService, useValue: ai },
       ],
     });

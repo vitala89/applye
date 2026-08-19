@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { Job, Settings } from '@applye/core';
-import { AiService, DbService, JobSourceService, KeysService } from '@applye/data';
+import {
+  AiService,
+  DbService,
+  DocumentsGateway,
+  JobSourceService,
+  KeysService,
+} from '@applye/data';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 import {
   JobIdentityOutcome,
@@ -88,13 +94,16 @@ describe('JobIdentityResolverService', () => {
       },
     };
 
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = { getSettings: () => Promise.resolve(settings) };
     TestBed.configureTestingModule({
       providers: [
         JobIdentityResolverService,
         { provide: JobSourceService, useValue: source },
         { provide: AiService, useValue: ai },
         { provide: KeysService, useValue: { hasProviderKey: () => Promise.resolve(hasKey) } },
-        { provide: DbService, useValue: { getSettings: () => Promise.resolve(settings) } },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
         { provide: JobIdentityPromptService, useValue: prompt },
       ],
     });

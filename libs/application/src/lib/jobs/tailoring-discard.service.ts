@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application, DocumentLibraryItem } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
 import { TailorScoreService } from './tailor-score.service';
@@ -38,6 +38,7 @@ export interface TailoringDiscardContext {
 @Injectable()
 export class TailoringDiscardService {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly status = inject(DocumentReviewStatusService);
@@ -67,7 +68,7 @@ export class TailoringDiscardService {
       // so no unlink is owed here (the upsert COALESCEs those ids and could
       // not clear them anyway).
       for (const draft of applicationDrafts(ctx.documents)) {
-        await this.db.documentLibraryDelete(draft.id as number);
+        await this.docs.documentLibraryDelete(draft.id as number);
       }
       this.linkedDocs.clear();
       if (ctx.jobId != null) {

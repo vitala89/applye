@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT, resolvePageSettings } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvStyleStore, ToastService } from '@applye/application';
 import { CvDetailComponent } from './cv-detail.component';
@@ -50,27 +50,27 @@ describe('CvDetailComponent card wiring', () => {
         ],
       }),
     };
-
+    // One stub, two tokens - the document library and its exports come from
+    // `DocumentsGateway` now; the rest of this stub is still `DbService`'s.
+    const docsStub = {
+      documentLibraryGet: jest.fn().mockResolvedValue(docItem),
+      cvTemplatesList: jest.fn().mockResolvedValue([]),
+      // A profile WITH a photo, because `CvPhotoStore.dataUri` gates the
+      // placement chips - with a null profile the photo editor renders
+      // only its "add in profile" branch and the placement wiring is
+      // unreachable. A mutation that broke that wiring survived until
+      // this fixture carried an image.
+      getProfile: jest.fn().mockResolvedValue({
+        photoDataUri: 'data:image/png;base64,iVBORw0KGgo=',
+      }),
+      checkStyleSafety: jest.fn().mockResolvedValue([]),
+      documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
+    };
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        {
-          provide: DbService,
-          useValue: {
-            documentLibraryGet: jest.fn().mockResolvedValue(docItem),
-            cvTemplatesList: jest.fn().mockResolvedValue([]),
-            // A profile WITH a photo, because `CvPhotoStore.dataUri` gates the
-            // placement chips - with a null profile the photo editor renders
-            // only its "add in profile" branch and the placement wiring is
-            // unreachable. A mutation that broke that wiring survived until
-            // this fixture carried an image.
-            getProfile: jest.fn().mockResolvedValue({
-              photoDataUri: 'data:image/png;base64,iVBORw0KGgo=',
-            }),
-            checkStyleSafety: jest.fn().mockResolvedValue([]),
-            documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
-          },
-        },
+        { provide: DbService, useValue: docsStub },
+        { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         ToastService,

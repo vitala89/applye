@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { AnalyticsApplication, AnalyticsFacts } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { AnalyticsComponent } from './analytics.component';
@@ -61,17 +61,18 @@ describe('AnalyticsComponent', () => {
 
   async function mount(facts: AnalyticsFacts | null, fails = false): Promise<void> {
     const toast = { error: jest.fn(), success: jest.fn() };
+    // One stub, two tokens - the document library and its exports come from
+    // `DocumentsGateway` now; the rest of this stub is still `DbService`'s.
+    const docsStub = {
+      getAnalyticsFacts: fails
+        ? jest.fn().mockRejectedValue(new Error('no db'))
+        : jest.fn().mockResolvedValue(facts),
+    };
     await TestBed.configureTestingModule({
       imports: [AnalyticsComponent],
       providers: [
-        {
-          provide: DbService,
-          useValue: {
-            getAnalyticsFacts: fails
-              ? jest.fn().mockRejectedValue(new Error('no db'))
-              : jest.fn().mockResolvedValue(facts),
-          },
-        },
+        { provide: DbService, useValue: docsStub },
+        { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
         TranslateService,
         { provide: ToastService, useValue: toast },

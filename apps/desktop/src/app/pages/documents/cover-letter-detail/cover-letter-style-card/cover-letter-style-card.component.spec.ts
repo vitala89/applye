@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CoverLetterStyleStore } from '@applye/application';
-import { DbService } from '@applye/data';
+import { DbService, DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card.component';
 
@@ -10,11 +10,14 @@ describe('CoverLetterStyleCardComponent', () => {
   let styles: CoverLetterStyleStore;
 
   beforeEach(async () => {
+    // One stub, two tokens - the style check comes from `DocumentsGateway` now.
+    const dbStub = { checkStyleSafety: jest.fn().mockResolvedValue([]) };
     await TestBed.configureTestingModule({
       imports: [CoverLetterStyleCardComponent],
       providers: [
         CoverLetterStyleStore,
-        { provide: DbService, useValue: { checkStyleSafety: jest.fn().mockResolvedValue([]) } },
+        { provide: DbService, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
       ],
     }).compileComponents();
 

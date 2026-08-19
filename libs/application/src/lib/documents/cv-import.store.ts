@@ -6,7 +6,7 @@ import type {
   SupportedLanguage,
 } from '@applye/core';
 import { buildCvContent, parseCvSkillResponse } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, DocumentsGateway } from '@applye/data';
 
 /**
  * What reading the picked file produced. Each is a different thing on screen,
@@ -47,6 +47,7 @@ const DEFAULT_REGION_TAG = 'de';
 @Injectable()
 export class CvImportStore {
   private readonly db = inject(DbService);
+  private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
 
   readonly open = signal(false);
@@ -94,7 +95,7 @@ export class CvImportStore {
     if (this.busy()) return 'busy';
     this.busy.set(true);
     try {
-      const file = await this.db.cvImportReadFile(path);
+      const file = await this.docs.cvImportReadFile(path);
 
       const existing = cvs.find((c) => c.source === 'uploaded' && c.inputHash === file.inputHash);
       if (existing) {
@@ -145,7 +146,7 @@ export class CvImportStore {
     try {
       const template = templates.find((tpl) => tpl.id === this.templateId()) ?? null;
       const content = buildCvContent(parsed, template);
-      await this.db.documentLibraryUpsert({
+      await this.docs.documentLibraryUpsert({
         docType: 'cv',
         source: 'uploaded',
         label: this.label(),

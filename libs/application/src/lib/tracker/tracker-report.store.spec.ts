@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import type { TrackerCustomColumn, TrackerRow } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway, TrackerGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  ProfileSettingsGateway,
+  TrackerGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TrackerColumnsStore } from './tracker-columns.store';
 import { TrackerReportStore } from './tracker-report.store';
@@ -31,11 +36,12 @@ function createStore(rows: TrackerRow[] = [], customColumns: TrackerCustomColumn
       TrackerColumnsStore,
       TrackerRowsStore,
       TrackerReportStore,
-      // One stub, two tokens. The subject itself only needs the gateway, but it
-      // injects `TrackerRowsStore`, which still reads `getSettings` and
-      // `deleteJob` through `DbService` - a spec provides for the dependency
-      // graph, not for the subject alone.
-      { provide: DbService, useValue: db },
+      // One stub object, several tokens. The subject itself only needs the
+      // tracker gateway, but it injects `TrackerRowsStore`, which reads
+      // `getSettings` through `ProfileSettingsGateway` and `deleteJob` through
+      // `JobsGateway` - a spec provides for the dependency graph, not for the
+      // subject alone.
+      { provide: ProfileSettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },

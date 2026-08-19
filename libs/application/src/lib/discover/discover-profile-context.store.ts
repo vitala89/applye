@@ -6,7 +6,7 @@ import {
   parseLocalMarkets,
   parseProfileMd,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { ProfileSettingsGateway } from '@applye/data';
 
 /** The compensation target read out of the profile markdown. */
 export interface CompensationTarget {
@@ -33,7 +33,7 @@ const NO_TARGET: CompensationTarget = { min: '', max: '', currency: '', period: 
  */
 @Injectable()
 export class DiscoverProfileContextStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
 
   private readonly archetypesState = signal<Archetype[]>([]);
   private readonly keywordsState = signal<string[]>([]);

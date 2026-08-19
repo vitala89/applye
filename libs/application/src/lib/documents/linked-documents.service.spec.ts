@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { LinkedDocumentsService } from './linked-documents.service';
 
 describe('LinkedDocumentsService', () => {
@@ -42,7 +42,6 @@ describe('LinkedDocumentsService', () => {
     TestBed.configureTestingModule({
       providers: [
         LinkedDocumentsService,
-        { provide: DbService, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },

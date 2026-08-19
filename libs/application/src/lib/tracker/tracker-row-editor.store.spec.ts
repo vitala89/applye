@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import type { TrackerRow } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway, TrackerGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  ProfileSettingsGateway,
+  TrackerGateway,
+} from '@applye/data';
 import { TrackerColumnDef } from './tracker-columns';
 import { TrackerRowEditorStore } from './tracker-row-editor.store';
 import { TrackerRowsStore } from './tracker-rows.store';
@@ -25,7 +30,7 @@ function createStore(rows: TrackerRow[] = []) {
     providers: [
       TrackerRowsStore,
       TrackerRowEditorStore,
-      { provide: DbService, useValue: db },
+      { provide: ProfileSettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },

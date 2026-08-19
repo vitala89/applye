@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { SupportedLanguage } from '@applye/core';
-import { DbService } from '@applye/data';
+import { ProfileSettingsGateway } from '@applye/data';
 
 /** localStorage key for the sidebar rail preference. */
 const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
@@ -21,7 +21,7 @@ const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
  */
 @Injectable()
 export class ShellStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
 
   /** Null until the settings row has been read, and after a failed read. */
   readonly uiLanguage = signal<SupportedLanguage | null>(null);

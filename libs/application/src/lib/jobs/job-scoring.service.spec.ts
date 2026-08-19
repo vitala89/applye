@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import {
   AiService,
   AtsService,
-  DbService,
   DocumentsGateway,
   JobsGateway,
   JobsStore,
@@ -73,7 +72,6 @@ describe('JobScoringService', () => {
         FinalChecksService,
         TailorScoreService,
         WizardActivityService,
-        { provide: DbService, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },

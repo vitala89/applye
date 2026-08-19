@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { DocumentLibraryItem } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { CoverLetterListStore } from './cover-letter-list.store';
 
 const item = (over: Partial<DocumentLibraryItem> = {}): DocumentLibraryItem =>
@@ -27,7 +27,6 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   TestBed.configureTestingModule({
     providers: [
       CoverLetterListStore,
-      { provide: DbService, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

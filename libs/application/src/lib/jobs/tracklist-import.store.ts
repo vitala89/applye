@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { ImportPreviewRow, ImportRawRow, ImportSkipped } from '@applye/core';
-import { AiService, DbService, SystemGateway } from '@applye/data';
+import { AiService, ProfileSettingsGateway, SystemGateway } from '@applye/data';
 import { parseImportResponse, toRawRows } from './tracklist-import';
 
 export type ImportStep = 'pick' | 'preview' | 'done';
@@ -31,7 +31,7 @@ export interface ImportResult {
  */
 @Injectable()
 export class TracklistImportStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
 

@@ -7,7 +7,7 @@ import type {
   Settings,
   SupportedLanguage,
 } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway, JobsStore } from '@applye/data';
+import { DocumentsGateway, JobsGateway, JobsStore, ProfileSettingsGateway } from '@applye/data';
 import { baseCvChoices } from './job-document-defaults';
 import { ToastService } from '../shell/toast.service';
 import { TranslateService } from '@applye/i18n';
@@ -19,7 +19,7 @@ import { TranslateService } from '@applye/i18n';
  *
  * This is the last screen to come out of `COMPONENTS_STILL_USING_THE_GATEWAY`
  * (ADR-0005). The page held all four reads and the one write directly against
- * `DbService`; they are here now, and the page renders and orchestrates.
+ * the data gateway; they are here now, and the page renders and orchestrates.
  *
  * **It deliberately stops at the data.** The load path on the page interleaves
  * these reads with six `apps/desktop` services - the cached score, the review
@@ -36,7 +36,7 @@ import { TranslateService } from '@applye/i18n';
  */
 @Injectable()
 export class JobDetailStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly jobsDb = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly jobs = inject(JobsStore);

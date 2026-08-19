@@ -1,7 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InterviewStage } from '@applye/core';
-import { DbService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  InterviewGateway,
+  JobsGateway,
+  ProfileSettingsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { InterviewStagesStore } from '@applye/application';
@@ -16,11 +21,11 @@ const STAGE: InterviewStage = {
   status: 'scheduled',
 };
 
-function buildComponent(overrides: { db?: Partial<DbService> } = {}): {
+function buildComponent(overrides: { db?: Partial<ProfileSettingsGateway> } = {}): {
   component: InterviewPrepDetailComponent;
   fixture: ComponentFixture<InterviewPrepDetailComponent>;
 } {
-  const dbStub: Partial<DbService> = {
+  const dbStub: Partial<ProfileSettingsGateway> = {
     listPipelineCards: jest.fn().mockResolvedValue([
       {
         id: 1,
@@ -38,7 +43,6 @@ function buildComponent(overrides: { db?: Partial<DbService> } = {}): {
   TestBed.configureTestingModule({
     imports: [InterviewPrepDetailComponent],
     providers: [
-      { provide: DbService, useValue: dbStub },
       { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: InterviewGateway, useValue: dbStub },

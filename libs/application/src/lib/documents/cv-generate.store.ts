@@ -7,7 +7,7 @@ import {
   parseArchetypes,
   parseCvSkillResponse,
 } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 
 /**
  * What one generation attempt did. Each is a different fact, and none of them
@@ -52,7 +52,7 @@ const DEFAULT_REGION_TAG = 'de';
  */
 @Injectable()
 export class CvGenerateStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly jobs = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);

@@ -28,8 +28,8 @@ import { pickCurrentStage, sortStages } from './interview-stage-view';
 @Injectable()
 export class QuickViewStore {
   private readonly db = inject(JobsGateway);
-  /** Stages come from `InterviewGateway`; `db` stays for the comment and
-   * status writes, which belong to the jobs domain and have not moved. */
+  /** Stages come from `InterviewGateway`; `db` is `JobsGateway`, for the
+   * comment and status writes. */
   private readonly interview = inject(InterviewGateway);
 
   readonly statusBusy = signal(false);

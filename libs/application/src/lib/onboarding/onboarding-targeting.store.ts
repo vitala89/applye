@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, ProfileSettingsGateway } from '@applye/data';
 import {
   CURRENCY_OPTIONS,
   normalizeCurrency,
@@ -26,7 +26,7 @@ const COMP_BAND = { lo: 50, hi: 300 };
  */
 @Injectable()
 export class OnboardingTargetingStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly ai = inject(AiService);
 
   readonly suggestedRoles = signal<string[]>([]);

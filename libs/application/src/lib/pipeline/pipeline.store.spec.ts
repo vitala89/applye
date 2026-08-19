@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Application, ApplicationStatus, InterviewStage, PipelineCard } from '@applye/core';
-import { DbService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
 import { PipelineStore } from './pipeline.store';
 
 const COLUMNS: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected', 'cancelled'];
@@ -27,7 +27,6 @@ function createStore(cards: PipelineCard[], over: Partial<Record<string, jest.Mo
   TestBed.configureTestingModule({
     providers: [
       PipelineStore,
-      { provide: DbService, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: InterviewGateway, useValue: db },

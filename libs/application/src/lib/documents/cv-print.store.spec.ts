@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvContent, CvSection, DocumentLibraryItem } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { CvPrintStore } from './cv-print.store';
 
 const item = (over: Partial<DocumentLibraryItem> = {}): DocumentLibraryItem =>
@@ -18,7 +18,6 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   TestBed.configureTestingModule({
     providers: [
       CvPrintStore,
-      { provide: DbService, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

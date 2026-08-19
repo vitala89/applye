@@ -1,6 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Profile } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileSettingsGateway,
+  SystemGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '@applye/application';
@@ -60,7 +66,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
     hashText = jest.fn().mockImplementation(async (text: string) => fakeHash(text));
     run = jest.fn().mockResolvedValue({ text: 'generated', tokensInput: 1, tokensOutput: 1 });
 
-    const dbStub: Partial<DbService> = {
+    const dbStub: Partial<ProfileSettingsGateway> = {
       getProfile,
       upsertProfile,
       hashText,
@@ -72,7 +78,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
     await TestBed.configureTestingModule({
       imports: [ProfileComponent],
       providers: [
-        { provide: DbService, useValue: dbStub },
+        { provide: ProfileSettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: SystemGateway, useValue: dbStub },

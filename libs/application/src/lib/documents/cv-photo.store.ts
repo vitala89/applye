@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { CvSection, PhotoPlacement } from '@applye/core';
-import { DbService } from '@applye/data';
+import { ProfileSettingsGateway } from '@applye/data';
 import {
   type CvPhotoFlags,
   applyPhotoFlags,
@@ -32,7 +32,7 @@ export const CV_PHOTO_PLACEMENTS: readonly { value: PhotoPlacement; labelKey: st
  */
 @Injectable()
 export class CvPhotoStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
 
   readonly includePhoto = signal(false);
   readonly placement = signal<PhotoPlacement>('above_left');

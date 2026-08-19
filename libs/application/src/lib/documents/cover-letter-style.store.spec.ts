@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { StyleNote } from '@applye/core';
 import { COVER_LETTER_STYLE_DEFAULT } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { CoverLetterStyleStore } from './cover-letter-style.store';
 
 function note(kind: StyleNote['kind'], detail: string): StyleNote {
@@ -14,7 +14,6 @@ function createStore(notes: StyleNote[] = []) {
   TestBed.configureTestingModule({
     providers: [
       CoverLetterStyleStore,
-      { provide: DbService, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

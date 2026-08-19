@@ -11,7 +11,7 @@ import {
   scoringState as computeScoringState,
   serializeArchetypes,
 } from '@applye/core';
-import { DbService, SystemGateway } from '@applye/data';
+import { ProfileSettingsGateway, SystemGateway } from '@applye/data';
 import { ProfileFormStore } from './profile-form.store';
 
 /** Every collapsible section on the profile page. */
@@ -40,7 +40,7 @@ export type ProfileSectionKey =
  */
 @Injectable()
 export class ProfileStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly system = inject(SystemGateway);
   readonly editor = inject(ProfileFormStore);
 

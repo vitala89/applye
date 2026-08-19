@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { CvSectionKey, Settings } from '@applye/core';
 import { mergeRegeneratedSection, parseCvSkillResponse } from '@applye/core';
-import { AiService, DbService, SystemGateway } from '@applye/data';
+import { AiService, ProfileSettingsGateway, SystemGateway } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import {
   CvNoProfileError,
@@ -30,7 +30,7 @@ const MAX_TOKENS = 8192;
  */
 @Injectable()
 export class CvRegenerationStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly document = inject(CvDocumentStore);

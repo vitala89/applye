@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type { ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { CoverLetterPrintStore } from '@applye/application';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CoverLetterPrintComponent } from './cover-letter-print.component';
 
@@ -40,7 +40,7 @@ describe('CoverLetterPrintComponent', () => {
 
   function setup(item: unknown) {
     printWindowReady = jest.fn().mockResolvedValue(undefined);
-    const dbStub: Partial<DbService> = {
+    const dbStub: Partial<ProfileSettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(item),
       printWindowReady,
     };
@@ -48,7 +48,6 @@ describe('CoverLetterPrintComponent', () => {
     TestBed.configureTestingModule({
       imports: [CoverLetterPrintComponent],
       providers: [
-        { provide: DbService, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         TranslateService,

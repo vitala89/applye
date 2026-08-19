@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DbService, JobsGateway, JobsStore } from '@applye/data';
+import { JobsGateway, JobsStore } from '@applye/data';
 import { WizardNavService } from './wizard-nav.service';
 import { WizardProgressService } from './wizard-progress.service';
 
@@ -20,10 +20,6 @@ describe('WizardNavService', () => {
         WizardNavService,
         WizardProgressService,
         { provide: JobsStore, useValue: { overview } },
-        {
-          provide: DbService,
-          useValue: { getJob: (id: number) => Promise.resolve(unlistedJobs[id] ?? null) },
-        },
         {
           provide: JobsGateway,
           useValue: { getJob: (id: number) => Promise.resolve(unlistedJobs[id] ?? null) },

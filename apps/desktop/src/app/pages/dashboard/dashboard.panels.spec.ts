@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { WizardProgressService } from '@applye/application';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
@@ -59,8 +59,9 @@ describe('DashboardComponent list panels', () => {
     sessionStorage.clear();
     navigate = jest.fn();
     TestBed.resetTestingModule();
-    // One stub, two tokens - `SystemGateway` now serves the shared
-    // operations, and the rest of this stub is still `DbService`'s.
+    // One stub object, several tokens - `SystemGateway` serves the shared
+    // operations, `JobsGateway` the jobs and pipeline reads, and
+    // `ProfileSettingsGateway` the profile row.
     const dbStub = {
       listPipelineCards: jest.fn().mockResolvedValue(cards),
       listJobsOverview: jest.fn().mockResolvedValue(jobs),
@@ -72,7 +73,7 @@ describe('DashboardComponent list panels', () => {
       imports: [DashboardComponent],
       providers: [
         provideRouter([]),
-        { provide: DbService, useValue: dbStub },
+        { provide: ProfileSettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: SystemGateway, useValue: dbStub },
@@ -228,8 +229,9 @@ describe('DashboardComponent KPI tiles and queue', () => {
   async function mount(cards: Record<string, unknown>[] = []): Promise<void> {
     sessionStorage.clear();
     TestBed.resetTestingModule();
-    // One stub, two tokens - `SystemGateway` now serves the shared
-    // operations, and the rest of this stub is still `DbService`'s.
+    // One stub object, several tokens - `SystemGateway` serves the shared
+    // operations, `JobsGateway` the jobs and pipeline reads, and
+    // `ProfileSettingsGateway` the profile row.
     const dbStub2 = {
       listPipelineCards: jest.fn().mockResolvedValue(cards),
       listJobsOverview: jest.fn().mockResolvedValue([]),
@@ -241,7 +243,7 @@ describe('DashboardComponent KPI tiles and queue', () => {
       imports: [DashboardComponent],
       providers: [
         provideRouter([]),
-        { provide: DbService, useValue: dbStub2 },
+        { provide: ProfileSettingsGateway, useValue: dbStub2 },
         { provide: JobsGateway, useValue: dbStub2 },
         { provide: DocumentsGateway, useValue: dbStub2 },
         { provide: SystemGateway, useValue: dbStub2 },

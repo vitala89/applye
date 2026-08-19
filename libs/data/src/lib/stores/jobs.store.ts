@@ -3,7 +3,7 @@ import { JobOverview } from '@applye/core';
 import { JobsGateway } from '../services/jobs.gateway';
 
 /**
- * Shared reactive projection over the jobs list. SQLite (via DbService) stays
+ * Shared reactive projection over the jobs list. SQLite (via `JobsGateway`) stays
  * the source of truth - this only mirrors it in memory so My Jobs and the job
  * detail view stay in sync without a full reload after every mutation.
  *

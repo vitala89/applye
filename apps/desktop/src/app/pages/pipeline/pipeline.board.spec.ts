@@ -3,13 +3,7 @@ import { By } from '@angular/platform-browser';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { provideRouter } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import {
-  AiService,
-  DbService,
-  DocumentsGateway,
-  InterviewGateway,
-  JobsGateway,
-} from '@applye/data';
+import { AiService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { PipelineComponent } from './pipeline.component';
@@ -50,9 +44,8 @@ describe('PipelineComponent board', () => {
 
   async function mount(cards: PipelineCard[] = [card()]): Promise<void> {
     TestBed.resetTestingModule();
-    // One stub, two tokens: the interview stages come from `InterviewGateway`
-    // now, and the rest of this stub is still `DbService`'s - those domains
-    // have not moved.
+    // One stub object, several tokens: the interview stages come from
+    // `InterviewGateway`, the applications and their comments from `JobsGateway`.
     const dbStub = {
       listPipelineCards: jest.fn().mockResolvedValue(cards),
       listInterviewStages: jest.fn().mockResolvedValue([]),
@@ -63,7 +56,6 @@ describe('PipelineComponent board', () => {
       imports: [PipelineComponent],
       providers: [
         provideRouter([]),
-        { provide: DbService, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: InterviewGateway, useValue: dbStub },
@@ -299,9 +291,8 @@ describe('PipelineComponent board', () => {
 
     it('reports a failed read with a retry rather than an empty board', async () => {
       TestBed.resetTestingModule();
-      // One stub, two tokens: the interview stages come from `InterviewGateway`
-      // now, and the rest of this stub is still `DbService`'s - those domains
-      // have not moved.
+      // One stub object, several tokens: the interview stages come from
+      // `InterviewGateway`, the applications and their comments from `JobsGateway`.
       const dbStub2 = {
         listPipelineCards: jest.fn().mockRejectedValue(new Error('db gone')),
         listInterviewStages: jest.fn().mockResolvedValue([]),
@@ -310,7 +301,6 @@ describe('PipelineComponent board', () => {
         imports: [PipelineComponent],
         providers: [
           provideRouter([]),
-          { provide: DbService, useValue: dbStub2 },
           { provide: JobsGateway, useValue: dbStub2 },
           { provide: DocumentsGateway, useValue: dbStub2 },
           { provide: InterviewGateway, useValue: dbStub2 },

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { AiProvider, Settings } from '@applye/core';
-import { DbService, KeysService } from '@applye/data';
+import { KeysService, ProfileSettingsGateway } from '@applye/data';
 
 /** Every provider whose key the factory reset has to clear. The keychain lives
  * outside the database, so wiping one does not touch the other. */
@@ -25,7 +25,7 @@ const ALL_PROVIDERS: AiProvider[] = ['claude', 'deepseek', 'openai', 'gemini', '
  */
 @Injectable()
 export class SettingsStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly keys = inject(KeysService);
 
   readonly record = signal<Settings | null>(null);

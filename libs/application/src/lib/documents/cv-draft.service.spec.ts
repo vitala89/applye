@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AiService, DbService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import {
@@ -158,7 +158,6 @@ describe('CvDraftService', () => {
         CvDraftService,
         CvGapDialogService,
         TranslateService,
-        { provide: DbService, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },

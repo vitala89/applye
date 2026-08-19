@@ -13,8 +13,9 @@ jest.mock('@tauri-apps/api/core', () => ({ invoke: jest.fn(async () => null) }))
  * `portal_answers_get` where it meant `tailoring_cache_get` would leave all
  * 1642 application tests green and fail only in the running app - and the Rust
  * side would simply not find a command by that name. The strings were equally
- * unverified while they lived on `DbService`; this is the seam the remaining
- * seven gateway extractions should copy rather than a gap this one opened.
+ * unverified while they lived on `DbService`, the god-service this migration
+ * replaced; this is the seam the other seven gateway extractions copied rather
+ * than a gap this one opened.
  *
  * `tauriInvoke` refuses to dispatch outside Tauri, so `__TAURI_INTERNALS__` is
  * set to satisfy that guard - the check being made here is about what is sent,

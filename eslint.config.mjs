@@ -11,7 +11,9 @@ import tseslint from 'typescript-eslint';
  * This rule began as a ratchet with an allowlist of 26 components that still
  * injected `DbService`; every migrated page deleted its own line, `jobs` deleted
  * the last one, and the allowlist and its conditional spread are gone with it
- * (ADR-0005, amendment fifty-six).
+ * (ADR-0005, amendment fifty-six). `DbService` itself is gone now too, cut into
+ * eight per-domain gateways, so the pattern below matches any `*Gateway` rather
+ * than a list that would have gone stale once per pull request.
  *
  * **`@nx/enforce-module-boundaries` now catches strictly more than this rule**,
  * since `type:data` left `type:app`'s allowlist in amendment fifty-five: every
@@ -35,16 +37,23 @@ import tseslint from 'typescript-eslint';
  * convention would slip through the same hole, and the fix for that is the
  * naming convention rather than a longer glob.
  */
-const GATEWAY_SERVICES = ['DbService', 'AiService', 'JobSourceService'];
+const GATEWAY_SERVICES = ['AiService', 'JobSourceService'];
 
-/** Matches `inject(DbService)` however it is written, including a type argument. */
-const GATEWAY_INJECTION = `CallExpression[callee.name="inject"] > Identifier.arguments[name=/^(${GATEWAY_SERVICES.join(
-  '|',
-)})$/]`;
+/**
+ * `DbService` used to head this list. It is gone: the eight-gateway migration
+ * deleted it, and naming its successors one by one would have left the rule
+ * silently narrower every time a gateway landed - a rule that names nothing is
+ * worse than no rule, because it still reads like cover. **The pattern matches
+ * any `*Gateway`**, so the ninth is covered on the day it is written.
+ */
+const GATEWAY_NAME_PATTERN = `(${[...GATEWAY_SERVICES, '[A-Za-z]+Gateway'].join('|')})`;
+
+/** Matches `inject(JobsGateway)` however it is written, including a type argument. */
+const GATEWAY_INJECTION = `CallExpression[callee.name="inject"] > Identifier.arguments[name=/^${GATEWAY_NAME_PATTERN}$/]`;
 
 const GATEWAY_INJECTION_MESSAGE = `A component may not inject a data-layer service (${GATEWAY_SERVICES.join(
   ', ',
-)}) - ADR-0005. Screen state and data access belong to a signal store in libs/application; the component renders and delegates. Put this read, write or model call in a store.`;
+)}, or any *Gateway) - ADR-0005. Screen state and data access belong to a signal store in libs/application; the component renders and delegates. Put this read, write or model call in a store.`;
 
 export default tseslint.config(
   ...nx.configs['flat/base'],
@@ -103,7 +112,7 @@ export default tseslint.config(
     // Tests are exempt from the `type:data` half of the rule above, and only
     // from that half. A spec provides fakes for the collaborators of the unit
     // it tests - an app component's store reaches the gateway, so its spec has
-    // to be able to name `DbService` to stub it. That is test wiring, not a
+    // to be able to name that gateway to stub it. That is test wiring, not a
     // dependency direction, and rewriting 25 specs to fake a store's own
     // collaborator graph instead would test less while changing more.
     //

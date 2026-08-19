@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CvPhotoStore, CvStyleStore } from '@applye/application';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 
@@ -24,7 +24,7 @@ describe('CvDetailComponent per-section style', () => {
   let photo: CvPhotoStore;
 
   beforeEach(async () => {
-    const dbStub: Partial<DbService> = {
+    const dbStub: Partial<ProfileSettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
@@ -34,7 +34,7 @@ describe('CvDetailComponent per-section style', () => {
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: DbService, useValue: dbStub },
+        { provide: ProfileSettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },

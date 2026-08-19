@@ -7,9 +7,9 @@ import { tauriInvoke } from '../tauri.invoke';
  * the sources the scan runs against.
  *
  * **The second per-domain gateway** cut out of `db.service.ts` - see
- * `CODE_QUALITY.md` for the migration and `DraftsGateway` for the pattern. A
- * method still on `DbService` means its domain has not moved yet, never that it
- * belongs there.
+ * `CODE_QUALITY.md` for the migration and `DraftsGateway` for the pattern.
+ * While that file still existed, a method on it meant its domain had not moved
+ * yet, never that it belonged there; the eighth gateway deleted it.
  *
  * **Discover went second on churn, not on size.** The order was re-judged when
  * the two turned out to be almost uncorrelated: profile and settings is seven

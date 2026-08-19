@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService } from '@applye/data';
+import { ProfileSettingsGateway } from '@applye/data';
 import { shouldShowOnboardingBanner } from './onboarding-gate.util';
 
 /**
@@ -18,7 +18,7 @@ import { shouldShowOnboardingBanner } from './onboarding-gate.util';
  */
 @Injectable()
 export class OnboardingBannerStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
 
   readonly visible = signal(false);
 

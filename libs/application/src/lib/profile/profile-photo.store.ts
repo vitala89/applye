@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DocumentsGateway, ProfileSettingsGateway } from '@applye/data';
 
 /**
  * The profile headshot's pick-crop-save flow: whether a save is running, the
@@ -20,7 +20,7 @@ import { DbService, DocumentsGateway } from '@applye/data';
  */
 @Injectable()
 export class ProfilePhotoStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(ProfileSettingsGateway);
   private readonly docs = inject(DocumentsGateway);
 
   readonly saving = signal(false);

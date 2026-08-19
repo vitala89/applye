@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Profile, Settings } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { OnboardingBannerStore } from './onboarding-banner.store';
 
 const settings = (over: Partial<Settings> = {}): Settings =>
@@ -17,7 +17,7 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   TestBed.configureTestingModule({
     providers: [
       OnboardingBannerStore,
-      { provide: DbService, useValue: db },
+      { provide: ProfileSettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

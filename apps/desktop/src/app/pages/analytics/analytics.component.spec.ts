@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { AnalyticsApplication, AnalyticsFacts } from '@applye/core';
-import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '@applye/application';
 import { AnalyticsComponent } from './analytics.component';
@@ -61,8 +61,8 @@ describe('AnalyticsComponent', () => {
 
   async function mount(facts: AnalyticsFacts | null, fails = false): Promise<void> {
     const toast = { error: jest.fn(), success: jest.fn() };
-    // One stub, two tokens - the document library and its exports come from
-    // `DocumentsGateway` now; the rest of this stub is still `DbService`'s.
+    // One stub object, several tokens - the document library and its exports
+    // come from `DocumentsGateway` and the analytics facts from `JobsGateway`.
     const docsStub = {
       getAnalyticsFacts: fails
         ? jest.fn().mockRejectedValue(new Error('no db'))
@@ -71,7 +71,6 @@ describe('AnalyticsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AnalyticsComponent],
       providers: [
-        { provide: DbService, useValue: docsStub },
         { provide: JobsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
@@ -97,10 +96,6 @@ describe('AnalyticsComponent', () => {
       await TestBed.configureTestingModule({
         imports: [AnalyticsComponent],
         providers: [
-          {
-            provide: DbService,
-            useValue: { getAnalyticsFacts: () => new Promise(() => undefined) },
-          },
           {
             provide: JobsGateway,
             useValue: { getAnalyticsFacts: () => new Promise(() => undefined) },

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { DiscoverProfileContextStore } from './discover-profile-context.store';
 
 interface Db {
@@ -24,7 +24,7 @@ function createStore(over: Partial<Db> = {}): { store: DiscoverProfileContextSto
   TestBed.configureTestingModule({
     providers: [
       DiscoverProfileContextStore,
-      { provide: DbService, useValue: db },
+      { provide: ProfileSettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

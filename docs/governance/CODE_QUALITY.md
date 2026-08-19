@@ -189,17 +189,25 @@ rather than only components, and every service in `libs/data` rather than those 
 re-exported through `@applye/application` would satisfy the tag check while the `inject()` call stayed
 the only evidence.
 
-**`db.service.ts` is internal to this layer, and it is being cut into per-domain gateways now.** The
-rule here used to be "cut it when the ratchet refuses the next method added to it, not before"; the
-maintainer superseded that on 2026-08-19 and the migration is under way. It may still not grow, and
-it must still never be injected into a component.
+**`db.service.ts` is gone.** It was cut into eight per-domain gateways over 2026-08-19, in pull
+requests #484 to #492, and deleted with its barrel export when the last domain left. The rule here
+used to be "cut it when the ratchet refuses the next method added to it, not before"; the maintainer
+superseded that and the migration ran to completion. **What follows is kept as the record of how it
+was done**, because the next time a service in any layer has to be split the same five rules apply -
+and every one of them was written after a pull request got it wrong first.
 
 Eight gateways, one per domain: profile and settings · jobs and applications · tracker · discover ·
 interview · documents (library and export) · **drafts** (tailoring, portal answers, follow-ups) ·
 system (import, backup, health). **One pull request per gateway**, and each
-one is a complete migration - the methods move, that domain's consumers and their specs are
-repointed, and the methods are deleted from `DbService`. No pull request leaves a gateway delegating
-back to `DbService`: the dependency never points the wrong way, not even temporarily.
+one was a complete migration - the methods moved, that domain's consumers and their specs were
+repointed, and the methods were deleted from `DbService`. No pull request left a gateway delegating
+back to `DbService`: the dependency never pointed the wrong way, not even temporarily.
+
+**A gateway is a flat wrapper over Rust commands and holds no state.** `cache-signal.guard.spec.ts`
+enforces the one shape that is banned - a null-initialized cache signal filled by a separate
+`load()` - and it now reads `*.gateway.ts` as well as `*.service.ts`. It did not, for the whole
+migration: the guard was written when `db.service.ts` was the only file it needed to cover, and the
+`.service.ts` glob silently stopped matching as each domain moved out.
 
 **The order is by files touched, not by method count** - the two are almost uncorrelated, and the
 point of going smallest-first is a reviewable diff. Measured: discover 11 files · interview 14 ·
@@ -208,10 +216,9 @@ Ordering by method count would have put the largest migration second. Re-measure
 request rather than trusting this list, since every migration changes it - re-measured before the
 jobs pull request, the last two read 57 and 66 rather than 54 and 68, and the order held.
 
-**So `DbService` is a shrinking remainder, not a home.** A method still on it means its domain has
-not been migrated yet, never that it belongs there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to 307), `SystemGateway` fifth (307 to 220), `DocumentsGateway` sixth (220 to **142**), `JobsGateway` seventh (142 to **50**); the
-file is deleted when the last domain leaves. New code reaches for the gateway if its domain has one,
-and for `DbService` only if it does not yet.
+**`DbService` was a shrinking remainder, not a home**, for as long as it existed. A method still on it
+meant its domain had not been migrated yet, never that it belonged there. `DraftsGateway` landed first (461 to 426), `DiscoverGateway` second (426 to **381**, under budget), `InterviewGateway` third (381 to 349), `TrackerGateway` fourth (349 to 307), `SystemGateway` fifth (307 to 220), `DocumentsGateway` sixth (220 to **142**), `JobsGateway` seventh (142 to **50**), `ProfileSettingsGateway` eighth (50 to **0**, and the file
+deleted). New code reaches for its domain's gateway; there is no longer anywhere else to reach.
 
 **Check the banners before cutting; four gateways in a row found a method under the wrong one.**
 Six application methods sat under Discover, `deleteJob` under Interview, the tracker's seven
@@ -224,15 +231,26 @@ documents, dashboard and jobs read it, so it goes to the system gateway rather t
 into each domain that happens to key a cache on it. A service migrated before then injects both, and
 says so where it injects them.
 
-**Add the new token to every spec and test helper that provides `DbService`, not to a filtered
-subset.** Four provider shapes exist - a named stub, a multi-line inline literal, a **single-line**
-inline literal, and a shared `*.harness.ts` that is not a `.spec.ts` at all - and the documents
-migration was broken once by each of the last two. Grep for `provide: DbService` across `*.ts`, not
-for method names and not for `*.spec.ts` only. Applied as one pass, this rule got the jobs migration
-green on its first run. **Inside `libs/data` there is a fifth shape**: `jobs.store.spec.ts` imports
-`DbService` by relative path rather than from `@applye/data`, and puts the provider inline in the
-`providers:` array on the same line - so a pass keyed on the barrel import, or on a provider owning a
-line of its own, skips it silently.
+**Add the new token to every spec and test helper that provides the old one, not to a filtered
+subset.** Six shapes were found, one pull request at a time, and each one broke a pass that had not
+met it before:
+
+1. a **named stub** assigned to a `const` and referenced by the provider;
+2. a **multi-line inline literal** in the `providers:` array;
+3. a **single-line inline literal**, matched by neither pattern above;
+4. a shared **`*.harness.ts`** that is not a `.spec.ts` at all, so no spec-only glob finds it;
+5. a **relative import** from inside `libs/data` with the provider inline on the `providers:` line -
+   invisible to a pass keyed on the `@applye/data` barrel or on a provider owning its own line;
+6. a **class stub whose methods are fields**, `getProfile = jest.fn()` rather than `getProfile:` -
+   which is what a "does this stub name any of the methods?" check misses, because it looks for a
+   colon.
+
+Grep `provide: <Token>` across `*.ts`, not for method names and not for `*.spec.ts` only. Applied as
+one pass, the rule got the jobs migration green on its first run against six passes for documents.
+
+**And check what a stub is really for before deleting its provider.** The last migration removed 52
+providers whose spec named none of the six methods; two of them were live, and shape 6 above is why
+the check said otherwise. Removing a provider is only safe with the suite as the evidence.
 
 **Check what a spec provides for before swapping its token.** A spec provides for the subject's
 whole dependency graph, not for the subject alone: `geo-target.store.spec.ts` provides `DbService`
@@ -244,6 +262,17 @@ needed, provide **one stub object under both tokens** rather than two fakes.
 consumer stubs the gateway: a method invoking the wrong Rust command leaves the whole suite green and
 fails only in the running app. `drafts.gateway.spec.ts` is the shape to copy, including the test that
 counts distinct command names - two methods sharing a string passes every per-method assertion.
+**Every one of the eight had a trap worth a named test**, and finding it is part of writing the spec:
+`addSource` spreading its input, the `tracker_custom_column_*` commands carrying no `db_` prefix,
+`deleteInterviewStage(stageId)` against `listInterviewStages(applicationId)`, the four export twins
+separated only by their command string, the two application setters disagreeing about whether the
+primary key is called `id` or `applicationId`, and `setProfilePhoto(null)` where the null is the
+instruction rather than an absent argument.
+
+**A lint rule that names a class outlives the class.** `GATEWAY_INJECTION` in `eslint.config.mjs`
+listed `DbService` by name; deleting the class would have left it passing on a component that injects
+`JobsGateway`, which is the exact thing it forbids. It matches `[A-Za-z]+Gateway` now. When a
+migration deletes a symbol, grep the lint config for it before the pull request, not after.
 
 ## Angular and frontend decomposition
 

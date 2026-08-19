@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { DiscoverDetailStore, type DetailContext } from './discover-detail.store';
 
 interface FakeDb {
@@ -12,7 +12,6 @@ function createStore(getJob: jest.Mock): { store: DiscoverDetailStore; db: FakeD
   TestBed.configureTestingModule({
     providers: [
       DiscoverDetailStore,
-      { provide: DbService, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

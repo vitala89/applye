@@ -13,13 +13,12 @@ import { tauriInvoke } from '../tauri.invoke';
  * The three AI draft caches: a tailoring pass, a set of portal answers, and a
  * follow-up message.
  *
- * **The first of the per-domain gateways `db.service.ts` is being cut into.**
+ * **The first of the eight per-domain gateways `db.service.ts` was cut into.**
  * `CODE_QUALITY.md` used to record that the cut happens "when the ratchet
  * refuses the next method added to it, not before"; the maintainer superseded
- * that on 2026-08-19 and the file now says so. `DbService` keeps everything not
- * yet migrated, and shrinks by one domain per pull request until it is gone -
- * so a method being here rather than there is a statement about what has moved,
- * not about what belongs where.
+ * that on 2026-08-19. `DbService` shrank by one domain per pull request and was
+ * deleted with the eighth, so a method's gateway is now a statement about what
+ * it belongs to rather than about what has moved.
  *
  * These three are one domain because they are one shape: each is keyed on a
  * hash of everything that went into the generation, each returns `null` on a

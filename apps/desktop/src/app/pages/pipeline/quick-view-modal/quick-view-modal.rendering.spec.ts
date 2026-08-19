@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { InterviewStage, PipelineCard } from '@applye/core';
 import {
   AiService,
-  DbService,
   DocumentsGateway,
   InterviewGateway,
   JobsGateway,
@@ -74,8 +73,7 @@ async function mount(
 ): Promise<ComponentFixture<QuickViewModalComponent>> {
   TestBed.resetTestingModule();
   // One stub, two tokens: the interview stages come from `InterviewGateway`
-  // now, and the rest of this stub is still `DbService`'s - those domains
-  // have not moved.
+  // and the applications, their status and their comments from `JobsGateway`.
   const dbStub = {
     listInterviewStages: jest.fn().mockResolvedValue(stages),
     listApplicationComments: jest.fn().mockResolvedValue([]),
@@ -83,7 +81,6 @@ async function mount(
   TestBed.configureTestingModule({
     imports: [QuickViewModalComponent],
     providers: [
-      { provide: DbService, useValue: dbStub },
       { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: SystemGateway, useValue: dbStub },

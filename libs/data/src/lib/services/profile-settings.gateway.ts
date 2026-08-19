@@ -1,18 +1,33 @@
 import { Injectable } from '@angular/core';
-import { Profile } from '@applye/core';
-import { Settings } from '@applye/core';
+import { Profile, Settings } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /**
- * What is left of the original god-service: the profile row and the settings
- * row, and nothing else.
+ * The profile row and the settings row - the two singletons the whole
+ * application reads from, and the factory reset that clears them.
  *
- * **Seven of the eight domains have moved out**; this is the shrinking
- * remainder described in `CODE_QUALITY.md`, not a home. `ProfileSettingsGateway`
- * takes the six methods below and this file is deleted with them.
+ * **The eighth and last per-domain gateway.** `db.service.ts` is deleted with
+ * this move; see `CODE_QUALITY.md` for the migration and `DraftsGateway` for
+ * the pattern. Six methods, the fewest of the eight, across the most files -
+ * which is why the order was by churn rather than by method count.
+ *
+ * **`resetAllData` stays here rather than going to `SystemGateway`.** The
+ * argument for moving it is its blast radius: it wipes every user-data table,
+ * not only these two rows, and `SystemGateway` is where the operations that
+ * belong to no feature live. The argument that won is the one this migration
+ * has used three times - the consumers decide, not the description. Its only
+ * caller is `SettingsStore`, behind the Settings screen's explicit confirm, and
+ * the row it resets to defaults is the settings row. The same principle put the
+ * score cache in `JobsGateway` against the written domain list, and
+ * `checkArchetypeMatch` there against its banner.
+ *
+ * `hashText` is **not** here, and that is deliberate: a dozen callers across
+ * profile, documents, dashboard and jobs read it, so it went to `SystemGateway`
+ * rather than making them all inject a domain token. A service needing both
+ * injects both, and says so where it injects them.
  */
 @Injectable({ providedIn: 'root' })
-export class DbService {
+export class ProfileSettingsGateway {
   // --- Profile (source of truth) ---
   async getProfile(): Promise<Profile | null> {
     return tauriInvoke<Profile | null>('db_get_profile');

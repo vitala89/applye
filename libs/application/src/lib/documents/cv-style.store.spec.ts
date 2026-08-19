@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT, effectiveSectionStyle, type StyleNote } from '@applye/core';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { CvStyleStore } from './cv-style.store';
 
 class DbStub {
@@ -17,7 +17,6 @@ describe('CvStyleStore', () => {
     TestBed.configureTestingModule({
       providers: [
         CvStyleStore,
-        { provide: DbService, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
       ],

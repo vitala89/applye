@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { BootGateStore } from './boot-gate.store';
 
 function createStore(over: Record<string, jest.Mock> = {}) {
@@ -12,7 +12,7 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   TestBed.configureTestingModule({
     providers: [
       BootGateStore,
-      { provide: DbService, useValue: db },
+      { provide: ProfileSettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],

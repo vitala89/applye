@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import {
   AiService,
-  DbService,
   DocumentsGateway,
   DraftsGateway,
   JobsGateway,
@@ -79,7 +78,6 @@ describe('TailoringService', () => {
       providers: [
         TailoringService,
         WizardActivityService,
-        { provide: DbService, useValue: db },
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },

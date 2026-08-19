@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { PipelineCard } from '@applye/core';
-import { DbService, InterviewGateway } from '@applye/data';
+import { InterviewGateway, JobsGateway } from '@applye/data';
 
 /**
  * The Interview Prep list: every application with at least one stage, sorted
@@ -20,7 +20,7 @@ import { DbService, InterviewGateway } from '@applye/data';
  */
 @Injectable()
 export class InterviewPrepStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   /** Stages and prep come from `InterviewGateway`; `db` stays for the cards. */
   private readonly interview = inject(InterviewGateway);
 

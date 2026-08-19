@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Settings, TrackerRow } from '@applye/core';
-import { DbService, TrackerGateway } from '@applye/data';
+import { DbService, JobsGateway, TrackerGateway } from '@applye/data';
 import {
   TrackerRange,
   TrackerSegment,
@@ -26,6 +26,7 @@ import {
 @Injectable()
 export class TrackerRowsStore {
   private readonly db = inject(DbService);
+  private readonly jobs = inject(JobsGateway);
   /** Rows and archiving come from `TrackerGateway`; `db` stays for
    * `deleteJob` and `getSettings`, whose domains have not moved. */
   private readonly tracker = inject(TrackerGateway);
@@ -103,7 +104,7 @@ export class TrackerRowsStore {
    */
   async remove(row: TrackerRow): Promise<boolean> {
     if (row.jobId == null) return false;
-    await this.db.deleteJob(row.jobId);
+    await this.jobs.deleteJob(row.jobId);
     this.all.update((rows) => rows.filter((r) => r.id !== row.id));
     return true;
   }

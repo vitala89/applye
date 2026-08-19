@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { DiscoverFeedItem } from '@applye/core';
-import { DbService, DiscoverGateway } from '@applye/data';
+import { DiscoverGateway, JobsGateway } from '@applye/data';
 
 /** A scanned job plus the triage state the page holds until the next reload. */
 export interface FeedRow extends DiscoverFeedItem {
@@ -30,7 +30,7 @@ export const FEED_PAGE = 30;
  */
 @Injectable()
 export class DiscoverFeedStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   /** Feed reads and the dismiss/clear writes; `db` stays only for
    * `upsertApplication`, which belongs to the jobs domain and has not moved. */
   private readonly discover = inject(DiscoverGateway);

@@ -1,6 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { AiService, DbService, DocumentsGateway, DraftsGateway, SystemGateway } from '@applye/data';
+import {
+  AiService,
+  DbService,
+  DocumentsGateway,
+  DraftsGateway,
+  JobsGateway,
+  SystemGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TailorContext, TailoringService } from './tailoring.service';
 import { WizardActivityService } from './wizard-activity.service';
@@ -73,6 +80,7 @@ describe('TailoringService', () => {
         TailoringService,
         WizardActivityService,
         { provide: DbService, useValue: db },
+        { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: DraftsGateway, useValue: drafts },

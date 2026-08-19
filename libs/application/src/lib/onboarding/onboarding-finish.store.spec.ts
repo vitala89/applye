@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvContent, CvParsedContent } from '@applye/core';
-import { AiService, DbService, DocumentsGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { OnboardingFinishStore } from './onboarding-finish.store';
 import { OnboardingResumeStore } from './onboarding-resume.store';
 import { OnboardingReviewStore } from './onboarding-review.store';
@@ -50,6 +50,7 @@ describe('OnboardingFinishStore', () => {
         OnboardingReviewStore,
         OnboardingTargetingStore,
         { provide: DbService, useValue: docsStub },
+        { provide: JobsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
       ],

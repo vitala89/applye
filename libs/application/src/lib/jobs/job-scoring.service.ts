@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { AiService, AtsService, DbService, JobsStore } from '@applye/data';
+import { AiService, AtsService, JobsGateway, JobsStore } from '@applye/data';
 import { AtsReport, ScoringCache, Settings } from '@applye/core';
 import { TailorScoreService } from './tailor-score.service';
 import { WizardActivityService } from './wizard-activity.service';
@@ -38,7 +38,7 @@ export type { ScoreContext };
  */
 @Injectable()
 export class JobScoringService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly ai = inject(AiService);
   private readonly ats = inject(AtsService);
   private readonly jobsStore = inject(JobsStore);

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DbService, DiscoverGateway, DocumentsGateway } from '@applye/data';
+import { DbService, DiscoverGateway, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
 import { ToastService } from '@applye/application';
@@ -67,6 +67,7 @@ async function createFixture(
     providers: [
       provideRouter([]),
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: DiscoverGateway, useValue: db },
       TranslateService,

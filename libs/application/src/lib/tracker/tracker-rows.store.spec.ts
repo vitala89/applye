@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { Settings, TrackerRow } from '@applye/core';
-import { DbService, DocumentsGateway, TrackerGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway, TrackerGateway } from '@applye/data';
 import { TrackerRowsStore } from './tracker-rows.store';
 
 function row(over: Partial<TrackerRow> = {}): TrackerRow {
@@ -19,6 +19,7 @@ function createStore(rows: TrackerRow[] = [], settings: Partial<Settings> | null
     providers: [
       TrackerRowsStore,
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },
     ],

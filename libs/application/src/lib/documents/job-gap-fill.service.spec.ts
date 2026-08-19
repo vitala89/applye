@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { JobGapFillService, jobDocLabel } from './job-gap-fill.service';
 
@@ -54,6 +54,7 @@ describe('JobGapFillService', () => {
         JobGapFillService,
         CvGapDialogService,
         { provide: DbService, useValue: db },
+        { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
       ],
     });

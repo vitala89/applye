@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { JobOverview } from '@applye/core';
-import { DbService } from '../services/db.service';
+import { JobsGateway } from '../services/jobs.gateway';
 
 /**
  * Shared reactive projection over the jobs list. SQLite (via DbService) stays
@@ -15,7 +15,7 @@ import { DbService } from '../services/db.service';
  */
 @Injectable({ providedIn: 'root' })
 export class JobsStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
 
   private readonly overviewState = signal<JobOverview[]>([]);
   private readonly loadingState = signal(false);

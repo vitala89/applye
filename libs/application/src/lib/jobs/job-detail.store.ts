@@ -7,7 +7,7 @@ import type {
   Settings,
   SupportedLanguage,
 } from '@applye/core';
-import { DbService, DocumentsGateway, JobsStore } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway, JobsStore } from '@applye/data';
 import { baseCvChoices } from './job-document-defaults';
 import { ToastService } from '../shell/toast.service';
 import { TranslateService } from '@applye/i18n';
@@ -37,6 +37,7 @@ import { TranslateService } from '@applye/i18n';
 @Injectable()
 export class JobDetailStore {
   private readonly db = inject(DbService);
+  private readonly jobsDb = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly jobs = inject(JobsStore);
   private readonly toast = inject(ToastService);
@@ -88,12 +89,12 @@ export class JobDetailStore {
    */
   async loadJob(id: number): Promise<boolean> {
     try {
-      const job = await this.db.getJob(id);
+      const job = await this.jobsDb.getJob(id);
       if (!job) return false;
       this.job.set(job);
       this.jdText.set(job.jdText ?? '');
 
-      const applications = await this.db.listApplications();
+      const applications = await this.jobsDb.listApplications();
       const application = applications.find((a) => a.jobId === id) ?? null;
       this.application.set(application);
 
@@ -157,7 +158,7 @@ export class JobDetailStore {
     const job = this.job();
     if (!job?.id) return null;
 
-    const created = await this.db.upsertApplication({
+    const created = await this.jobsDb.upsertApplication({
       jobId: job.id,
       status: 'saved',
       docLanguage,

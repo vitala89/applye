@@ -6,6 +6,7 @@ import {
   DbService,
   DocumentsGateway,
   InterviewGateway,
+  JobsGateway,
   SystemGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -83,6 +84,7 @@ async function mount(
     imports: [QuickViewModalComponent],
     providers: [
       { provide: DbService, useValue: dbStub },
+      { provide: JobsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: SystemGateway, useValue: dbStub },
       { provide: InterviewGateway, useValue: dbStub },

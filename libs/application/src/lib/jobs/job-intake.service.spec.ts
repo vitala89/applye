@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService, DocumentsGateway, JobSourceService } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway, JobSourceService } from '@applye/data';
 import { JobIntakeService } from './job-intake.service';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 
@@ -31,7 +31,7 @@ describe('JobIntakeService', () => {
     resolveCalls = [];
 
     // Two fakes, because the parse itself moved to JobSourceService while the
-    // cache probe and the archetype check stayed on DbService.
+    // cache probe and the archetype check went to JobsGateway.
     const source = {
       jobPaste: (
         jdText: string,
@@ -81,6 +81,7 @@ describe('JobIntakeService', () => {
       providers: [
         JobIntakeService,
         { provide: DbService, useValue: db },
+        { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: JobSourceService, useValue: source },
         { provide: JobIdentityResolverService, useValue: identity },

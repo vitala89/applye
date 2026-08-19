@@ -7,7 +7,7 @@ import {
   parseArchetypes,
   parseCvSkillResponse,
 } from '@applye/core';
-import { AiService, DbService, DocumentsGateway } from '@applye/data';
+import { AiService, DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 
 /**
  * What one generation attempt did. Each is a different fact, and none of them
@@ -53,6 +53,7 @@ const DEFAULT_REGION_TAG = 'de';
 @Injectable()
 export class CvGenerateStore {
   private readonly db = inject(DbService);
+  private readonly jobs = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
 
@@ -202,9 +203,9 @@ export class CvGenerateStore {
    * A job with no application row yet is left alone: there is nothing to
    * attach it to, and inventing one here would be a second feature. */
   private async linkToApplication(jobId: number, documentId: number): Promise<void> {
-    const apps = await this.db.listApplications();
+    const apps = await this.jobs.listApplications();
     const app = apps.find((a) => a.jobId === jobId);
-    if (app) await this.db.upsertApplication({ ...app, cvDocumentId: documentId });
+    if (app) await this.jobs.upsertApplication({ ...app, cvDocumentId: documentId });
   }
 
   /** The template matching the chosen region, or the first one there is. */

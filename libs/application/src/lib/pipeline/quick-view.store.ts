@@ -6,7 +6,7 @@ import type {
   InterviewStage,
   Priority,
 } from '@applye/core';
-import { DbService, InterviewGateway } from '@applye/data';
+import { InterviewGateway, JobsGateway } from '@applye/data';
 import { pickCurrentStage, sortStages } from './interview-stage-view';
 
 /**
@@ -27,7 +27,7 @@ import { pickCurrentStage, sortStages } from './interview-stage-view';
  */
 @Injectable()
 export class QuickViewStore {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   /** Stages come from `InterviewGateway`; `db` stays for the comment and
    * status writes, which belong to the jobs domain and have not moved. */
   private readonly interview = inject(InterviewGateway);

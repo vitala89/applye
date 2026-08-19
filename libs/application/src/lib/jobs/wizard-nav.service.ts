@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DbService, JobsStore } from '@applye/data';
+import { JobsGateway, JobsStore } from '@applye/data';
 import { WizardProgressService } from './wizard-progress.service';
 
 /** What the caller still owes once the job has loaded, if anything. */
@@ -24,7 +24,7 @@ const DOCUMENTS_STEP = 3;
 export class WizardNavService {
   private readonly progressSvc = inject(WizardProgressService);
   private readonly jobsStore = inject(JobsStore);
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
 
   /** Writable so the page component can alias it straight onto the template. */
   readonly open = signal(false);

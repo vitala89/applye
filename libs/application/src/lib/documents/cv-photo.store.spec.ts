@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvSection } from '@applye/core';
-import { DbService, DocumentsGateway } from '@applye/data';
+import { DbService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { CvPhotoStore } from './cv-photo.store';
 import { photoSectionOf } from './cv-photo-sections';
 
@@ -19,6 +19,7 @@ function createStore(profile: { photoDataUri?: string | null } | null = null) {
     providers: [
       CvPhotoStore,
       { provide: DbService, useValue: db },
+      { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],
   });

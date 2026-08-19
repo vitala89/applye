@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application, DocumentLibraryItem, SupportedLanguage } from '@applye/core';
-import { DbService, DocumentsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ReviewDocumentKind } from './document-gen.service';
 
@@ -24,7 +24,7 @@ export interface LinkResult {
  */
 @Injectable()
 export class LinkedDocumentsService {
-  private readonly db = inject(DbService);
+  private readonly db = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly system = inject(SystemGateway);
   private readonly t = inject(TranslateService).t;

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { JobOverview, PipelineCard, Profile } from '@applye/core';
-import { DbService, SystemGateway } from '@applye/data';
+import { DbService, JobsGateway, SystemGateway } from '@applye/data';
 import { MS_HOUR, SOON_HOURS, monogram, scheduledMs, whenLabel } from './dashboard.util';
 
 /** One upcoming interview, ready for the list to render. */
@@ -36,6 +36,7 @@ export type ProgressJobId = () => number | null | undefined;
 @Injectable()
 export class DashboardStore {
   private readonly db = inject(DbService);
+  private readonly jobs = inject(JobsGateway);
   private readonly system = inject(SystemGateway);
 
   readonly loading = signal(true);
@@ -68,8 +69,8 @@ export class DashboardStore {
     this.loading.set(true);
     try {
       const [cards, overview, profile] = await Promise.all([
-        this.db.listPipelineCards(),
-        this.db.listJobsOverview(),
+        this.jobs.listPipelineCards(),
+        this.jobs.listJobsOverview(),
         this.db.getProfile(),
       ]);
       this.cards.set(cards);
@@ -104,7 +105,7 @@ export class DashboardStore {
     const row = rows.find((j) => j.id === jobId);
     const fromRow = row?.company ?? row?.title ?? '';
     if (fromRow) return fromRow;
-    const job = await this.db.getJob(jobId).catch(() => null);
+    const job = await this.jobs.getJob(jobId).catch(() => null);
     return job?.company ?? job?.title ?? `#${jobId}`;
   }
 

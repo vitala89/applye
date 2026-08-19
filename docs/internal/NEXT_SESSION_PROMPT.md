@@ -4,245 +4,189 @@ Copy everything below the line into a fresh session.
 
 ---
 
-Continue the Applye file-size work. **No new features.** `ADR-0005` is finished - do not restart or
-re-plan that campaign. Everything below is debt.
+Continue the Applye `db.service.ts` gateway migration. **No new features.** The `ADR-0005` file-size
+campaign is **finished** - do not restart or re-plan it. Two gateways remain, then the stream ends.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
 `docs/product/CURRENT_STATE.md`, the recent `docs/internal/DUTY_WATCH.md` entries,
-`docs/governance/CODE_QUALITY.md` and `docs/governance/VALIDATION_MATRIX.md`. Read
-`docs/architecture.md` too - the CSP rationale and the initial-bundle budget constrain the work
-below.
+`docs/governance/CODE_QUALITY.md` and `docs/governance/VALIDATION_MATRIX.md`. **`CODE_QUALITY.md`'s
+`db.service.ts` section is the canon for this work** - it holds the eight-gateway list, the ordering
+rule, the spec rule and the gateway-spec rule, all of them written because a pull request got them
+wrong first.
 
 ## Where things stand
 
-`main` is at `52edb637`. **No open pull requests.** Working tree clean.
+`main` is at `abdabae6`. **No open pull requests.** Working tree clean.
 
-Twenty-nine pull requests merged, #449-#477. The last six:
+**Zero files over budget, in all seven categories.** `quality:file-size --all` has reported that
+since the second gateway landed, six pull requests earlier than the ratchet would have forced it.
 
-- **#472** `first-launch.component.ts` 419 to **38/400** - the view moved out of the class.
-- **#473** the Pipeline quick view, 537 to **343/400**, two children.
-- **#474** the dashboard's two list panels became one component, 506 to **360/400**.
-- **#475** the tracker grid left the page, 433 to **207/400**.
-- **#476** the pipeline card left the board, 456 to **269/400**.
-- **#477** Discover re-judged, 475 to **393/400** - two dead selectors deleted, four keyframes
-  relocated, the clear-feed dialog extracted.
+The gateway migration is **6 of 8 done**, in the order churn dictated rather than method count:
 
-The audit reads **4 files over budget**, down from 18 across twelve watches. Get the
-current picture with `npm run quality:file-size:all` before planning anything - it is a report, not a
-gate, and always exits zero.
+| #   | PR   | gateway            | `db.service.ts`             |
+| --- | ---- | ------------------ | --------------------------- |
+| 1   | #484 | `DraftsGateway`    | 461 → 426                   |
+| 2   | #485 | `DiscoverGateway`  | 426 → **381**, under budget |
+| 3   | #486 | `InterviewGateway` | 381 → 349                   |
+| 4   | #487 | `TrackerGateway`   | 349 → 307                   |
+| 5   | #488 | `SystemGateway`    | 307 → 220                   |
+| 6   | #489 | `DocumentsGateway` | 220 → **142/400**           |
 
-## What is left, and what kind of thing each one is
+Before that, #479-#483 finished the file-size campaign: `_editor-shell.scss` 460→26,
+`cv-preview.component.html` 779→126, `document.model.ts` split six ways, the
+`cv-save-template-modal` unstyled-button bug fixed, and `NATIVE_GATE_SCRIPT.md` written.
 
-**Every stylesheet that could be fixed by extracting a child has been, and Discover has been
-re-judged.** Four items remain:
+## What is left
 
-| File                              | Size    | What it needs                                     |
-| --------------------------------- | ------- | ------------------------------------------------- |
-| `_editor-shell.scss`              | 460/400 | **The only unblocked one. Do this first.**        |
-| `cv-preview.component.html`       | 779/300 | The maintainer's decision through `aif-grilling`. |
-| `libs/core/.../document.model.ts` | 504/400 | The same - it is a `libs/` public API.            |
-| `db.service.ts`                   | 461/400 | The same, plus its recorded rule to re-confirm.   |
+**Two gateways. Re-measure the table before each one - every migration changes it.**
 
-**`_editor-shell.scss` 460/400 is a global partial**, `@use`d once from `apps/desktop/src/styles.scss`
-as `@use './app/pages/documents/editor-shell' as *`, and **eleven templates render `docedit-*`
-classes**. Both document editors depend on it, including #465's two cards' controls. Splitting the
-file by responsibility is a size pass; **changing what it emits is not**. `check-style-move` across
-the partial and every consumer sheet must come back lossless, and because the partial is emitted
-unwrapped into the global sheet, a mistake here shows on pages you did not touch.
+| domain              | methods | source | spec |  total |
+| ------------------- | ------: | -----: | ---: | -----: |
+| jobs + applications |      17 |     25 |   33 | **58** |
+| profile + settings  |       7 |     26 |   42 | **68** |
 
-**The three gated items are decisions, not approvals.** `AGENTS.md` routes a `libs/` public-API
-change and any task with two readings through `aif-grilling`, and that means asking rather than
-choosing. Bring all three questions in **one** round:
+**PR 7 is `JobsGateway`**: jobs, applications and the score cache. The score cache belongs here, not
+to the tracker - `TrackerGateway`'s header records why, and the tracker gateway's own PR corrected
+the domain list on that point. `deleteJob` is in the Jobs section now; #486 moved it back there from
+the interview section.
 
-- **`cv-preview.component.html` 779/300** - it looks like nine `ng-template` atoms and is not: they
-  speak one inline-editing protocol repeated per field. The real seam is the **17 near-identical
-  `@if (isEditingLeaf(...))` pairs**. Largest file in the repository.
-- **`document.model.ts` 504/400** - splitting it changes a `libs/core` public API.
-- **`db.service.ts` 461/400** - the recorded rule is "cut into per-domain gateways when the ratchet
-  refuses the next method added to it, not before". Ask whether that rule still stands, rather than
-  assuming the maintainer's "do all the files" overrides it.
+**PR 8 is `ProfileSettingsGateway`**, the largest by churn on the fewest methods, and the last one.
+When it lands, `db.service.ts` is empty and **the file is deleted**, along with its export from
+`libs/data/src/index.ts`. That is the end of the stream.
 
-## The maintainer's decision, already taken
+## The rules this series wrote, each after getting it wrong
 
-**The maintainer has chosen to finish the file-size work first, then walk the application by hand.**
-Do not re-open that choice or re-recommend the gate - it is decided. They have also **authorised
-fixing bugs found along the way** rather than only filing them.
+**Do not rediscover these. Every one cost a failed pass.**
 
-What that means for you:
+1. **Order by files touched, not by method count.** They are almost uncorrelated: profile and
+   settings is seven methods and sixty-eight files, the largest of the eight. Re-measure before each
+   PR.
+2. **Grep `provide: DbService` across `*.ts`, and expect four provider shapes**: a named stub, a
+   multi-line inline literal, a **single-line** inline literal, and a shared `*.harness.ts` that is
+   not a `.spec.ts` at all. The documents migration lost three passes discovering these one at a
+   time. A method-name grep and a subject-name grep both miss real files.
+3. **One stub object under both tokens**, everywhere. Never split it into two fakes, and never swap a
+   token wholesale: **a spec provides for the subject's whole dependency graph, not for the subject
+   alone.** That broke `geo-target.store.spec.ts` and `tracker-report.store.spec.ts` in two separate
+   pull requests.
+4. **Each gateway carries a spec pinning its command strings and argument shapes**, mocking
+   `@tauri-apps/api/core` - see `drafts.gateway.spec.ts` for the shape. **Include the test that counts
+   distinct command names**: two methods sharing a string passes every per-method assertion. Every
+   gateway so far has had a trap worth a named test - `addSource` spreading its input, the
+   `tracker_custom_column_*` commands carrying no `db_` prefix, `deleteInterviewStage(stageId)` versus
+   `listInterviewStages(applicationId)`, the four export twins. **Find this gateway's own.**
+5. **The receiver is the evidence, not the method name.** `db.exportPdf` looked alive because grep
+   found `exportPdf` in a modal and six spec assertions - all of them `TrackerReportStore.exportPdf`.
+   Grep `db.<method>(`, not `.<method>(`.
+6. **Look for mis-filed methods before cutting.** Three gateways in a row found some: six application
+   methods under the Discover banner, `deleteJob` under Interview, the tracker's seven interleaved
+   through Jobs. Restore the banner or move the method, and say which in the PR.
+7. **Lint catches what the type-check does not.** Orphaned imports have survived a green
+   `desktop:type-check` five times in this series; twice the pre-commit hook was what caught them.
+   Never treat an earlier green lint as covering later edits, which is why `--skip-nx-cache` is
+   mandatory.
+8. **A regex that assumes indentation is whitespace should assert it.** A hoist read everything before
+   `TestBed.configureTestingModule(` as indentation, captured an `await`, and wrote it onto every
+   hoisted line.
 
-- Three of the four remaining files need their **decision**, not their approval. Do the unblocked one
-  first, then bring all three questions in a single `aif-grilling` round.
-- **`docs/internal/NATIVE_GATE_BACKLOG.md` holds 73 unticked checks across 14 sections.** They will
-  drive these themselves once the refactor lands. **Six of the sections came from the recent splits**
-  and are the only way to close them: **C4** the welcome screen's animation and reduced motion ·
-  **C5** the quick view's copied `.btn-*`, `.qv__hint`, `.qv__error`, `.qv__link` · **C6** the
-  dashboard's `:host` rule, its two `@keyframes dash-shimmer` copies and the changed skeleton widths ·
-  **C7** the tracker grid's sticky columns, overflow and pinning · **C8** the pipeline card's
-  drag-and-drop, which jsdom cannot exercise at all · **C9** Discover's four relocated keyframes and
-  the clear-feed dialog's three cancel paths.
-- Keep adding new pending checks to that file as you go, rather than restating them in watch entries.
-- **The last deliverable of this whole stream is a walkable script** built from that backlog: what
-  rows the database needs, which screens in which order, what to look at. Write it when the files are
-  done. The maintainer drives it; you cannot.
+## Do not re-open: the desktop suite is not flaky
 
-## One open bug, filed and not fixed
+Two watches reported it as flaky and pointed at a zoneless promise-ordering bug. **That was wrong**,
+and PR 4 corrected it with measurements. The failures are `Exceeded timeout of 5000 ms` - **no
+assertion ever failed**. Jest defaults to nine workers on ten cores that were already ~70% consumed
+by Chrome, Cursor and Claude; the heaviest component specs simply did not finish in time. The same
+suite on an idle machine runs in **20 s** and passes; capped at two workers under load it passes;
+`tracker.table.spec.ts` alone runs 19 tests in 4 s.
 
-`cv-save-template-modal.component.scss` opens by stating `.btn-ghost` and `.btn-primary` are
-"global, from `libs/ui`". **They are not.** `libs/ui/src/styles/_button.scss` declares the
-`.btn--ghost` BEM family, a different vocabulary; only two component sheets declare the hyphenated
-names and both are encapsulated; the only global match in the built sheet is `.profile .btn-ghost`,
-nested where it reaches nothing. **The CV save-as-template dialog's two buttons render unstyled.**
-`git log -S` shows the page's sheet never declared them, so it predates the #465 split. It is a small
-fix and it is not a size pass - prefer the `libs/ui` `ButtonDirective` over growing a sheet.
+**If a desktop suite run fails, check the machine's load before the code.** Re-run it. Two real but
+separate observations are recorded and unowned: `cv-detail.cards.spec.ts:90` calls `detectChanges()`
+on a destroyed fixture (`NG0406`, harmless today), and jest reports a worker failing to exit
+gracefully, which points at leaked timers. Neither causes what was seen.
+
+## Two product questions, open and unanswered
+
+Raised by #488, which deleted four wrappers nothing called. **These are the maintainer's to answer,
+not yours to decide.**
+
+- **`db_export` is a database-backup command with no button and no translation key anywhere.** The
+  feature exists in Rust and nowhere else. Did it lose its UI, or never get one?
+- **The tailoring-journal export path** (`generated_doc_get`, `export_docx`, `export_pdf`) is
+  superseded by the document-library export the app actually uses. Is it meant to be gone?
+
+All four Rust commands are still registered; re-wrapping any of them is about ten lines.
+
+## The other open stream: the manual gate
+
+**`docs/internal/NATIVE_GATE_SCRIPT.md` is the route; `NATIVE_GATE_BACKLOG.md` is the list.** 83
+checks across sixteen sections, ordered into fifteen stations, roughly ninety minutes. **The
+maintainer drives it - no agent can**: synthetic clicks do not reach the Tauri webview, and outside
+Tauri every `invoke` rejects.
+
+Tick the backlog, record failures in `DUTY_WATCH.md`, and **do not tick anything in the script** - it
+is a route and holds no state. Station 0 deletes the profile, so the backup command comes first.
+
+If a gateway PR adds a check, add it to the station that already owns that screen rather than
+creating a new one, and update the coverage table at the foot of the script.
 
 ## Pressure at the boundary
 
-`tailoring.service.ts` is **exactly 250/250**: the next line added to it fails the gate.
-`job-scoring.service.ts` is 249/250 and `job-identity-resolver.service.ts` 245/250.
+`tailoring.service.ts` is 245/250 and `portal-answers.service.ts` 233/250 - both in
+`libs/application`, where the budget is **250, not 400**. When the ratchet refuses a line, **pay for
+it rather than squeezing**: the tailoring service's cache-key assembly moved to `tailoring-pass.ts`
+because it is a function of its arguments and nothing else, which bought eight lines honestly.
 
-Three test files are near the 600 budget and cannot take new cases:
-`cv-live-style-panel.entry-rule.spec.ts` **598/600**, `cv-preview.styling.spec.ts` 586,
-`cv-preview.editing.spec.ts` 571. New tests for those areas go in a new file.
+Three test files are near the 600 budget: `cv-live-style-panel.entry-rule.spec.ts` 598,
+`cv-preview.styling.spec.ts` 589, `cv-preview.editing.spec.ts` 571. New tests for those areas go in a
+new file.
 
-`onboarding.component.scss` is 391/400 and its template 291/300 - the next page to go over if
-anything is added to it. `_discover-controls.scss` is 352/400 and `discover.component.scss` 393/400
-after #477 - real but not generous headroom on both.
+## Gates before commit
 
-## What the last session learned, which changes how you plan
+`nx run desktop:type-check`, `nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache`,
+`nx test data`, `nx test application`, `nx test desktop`, `nx test core` when `libs/core` changed,
+`nx build desktop`, `cargo check` in `src-tauri` when anything under it changed,
+`npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`.
 
-**A surviving mutation is a question, not an answer.** Check that it changed what you meant before
-concluding anything about coverage. Two of the last session's survivors were bad mutations: one
-rewrote the first of two identical strings and hit the wrong element; one deleted a line that was
-inert. Both cost a second run to find out - and both were still worth it, because the first exposed
-four untested navigation targets and the second exposed a line that should be deleted. **A line no
-mutation can break is inert rather than covered.**
+`check-style-move.mjs` only when a stylesheet changed - skip it honestly otherwise. `nx build web`
+only when something it compiles changed; the web app's initial bundle is 4.25 kB over its 500 kB
+budget on `main`, pre-existing and not yours to fix.
 
-**"X exists somewhere" is not a property when one component serves N call sites.** Count per call
-site, in both directions. The dashboard's pill must belong to Recent jobs _and not to_ Upcoming
-interviews; the pipeline's stage track to Interview and to no other column. This has now caught a
-real leak twice.
-
-**A count and the thing it counts must be asserted in the same state.** A column badge reading what
-the column holds rather than what the filter leaves visible survived every other assertion.
-
-**Restore a mutated file from a copy taken before mutating, never from `HEAD`.** `git checkout <file>`
-on a feature branch restores the _pre-refactor_ file and makes meaningless runs look like emphatic
-kills. This cost eleven confusing test failures once.
-
-**A Sass variable is a dependency a selector-level check cannot see.** `check-style-move` compares
-flattened selectors, so a `$var` declared at the top of a page sheet and read by a block you are
-cutting out is a **crash inside `sass.dart.js`**, never a finding. Check the head of a sheet before
-cutting from the middle of it.
-
-**`quality:style-move` cannot see an inline-to-file move** - it reads `.scss` files, so rules that
-lived in a `styles: []` array read as "0 lost, N gained", which is a run with nothing to compare
-against rather than a clean bill. For those, diff the payload as a multiset instead.
-
-**Angular does not scope `@keyframes` names.** A copy is a global declaration of the same name; two
-copies are fine only while they stay identical, and that is a manual check.
-
-**A component host element carries the parent's content attribute**, which is what lets a page rule
-reach a child's host. That is load-bearing on the pipeline board: `.card` and `cdkDrag` sit on the
-child's host precisely so `_drag.scss` and `CdkDropList`'s content-children lookup keep working.
-
-**In a zoneless application `fixture.whenStable()` does not track a floating promise** started in a
-constructor. Two awaited macrotasks settle it. Two pages needed this before anything rendered.
-
-**Check "who declares it", not "who uses it", before deleting or moving a keyframe.** Angular does not
-scope keyframe names. The tracker had two declared in a page sheet that every consumer _also_
-declared identically, so deletion was safe. Discover had two declared in a page sheet the page never
-used, whose consumers declared **no** copy - deleting them would have silently stopped animations on
-two other files. Same shape of finding, opposite answer, and only the declaration check tells them
-apart.
-
-**Validate the reachability audit against a known answer before believing a negative result.**
-Compile the sheet so `&__x` resolves, flatten the selectors, and match each rightmost compound
-against the vocabulary the page's _own_ template declares. Run against
-`cv-detail.component.scss` at `f79c9b1e~1` it must flag the families #464 deleted. It has two known
-limits: it **skips at-rules**, and it reads `[class]="fn(...)"` as dead - Discover's five
-`.dv-console__line--*` modifiers are exactly that false positive and are alive.
-
-**"Nothing happened" has to be asserted in the state where it would have happened.** A cancel button
-wired to a destructive handler passed its test because the assertion did not drain the macrotask the
-destructive path needs. Drain the same way the positive path does.
-
-**A verdict recorded by an earlier session is evidence about that session, not about the file.**
-Discover's "not worth it" was right about component extraction and wrong about the file, and only
-measuring showed the difference. Re-judge rather than re-read.
+**`npm run quality:file-size` reports "no changed source files to check" against a committed or
+docs-only tree. That is not a pass.** Use `--staged` after `git add`, or
+`node tools/check-file-size-budgets.mjs --base origin/main`.
 
 ## Workflow notes that cost time repeatedly
-
-**`npm run quality:file-size` reports "no changed source files to check" against an uncommitted or
-already-committed tree.** That is not a pass. Use
-`node tools/check-file-size-budgets.mjs --base origin/main` from the repository root.
 
 **The Bash working directory persists between calls.** A `cd` into a subdirectory silently changes
 where every later relative path resolves.
 
-**Pull requests here are squash-merged**, and `origin/main` moves under you mid-session. When it
-does: `git rebase --onto origin/main <old-parent>`, then **re-verify everything** - green before a
-rebase means nothing after one. Only the four shared documents ever conflict: `CHANGELOG.md`,
-`CURRENT_STATE.md`, `DUTY_WATCH.md` and `NATIVE_GATE_BACKLOG.md`. When two branches are in flight,
-**name your backlog section around the other branch's** so they do not collide.
+**Pull requests here are squash-merged**, and `origin/main` moves under you. When it does:
+`git rebase --onto origin/main <old-parent>`, then **re-verify everything** - green before a rebase
+means nothing after one. Only four shared documents ever conflict: `CHANGELOG.md`,
+`CURRENT_STATE.md`, `DUTY_WATCH.md` and `NATIVE_GATE_BACKLOG.md`. `DUTY_WATCH.md` conflicts on every
+concurrent merge because entries are appended at the top - keep both, newest first, then
+`prettier --write` the file.
 
-**`docs/internal/DUTY_WATCH.md` conflicts on every concurrent merge** - entries are appended at the
-top. Keep both, newest first, then `prettier --write` the file.
-
-**Audit removed lines with `git diff origin/main | grep -E '^-([^-]|$)'` before pushing**, comparing
-indentation-stripped multisets both ways. The naive `^-[^-]` pattern silently skips deleted markdown
-bullets.
-
-**The pre-commit hook catches orphaned imports an earlier lint run predated.** The tracker split
-orphaned five; the type-check did not see them. Do not treat an earlier green lint as covering later
-edits, which is also why `--skip-nx-cache` is mandatory.
-
-**`nx build desktop` is the gate for bundling and budgets.** `npm run type-check` runs `ngc --noEmit`
-and does see templates, but only the build catches budget regressions. Use `nx build web` for the web
-app, never `npm run web:build`, which regenerates `apps/web/public/sitemap.xml`.
-
-**`libs/application` is imported by the eagerly-loaded shell, and 18 routes are `loadComponent`.**
-Moving a lazily-routed page's code down a layer moves it into the chunk every launch fetches.
-
-**The web app's initial bundle is 4.25 kB over its 500 kB budget on `main`.** Pre-existing, recorded
-in `CURRENT_STATE.md`, not yours to fix.
+**Measure before you write the number.** Three doc updates in this series stated a line count that
+turned out wrong when `grep -c` was run afterwards. Count first, then write.
 
 ## Standing items you cannot close
 
 **Dependabot is at one open alert**, `glib` RUSTSEC-2024-0429 - Linux-only, through the gtk-rs stack
-Tauri pins, deliberately left open as the signal that Tauri has moved. `npm audit --omit=dev` reads 0. The five remaining npm advisories are one chain, `image-size` -> `less` -> build tooling, whose
-only npm-suggested remedy is a semver-major **downgrade** of `@angular-devkit/build-angular`; the
+Tauri pins, deliberately left open as the signal that Tauri has moved. `npm audit --omit=dev` reads 0. The five remaining npm advisories are one chain, `image-size` → `less` → build tooling, whose only
+npm-suggested remedy is a semver-major **downgrade** of `@angular-devkit/build-angular`; the
 repository contains zero `.less` files and both apps set `inlineStyleLanguage: scss`, so the parser
 never runs. Do not "fix" it.
 
 No `npm run desktop:dev` process should be running - check with `pgrep -fl "tauri dev"`.
 
-## Gates before commit
-
-`nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop --skip-nx-cache`,
-`nx test desktop`, `nx test application` (only when a library changed), `nx build desktop`,
-`cargo check` in `src-tauri` when anything under it or in `capabilities/` changed,
-`npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`.
-Add `check-style-move.mjs` whenever markup moves between components or a rule moves between sheets -
-run the page sheet and every child sheet in **one** invocation, with `--base origin/main` and never
-`--base main`, which a fetch does not move. Skip it honestly when no stylesheet changed.
-
 ## What to do first
 
-The maintainer wants every remaining file resolved before they start the manual walk. In order:
-
-1. **`_editor-shell.scss` 460/400 - split by responsibility without changing what it emits.** The
-   only unblocked item. It is `@use`d once from `apps/desktop/src/styles.scss` and eleven templates
-   render `docedit-*` classes, so the emitted CSS reaching every one of them must be identical:
-   `check-style-move` across the partial and every consumer sheet, in one invocation, lossless. A
-   mistake here shows on pages you did not touch, because the partial is emitted unwrapped into the
-   global sheet.
-2. **Then bring the three gated decisions in one `aif-grilling` round** - `cv-preview.component.html`
-   779/300, `document.model.ts` 504/400 and `db.service.ts` 461/400. Ask, do not choose. Include
-   whether `db.service.ts`'s recorded "not before the ratchet refuses" rule still stands.
-3. **Fix the `cv-save-template-modal` unstyled buttons** described above. Authorised, small, and a
-   real user-visible defect.
-4. **Last, write the manual gate script.** Turn `NATIVE_GATE_BACKLOG.md`'s 73 checks into one
-   walkable pass: the database rows each section needs, the screens in order, what to look at, and
-   which checks wipe data so they go last. This is the deliverable that ends the stream.
+1. **PR 7, `JobsGateway`.** Re-measure the churn table, look for mis-filed methods before cutting,
+   apply the four-shape spec rule from the start, and write the gateway spec with the
+   distinct-command-count test plus whatever trap this domain turns out to have.
+2. **PR 8, `ProfileSettingsGateway`**, and with it **delete `db.service.ts`** and its barrel export.
+   That ends the migration.
+3. Then the only work left is the maintainer's: **walk `NATIVE_GATE_SCRIPT.md`**, and answer the two
+   product questions above.
 
 Pick one thing at a time and finish it, including the Duty Watch handoff.

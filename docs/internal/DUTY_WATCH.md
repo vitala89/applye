@@ -48,6 +48,7 @@ Before a watch can be marked complete:
 
 - **Status:** complete for `B10`. **`B9` was looked for and not found**, which is recorded as precisely as a fix rather than guessed at.
 - **Agent/tool:** Claude Code, Opus 5. Triage **6/10** (radius 1, ambiguity 1, risk 1, verification 2, unknowns 1); one grilling round, two questions, once the investigation turned up a scope fork the triage had not seen. No subagents.
+- **Commits:** `74394ecc` (the fix and its documents), plus this line recording it.
 - **Branch:** `fix/spinner-rotates-on-its-glyph`, cut from `origin/main` at `b05c326d` - base checked explicitly.
 - **Objective:** `B9` and `B10`, the last two bugs in the walk's fix order.
 

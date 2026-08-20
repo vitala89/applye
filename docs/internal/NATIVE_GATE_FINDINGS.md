@@ -33,7 +33,9 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
    query is in the `S1` entry below. `S3`, found while reading it, is separate.
 5. ~~**`B2`**~~ **fixed 2026-08-21** - and it is the one item in this file that **no check here can
    confirm**, so it is owed a native pass on station 4 before it counts. Then the print family
-   **`B4` `B5` `B6`**, then **`B9`** and **`B10`**.
+   ~~**`B4`**~~ and ~~**`B6`**~~ **fixed 2026-08-21**, both unverifiable here and owed the same native
+   pass; **`B5` is deliberately not in that change** and says below what would diagnose it. Then
+   **`B9`** and **`B10`**.
 
 `P1` and `P2` are one change and `P2` is already half-built. `P3`, `P4` and `P5` are decisions rather
 than defects. `Q2` and `Q3` are evaluation work that should be sized before it is started.
@@ -167,7 +169,7 @@ than saved). Export from the button works, so the print path itself is alive; it
 entry point that is dead. Nothing else in the app is reached by Cmd+P, so a swallowed shortcut or a
 missing handler is the place to look.
 
-**B4. The exported PDF does not use the margins shown in the editor.**
+**B4. The exported PDF does not use the margins shown in the editor. FIXED 2026-08-21.**
 In the live preview the four margin values from the Style card are respected and the page looks
 correct. Export to PDF - both to the print dialog's preview and to a saved file - and **page one
 loses its margins**: the content sits closer to the paper edge than the editor showed.
@@ -176,6 +178,23 @@ This is the first half of check `C` "export the CV to PDF … margins in the out
 values in the Style card", and it **fails**. It also means the second half of that check - that a
 second export in the same session wins over the first - cannot be judged yet, because the baseline
 is already wrong.
+
+**Fixed, 2026-08-21. The margins are content now, not a page property.** `@page` carries the paper
+size and `margin: 0`; `.page-card` keeps in print the padding it already draws on screen, so the
+inset is ordinary box layout rather than a paged-media feature the renderer has to honour. Same
+reasoning as `B2` - chosen for how it fails.
+
+**A previous session tried a zero page margin, hit scaled margins and a blank trailing page, and left
+a test forbidding it.** That tripwire was real and is rewritten rather than stepped over. The
+configuration it forbade is not this one: it kept the card at a **fixed page width and height in
+pixels** and broke **after every card including the last**. A page-sized box printed onto a
+full-bleed sheet is what the renderer scales, and a break after the final card is what emits the
+empty page. The card is content-sized here (`width: auto`, `height: auto`) and only cards two onward
+break before themselves.
+
+**What decided it: both shipped configurations have now failed a native pass** - the zero-margin one
+as recorded in that test, and the four-margin one as this finding. Keeping the current rule was not
+the conservative option it looked like.
 
 **B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
 On the exported page two, `EDUCATION` starts at the left margin with its rule running the full
@@ -186,13 +205,39 @@ a page break.
 
 Visible only in the export; the on-screen preview is correct, which is why no screen check caught it.
 
-**B6. The tracker export produces a trailing blank page.**
+**Deliberately not fixed with `B4` and `B6`, although the finding above suggests fixing all three
+together.** Nothing in this repository can see a laid-out exported page, so the wrapper this
+describes cannot be identified from here - only guessed at from the description. A guess that lands
+is indistinguishable from one that does not when three print changes ship in the same pass, which is
+the same objection that governs everything else in this file.
+
+**What would diagnose it**, in order of cost: the exported PDF's page two; or, cheaper, the DOM of
+the page-card that lands after the break - specifically whether the `LANGUAGES` section title sits
+inside a different wrapper from `EDUCATION`'s once the paginator has split the content.
+
+**B6. The tracker export produces a trailing blank page. FIXED 2026-08-21.**
 Export the Job Tracker report when the content fits on **one** page: the saved file has **two**, the
 second empty. The first page itself is correct.
 
 Same family as `B4` and `B5` - the print stylesheet, not the screen - so all three are worth fixing
 in one pass over the print path. A stray trailing element with a page-break, or a container whose
 height is rounded up past the page box, is the usual cause.
+
+**Fixed, 2026-08-21, and the cause was neither of those.** `app.ts` had no branch for the print
+routes, so `print/cv/:id`, `print/cover-letter/:id` and `print/tracker-report` rendered **the whole
+app shell**, and the print stylesheet only set `visibility: hidden` on it - which paints nothing and
+**occupies everything**. In the hidden export window the document was therefore laid out below a
+full-height shell, so a report that fitted on one page exported as two, the second blank.
+
+Two things follow from the same root. The shell is why the report needed `position: absolute` to
+reach the page origin at all; with no shell it is a plain block and the document is exactly as tall
+as its content. And it is the second candidate cause of `B4`, since an absolutely positioned box in
+paged media does not resolve against the page area the way a flowed one does.
+
+The print routes render the outlet alone now - no sidebar, no header, no toasts. `app.spec.ts` pins
+all three routes, the two near-misses (`/printer`, `/jobs/print`), that the boot gate cannot raise a
+welcome screen over an export, and that toasts still reach the user on the screens that are not the
+shell - the last of which was a regression caught in the writing rather than in review.
 
 **B7. The script's own database handling was unsafe, and it cost the walk its data twice.**
 Not a defect in the app - a defect in `NATIVE_GATE_SCRIPT.md`, fixed in the same session it was

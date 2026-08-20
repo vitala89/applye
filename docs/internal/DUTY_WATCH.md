@@ -44,6 +44,33 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-21, the print windows were rendering the whole app and hiding it
+
+- **Status:** complete for `B4` and `B6`. `B5` is deliberately out of the change, with what would diagnose it written down. **Neither fix is verified** - nothing here can see a laid-out exported page.
+- **Agent/tool:** Claude Code, Opus 5. Triage **9/10** (radius 2, ambiguity 2, risk 1, verification 2, unknowns 2), budget announced up front. The grilling gate ran twice: three questions, then **a fourth round after the evidence changed**. No subagents.
+- **Branch:** `fix/print-path-chromeless`, cut from `origin/main` at `faf9bdea` - checked explicitly, after the previous branch was cut from a feature branch by mistake.
+- **Objective:** the print family `B4` `B5` `B6` from `NATIVE_GATE_FINDINGS.md`, which that file recommends fixing in one pass.
+
+- **The root nobody had named.** `app.ts` had no branch for the print routes. `print/cv/:id`, `print/cover-letter/:id` and `print/tracker-report` - the hidden windows Rust opens to produce a PDF - rendered the **whole app shell**, and the print stylesheet only set `visibility: hidden` on it. That paints nothing and **occupies everything**.
+  - **`B6` follows directly**: the report was laid out below a full-height shell, so a report that fitted on one page exported as two, the second blank.
+  - **`B4` follows indirectly**: the shell is why the document needed `position: absolute` to reach the page origin, and an absolutely positioned box in paged media does not resolve against the page area the way a flowed one does.
+- The print routes render the outlet alone now. The report is a plain block, and its document is exactly as tall as its content.
+
+- **The margins are content, not a page property.** `@page` carries the paper size and `margin: 0`; `.page-card` keeps in print the padding it already draws on screen. Ordinary box layout instead of a paged-media feature the renderer has to honour - the same reasoning that decided `B2` yesterday.
+- **A tripwire was found mid-implementation and it changed the decision round.** `cv-detail.style.spec.ts` asserted `not.toContain('margin: 0;')` with a comment recording that a zero page margin had **already been tried** and produced scaled margins and a blank trailing page. That is exactly the kind of thing that must not be stepped over silently, so the work stopped and the maintainer was asked again with the new evidence.
+  - **`git log -S` settled what the forbidden configuration actually was**, and it is not this one: commit `eb431567` shows it kept the card at a **fixed page width and height in pixels** and broke **after every card including the last**. A page-sized box printed onto a full-bleed sheet is what the renderer scales; a break after the final card is what emits the empty page. The card is content-sized here and only cards two onward break before themselves.
+  - **What decided it: both shipped configurations have now failed a native pass** - the zero-margin one as that test records, the four-margin one as `B4`. Keeping the current rule was not the conservative option it looked like. The test is rewritten to assert `margin: 0` **with** a content-sized card, carrying the whole history in its comment.
+
+- **`B5` is split out on purpose**, against the finding's own advice to fix all three together. Nothing here can see a laid-out exported page, so the wrapper it describes can only be guessed at - and a guess that lands is indistinguishable from one that does not when three print changes ship in the same pass. The findings entry records what would diagnose it: the exported page two, or the DOM of the card that lands after the break.
+- **A regression was caught in the writing, not in review.** The toast container sat outside all three screens; folding it into the shell branch would have silenced every toast raised during first launch and onboarding. It is outside the screens and inside the chromeless guard now, and a test pins it.
+
+- **Files changed:** `apps/desktop/src/app/app.ts` and its spec, `apps/desktop/src/styles.scss`, `wysiwyg-print.ts` and its spec, `cv-detail.style.spec.ts`, plus documents. No Rust, no `libs/`.
+- **`check-style-move.mjs` was run and reports a deliberate delta rather than a move**: `.page-card` loses `padding: 0 !important`, the tracker report loses `position/top/left/right` and gains `display: block`. Named here and in the pull request, which is what the tool asks for.
+- **Validation, all run and observed:** `nx run desktop:type-check` green; `nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache` green with the one pre-existing warning; `nx test desktop` **1161 passed**, eight new; `nx build desktop` green, 1.51 MB / 280.79 kB, no budget warning; `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check` passed. No Rust or library change, so those targets do not apply.
+- **Not covered by anything here:** whether either export is now right. Station `C` of the native script settles `B4` - export a CV and measure the four margins against the Style card - and the tracker export settles `B6`. Both should be run on the same pass as `B2`, since all three are the same kind of claim.
+- **Privacy/security impact:** none. One template branch, one stylesheet, one page rule.
+- **Next first action:** `B5`, once its evidence exists, or `B9`/`B10`. `S1` remains blocked on one query against `tailoring_cache` rather than on a decision.
+
 ### 2026-08-21, the disclosure that WebKit would not re-open
 
 - **Status:** complete as a code change. **Unverified as a fix**, and that is not a caveat on this entry - it is the defining fact about `B2` and it is stated in the partial, the spec, the changelog and the pull request.

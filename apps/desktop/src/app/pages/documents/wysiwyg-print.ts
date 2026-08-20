@@ -37,14 +37,25 @@ import type { PageSettings } from '@applye/core';
 const PAGE_RULE_ELEMENT_ID = 'wysiwyg-page-rule';
 const PRINTING_BODY_CLASS = 'printing-cv';
 
-/** The `@page` declaration for these settings, in millimetres. */
+/**
+ * The `@page` declaration for these settings: the paper size, and **no page
+ * margin at all**.
+ *
+ * It used to carry the four margins, and the exported PDF did not use them -
+ * the content sat closer to the paper edge than the editor had shown (`B4`,
+ * native gate walk of 2026-08-20). The engine that renders the export is
+ * WebKit, and the printed output no longer asks it to honour a page margin:
+ * the page is the whole sheet, and `.page-card` keeps the padding it already
+ * draws on screen, so the inset is ordinary box layout that every engine has
+ * always implemented.
+ *
+ * `resolvePageSettings` is still called for its size, and the margins it
+ * resolves still reach the output - through the card, which is where the
+ * preview gets them from too. That is the point: one source, not two.
+ */
 export function pageRuleFor(page: PageSettings | undefined): string {
   const r = resolvePageSettings(page);
-  const m = r.margin;
-  return (
-    `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
-    ` margin: ${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm; }`
-  );
+  return `@page { size: ${r.widthMm}mm ${r.heightMm}mm; margin: 0; }`;
 }
 
 /**

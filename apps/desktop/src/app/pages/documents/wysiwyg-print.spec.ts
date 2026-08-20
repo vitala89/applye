@@ -29,20 +29,34 @@ describe('wysiwyg print', () => {
   });
 
   describe('the @page rule', () => {
-    it('carries the resolved size and all four margins, in millimetres', () => {
+    // `B4`: the exported PDF did not use the margins the editor showed, and the
+    // engine that renders it is WebKit. The rule no longer asks it to honour a
+    // page margin at all - the page is the whole sheet and the card's own
+    // padding insets the content, which is ordinary box layout.
+    it('sets a zero page margin, because the card supplies the real ones', () => {
+      const rule = pageRuleFor({
+        size: 'a4',
+        margin: { top: 1, right: 2, bottom: 3, left: 4 },
+      });
+
+      expect(rule).toContain('margin: 0');
+      expect(rule).not.toContain('1mm');
+    });
+
+    it('still carries the resolved page size in millimetres', () => {
       const rule = pageRuleFor({
         size: 'a4',
         margin: { top: 1, right: 2, bottom: 3, left: 4 },
       });
 
       expect(rule).toContain('size: 210mm 297mm');
-      expect(rule).toContain('margin: 1mm 2mm 3mm 4mm');
+      expect(rule).toMatch(/size: \d+mm \d+mm/);
     });
 
     it('resolves defaults when the document carries no page settings', () => {
       const rule = pageRuleFor(undefined);
 
-      expect(rule).toMatch(/^@page \{ size: \d+mm \d+mm; margin: (\d+mm ?){4}; \}$/);
+      expect(rule).toMatch(/^@page \{ size: \d+mm \d+mm; margin: 0; \}$/);
     });
 
     it('follows the page size rather than hard-coding A4', () => {
@@ -58,20 +72,20 @@ describe('wysiwyg print', () => {
 
       const el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement;
       expect(el).toBeTruthy();
-      expect(el.textContent).toContain('margin: 5mm 5mm 5mm 5mm');
+      expect(el.textContent).toContain('margin: 0');
       expect(document.body.classList.contains('printing-cv')).toBe(true);
       expect(printed).toBe(1);
     });
 
     it('reuses the style element instead of appending one per export', () => {
       printWithPageRule({ size: 'a4', margin: { top: 5, right: 5, bottom: 5, left: 5 } });
-      printWithPageRule({ size: 'a4', margin: { top: 9, right: 9, bottom: 9, left: 9 } });
+      printWithPageRule({ size: 'letter', margin: { top: 9, right: 9, bottom: 9, left: 9 } });
 
       expect(document.querySelectorAll('#wysiwyg-page-rule')).toHaveLength(1);
-      // ...and the second export's margins won, so the element is rewritten
+      // ...and the second export's page size won, so the element is rewritten
       // rather than merely left in place.
       expect(document.getElementById('wysiwyg-page-rule')?.textContent).toContain(
-        'margin: 9mm 9mm 9mm 9mm',
+        'size: 215.9mm 279.4mm',
       );
     });
 

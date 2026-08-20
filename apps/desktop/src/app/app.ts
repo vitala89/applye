@@ -6,7 +6,9 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs';
 import { ShellLayoutComponent } from './layout/shell-layout.component';
 import { UpdaterService } from './core/updater.service';
 import { FirstLaunchComponent, FirstLaunchDismiss } from './core/first-launch.component';
@@ -14,6 +16,12 @@ import { OnboardingComponent } from './core/onboarding/onboarding.component';
 import { OnboardingService } from './core/onboarding/onboarding.service';
 import { BootGateStore } from '@applye/application';
 import { ToastContainerComponent } from './core/toast/toast-container.component';
+
+/**
+ * The routes the hidden PDF-export windows load. They are never linked from the
+ * UI - Rust opens them - and the document is the entire point of the window.
+ */
+const PRINT_ROUTE_PREFIX = '/print/';
 
 @Component({
   imports: [
@@ -25,20 +33,28 @@ import { ToastContainerComponent } from './core/toast/toast-container.component'
   ],
   selector: 'app-root',
   template: `
-    @if (showFirstLaunch()) {
-      <app-first-launch (dismissed)="onFirstLaunchDismissed($event)" />
-    } @else if (showOnboarding()) {
-      <app-onboarding (completed)="onboarding.close()" />
+    @if (chromeless()) {
+      <router-outlet />
     } @else {
-      <app-shell-layout><router-outlet /></app-shell-layout>
+      @if (showFirstLaunch()) {
+        <app-first-launch (dismissed)="onFirstLaunchDismissed($event)" />
+      } @else if (showOnboarding()) {
+        <app-onboarding (completed)="onboarding.close()" />
+      } @else {
+        <app-shell-layout><router-outlet /></app-shell-layout>
+      }
+      <!-- Outside the three screens, as it always was: a toast raised during
+           onboarding still has to reach the user. Inside the chromeless guard,
+           because a toast painted into an exported PDF is not a toast. -->
+      <app-toast-container />
     }
-    <app-toast-container />
   `,
   styles: [':host { display: block; height: 100%; }'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [BootGateStore],
 })
 export class App implements OnInit {
+  private readonly router = inject(Router);
   private readonly updater = inject(UpdaterService);
   /** Which screen the app opens on. The rule is the store's; this component
    * only routes the answer (ADR-0005). */
@@ -48,6 +64,30 @@ export class App implements OnInit {
   readonly theme = signal<'dark' | 'light'>('dark');
   readonly showFirstLaunch = signal(false);
   readonly showOnboarding = computed(() => this.onboarding.open());
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /**
+   * No sidebar, no header, no toasts: the window is a sheet of paper.
+   *
+   * The print routes used to render the full shell and the print stylesheet
+   * hid it with `visibility: hidden`, which **paints nothing and occupies
+   * everything**. Two defects came out of that. The document had to be lifted
+   * to the page origin with `position: absolute` to escape the shell it was
+   * sitting below, and the shell's own height stayed in the flow - so a report
+   * that fitted on one page exported as two, the second blank (`B6`).
+   *
+   * Reading the URL rather than route data keeps this to one signal and no
+   * `ActivatedRoute` traversal from the root; the three routes are literally
+   * `print/*` and are declared in one place, `app.routes.ts`.
+   */
+  readonly chromeless = computed(() => this.url().startsWith(PRINT_ROUTE_PREFIX));
 
   async ngOnInit(): Promise<void> {
     // Fire-and-forget: the result reaches the user through the Settings badge

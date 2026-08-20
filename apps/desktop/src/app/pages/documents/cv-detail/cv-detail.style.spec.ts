@@ -476,15 +476,29 @@ describe('CvDetailComponent per-section style', () => {
     printSpy.mockRestore();
   });
 
-  it('exportPdfWysiwyg injects an @page rule carrying the real per-side margins', async () => {
+  // This test used to assert the opposite - four mm margins, and **never**
+  // `margin: 0`, because an earlier attempt at a zero page margin scaled the
+  // output and spilled a blank trailing page. That tripwire was laid
+  // deliberately and is rewritten deliberately.
+  //
+  // **The attempt it forbade is not this one.** It kept the card at a fixed
+  // page width and height in pixels and broke *after* every card including the
+  // last: a page-sized box printed onto a full-bleed sheet is what the renderer
+  // scales, and a break after the final card is what emits the empty page. The
+  // card is content-sized here and only cards two onward break before
+  // themselves.
+  //
+  // What decided it is that **both shipped configurations have now failed a
+  // native pass**: the zero-margin one as recorded above, and the four-margin
+  // one as `B4` - the exported PDF ignoring the margins the editor showed. So
+  // keeping the current rule is not the conservative option it looks like.
+  it('exportPdfWysiwyg injects an @page rule with no page margin', async () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     await component.exportPdfWysiwyg();
     const rule = document.getElementById('wysiwyg-page-rule')?.textContent ?? '';
-    // Real four-side mm margins (the print stylesheet zeroes the card padding),
-    // never `margin: 0` - the full-bleed value that scaled the margins and spilled
-    // a blank trailing page.
-    expect(rule).toMatch(/margin: \d+mm \d+mm \d+mm \d+mm/);
-    expect(rule).not.toContain('margin: 0;');
+
+    expect(rule).toContain('margin: 0');
+    expect(rule).toMatch(/size: [\d.]+mm [\d.]+mm/);
     printSpy.mockRestore();
   });
 

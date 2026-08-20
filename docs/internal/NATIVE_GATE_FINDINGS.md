@@ -28,6 +28,9 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
 3. ~~**`B8`** - the job title is a fragment of the description.~~ **Fixed** in the deterministic
    extractor, see the entry below. Still owed a native re-parse of a hard-wrapped posting.
 4. **`S1`** - two and a half minutes to a first document, half of it in the dual critique.
+   **Blocked on one measurement, not on a decision**: reading the prompt disproved the hypothesis
+   this file was carrying, and the numbers that replace it are already in `tailoring_cache`. The
+   query is in the `S1` entry below. `S3`, found while reading it, is separate.
 5. **`B2`**, then the print family **`B4` `B5` `B6`**, then **`B9`** and **`B10`**.
 
 `P1` and `P2` are one change and `P2` is already half-built. `P3`, `P4` and `P5` are decisions rather
@@ -396,6 +399,57 @@ build instead of blocking it.
 
 **The cache is doing its job** and is not part of this problem: re-running the same tailoring with
 nothing changed returned from cache, with no provider call.
+
+**Read against the prompt on 2026-08-20, and the first hypothesis above is wrong.**
+
+`libs/skills/src/resume-tailoring/resume-tailoring.md` is one skill run three times with a `pass`
+input. Pass 2's declared output is
+`{"pass":2,"result_md":"## Recruiter\n<3-5 points>\n\n## Hiring Manager\n<3-5 points>"}` - **six to
+ten bullet points, not a document.** So "whether it needs two passes at full document length" is
+already answered on the output side, and "whether it can run against a diff" has almost no output to
+trim.
+
+**The measured ordering is the real lead, and it is anomalous.** Pass 3 produces a complete tailored
+CV - by far the largest output of the three - and was measured **faster** than pass 2, which produces
+the smallest. Wall clock therefore does not track output length here, which rules out "it writes too
+much" as the cause and leaves three candidates: the size of the **input**, the model spending
+reasoning tokens for a short answer, or something outside the call.
+
+**Nor can the passes be overlapped.** Pass 3 takes `pass2_result` as an input, so the critique cannot
+run beside the build; that option is closed by the prompt's own data flow rather than by a benchmark.
+
+**What pass 2 does carry at full length is its input:** `profile_md`, `job_description`,
+`scoring_json` and `pass1_result`, all of them in the `[USER]` turn.
+
+**The numbers that settle this are already recorded.** `tailoring_cache` (migration `0005`) stores
+`pass`, `model_used`, `tokens_input` and `tokens_output` for every pass of every job, so the walk's
+own runs can be read back without re-running anything:
+
+```sql
+SELECT pass, model_used, tokens_input, tokens_output
+  FROM tailoring_cache
+ WHERE job_id = (SELECT job_id FROM tailoring_cache ORDER BY created_at DESC LIMIT 1)
+ ORDER BY pass;
+```
+
+If `tokens_input` is flat across the three passes and `tokens_output` for pass 2 is small, the time is
+going into reasoning rather than into text, and the lever is the model or the instruction - not the
+length. If `tokens_input` dominates, the lever is what pass 2 is given.
+
+**S3. The profile and the job description are re-sent, uncached, on all three passes.**
+Found while reading S1 and recorded separately because it is a token-cost defect rather than a
+latency one, and closing it is an architecture decision.
+
+`anthropic_run` in `apps/desktop/src-tauri/src/ai/api.rs` puts `cache_control: {"type":"ephemeral"}`
+on the `system` block and nothing else. A skill's `[SYSTEM]` section is its static instructions, so
+**the cached prefix is the small half**: the profile and the job description live in `[USER]` and are
+billed at full input price three times per tailoring run, plus again on every other skill call for
+the same job.
+
+Fixing it means deciding where a skill puts its per-job block, which changes the skill file format,
+`skills.rs`, and every skill that has one. That is its own decision with its own grilling - not a
+rider on S1 - and it should be sized against the `tokens_input` numbers above, which say exactly what
+the repetition costs.
 
 ### AI output quality
 

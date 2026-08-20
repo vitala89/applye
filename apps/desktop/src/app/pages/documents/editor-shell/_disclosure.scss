@@ -15,13 +15,48 @@
   }
 }
 
+// The collapse used by all six disclosures in the two document editors: the CV
+// section accordion, both Style cards, and the cover letter's blocks, body
+// paragraphs and recipient block.
+//
+// **It used to animate `grid-template-rows` between `0fr` and `1fr`, and
+// WKWebView does not honour that transition.** The section collapsed on the
+// first click and then would not re-open - only the chevron moved - so the
+// entries were present in the DOM and held at zero height, with an open chevron
+// over an empty body (`B2`, native gate walk of 2026-08-20). Tauri renders in
+// WKWebView on macOS while every automated check here runs in jsdom or Chrome,
+// which is exactly why nothing caught it.
+//
+// **The replacement is chosen for how it fails, not for how it looks.**
+// `height: 0` to `height: auto` is ordinary block layout that every engine has
+// implemented for decades, so the control is correct even where nothing
+// animates. `interpolate-size: allow-keywords` then lets engines that support
+// animating to a keyword ease it; the rest show and hide instantly. The old
+// technique degraded into a **broken** control on one engine; this one degrades
+// into an unanimated one, which is the property that matters.
+//
+// The property is set on the element rather than on `:root`. It is inherited
+// and applies to the element whose size interpolates, so scoping it here keeps
+// keyword interpolation from silently changing every other transition in the
+// app.
+//
+// `display: grid` is gone with the `fr` units it existed for. Every one of the
+// six call sites wraps its content in exactly one child, so the container was a
+// single-item grid and is now a plain block.
+//
+// The child's `overflow: hidden` is **kept on purpose** even though the
+// container now clips: it is what the six call sites render under today, and
+// removing it would let content that is currently clipped escape - a second
+// visual change riding along with a bug fix, in the one place no test here can
+// see it.
 .docedit-collapse {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows var(--dur-base) var(--ease-out);
+  overflow: hidden;
+  height: auto;
+  interpolate-size: allow-keywords;
+  transition: height var(--dur-base) var(--ease-out);
 }
 .docedit-collapse--closed {
-  grid-template-rows: 0fr;
+  height: 0;
 }
 .docedit-collapse > * {
   overflow: hidden;

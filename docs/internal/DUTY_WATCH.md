@@ -48,6 +48,7 @@ Before a watch can be marked complete:
 
 - **Status:** complete for `B4` and `B6`. `B5` is deliberately out of the change, with what would diagnose it written down. **Neither fix is verified** - nothing here can see a laid-out exported page.
 - **Agent/tool:** Claude Code, Opus 5. Triage **9/10** (radius 2, ambiguity 2, risk 1, verification 2, unknowns 2), budget announced up front. The grilling gate ran twice: three questions, then **a fourth round after the evidence changed**. No subagents.
+- **Commits:** `a0285da5` (the fix and its documents), plus this line recording it.
 - **Branch:** `fix/print-path-chromeless`, cut from `origin/main` at `faf9bdea` - checked explicitly, after the previous branch was cut from a feature branch by mistake.
 - **Objective:** the print family `B4` `B5` `B6` from `NATIVE_GATE_FINDINGS.md`, which that file recommends fixing in one pass.
 

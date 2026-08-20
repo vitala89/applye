@@ -188,7 +188,16 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
  * decision of its own, not a rider on moving the parse into this layer.
  */
 export function parseCoverLetterResponse(text: string): Partial<CoverLetterContent> {
-  const value: unknown = JSON.parse(cleanJsonText(text));
+  let value: unknown;
+  try {
+    value = JSON.parse(cleanJsonText(text));
+  } catch (cause) {
+    // `JSON.parse` throws `Unexpected end of JSON input` and nothing else - not
+    // the answer it choked on. That message reached the user unchanged and is
+    // the reason a cut-off letter could not be told apart from a malformed one
+    // by anyone reading the report.
+    throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`, { cause });
+  }
   // An array or a bare scalar parses fine and then lies its way through the
   // cast, reaching the editor as a letter with no fields rather than as the
   // failure it is.

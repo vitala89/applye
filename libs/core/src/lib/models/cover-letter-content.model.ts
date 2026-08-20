@@ -78,6 +78,34 @@ export const COVER_LETTER_LENGTHS: readonly CoverLetterLength[] = [
 export const COVER_LETTER_TONE_DEFAULT: CoverLetterTone = 'Formal';
 export const COVER_LETTER_LENGTH_DEFAULT: CoverLetterLength = 'Standard';
 
+/**
+ * A letter with every required field present and empty - the shape a partial
+ * answer is filled out against.
+ *
+ * Six of `CoverLetterContent`'s fields are required, and a skill's answer is
+ * legitimately partial: it fills the blocks it was asked for. The draft flows
+ * used to bridge that with a cast, which produced a stored letter whose
+ * `address` was literally `undefined` while its type said otherwise - a lie
+ * every reader downstream then had to survive. Spreading this first states the
+ * defaults instead of hiding them.
+ *
+ * A function rather than a constant, because the object is mutable and a shared
+ * instance would let one letter's edits reach another's starting point.
+ */
+export function emptyCoverLetterContent(): CoverLetterContent {
+  return {
+    address: {},
+    date: '',
+    subject: '',
+    greeting: '',
+    bodyParagraphs: [],
+    closing: '',
+    signature: '',
+    tone: COVER_LETTER_TONE_DEFAULT,
+    length: COVER_LETTER_LENGTH_DEFAULT,
+  };
+}
+
 /** Target body word budget per length preset - the low/high bounds drive both
  * the AI prompt guidance and the editor's word-count badge colour. Body-only
  * (paragraphs), excludes address/subject/greeting/closing/signature. */

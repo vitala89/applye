@@ -1,5 +1,15 @@
 # Current Operational State
 
+- **`B11` is instrumented, not closed, and the difference is deliberate.** The cover letter that
+  fails on the first attempt cannot be reproduced without a real provider call, so the work was to
+  make the next occurrence say what happened: `AiResponse` now carries the provider's `stop_reason` /
+  `finish_reason`, which both providers already reported into a value the app discarded, and a parse
+  failure names it. The defect found underneath is closed - one feature carried **three**
+  strictnesses of parse, and the wizard's Generate cover letter sat on the weakest of them while the
+  CV beside it sat on the strongest, which is exactly why the CV never failed on the same run. **The
+  next native run should read the message on a failed first attempt**: "stopped at its output token
+  limit" points at the cap or the prompt, a clean stop points at the skill.
+
 - **The first native gate walk is done and its most expensive finding is fixed.** `46 of 83` checks
   passed on 2026-08-20, 3 failed and 1 could not run; `docs/internal/NATIVE_GATE_FINDINGS.md` is the
   work list and `NATIVE_GATE_BACKLOG.md` has the per-section breakdown. **`B1` is closed**:

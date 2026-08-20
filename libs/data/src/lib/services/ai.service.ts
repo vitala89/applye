@@ -18,6 +18,16 @@ export interface AiResponse {
   tokensInput: number;
   tokensOutput: number;
   cachedTokens: number;
+  /**
+   * Why the provider stopped generating, verbatim - `stop_reason` on Anthropic,
+   * `finish_reason` on the OpenAI-compatible shape - or absent when the
+   * provider did not say, which is every CLI-bridge answer.
+   *
+   * Passed through rather than normalised, because the vendors spell "I hit the
+   * cap" differently. `isTruncatedStopReason` in `@applye/core` knows both
+   * spellings and is the only place that should compare against them.
+   */
+  stopReason?: string | null;
 }
 
 export interface RenderedSkill {

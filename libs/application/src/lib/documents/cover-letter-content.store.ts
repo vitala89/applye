@@ -5,7 +5,11 @@ import type {
   CoverLetterLength,
   CoverLetterTone,
 } from '@applye/core';
-import { COVER_LETTER_LENGTH_DEFAULT, COVER_LETTER_TONE_DEFAULT } from '@applye/core';
+import {
+  COVER_LETTER_LENGTH_DEFAULT,
+  COVER_LETTER_TONE_DEFAULT,
+  emptyCoverLetterContent,
+} from '@applye/core';
 import { bodyLengthStatus, countBodyWords } from './cover-letter-length';
 import {
   CoverLetterTextField,
@@ -15,22 +19,6 @@ import {
   updateCoverLetterField,
   updateCoverLetterParagraph,
 } from './cover-letter-content';
-
-/** An empty letter, and the shape `hydrate` falls back to for a document that
- * has never been written. */
-function emptyCoverLetter(): CoverLetterContent {
-  return {
-    address: {},
-    date: '',
-    subject: '',
-    greeting: '',
-    bodyParagraphs: [],
-    closing: '',
-    signature: '',
-    tone: COVER_LETTER_TONE_DEFAULT,
-    length: COVER_LETTER_LENGTH_DEFAULT,
-  };
-}
 
 /**
  * The letter itself: its blocks, its body paragraphs, and the application
@@ -45,7 +33,7 @@ function emptyCoverLetter(): CoverLetterContent {
  */
 @Injectable()
 export class CoverLetterContentStore {
-  readonly content = signal<CoverLetterContent>(emptyCoverLetter());
+  readonly content = signal<CoverLetterContent>(emptyCoverLetterContent());
 
   /** AI voice and length target, read straight off the persisted content. */
   readonly tone = computed<CoverLetterTone>(() => this.content().tone ?? COVER_LETTER_TONE_DEFAULT);
@@ -83,7 +71,7 @@ export class CoverLetterContentStore {
    */
   hydrate(contentJson: string | null | undefined): void {
     if (!contentJson) {
-      this.content.set(emptyCoverLetter());
+      this.content.set(emptyCoverLetterContent());
       return;
     }
     const parsed = JSON.parse(contentJson) as CoverLetterContent;

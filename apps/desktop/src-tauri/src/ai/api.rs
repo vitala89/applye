@@ -123,6 +123,7 @@ async fn anthropic_run(req: &AiRequest, api_key: &str) -> Result<AiResponse, Str
         tokens_input: usage_u32(usage, "input_tokens"),
         tokens_output: usage_u32(usage, "output_tokens"),
         cached_tokens: usage_u32(usage, "cache_read_input_tokens"),
+        stop_reason: stop_reason(&val, "stop_reason"),
     })
 }
 
@@ -182,7 +183,29 @@ async fn openai_compatible_run(
         tokens_input: usage_u32(usage, "prompt_tokens"),
         tokens_output: usage_u32(usage, "completion_tokens"),
         cached_tokens: usage_u32(usage, "prompt_cache_hit_tokens"),
+        stop_reason: openai_stop_reason(&val),
     })
+}
+
+/// The OpenAI-compatible shape puts the finish reason on the first choice, not
+/// on the envelope - the one structural difference from Anthropic, and the
+/// reason this is a function rather than another `val.get`.
+fn openai_stop_reason(val: &Value) -> Option<String> {
+    val.get("choices")
+        .and_then(Value::as_array)
+        .and_then(|c| c.first())
+        .and_then(|c| stop_reason(c, "finish_reason"))
+}
+
+/// Reads a stop/finish reason, treating an empty string and `null` alike as
+/// "the provider did not say". An empty string would otherwise reach the
+/// frontend as a reason that exists and explains nothing.
+fn stop_reason(val: &Value, key: &str) -> Option<String> {
+    val.get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
 }
 
 fn usage_u32(usage: Option<&Value>, key: &str) -> u32 {
@@ -220,6 +243,53 @@ mod tests {
     #[test]
     fn default_cap_is_8192_when_unset() {
         assert_eq!(resolve_max_tokens(&req(None)), 8192);
+    }
+
+    /// The reason a cut-off answer used to be indistinguishable from a bad one:
+    /// both providers report why they stopped, in the same body this code
+    /// already parses, and it was read by nobody.
+    #[test]
+    fn anthropic_stop_reason_is_read_from_the_envelope() {
+        let val = json!({ "stop_reason": "max_tokens" });
+        assert_eq!(
+            stop_reason(&val, "stop_reason").as_deref(),
+            Some("max_tokens")
+        );
+    }
+
+    #[test]
+    fn openai_finish_reason_is_read_from_the_first_choice() {
+        let val = json!({ "choices": [{ "finish_reason": "length" }] });
+        assert_eq!(openai_stop_reason(&val).as_deref(), Some("length"));
+    }
+
+    #[test]
+    fn a_clean_finish_is_reported_verbatim_rather_than_dropped() {
+        // "the provider said it finished" and "the provider said nothing" are
+        // different facts, and only one of them clears a truncation suspicion.
+        assert_eq!(
+            stop_reason(&json!({ "stop_reason": "end_turn" }), "stop_reason").as_deref(),
+            Some("end_turn")
+        );
+        assert_eq!(
+            openai_stop_reason(&json!({ "choices": [{ "finish_reason": "stop" }] })).as_deref(),
+            Some("stop")
+        );
+    }
+
+    #[test]
+    fn a_missing_null_or_blank_reason_is_none() {
+        assert_eq!(stop_reason(&json!({}), "stop_reason"), None);
+        assert_eq!(
+            stop_reason(&json!({ "stop_reason": null }), "stop_reason"),
+            None
+        );
+        assert_eq!(
+            stop_reason(&json!({ "stop_reason": "   " }), "stop_reason"),
+            None
+        );
+        assert_eq!(openai_stop_reason(&json!({})), None);
+        assert_eq!(openai_stop_reason(&json!({ "choices": [] })), None);
     }
 
     #[test]

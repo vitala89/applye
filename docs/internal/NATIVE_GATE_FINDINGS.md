@@ -31,7 +31,9 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
    **Blocked on one measurement, not on a decision**: reading the prompt disproved the hypothesis
    this file was carrying, and the numbers that replace it are already in `tailoring_cache`. The
    query is in the `S1` entry below. `S3`, found while reading it, is separate.
-5. **`B2`**, then the print family **`B4` `B5` `B6`**, then **`B9`** and **`B10`**.
+5. ~~**`B2`**~~ **fixed 2026-08-21** - and it is the one item in this file that **no check here can
+   confirm**, so it is owed a native pass on station 4 before it counts. Then the print family
+   **`B4` `B5` `B6`**, then **`B9`** and **`B10`**.
 
 `P1` and `P2` are one change and `P2` is already half-built. `P3`, `P4` and `P5` are decisions rather
 than defects. `Q2` and `Q3` are evaluation work that should be sized before it is started.
@@ -86,7 +88,7 @@ The score reappearing as **Score this job** was the blank screen, not a third de
 regression tests pin both halves at the store seam, which is where the loss became observable, but
 the walk is what saw the symptom.
 
-**B2. A CV editor section shows an open chevron over an empty body.**
+**B2. A CV editor section shows an open chevron over an empty body. FIXED 2026-08-21.**
 Seen in the **CV editor's section accordion**. In the reported screen `EDUCATION` has its chevron
 turned right (closed) with no body, which is correct, while `SKILLS` and `LANGUAGES` have the chevron
 turned **down** - the open position - and show nothing under it.
@@ -124,6 +126,38 @@ A fix has to stop relying on animating an `fr` value: animate `max-height`, or u
 `interpolate-size: allow-keywords` with `height: auto` where the engine supports it, or drop the
 animation for a plain show/hide. Whatever is chosen, **it cannot be verified in jsdom** - it needs
 another native pass on this same station.
+
+**Fixed, 2026-08-21, in the partial, for all six disclosures.** `.docedit-collapse` now collapses by
+`height: 0` to `height: auto` with `interpolate-size: allow-keywords`, and `display: grid` is gone
+with the `fr` units it existed for. Every one of the six call sites wraps its content in exactly one
+child, so the container was a single-item grid and is now a plain block.
+
+**The replacement was chosen for how it fails, not for how it looks.** Block layout with a height is
+what every engine has implemented for decades, so the control is correct even where nothing animates;
+`interpolate-size` then lets engines that support animating to a keyword ease it. The old technique
+degraded into a **broken** control on one engine, this one degrades into an unanimated one.
+
+**The narrowing recorded on the walk - "the Style card re-opens correctly" - was checked and does not
+change the fix.** Both markups are structurally identical (`.docedit-collapse > div > content`), so
+the difference is the content: the CV sections hold component hosts with their own editors, the Style
+card holds plain fields. One disclosure happening not to break is weaker evidence than the technique
+being unreliable in the engine, and the finding's own instruction was to fix once in the partial.
+
+**`interpolate-size` is declared on the element, not on `:root`.** It is inherited, so a global
+declaration would quietly enable keyword interpolation for every other transition in the app.
+
+**What the suite can and cannot say.** `apps/desktop/src/disclosure-css.spec.ts` scans the partial
+and fails if an `fr`-unit track transition returns, if the closed state stops clipping, if
+`interpolate-size` goes global, or if reduced motion is dropped. **None of that is evidence the bug is
+gone** - jsdom has no layout and the engine that broke is not in this repository. Station 4 is what
+settles it, and the CV Style card, the cover-letter blocks, its body paragraphs and its recipient
+block should be opened and closed twice each on the same pass, because they now share the changed
+rule.
+
+**Found while fixing, not fixed: the closed content stays in the tab order.** `overflow: hidden` hides
+it visually and leaves it focusable, so a keyboard user tabs into a collapsed section. That was true
+of the `fr` version too, so it is not a regression - it is a separate defect, and closing it means
+`inert` or `aria-hidden` across six templates rather than one rule.
 
 **B3. Cmd+P in the CV preview opens nothing.**
 The print dialog never appears, so **check `C` "press Cmd+P directly in the CV preview" cannot be

@@ -1,5 +1,15 @@
 # Current Operational State
 
+- **`B2` is fixed in code and unverified in fact, and the two are being kept apart on purpose.** The
+  CV editor's disclosure animated `grid-template-rows` from `0fr` to `1fr`, which **WKWebView does
+  not honour** - a section closed once never came back. It collapses by `height` now, with
+  `interpolate-size: allow-keywords` so engines that can animate to a keyword still ease it: the old
+  technique degraded into a broken control on one engine, this one degrades into an unanimated one.
+  Fixed once in the shared partial, so **all six disclosures in both document editors change**.
+  `disclosure-css.spec.ts` guards the technique - it fails if the `fr` transition returns - but jsdom
+  has no layout and the engine that broke is not in this repository, **so a green suite is not
+  evidence here**. Station 4 of the native script is what settles it, and all six should be opened
+  and closed twice on that pass.
 - **`B8` is fixed, and the premise in its own title was wrong.** Nothing truncated the job title: a
   scanned posting is hard-wrapped at about eighty columns, so a fragment of a sentence **is** a line
   of the document, and the reported one is **79 characters** - one under the length cut the

@@ -44,6 +44,32 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-21, the spinner was turning on a box 1.84px taller than itself
+
+- **Status:** complete for `B10`. **`B9` was looked for and not found**, which is recorded as precisely as a fix rather than guessed at.
+- **Agent/tool:** Claude Code, Opus 5. Triage **6/10** (radius 1, ambiguity 1, risk 1, verification 2, unknowns 1); one grilling round, two questions, once the investigation turned up a scope fork the triage had not seen. No subagents.
+- **Commits:** `74394ecc` (the fix and its documents), plus this line recording it.
+- **Branch:** `fix/spinner-rotates-on-its-glyph`, cut from `origin/main` at `b05c326d` - base checked explicitly.
+- **Objective:** `B9` and `B10`, the last two bugs in the walk's fix order.
+
+- **`B10`'s cause was already written down in this repository, in another file, about another component.** `libs/ui/src/styles/_button.scss` records that a `<lucide-icon>` wrapper is a line box which reserves descender space below the baseline - **1.84px at that font size, whatever the icon measures** - and fixes it there with `svg { display: block }`. The three spinners animate the **wrapper**, so a 16px glyph was rotating about the centre of a 17.84px box, roughly 0.92px off its own, once every 900ms. That is the wander.
+- **Checking each site changed the answer from the one that was authorised.** The maintainer chose "fix all four boxes"; there are four rotate animations but only **three** are defective. The onboarding spinner is a bordered `<span>` with an explicit 14px square, so its box already is the circle it draws. It is left alone, and the spec asserts why, because "there were four and you fixed three" is the question a later reader will have.
+- **The fix is `display: inline-flex` on each spinning wrapper**, not `block`: these sit beside text, and it is the flex box - blockifying the inline `<svg>` - that removes the line box. `block` on the wrapper would have left an inline formatting context inside it and changed nothing.
+
+- **`B9` was investigated and three candidate causes were eliminated**, which is the useful output when a defect will not reproduce:
+  - `apply-wizard.component.ts` renders **exactly one** `<footer class="apply-wizard__footer">`, outside the step switch, and no step component renders an action row of its own - so the element is the same on every step;
+  - that footer declares `padding-top` and `border-top` and **no bottom padding at all**, so there is no value that could vary;
+  - "the page ran out of room on a long step" was already handled months before the walk - the shell's content area has a deliberately larger bottom padding (48px) plus `scroll-padding-block-end`, added in #156 on **2026-07-26**, which `git log -S` settled rather than assumption.
+  - **What would settle it** is now in the findings: which two steps differ, and the computed `padding-bottom` of the footer and of its scrolling ancestor on each. Guessing a padding onto the footer was considered and rejected - with no identified cause it is a change nothing here can judge, in the one area where a wrong guess adds a second inconsistency rather than removing the first.
+
+- **Files changed:** three component stylesheets, one line and its reasoning each, plus the new `apps/desktop/src/spinner-css.spec.ts` and documents. No template, no TypeScript beyond the spec, no Rust.
+- **`check-style-move.mjs` was run on all three sheets and reports 0 lost, 3 gained** - the three `display: inline-flex` declarations and nothing else. That is the cleanest reading this tool has given in the print/style work of the last two days, and it is the point: nothing was moved, one declaration was added.
+- **Validation, all run and observed:** `nx run desktop:type-check` green; `nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache` green with the one pre-existing warning; `nx test desktop` **1165 passed**, four new; `nx build desktop` green, 1.51 MB / 280.79 kB; `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check` passed. No Rust or library change.
+- **Not covered by anything here:** whether the circle now turns true. jsdom has no layout, so the spec guards the box and says so in its own header.
+- **Privacy/security impact:** none.
+- **The unverified backlog is now four items deep and that is worth saying plainly.** `B2`, `B4`, `B6` and `B10` are all fixed-but-unseen, and they need one native pass between them: station 4 for the disclosures, station `C` for the CV margins, a tracker export for the blank page, and any tailoring run for the spinner. Stacking a fifth before that pass happens is how a session ends with more claims than evidence.
+- **Next first action:** the native pass above, or `S1` if its `tailoring_cache` numbers arrive. What remains after that is decisions rather than defects - `P1`/`P2`, `P3`, `P4`, `P5` - plus `Q1` and the two evaluation items.
+
 ### 2026-08-21, the print windows were rendering the whole app and hiding it
 
 - **Status:** complete for `B4` and `B6`. `B5` is deliberately out of the change, with what would diagnose it written down. **Neither fix is verified** - nothing here can see a laid-out exported page.

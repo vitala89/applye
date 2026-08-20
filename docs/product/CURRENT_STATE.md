@@ -1,5 +1,14 @@
 # Current Operational State
 
+- **`B10` is fixed in three places, and `B9` was looked for and not found.** The spinner wandered
+  because the animation sits on the `<lucide-icon>` wrapper, which is a line box reserving about
+  **1.84px** of descender space - a mechanism `_button.scss` had already measured for buttons - so a
+  16px glyph turned about the centre of a 17.84px box. Each spinning wrapper is a flex box now. Four
+  rotate animations exist; **three were defective**, and the onboarding one is a bordered span whose
+  box already is its circle. For `B9` three candidate causes were eliminated - one footer element, no
+  bottom padding to vary, and the page-bottom gap already handled in July - so what would settle it is
+  recorded instead of guessed at. **The unverified backlog is now four deep**: `B2`, `B4`, `B6` and
+  `B10` are all fixed-but-unseen and need one native pass between them.
 - **`B4` and `B6` are fixed, and they shared a root nobody had named.** The print routes - the hidden
   windows Rust opens to make a PDF - rendered **the whole app shell**, and the print stylesheet only
   hid it with `visibility: hidden`, which paints nothing and occupies everything. That is directly

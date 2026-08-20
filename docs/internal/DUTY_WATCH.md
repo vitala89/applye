@@ -49,7 +49,7 @@ Before a watch can be marked complete:
 - **Status:** complete for `B1`. Two other native-gate items it touched are unchanged and stated below.
 - **Agent/tool:** Claude Code, Opus 5. Triage scored the task **6/10** (radius 1, ambiguity 1, risk 1, verification 2, unknowns 1), which routes to Sonnet at high effort; the session ran on Opus and that mismatch is recorded rather than corrected, because the model is not the session's to switch. No subagents were spawned.
 - **Branch:** `fix/tailoring-discard-owns-its-pass`, cut from `origin/main` at `8ea5ed4b`.
-- **Commits:** `06826436`.
+- **Commits:** `c042e659` (the fix and its documents), plus this line recording it.
 - **Objective:** `B1` from `docs/internal/NATIVE_GATE_FINDINGS.md` - the first item in the fix order, and the only defect in that file that costs the user tokens on every occurrence.
 - **The grilling gate ran before any edit**, because scoping the deletion changes what a `libs/application` service may destroy. Two rounds, four questions, and the facts each round needed were settled by reading rather than asked: that `document_library_delete` unlinks and then deletes, so the loss was permanent; that `enterJob` cannot re-read a route that still points at the id it loaded; that `TailorScoreService` holds only the in-memory post-tailor rescore; that `WizardProgressService` had already settled `sessionStorage` in this layer under `ADR-0005` amendment thirty-three; and that there are **two** wizard-open paths but only **one** draft-creation path, which is what chose the mechanism.
 

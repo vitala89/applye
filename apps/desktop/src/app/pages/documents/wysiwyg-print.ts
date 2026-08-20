@@ -38,24 +38,33 @@ const PAGE_RULE_ELEMENT_ID = 'wysiwyg-page-rule';
 const PRINTING_BODY_CLASS = 'printing-cv';
 
 /**
- * The `@page` declaration for these settings: the paper size, and **no page
- * margin at all**.
+ * The `@page` declaration for these settings, in millimetres.
  *
- * It used to carry the four margins, and the exported PDF did not use them -
- * the content sat closer to the paper edge than the editor had shown (`B4`,
- * native gate walk of 2026-08-20). The engine that renders the export is
- * WebKit, and the printed output no longer asks it to honour a page margin:
- * the page is the whole sheet, and `.page-card` keeps the padding it already
- * draws on screen, so the inset is ordinary box layout that every engine has
- * always implemented.
+ * **The margins belong here, and the round trip that proved it is worth
+ * keeping.** `B4` reported the exported PDF ignoring the Style card's margins,
+ * and the first attempt moved them into `.page-card`'s padding with
+ * `margin: 0` here - on the reasoning that padding is ordinary box layout and
+ * a page margin is a feature the renderer has to honour.
  *
- * `resolvePageSettings` is still called for its size, and the margins it
- * resolves still reach the output - through the card, which is where the
- * preview gets them from too. That is the point: one source, not two.
+ * That fixed page one and broke page two, and the native pass of 2026-08-21
+ * showed why. `paginate.util.ts` packs content into
+ * `pageHeightPx - marginTop - marginBottom`, so a card carrying the margins as
+ * padding is **exactly one page tall**. Printed onto a sheet whose printable
+ * area is smaller than the paper by any amount at all, it overflows, and
+ * `break-inside: avoid` moves a whole section onto a second page - which has no
+ * top inset, because padding belongs to a box and not to each page it spans.
+ *
+ * A page margin repeats on every page. That is the property this needs, and it
+ * is why the tripwire that forbade `margin: 0` was right about the outcome even
+ * though its stated reason described a different configuration.
  */
 export function pageRuleFor(page: PageSettings | undefined): string {
   const r = resolvePageSettings(page);
-  return `@page { size: ${r.widthMm}mm ${r.heightMm}mm; margin: 0; }`;
+  const m = r.margin;
+  return (
+    `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
+    ` margin: ${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm; }`
+  );
 }
 
 /**

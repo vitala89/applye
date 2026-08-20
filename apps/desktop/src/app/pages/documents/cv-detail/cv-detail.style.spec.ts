@@ -476,29 +476,30 @@ describe('CvDetailComponent per-section style', () => {
     printSpy.mockRestore();
   });
 
-  // This test used to assert the opposite - four mm margins, and **never**
-  // `margin: 0`, because an earlier attempt at a zero page margin scaled the
-  // output and spilled a blank trailing page. That tripwire was laid
-  // deliberately and is rewritten deliberately.
+  // The tripwire here has now been rewritten twice, and the second rewrite put
+  // it back. It forbade `margin: 0`; a change on 2026-08-21 moved the margins
+  // into the card's padding and rewrote it to allow one, arguing that the
+  // configuration the tripwire condemned had a fixed page-sized card and a
+  // break after every card, unlike the new one.
   //
-  // **The attempt it forbade is not this one.** It kept the card at a fixed
-  // page width and height in pixels and broke *after* every card including the
-  // last: a page-sized box printed onto a full-bleed sheet is what the renderer
-  // scales, and a break after the final card is what emits the empty page. The
-  // card is content-sized here and only cards two onward break before
-  // themselves.
+  // **The native pass that afternoon said otherwise, and the mechanism is
+  // dimensional rather than incidental.** The paginator packs content into
+  // `pageHeight - margins`, so a card carrying the margins as padding is
+  // exactly one page tall whatever else is true of it; printed onto a sheet
+  // whose printable area is smaller than the paper by any amount, it overflows
+  // and `break-inside: avoid` moves a whole section onto a second page with no
+  // top inset. Padding belongs to a box; a margin repeats on every page.
   //
-  // What decided it is that **both shipped configurations have now failed a
-  // native pass**: the zero-margin one as recorded above, and the four-margin
-  // one as `B4` - the exported PDF ignoring the margins the editor showed. So
-  // keeping the current rule is not the conservative option it looks like.
-  it('exportPdfWysiwyg injects an @page rule with no page margin', async () => {
+  // So the assertion is the original one, and the comment is longer, because
+  // the next person to have this idea should be able to read why it fails
+  // rather than rediscover it in an export.
+  it('exportPdfWysiwyg injects an @page rule carrying the real per-side margins', async () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     await component.exportPdfWysiwyg();
     const rule = document.getElementById('wysiwyg-page-rule')?.textContent ?? '';
 
-    expect(rule).toContain('margin: 0');
-    expect(rule).toMatch(/size: [\d.]+mm [\d.]+mm/);
+    expect(rule).toMatch(/margin: \d+mm \d+mm \d+mm \d+mm/);
+    expect(rule).not.toContain('margin: 0;');
     printSpy.mockRestore();
   });
 

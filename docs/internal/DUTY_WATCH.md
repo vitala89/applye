@@ -48,6 +48,7 @@ Before a watch can be marked complete:
 
 - **Status:** complete as a fix to the deterministic extractor. **Not confirmed on the posting that reported it** - that needs a native re-parse, and the entry says so where it matters.
 - **Agent/tool:** Claude Code, Opus 5. Triage **8/10** (radius 1, ambiguity 2, risk 1, verification 2, unknowns 2). Ambiguity 2 sent it through the grilling gate before any edit: one round, three questions. No subagents.
+- **Commits:** `7b12d2ec` (the fix and its documents), plus this line recording it.
 - **Branch:** `fix/job-title-from-identify`, cut from `origin/main` at `11ea12a4` - `B11` (PR #496) already merged, so this branch starts from both previous fixes.
 - **Objective:** `B8` from `NATIVE_GATE_FINDINGS.md`, third in the fix order. The title feeds the archetype screen, the score and the tailoring prompt, so a wrong one is read three times.
 

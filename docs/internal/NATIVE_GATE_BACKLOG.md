@@ -39,6 +39,34 @@ npm run desktop:dev
 
 **Two of these cost tokens and are marked.** Everything unmarked is free.
 
+## Walk of 2026-08-20
+
+The first full sitting of `NATIVE_GATE_SCRIPT.md`, driven by the maintainer on a seeded database.
+**46 of 83 checks are ticked.** What is not ticked is listed here with the reason, so the remainder is
+a work list rather than an unknown.
+
+Eleven sections passed outright and are ticked above: **B, C2, C3, C5, C7, C8, C9, C10, C11, C12, D**.
+
+The rest, and why:
+
+- **A** - 8 passed. **Two failed**: "the card holds its value and then reloads" (cancelling a tailor
+  blanks the job detail) and "discard a tailoring" (the discard also destroys the score and both
+  generated documents). Both are `B1` in `NATIVE_GATE_FINDINGS.md`.
+- **C** - 13 passed. **One failed**: the exported PDF ignores the Style card's margins. **One could
+  not run**: Cmd+P in the CV preview opens no dialog at all.
+- **C4** - 2 passed (the blinking caret, and a short window compressing rather than scrolling), one
+  half-passed ("Take the tour" works; the other exit needs a fresh profile). **Two not run**: the
+  opening choreography, and everything behind macOS Reduce motion.
+- **C6** - 2 passed (both panels fill their columns; neither shows the other's trailing element).
+  One half-passed: a stage outside 48 hours correctly takes no accent, but the seed has no stage
+  inside 48 hours to compare against. **Three not run**: the synchronised shimmer, the skeleton bar
+  widths, and Reduce motion.
+- **E** - **deferred to the `0.29.3` release**, because the `0.29.1` it named was deleted as
+  superseded and the local copy is the broken build. See the station for the replacement.
+
+**Nothing here is blocked on the app.** The unrun checks need either a system setting an agent may not
+change, a fresh profile, a data shape the seed does not produce, or a release that does not exist yet.
+
 ## A. Job detail, after the `ADR-0005` migration
 
 `jobs.component.ts` went 977 to 371 lines across #448, #449, #450 and #451, and eight stores in
@@ -67,8 +95,8 @@ a navigation it should have been reset by, or two jobs sharing one.
 Both items are layout-only and need the feed populated, so run a scan first. Neither is reachable in
 a browser preview, because the filter bar and the detail screen only render once there are rows.
 
-- [ ] The `.dv-filters` bar **sticks** while the feed scrolls under it.
-- [ ] The detail grid **collapses at `max-width: 980px`**. Narrow the window past that point and the
+- [x] The `.dv-filters` bar **sticks** while the feed scrolls under it.
+- [x] The detail grid **collapses at `max-width: 980px`**. Narrow the window past that point and the
       two-column detail becomes one column.
 
 ## C. The CV live-style panel, after its split (#462 and the template split)
@@ -160,15 +188,15 @@ and every flattened selector matched against the markup the page declares - but 
 written at runtime, and it cannot see which of two identical global `@keyframes` the browser picks.
 Both checks are free and need only the tracker to have rows.
 
-- [ ] **The tracker page renders unchanged.** Open Tracker with at least one application. The title
+- [x] **The tracker page renders unchanged.** Open Tracker with at least one application. The title
       row, the toolbar buttons, the segmented period control, the table and the status pills all look
       as they did. `.jt__title` is the rule most worth a second look - it was deleted as matching
       nothing, so a heading that suddenly renders at the default font size is what a wrong call looks
       like.
-- [ ] **The export dialog still has styled toolbar buttons.** Open the tracker's export dialog. Its
+- [x] **The export dialog still has styled toolbar buttons.** Open the tracker's export dialog. Its
       buttons keep their border, mono type and hover state, and the primary one is still accent-filled.
       This is the `.jt-tbtn` deletion: the dialog's own copy is supposed to be what styles it.
-- [ ] **The three animations still play.** The export dialog and the column drawer fade-and-rise on
+- [x] **The three animations still play.** The export dialog and the column drawer fade-and-rise on
       open (`jtIn`); a row's action menu pops (`jtPop`); the loading skeleton bars pulse (`jtPulse`).
       The first two are the keyframe deletion - the page's copies are gone and the children's
       identical ones must be what runs.
@@ -181,23 +209,23 @@ failed to reach a child still passes every assertion in the suite - the symptom 
 an unstyled control, not an error. Needs applications in the database; run
 section A's steps first.
 
-- [ ] **The six bar lists all look the same as each other.** Open Analytics with a
+- [x] **The six bar lists all look the same as each other.** Open Analytics with a
       populated pipeline. Funnel, match-score distribution, score vs outcome, time
       to response, pipeline aging and locations each render name, bar and value at
       the same size and spacing. One component draws all six now; a rule that
       failed to reach it shows as bare text with no bar.
-- [ ] **Only the funnel shows a conversion percentage**, and score vs outcome shows
+- [x] **Only the funnel shows a conversion percentage**, and score vs outcome shows
       its "N applications" caption **without** one. The two halves gate separately
       and a unit test can only check the DOM, not the layout of the column.
-- [ ] **The KPI tiles animate while loading.** Switch period on a slow database, or
+- [x] **The KPI tiles animate while loading.** Switch period on a slow database, or
       reopen the page: the four placeholder tiles shimmer. Those boxes are styled
       from `_analytics-skeleton.scss`, a **global** partial - the one thing here
       that could regress another page rather than this one.
-- [ ] **Nothing else on any other page changed.** The partial is emitted unwrapped
+- [x] **Nothing else on any other page changed.** The partial is emitted unwrapped
       into the global sheet. `ana-` was verified unique by grep, but a glance at
       Dashboard, Jobs and Settings costs nothing and is the only check that would
       catch a collision.
-- [ ] **The trend plot still draws both lines.** With follow-ups logged in the
+- [x] **The trend plot still draws both lines.** With follow-ups logged in the
       period, the chart shows the accent applications line and the grey follow-ups
       line, with the tick labels beneath.
 
@@ -244,26 +272,26 @@ an unstyled control and never as an error: jsdom has no cascade, and
 side of the boundary a rule ended up on. Needs applications in the database, one
 of them **overdue** and one **in interview with stages**; run section A first.
 
-- [ ] **The interview stepper looks unchanged.** Open the quick view on an
+- [x] **The interview stepper looks unchanged.** Open the quick view on an
       application at interview with several stages: the rail draws a filled track
       up to the current stage, a check in each passed dot, a pip in the current
       one, the current label in accent, and the counter in the head reading
       position over total. All of that is now the child's stylesheet.
-- [ ] **The view-all link still looks like a link in all three branches.** It is
+- [x] **The view-all link still looks like a link in all three branches.** It is
       drawn by the child inside the stepper foot and by the modal in the
       failed-read and no-stages-yet branches - two copies of the same rule, and
       the one check that would catch them drifting apart.
-- [ ] **The follow-up composer's controls match the modal's own.** On an overdue
+- [x] **The follow-up composer's controls match the modal's own.** On an overdue
       card: the language select, both recipient inputs, the subject and the body
       share the sunken background, the border, the radius and the focus ring with
       the status select and the comment box above them. Those four are one
       grouped selector in the child now and the other two stayed on the modal, so
       this is the check that the grouping kept them identical.
-- [ ] **Both composer buttons are styled.** "Draft" is a ghost button and "Open in
+- [x] **Both composer buttons are styled.** "Draft" is a ghost button and "Open in
       mail" a filled one, matching the modal's own footer pair. `.btn-ghost` and
       `.btn-primary` are copies in the child - and there is no global rule for
       either name to fall back on, which is what makes an omission here silent.
-- [ ] **A draft survives a status change.** Draft a follow-up on an overdue card,
+- [x] **A draft survives a status change.** Draft a follow-up on an overdue card,
       then change the status in the same modal. The composer may disappear if the
       card stops being overdue; reopening it must still show the draft rather
       than an empty form. This is the reason `FollowupDraftService` stayed
@@ -309,23 +337,23 @@ has no model of: the suite renders every cell and can prove none of them stays
 put while the grid scrolls sideways. Needs tracker rows in the database, one of
 them archived; run section A's steps first.
 
-- [ ] **The index and the pinned column still stick.** Scroll the grid
+- [x] **The index and the pinned column still stick.** Scroll the grid
       horizontally: the row number and the pinned column stay against the left
       edge while everything else moves under them. `$idx` and `$pin` moved into
       the child's sheet, and they are the only two values that decide this.
-- [ ] **The header stays put vertically.** Scroll down a long list: the column
+- [x] **The header stays put vertically.** Scroll down a long list: the column
       headings remain visible above the rows.
-- [ ] **The row menu still escapes the grid.** Open a row's kebab menu near the
+- [x] **The row menu still escapes the grid.** Open a row's kebab menu near the
       bottom or right edge: the popup is drawn whole rather than clipped by the
       scroll container. It is rendered at the page root for that reason, and it
       now crosses a component boundary to get there.
-- [ ] **Scrolling the grid closes an open row menu**, and the menu does not
+- [x] **Scrolling the grid closes an open row menu**, and the menu does not
       linger detached from its row. The unit test asserts the wiring; only a real
       scroll shows the popup actually goes.
-- [ ] **Editing a row in place still fits.** Open a row for editing: the inputs
+- [x] **Editing a row in place still fits.** Open a row for editing: the inputs
       sit inside their cells without changing the row height or pushing the
       pinned columns out of alignment.
-- [ ] **Nothing in the grid animates.** The page's reduced-motion rule was left
+- [x] **Nothing in the grid animates.** The page's reduced-motion rule was left
       behind deliberately, on the finding that no grid rule declares a transition
       or an animation. Any movement seen here - a hover fade, a row transition -
       means that finding was wrong and the rule has to be copied into the child.
@@ -338,24 +366,24 @@ cannot drag at all** - the suite can prove each card is a registered draggable
 with its placeholder resolved, and nothing beyond that. Needs applications on the
 board, at least one at Interview with a scheduled stage. Run section A first.
 
-- [ ] **A card can still be dragged between columns.** Pick one up in Applied and
+- [x] **A card can still be dragged between columns.** Pick one up in Applied and
       drop it in Interview: the status changes and the card stays where it was
       dropped. This is the single check that would catch `cdkDrag` no longer
       being content of its drop list, which every automated check here misses.
-- [ ] **The dragged card sits under the pointer rather than trailing it.** This is
+- [x] **The dragged card sits under the pointer rather than trailing it.** This is
       the bug `_drag.scss` and `drag-styles.spec.ts` exist for, and the `.card`
       rule it depends on now lives on a component host rather than on an
       `<article>`. Drag slowly across the board: no echo, no lag.
-- [ ] **The drop animation still runs**, and the gap the card leaves behind shows
+- [x] **The drop animation still runs**, and the gap the card leaves behind shows
       the dashed placeholder at the right size while the drag is in progress.
-- [ ] **The other cards reflow around the gap.** `.col__list.cdk-drop-list-dragging
+- [x] **The other cards reflow around the gap.** `.col__list.cdk-drop-list-dragging
 .card` reaches from the page's drop list into the host element; if the
       selector stopped matching, the other cards would jump rather than slide.
-- [ ] **A card still looks like a card.** Hover one: the lift, the border and the
+- [x] **A card still looks like a card.** Hover one: the lift, the border and the
       shadow are the page's `.card` rule, while everything inside it is now the
       child's sheet - the seam a screen would show as a card whose box and
       contents disagree.
-- [ ] **The interview stage track shows in the Interview column only.** An
+- [x] **The interview stage track shows in the Interview column only.** An
       application that moved on to Offer keeps its stage data; the track must not
       follow it there. Counted in the suite, but only per rendered column.
 
@@ -367,25 +395,25 @@ the animation either plays or it silently does not, and jsdom has neither. Needs
 at least one enabled source and a feed with rows; the clear-feed check wipes the
 feed, so do it last.
 
-- [ ] **The scan console's cursor still blinks** while a scan is running, and the
+- [x] **The scan console's cursor still blinks** while a scan is running, and the
       scanning button still pulses. `dv-blink` stayed on the page and `dv-pulse`
       moved to the global partial - if the move went wrong, the button is simply
       static and nothing errors.
-- [ ] **The skeleton still shimmers** while the feed loads. `dv-shimmer` moved
+- [x] **The skeleton still shimmers** while the feed loads. `dv-shimmer` moved
       with `dv-pulse`; same failure mode.
-- [ ] **The sources drawer still slides in** rather than appearing. `dv-slidein`
+- [x] **The sources drawer still slides in** rather than appearing. `dv-slidein`
       moved into the drawer's own sheet, and the drawer was its only consumer.
-- [ ] **The filter menu and the full job detail still fade in.** `dv-fade` has
+- [x] **The filter menu and the full job detail still fade in.** `dv-fade` has
       three consumers across two children and the page, and now lives in the
       partial that reaches all of them.
-- [ ] **The clear-feed dialog still pops in**, centred, over a dimmed backdrop.
+- [x] **The clear-feed dialog still pops in**, centred, over a dimmed backdrop.
       `dv-popin` travelled into the extracted component with the only rule that
       used it.
-- [ ] **The dialog still cancels three ways and wipes one.** Escape, the Cancel
+- [x] **The dialog still cancels three ways and wipes one.** Escape, the Cancel
       button and a click on the backdrop all close it without wiping; only the
       red button wipes. The suite covers all four, but the backdrop is a large
       target next to a destructive action and is worth seeing.
-- [ ] **The feed footer still reads correctly.** Two rules under it were deleted
+- [x] **The feed footer still reads correctly.** Two rules under it were deleted
       as unreachable - `.dv-footer__actions` and `.dv-footer__confirm`. Nothing
       renders them, so nothing should change; this is the check on that claim.
 
@@ -401,25 +429,25 @@ proves the rules exist in the child's compiled sheet, not that the page looks
 right. Needs a CV with several experience entries (enough to cross a page
 break), education, skills and languages.
 
-- [ ] **The CV still paginates where it did.** Open a CV long enough to run to a
+- [x] **The CV still paginates where it did.** Open a CV long enough to run to a
       second page, and check the page break falls between the same entries as
       before. Six `:host { display: contents }` declarations are the only thing
       keeping each child's host out of the measured box.
-- [ ] **Every section title still reads as one.** Uppercase, letter-spaced, with
+- [x] **Every section title still reads as one.** Uppercase, letter-spaced, with
       its underline rule running straight edge to edge rather than curving in at
       the corners. Four components now declare that rule from one partial.
-- [ ] **The experience head still lays out as one line.** Company, industry and
+- [x] **The experience head still lays out as one line.** Company, industry and
       location on the left, dates on the right, with Aurora's thin rule under
       it - and education, which shares the same partial, showing **no** rule.
-- [ ] **Bullets still hang under their entry** with the list indent, and a long
+- [x] **Bullets still hang under their entry** with the list indent, and a long
       entry still splits head-from-bullets across a page break.
-- [ ] **Selecting a leaf still rings exactly one element**, and the inline editor
+- [x] **Selecting a leaf still rings exactly one element**, and the inline editor
       that replaces it sits at the text's own width rather than stretching the
       whole column. Four atoms `@use` that sizing rule from one partial.
-- [ ] **Click-a-word bold still works in the summary and in a bullet**, and
+- [x] **Click-a-word bold still works in the summary and in a bullet**, and
       nowhere else. The rewrite moved to `CvPreviewEditingService`; the two
       atoms are the only callers.
-- [ ] **Skills rows and the languages line still read at their normal weights**
+- [x] **Skills rows and the languages line still read at their normal weights**
       and separators, with the printed PDF matching the on-screen sheet.
 
 ## C11. The CV save-as-template dialog, after its buttons were fixed
@@ -429,7 +457,7 @@ rendering unstyled and no automated gate could see it, because a class name that
 matches nothing fails silently. The suite now asserts the design-system classes
 are present, which is a claim about the DOM, not about the paint.
 
-- [ ] **The Save-as-template dialog's buttons look like buttons.** CV editor,
+- [x] **The Save-as-template dialog's buttons look like buttons.** CV editor,
       Save as template: Cancel reads as a ghost button and Save as the primary
       one, both matching every other dialog in the app - not as unstyled
       browser-default buttons. Type a name and confirm Save enables.
@@ -443,10 +471,10 @@ and it needs the real SQLite rows the unit tests stub away. Two of the three
 cost tokens to fill, so run these at the script's paid station rather than on
 their own.
 
-- [ ] **A tailoring pass is served from cache the second time.** Run a tailoring,
+- [x] **A tailoring pass is served from cache the second time.** Run a tailoring,
       then re-run it with nothing changed: it returns without a provider call.
       **(costs tokens on the first run only)**
-- [ ] **A follow-up draft survives and is re-read.** Draft a follow-up on an
+- [x] **A follow-up draft survives and is re-read.** Draft a follow-up on an
       overdue card, close the quick view, reopen it: the draft is still there.
       This is free - the cache read is the same path either way.
 
@@ -454,12 +482,12 @@ their own.
 
 Both were named as the next action on 2026-08-14 and neither has been run.
 
-- [ ] **The interview stage panel.** An application with no stages offers the quick-add form; an
+- [x] **The interview stage panel.** An application with no stages offers the quick-add form; an
       application whose stage read _failed_ shows the failure and does **not** offer the form. The
       second half is the bug that was fixed - accepting the form there would have written a duplicate
       first stage - and it is free to check by opening the panel with the database available and then
       unavailable.
-- [ ] **The ATS line.** **(costs a full tailoring run plus a rescore)** This is why it has not been
+- [x] **The ATS line.** **(costs a full tailoring run plus a rescore)** This is why it has not been
       spent unasked.
 
 ## E. Release

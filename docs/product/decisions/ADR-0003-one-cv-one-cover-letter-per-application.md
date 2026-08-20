@@ -106,3 +106,64 @@ change (a document list or version table) and is independent of this decision.
         only at final Apply / Update application (audit item E).
   - [ ] Confirm no duplicate "<Company> - Tailored CV" rows after tailor then
         retailor for one job.
+
+---
+
+## Amendment one: a discard owns the pass it is abandoning, not every draft it can see
+
+**Date**: 2026-08-20. **Trigger**: `B1` in `docs/internal/NATIVE_GATE_FINDINGS.md`, the one check of
+station 3 that failed in the first full native gate walk, expanded by station 12.
+
+This ADR settled that an application points at exactly one CV and one cover letter. It did not settle
+**who may destroy them**, and the gap had a price: `TailoringDiscardService` deleted every linked
+document whose `isApplicationDraft` was true, with no notion of which tailoring pass produced it.
+
+That reads as safe, because a committed document is excluded. It is not. A job tailored once and
+never exported or marked applied keeps both documents in draft, exactly as this ADR intends. So
+re-tailoring that job and pressing **Cancel** deleted the _previous_ pass's CV and cover letter -
+and `document_library_delete` unlinks the application first, then deletes the row
+(`apps/desktop/src-tauri/src/commands/documents.rs`), so nothing brought them back. The next run's
+**Review documents** step read `Missing` for both, and the user paid a second time for two documents
+they already had.
+
+**The decision**: a discard destroys the drafts the in-flight pass created, and nothing else.
+Ownership is recorded at the moment a draft is born - `JobDocumentDraftsStore.link`, the single
+creation path - in `TailoringPassDraftsService`, a root-scoped, `sessionStorage`-backed record of one
+pass at a time. Choosing an existing library document links without recording: that document is the
+user's, not the pass's.
+
+**Why recorded at creation rather than snapshotted at wizard open.** There are two ways into the
+wizard - `JobActionsStore.openWizard` and the cross-job confirm - and only one way to create a draft.
+A snapshot missed on either open path silently restores the old behaviour, and the failure mode is
+the bug. Recording at creation cannot be routed around.
+
+**The failure direction is chosen, not accidental.** The record is session-scoped, so an app restart
+empties it and a discard afterwards deletes nothing rather than deleting too much. An orphaned draft
+is a row the user can delete; a destroyed one cost tokens and is gone.
+
+**A second defect shared the same symptom and is not the same bug.** `discardTailoring` called
+`resetJobScopedState()` and stopped, so the screen emptied and never re-read - `enterJob` will not
+reload when the route still points at the id it already loaded. The job rendered blank and recovered
+only by leaving for My Jobs and coming back. It now awaits `lifecycle.loadJob(id)`, as
+`updateApplication` already did. That half destroyed nothing; it is what made the destructive half
+look recoverable.
+
+### Consequences
+
+- Cancelling a re-tailor returns the job to the state it was in, with its cached score, its linked
+  documents and its tailoring cache re-read from the database.
+- A first tailoring is unchanged: the pass created both drafts, so the discard still removes both.
+- Every path that ends a pass disowns its drafts - close the wizard, mark applied, update the
+  application, and the discard itself once its deletes are through. A failed discard keeps the record
+  so a retry still has the authority to finish.
+- `TailoringDiscardContext` is unchanged. The public-API delta is one additive export.
+
+### Privacy / Security Impact
+
+None. The record holds document-library row ids for the current session only, in `sessionStorage`,
+and nothing leaves the machine.
+
+### Reversibility
+
+Easy. Deleting `TailoringPassDraftsService` and restoring `applicationDrafts` at the call site
+returns the previous behaviour, including its defect.

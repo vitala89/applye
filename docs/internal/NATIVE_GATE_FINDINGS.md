@@ -7,7 +7,7 @@ complaints, and AI-output quality problems.
 The backlog records whether a check passed. **This file records what to do about it.** A failed check
 appears in both: ticked as failed there, described here.
 
-Nothing in this file is fixed yet. It is the work queue for after the walk.
+It is the work queue for after the walk. **A fixed item keeps its entry and gains a `Fixed` note**, so the reasoning that produced the fix stays next to the symptom that found it.
 
 ## Walk of 2026-08-20
 
@@ -19,8 +19,8 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
 
 **Fix in this order**, because two of these cost the user money and the rest do not:
 
-1. **`B1`** - cancelling a tailor destroys the score and both generated documents. Real tokens and
-   minutes on every cancel.
+1. ~~**`B1`** - cancelling a tailor destroys the score and both generated documents.~~ **Fixed**,
+   see the entry below. Still owed a native re-walk of station 3 check `A` item 7 and station 12.
 2. **`B11`** - cover-letter generation fails on the first attempt and works on the second, so every
    letter is paid for twice.
 3. **`B8`** - the job title is a fragment of the description, and it feeds the archetype screen, the
@@ -33,7 +33,7 @@ than defects. `Q2` and `Q3` are evaluation work that should be sized before it i
 
 ### Bugs
 
-**B1. Cancelling a re-tailor blanks the job detail, and the data is still there.**
+**B1. Cancelling a re-tailor blanks the job detail, and the data is still there. FIXED 2026-08-20.**
 Reproduce: open a job that has been tailored → **Retailor** → **Next** → **Cancel** / **Discard**.
 The app returns to the job and the detail renders **empty**. Navigating away to the jobs list and
 clicking the same job again brings **all of it back**.
@@ -58,6 +58,28 @@ all. Whatever the discard path is unwinding, it is unwinding past its own transa
 drop the in-flight pass and nothing else.
 
 Fix this before `B4`, `B5` and `B6`: they are cosmetic and this one costs the user tokens.
+
+**Fixed, 2026-08-20.** Two defects sharing one symptom, and the diagnosis in the paragraph above was
+right on both counts.
+
+- _The blank screen._ `JobActionsStore.discardTailoring` called `resetJobScopedState()` and stopped.
+  `enterJob` does not re-read when the route still points at the id it already loaded, so nothing
+  reloaded until the user left for My Jobs and came back. It now awaits `lifecycle.loadJob(id)`, the
+  same thing `updateApplication` was already doing.
+- _The destroyed documents._ `TailoringDiscardService` deleted every linked document with
+  `isApplicationDraft` set, with no notion of which pass produced it - and a job tailored once but
+  never exported keeps both documents in draft, so cancelling the **second** pass deleted the
+  **first** pass's work. `document_library_delete` unlinks then deletes, so it was permanent. A new
+  `TailoringPassDraftsService` records a draft as the pass's at the single place one is created, and
+  the discard may destroy nothing else. `ADR-0003` amendment one carries the reasoning.
+
+The score reappearing as **Score this job** was the blank screen, not a third deletion:
+`TailorScoreService` only ever held the in-memory post-tailor rescore, and the baseline in
+`scoring_cache` was never touched.
+
+**Not covered by the suite**: the native re-walk of station 3 check `A` item 7 and station 12. The
+regression tests pin both halves at the store seam, which is where the loss became observable, but
+the walk is what saw the symptom.
 
 **B2. A CV editor section shows an open chevron over an empty body.**
 Seen in the **CV editor's section accordion**. In the reported screen `EDUCATION` has its chevron

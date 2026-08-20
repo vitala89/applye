@@ -82,6 +82,7 @@ export * from './lib/jobs/portal-answers.service';
 export * from './lib/jobs/tailor-score.service';
 export * from './lib/jobs/tailoring-pass';
 export * from './lib/jobs/tailoring-discard.service';
+export * from './lib/jobs/tailoring-pass-drafts.service';
 export * from './lib/jobs/tailoring.service';
 export * from './lib/jobs/wizard-activity.service';
 export * from './lib/jobs/job-overview-rows';

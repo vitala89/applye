@@ -6,6 +6,7 @@ import { JobDocumentsStore } from './job-documents.store';
 import { JobScoringStore } from './job-scoring.store';
 import { JobTailoringStore } from './job-tailoring.store';
 import { TailoringDiscardService } from './tailoring-discard.service';
+import { TailoringPassDraftsService } from './tailoring-pass-drafts.service';
 import { WizardNavService } from './wizard-nav.service';
 
 /** How long the "application updated" card holds before the page reloads. */
@@ -31,6 +32,7 @@ export class JobActionsStore {
   private readonly lifecycle = inject(JobDetailLifecycleStore);
   private readonly nav = inject(WizardNavService);
   private readonly discardSvc = inject(TailoringDiscardService);
+  private readonly passDrafts = inject(TailoringPassDraftsService);
 
   /** An action is in flight. Aliased onto the service so the template binds one
    * name whichever layer sets it. */
@@ -88,6 +90,7 @@ export class JobActionsStore {
     this.detail.application.set(updated);
     this.lifecycle.editingLocked.set(false);
     this.nav.forget(id);
+    this.passDrafts.clear(id);
     return true;
   }
 
@@ -105,8 +108,16 @@ export class JobActionsStore {
     this.nav.requestOpen(this.detail.job()?.id);
   }
 
+  /**
+   * Back to the job summary. The pass is over, so its drafts stop being the
+   * discard's to destroy: reopening the wizard starts a new one, and letting
+   * the old record survive would hand the next cancel authority over documents
+   * it did not create (`B1`).
+   */
   closeWizard(): void {
-    this.nav.close(this.detail.job()?.id);
+    const id = this.detail.job()?.id;
+    this.nav.close(id);
+    this.passDrafts.clear(id);
   }
 
   /** Opens the confirm for abandoning this job's tailoring. */
@@ -116,16 +127,24 @@ export class JobActionsStore {
 
   /**
    * Abandon the tailoring for this job: throw away the tailored passes, the
-   * draft CV and cover letter, and the saved wizard progress, then return to the
-   * job summary as if the wizard had never been opened.
+   * draft CV and cover letter this pass generated, and the saved wizard
+   * progress, then return to the job summary as if the wizard had never been
+   * opened.
    *
-   * Only DRAFT documents are deleted. Once a document has been committed (the
-   * user exported it or marked the job applied) it belongs to the Documents
-   * library, and cancelling a later re-tailor must not take it with it.
+   * Only DRAFT documents are deleted, and only the ones THIS pass created.
+   * Committed documents belong to the Documents library, and a draft the
+   * previous pass generated is work the user already paid for - cancelling a
+   * re-tailor must take neither with it (`TailoringPassDraftsService`).
+   *
+   * The reload is not optional. `resetJobScopedState` empties the screen, and
+   * `enterJob` will not re-read on its own: the route still points at the id it
+   * already loaded, so `switching` is false. Without this the job rendered
+   * blank and only recovered by going out to My Jobs and back in.
    */
   async discardTailoring(): Promise<void> {
+    const id = this.detail.job()?.id;
     const discarded = await this.discardSvc.discard({
-      jobId: this.detail.job()?.id ?? null,
+      jobId: id ?? null,
       documents: [this.docs.cv(), this.docs.coverLetter()],
       applyApplication: (application) => this.detail.application.set(application),
     });
@@ -133,7 +152,8 @@ export class JobActionsStore {
     // already on the status line, and the confirmation is still open.
     if (!discarded) return;
     this.lifecycle.resetJobScopedState();
-    this.nav.forget(this.detail.job()?.id);
+    if (id != null) await this.lifecycle.loadJob(id);
+    this.nav.forget(id);
     this.nav.requestScrollTop();
   }
 
@@ -168,6 +188,7 @@ export class JobActionsStore {
     await this.docs.commit(this.tailoring.finalCvMd(), true);
     await this.scoring.savePostTailorScore();
     this.nav.forget(id);
+    this.passDrafts.clear(id);
     this.applyResult.set('updated');
 
     setTimeout(() => {

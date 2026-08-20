@@ -51,7 +51,10 @@ The rest, and why:
 
 - **A** - 8 passed. **Two failed**: "the card holds its value and then reloads" (cancelling a tailor
   blanks the job detail) and "discard a tailoring" (the discard also destroys the score and both
-  generated documents). Both are `B1` in `NATIVE_GATE_FINDINGS.md`.
+  generated documents). Both are `B1` in `NATIVE_GATE_FINDINGS.md`. **`B1` was fixed in code on
+  2026-08-20** with regression tests at the store seam; the two checks stay marked failed here until
+  a native pass re-runs them, because a fix that was never seen in the running app has not passed
+  this gate.
 - **C** - 13 passed. **One failed**: the exported PDF ignores the Style card's margins. **One could
   not run**: Cmd+P in the CV preview opens no dialog at all.
 - **C4** - 2 passed (the blinking caret, and a short window compressing rather than scrolling), one

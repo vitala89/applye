@@ -1,5 +1,17 @@
 # Current Operational State
 
+- **The first native gate walk is done and its most expensive finding is fixed.** `46 of 83` checks
+  passed on 2026-08-20, 3 failed and 1 could not run; `docs/internal/NATIVE_GATE_FINDINGS.md` is the
+  work list and `NATIVE_GATE_BACKLOG.md` has the per-section breakdown. **`B1` is closed**:
+  cancelling a re-tailor was deleting the _previous_ tailoring's CV and cover letter - permanently,
+  because `document_library_delete` unlinks before it deletes - and blanking the job detail on the
+  way out. The deletion is now scoped to the drafts the in-flight pass created
+  (`TailoringPassDraftsService`, `ADR-0003` amendment one) and the discard re-reads the job instead
+  of leaving an empty screen. **The native re-walk of station 3 check `A` item 7 and station 12 is
+  still owed** - the regression tests pin the store seam, but the walk is what saw the symptom.
+  **Next in the fix order is `B11`**, the cover letter that fails on the first attempt and works on
+  the second, and the first move there is to capture the provider error on the failed attempt rather
+  than theorise about it.
 - **Current version**: `0.29.2`, **published**, and the first Applye release that ships an installer
   for every platform: macOS on both architectures, Windows `.msi` and `.exe`, Linux
   `.deb`/`.rpm`/`.AppImage`, each with its `.sig`, plus `latest.json`. All four matrix jobs passed.

@@ -5,6 +5,7 @@ import { DocumentReviewStatusService } from './document-review-status.service';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
 import { TailorScoreService } from './tailor-score.service';
 import { TailoringDiscardService, applicationDrafts } from './tailoring-discard.service';
+import { TailoringPassDraftsService } from './tailoring-pass-drafts.service';
 
 describe('applicationDrafts', () => {
   const draft = { id: 1, isApplicationDraft: true } as never;
@@ -29,6 +30,7 @@ describe('applicationDrafts', () => {
 describe('TailoringDiscardService', () => {
   let svc: TailoringDiscardService;
   let status: DocumentReviewStatusService;
+  let passDrafts: TailoringPassDraftsService;
   let deleted: number[];
   let toasts: string[];
   let deleteFails: boolean;
@@ -40,6 +42,7 @@ describe('TailoringDiscardService', () => {
     deleted = [];
     toasts = [];
     deleteFails = false;
+    sessionStorage.clear();
 
     const db = {
       documentLibraryDelete: (id: number) => {
@@ -53,6 +56,7 @@ describe('TailoringDiscardService', () => {
     TestBed.configureTestingModule({
       providers: [
         TailoringDiscardService,
+        TailoringPassDraftsService,
         DocumentReviewStatusService,
         LinkedDocumentsService,
         TailorScoreService,
@@ -65,6 +69,11 @@ describe('TailoringDiscardService', () => {
 
     svc = TestBed.inject(TailoringDiscardService);
     status = TestBed.inject(DocumentReviewStatusService);
+    passDrafts = TestBed.inject(TailoringPassDraftsService);
+    // The default fixture is a first tailoring: this pass generated both
+    // documents, so both are its to destroy.
+    passDrafts.record(7, 11);
+    passDrafts.record(7, 22);
   });
 
   function context(overrides: Record<string, unknown> = {}) {
@@ -79,6 +88,50 @@ describe('TailoringDiscardService', () => {
   it('deletes every application draft and reports success', async () => {
     expect(await svc.discard(context())).toBe(true);
     expect(deleted).toEqual([11, 22]);
+  });
+
+  // `B1`, the expensive half: a job tailored once still has its CV and cover
+  // letter in draft, so re-tailoring and cancelling used to delete both -
+  // permanently, and they cost real tokens to generate. A discard unwinds its
+  // own pass and stops there.
+  it('leaves a draft the in-flight pass did not create', async () => {
+    passDrafts.clear();
+    passDrafts.record(7, 22);
+
+    expect(await svc.discard(context())).toBe(true);
+    expect(deleted).toEqual([22]);
+  });
+
+  it('deletes nothing when the pass created nothing', async () => {
+    passDrafts.clear();
+
+    expect(await svc.discard(context())).toBe(true);
+    expect(deleted).toEqual([]);
+  });
+
+  // The record is keyed by job, so another job's pass cannot authorise a delete
+  // here - and an app restart empties it, which must fail towards keeping work.
+  it('leaves everything alone when the record belongs to another job', async () => {
+    passDrafts.clear();
+    passDrafts.record(9, 11);
+
+    await svc.discard(context());
+
+    expect(deleted).toEqual([]);
+  });
+
+  it('disowns the pass once it has been discarded', async () => {
+    await svc.discard(context());
+
+    expect(passDrafts.ids(7)).toEqual([]);
+  });
+
+  it('keeps the record when the discard failed, so a retry still owns the pass', async () => {
+    deleteFails = true;
+
+    await svc.discard(context());
+
+    expect(passDrafts.ids(7)).toEqual([11, 22]);
   });
 
   it('re-reads the application for this job and hands it back', async () => {

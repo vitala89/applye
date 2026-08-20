@@ -14,6 +14,7 @@ import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
 import { JobDetailStore } from './job-detail.store';
 import { JobFinalChecksStore } from './job-final-checks.store';
+import { TailoringPassDraftsService } from './tailoring-pass-drafts.service';
 
 /**
  * Generating a document for this job: the CV draft, the cover letter draft, the
@@ -39,6 +40,7 @@ export class JobDocumentDraftsStore {
   private readonly gapFill = inject(JobGapFillService);
   private readonly gapSvc = inject(CvGapDialogService);
   private readonly docGen = inject(DocumentGenService);
+  private readonly passDrafts = inject(TailoringPassDraftsService);
   private readonly router = inject(Router);
   private readonly t = inject(TranslateService).t;
 
@@ -115,13 +117,24 @@ export class JobDocumentDraftsStore {
     });
   }
 
-  /** What both create paths do with a result: adopt the application, link the
-   * document, and tell the checks that what they described has changed. */
+  /**
+   * What both create paths do with a result: adopt the application, link the
+   * document, and tell the checks that what they described has changed.
+   *
+   * Also the one place a tailoring pass's draft is born, which is why the pass
+   * records ownership here. A discard may only destroy what it finds in that
+   * record, so a re-tailor that is cancelled before generating anything takes
+   * nothing with it (`B1`). Choosing an existing library document is a
+   * different path and deliberately records nothing - that document is the
+   * user's, not this pass's.
+   */
   private link(
     application: Application,
     kind: ReviewDocumentKind,
     document: DocumentLibraryItem,
   ): void {
+    const jobId = this.detail.job()?.id;
+    if (jobId != null && document.id != null) this.passDrafts.record(jobId, document.id);
     this.detail.application.set(application);
     if (kind === 'cv') this.linkedDocs.cv.set(document);
     else this.linkedDocs.coverLetter.set(document);

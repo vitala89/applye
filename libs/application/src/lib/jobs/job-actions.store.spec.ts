@@ -9,10 +9,12 @@ import { JobDocumentsStore } from './job-documents.store';
 import { JobScoringStore } from './job-scoring.store';
 import { JobTailoringStore } from './job-tailoring.store';
 import { TailoringDiscardService } from './tailoring-discard.service';
+import { TailoringPassDraftsService } from './tailoring-pass-drafts.service';
 import { WizardNavService } from './wizard-nav.service';
 
 describe('JobActionsStore', () => {
   let store: JobActionsStore;
+  let passDrafts: TailoringPassDraftsService;
   let job: ReturnType<typeof signal<Job | null>>;
   let application: ReturnType<typeof signal<Application | null>>;
   let jdText: ReturnType<typeof signal<string>>;
@@ -29,6 +31,7 @@ describe('JobActionsStore', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
+    sessionStorage.clear();
     job = signal<Job | null>({ id: 3, title: 'Angular dev', jdText: 'saved text' } as Job);
     application = signal<Application | null>(null);
     jdText = signal('edited text');
@@ -45,6 +48,7 @@ describe('JobActionsStore', () => {
     TestBed.configureTestingModule({
       providers: [
         JobActionsStore,
+        TailoringPassDraftsService,
         {
           provide: JobDetailStore,
           useValue: { job, application, jdText },
@@ -130,6 +134,8 @@ describe('JobActionsStore', () => {
       ],
     });
     store = TestBed.inject(JobActionsStore);
+    passDrafts = TestBed.inject(TailoringPassDraftsService);
+    passDrafts.record(3, 11);
   });
 
   afterEach(() => {
@@ -208,10 +214,15 @@ describe('JobActionsStore', () => {
   });
 
   describe('discardTailoring', () => {
-    it('resets the job-scoped state and returns to the top of the summary', async () => {
+    // `B1`, the visible half: the reset empties the screen and `enterJob` will
+    // not re-read - the route param has not changed, so the id it loaded is
+    // still the id it is on. Without the reload the job rendered blank, and its
+    // cached score and linked documents only came back by leaving and
+    // re-entering from My Jobs.
+    it('resets the job-scoped state, re-reads the job, and returns to the top', async () => {
       await store.discardTailoring();
 
-      expect(calls).toEqual(['discard', 'resetJobScoped', 'forget:3', 'scrollTop']);
+      expect(calls).toEqual(['discard', 'resetJobScoped', 'loadJob:3', 'forget:3', 'scrollTop']);
     });
 
     // Nothing was destroyed, so nothing on the page should move: the reason is
@@ -289,6 +300,38 @@ describe('JobActionsStore', () => {
       store.openDeleteConfirm();
 
       expect(calls).toEqual(['requestOpen:3', 'close:3', 'askDiscard', 'openDeleteConfirm']);
+    });
+  });
+
+  // Every way a pass can end has to disown its drafts, or the next pass's
+  // discard inherits authority over documents it did not create - which is the
+  // shape of `B1` all over again. The discard path disowns them inside
+  // `TailoringDiscardService`, where the delete succeeds or does not.
+  describe('ending a tailoring pass disowns its drafts', () => {
+    it('on closing the wizard back to the summary', () => {
+      store.closeWizard();
+
+      expect(passDrafts.ids(3)).toEqual([]);
+    });
+
+    it('on marking the job applied', async () => {
+      await store.markApplied();
+
+      expect(passDrafts.ids(3)).toEqual([]);
+    });
+
+    it('on updating an application that already has a status', async () => {
+      await store.updateApplication();
+
+      expect(passDrafts.ids(3)).toEqual([]);
+    });
+
+    it('leaves the pass alone when the transition failed', async () => {
+      markAppliedResult = null;
+
+      await store.markApplied();
+
+      expect(passDrafts.ids(3)).toEqual([11]);
     });
   });
 });

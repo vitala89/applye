@@ -49,6 +49,7 @@ Before a watch can be marked complete:
 - **Status:** complete as instrumentation and as a defect fix. **`B11` itself is not proven fixed**, and the entry below says so in every place it could be misread.
 - **Agent/tool:** Claude Code, Opus 5. Re-triage scored **8/10** (radius 2, ambiguity 2, risk 1, verification 2, unknowns 1) after the first read showed a Tauri IPC contract change; the grilling gate ran on the ambiguity, two rounds, five questions. No subagents.
 - **Branch:** `fix/cover-letter-parse-and-stop-reason`, cut from `origin/main` at `8ea5ed4b` and **rebased onto `7fdf1340`** once `B1` merged as PR #495. The two share no source file; the conflict was the three append-at-the-top documents that always conflict here - `CHANGELOG.md`, `CURRENT_STATE.md` and this log - and both sides were kept, newest first. Every gate below was re-run **after** the rebase, because green before a rebase says nothing about after it.
+- **Commits:** `32407e6b` (the fix and its documents), plus this line recording it.
 - **Objective:** `B11` from `NATIVE_GATE_FINDINGS.md`, second in the fix order. The plan's instruction was explicit and was followed: **capture the provider error on the failed attempt before theorising.**
 
 - **The constraint, stated first because it shapes everything else:** `B11` cannot be reproduced without a real provider call, so nothing here proves the cause. What was deliverable was making the next occurrence diagnosable, and closing the defect found while looking.

@@ -1,5 +1,16 @@
 # Current Operational State
 
+- **`B4` and `B6` are fixed, and they shared a root nobody had named.** The print routes - the hidden
+  windows Rust opens to make a PDF - rendered **the whole app shell**, and the print stylesheet only
+  hid it with `visibility: hidden`, which paints nothing and occupies everything. That is directly
+  why a one-page tracker report exported as two, and indirectly why the CV export lost its margins:
+  the document had to be absolutely positioned to escape the shell it was laid out below. The print
+  routes render the outlet alone now, and the margins moved from `@page` into the card's own padding
+  - ordinary box layout rather than a paged-media feature the renderer has to honour. **A tripwire
+    from an earlier session forbade exactly that**, and it was rewritten rather than stepped over: the
+    configuration it forbade kept the card at a fixed page size and broke after every card, and both
+    shipped configurations have now failed a native pass. **`B5` is deliberately not in the change** -
+    nothing here can see a laid-out exported page. Both fixes are owed the same native pass as `B2`.
 - **`B2` is fixed in code and unverified in fact, and the two are being kept apart on purpose.** The
   CV editor's disclosure animated `grid-template-rows` from `0fr` to `1fr`, which **WKWebView does
   not honour** - a section closed once never came back. It collapses by `height` now, with

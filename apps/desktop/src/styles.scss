@@ -133,10 +133,16 @@
     gap: 0;
   }
 
-  // One on-screen page-card = one physical page. The `@page` rule (injected by
-  // `exportPdfWysiwyg`) owns the real margins, so the card sheds its simulated
-  // padding and fixed full-page height here and prints as its content box inside
-  // the page's margin area - exact margins, no full-bleed scaling.
+  // One on-screen page-card = one physical page.
+  //
+  // **The card keeps its padding, and that padding is the printed margin.**
+  // It used to shed it and let `@page { margin }` supply the inset, which is
+  // the semantically right place for a page margin and did not survive the
+  // engine: the exported PDF put the content closer to the paper edge than the
+  // editor had shown (`B4`). The `@page` rule now sets `margin: 0`, so the page
+  // is the whole sheet and the inset comes from the same padding the preview
+  // draws - one source for the margins instead of two, and ordinary box layout
+  // rather than a paged-media feature the renderer has to honour.
   body.printing-cv .page-card-wrap {
     @include paper.paper-light;
     display: block;
@@ -154,12 +160,12 @@
     box-shadow: none;
     border: 0;
     overflow: hidden; // guard against a sub-pixel spill adding a blank page
-    // Drop the inline simulated margins + fixed page height: the @page rule now
-    // provides the margins, and a content-sized card can't round-overflow onto a
-    // blank page. Width fills the page's content area (= the measured column).
+    // Drop the fixed page height so a content-sized card cannot round-overflow
+    // onto a blank page, and let the width fill the sheet - which with
+    // `@page { margin: 0 }` is the whole paper. The inline padding is
+    // deliberately NOT reset: it is the margin now (see above).
     width: auto !important;
     height: auto !important;
-    padding: 0 !important;
   }
 
   // Keep an atom from splitting across the card's internal content box.
@@ -202,11 +208,14 @@
   body.printing-report app-tracker-report * {
     visibility: visible;
   }
+  // Static, not pinned. It was absolutely positioned because the app shell
+  // rendered behind it and `visibility: hidden` leaves layout intact, so the
+  // report had to be lifted to the page origin - and the shell's full height
+  // stayed in the flow, which is where `B6`'s trailing blank page came from.
+  // The print routes render no shell now, so the report is the only content
+  // and the document is exactly as tall as it is.
   body.printing-report app-tracker-report {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    display: block;
     background: #fff;
   }
 }

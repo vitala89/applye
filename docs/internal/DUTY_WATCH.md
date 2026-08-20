@@ -49,6 +49,7 @@ Before a watch can be marked complete:
 - **Status:** complete as a code change. **Unverified as a fix**, and that is not a caveat on this entry - it is the defining fact about `B2` and it is stated in the partial, the spec, the changelog and the pull request.
 - **Agent/tool:** Claude Code, Opus 5. Triage **7/10** (radius 1, ambiguity 2, risk 1, verification 2, unknowns 1); the grilling gate ran on the ambiguity, one round, two questions. No subagents.
 - **Branch:** `fix/disclosure-collapse-webkit`, cut from `origin/main` at `93a69cf2`.
+- **Commits:** `ba964b77` (the fix and its documents), plus this line recording it. **The branch was cut from the `S1` documentation branch rather than from `main`**, so once #498 squash-merged it carried that work twice and GitHub reported a conflict against a change already on `main`. Repaired with `git rebase --onto origin/main <the duplicated commit>`, which replays only the two `B2` commits; the diff against `main` is now the six files below and nothing else, and every gate was re-run after it.
 - **Objective:** `B2` from `NATIVE_GATE_FINDINGS.md`, the next item after `S1` was blocked on a measurement.
 
 - **The bug.** `.docedit-collapse` animated `grid-template-rows` between `0fr` and `1fr`. WKWebView does not honour that transition: the section collapsed on the first click and never came back, entries still in the DOM at zero height, chevron open over nothing. Tauri renders in WKWebView on macOS; jsdom and Chrome both accept the construction, which is why it shipped.

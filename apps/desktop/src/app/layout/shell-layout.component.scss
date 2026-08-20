@@ -281,6 +281,13 @@
   }
 
   &__spin {
+    // The wrapper is a line box, so it reserves descender space below the
+    // baseline - about 1.84px at this font size, whatever the icon measures
+    // (`libs/ui/src/styles/_button.scss` measured it). The animation is on the
+    // wrapper, so a 16px glyph was rotating about the centre of a 17.84px box
+    // and visibly wandered (`B10`). A flex box blockifies the inline svg, so
+    // the box is the glyph and the centre is the glyph's centre.
+    display: inline-flex;
     animation: resume-tailor-spin 900ms linear infinite;
   }
 }

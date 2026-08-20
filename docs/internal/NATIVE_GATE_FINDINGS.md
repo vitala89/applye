@@ -34,8 +34,8 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
 5. ~~**`B2`**~~ **fixed 2026-08-21** - and it is the one item in this file that **no check here can
    confirm**, so it is owed a native pass on station 4 before it counts. Then the print family
    ~~**`B4`**~~ and ~~**`B6`**~~ **fixed 2026-08-21**, both unverifiable here and owed the same native
-   pass; **`B5` is deliberately not in that change** and says below what would diagnose it. Then
-   **`B9`** and **`B10`**.
+   pass; **`B5` is deliberately not in that change** and says below what would diagnose it. Then ~~**`B10`**~~ **fixed 2026-08-21**; **`B9`** joins `B5` as a finding that cannot be isolated
+   from the repository and says below what would settle it.
 
 `P1` and `P2` are one change and `P2` is already half-built. `P3`, `P4` and `P5` are decisions rather
 than defects. `Q2` and `Q3` are evaluation work that should be sized before it is started.
@@ -319,15 +319,52 @@ real role.
 to correct one. Making a positional guess a weaker provenance that the AI may overwrite is a
 behaviour change of its own, and it needs its own decision rather than riding along here.
 
-**B9. The wizard's footer padding is inconsistent.**
+**B9. The wizard's footer padding is inconsistent. NOT REPRODUCIBLE FROM THE REPOSITORY.**
 The row holding **Back**, **Cancel** and **Continue** sometimes has bottom padding and sometimes has
 none - it varies between steps rather than between screens sizes. One step's layout is missing what
 its neighbours have.
 
-**B10. The in-progress spinner wobbles.**
+**Looked for on 2026-08-21 and not found, which is worth recording as precisely as a fix.** Three
+things were checked and none of them is the cause:
+
+- **There is exactly one footer.** `apply-wizard.component.ts` renders a single
+  `<footer class="apply-wizard__footer">` outside the step switch, so Back, Cancel and Continue are
+  the same element on every step. No step component renders an action row of its own.
+- **That footer has no bottom padding at all** - `padding-top` and `border-top` only - so there is no
+  value that could vary.
+- **The obvious alternative was already handled, months before the walk.** The shell's content area
+  carries a deliberately larger bottom padding (48px) plus `scroll-padding-block-end`, added in #156
+  on 2026-07-26 precisely so the last element on any page keeps a consistent gap. So "the page ran out
+  of room on a long step" is not it either.
+
+**What would settle it**, and it is cheap to capture on the next pass: **which two steps differ**, and
+the computed `padding-bottom` of `.apply-wizard__footer` and of its scrolling ancestor on each of
+them. A screenshot of both steps at the same window height would do as well.
+
+Guessing a padding onto the footer was considered and rejected: with no identified cause it is a
+change nothing here can judge, in the one area where a wrong guess adds a second inconsistency rather
+than removing the first.
+
+**B10. The in-progress spinner wobbles. FIXED 2026-08-21.**
 Leave a tailoring run and move to another section: the "still running" chip appears with a circular
 progress icon, and the circle does not rotate around its own centre - it visibly wanders. A transform
 origin that is not the icon's centre, or a rotation applied to a box larger than the glyph.
+
+**Fixed, 2026-08-21. The second guess was right, and the repository had already measured the
+mechanism once.** The animation sits on the `<lucide-icon>` **wrapper**, which is a line box and
+therefore reserves descender space below the baseline - about **1.84px at this font size, whatever
+the icon measures**, as `libs/ui/src/styles/_button.scss` records from the time an 18px icon rendered
+28 x 29.84 in a button. So a 16px glyph was rotating about the centre of a 17.84px box, roughly
+0.92px off its own centre, once every 900ms. The wrapper is a flex box now, which blockifies the
+inline `<svg>` so the box is the glyph.
+
+**Three places had it, not one**: the resume-tailoring chip that was reported, the job-identity badge,
+and the factory-reset button. All three are fixed. **The onboarding spinner deliberately is not** - it
+is a bordered `<span>` with an explicit 14px square, so its box already is the circle it draws, and
+`spinner-css.spec.ts` asserts that rather than leaving the omission to memory.
+
+**The guard is a guard, not evidence.** jsdom has no layout, so the spec scans the stylesheets for the
+box; whether the circle now turns on its centre is a thing only a screen can say.
 
 **B11. Generating a cover letter fails on the first attempt and works on the second.**
 Reported as recurring, not a one-off: the first **Generate cover letter** cuts off, and pressing

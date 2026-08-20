@@ -447,6 +447,10 @@ pub async fn run(req: &AiRequest) -> Result<AiResponse, String> {
         tokens_input: reply.tokens_input,
         tokens_output: reply.tokens_output,
         cached_tokens: reply.cached_tokens,
+        // The CLI bridges report no stop reason. `None` is the honest answer;
+        // inventing "end_turn" here would tell the frontend the provider
+        // confirmed a clean finish when nothing did.
+        stop_reason: None,
     })
 }
 

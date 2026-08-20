@@ -2,19 +2,18 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   Application,
   BaseLetter,
-  CoverLetterContent,
   DocumentLibraryItem,
   Job,
   Profile,
   Settings,
   SupportedLanguage,
   buildTailoredContent,
-  cleanJsonText,
   readBaseLetter,
 } from '@applye/core';
 import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../shell/toast.service';
+import { parseCoverLetterFromResponse } from './cover-letter-response';
 
 /** Everything the tailored copy is built from. The page still owns the library
  * list, because the choose-existing dropdown reads the same letters. */
@@ -202,7 +201,7 @@ export class CoverLetterTailorService {
       language: lang,
     });
 
-    const parsed = JSON.parse(cleanJsonText(res.text)) as CoverLetterContent;
+    const parsed = parseCoverLetterFromResponse(res);
     // A generated letter brings its own addressing; the tailoring pass returns
     // body paragraphs alone and leaves the base's addressing intact.
     const addressing: Partial<BaseLetter> = hasBase

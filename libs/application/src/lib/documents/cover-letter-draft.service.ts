@@ -9,11 +9,12 @@ import {
   Profile,
   Settings,
   SupportedLanguage,
-  cleanJsonText,
+  emptyCoverLetterContent,
 } from '@applye/core';
 import { AiService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
 
 import { CvGapDialogService } from './cv-gap-dialog.service';
+import { parseCoverLetterFromResponse } from './cover-letter-response';
 import { DocumentGenService } from './document-gen.service';
 import { DocumentRegionTag } from '../jobs/job-document-defaults';
 import { GapFillHooks, foldInGapAnswers } from './gap-fill';
@@ -127,8 +128,13 @@ export class CoverLetterDraftService {
       userPrompt: rendered.userPrompt,
       language: ctx.language,
     });
-    const parsed = JSON.parse(cleanJsonText(res.text)) as CoverLetterContent;
+    const parsed = parseCoverLetterFromResponse(res);
+    // Spread over a complete empty letter rather than casting the answer: a
+    // skill fills the blocks it was asked for, and six of this type's fields
+    // are required. The cast that used to stand here stored `address:
+    // undefined` under a type that promised an object.
     const content: CoverLetterContent = {
+      ...emptyCoverLetterContent(),
       ...parsed,
       bodyParagraphs: parsed.bodyParagraphs ?? [],
       jobDescription: jdText,

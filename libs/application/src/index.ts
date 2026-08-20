@@ -18,6 +18,7 @@ export * from './lib/documents/application-document-actions';
 export * from './lib/documents/cv-draft.service';
 export * from './lib/documents/cv-gap-dialog.service';
 export * from './lib/documents/cover-letter-draft.service';
+export * from './lib/documents/cover-letter-response';
 export * from './lib/documents/doc-card-status';
 export * from './lib/documents/document-export.service';
 export * from './lib/documents/document-gen.service';

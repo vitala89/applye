@@ -22,7 +22,9 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
 1. ~~**`B1`** - cancelling a tailor destroys the score and both generated documents.~~ **Fixed**,
    see the entry below. Still owed a native re-walk of station 3 check `A` item 7 and station 12.
 2. **`B11`** - cover-letter generation fails on the first attempt and works on the second, so every
-   letter is paid for twice.
+   letter is paid for twice. **Instrumented on 2026-08-20 rather than fixed**: the failure now names
+   its cause, and the parse asymmetry found underneath it is closed. The next occurrence is what
+   settles it.
 3. **`B8`** - the job title is a fragment of the description, and it feeds the archetype screen, the
    score and the tailoring prompt.
 4. **`S1`** - two and a half minutes to a first document, half of it in the dual critique.
@@ -217,6 +219,37 @@ Two attempts means the user pays twice, and a failure that clears itself on retr
 never gets diagnosed because the retry always works. **Worth capturing the provider error on the
 failed attempt** rather than guessing - the difference between a timeout, a truncated response and a
 schema rejection decides the fix.
+
+**Worked on 2026-08-20, and the honest status is "the next occurrence is diagnosable", not "fixed".**
+The bug cannot be reproduced without a real provider call, so nothing here proves the cause. What the
+code did settle is why nobody could tell:
+
+- **One feature carried three strictnesses of parse.** `parseCvSkillResponse` cleans the answer,
+  parses it, and **repairs a truncated one** before giving up. `parseCoverLetterResponse` - the
+  editor's path - parses and rejects an array or a bare scalar, but does not repair. The wizard's
+  **Generate cover letter** did neither: a raw `JSON.parse(cleanJsonText(...))` with a cast. That
+  ordering is the whole of "the CV on the same run did not do this": the CV sits on the most defended
+  parse in the repository and the failing button sat on the least.
+- **The message the user got could not distinguish the three causes this file says decide the fix.**
+  `JSON.parse` throws `Unexpected end of JSON input` and nothing else - not the answer it choked on -
+  and `DocumentReviewStatusService.fail` shows exactly that string. A timeout, a truncated response
+  and a schema rejection all arrived as one sentence.
+- **Both providers already say why they stopped, and the app threw it away.** Anthropic reports
+  `stop_reason`, the OpenAI-compatible shape reports `finish_reason`, both in the same JSON body
+  `ai/api.rs` already parses for `usage`. `AiResponse` now carries it, and a parse failure names it:
+  a capped answer says so and says a retry is likely to work, a clean stop says the answer was not
+  cut short, and a CLI answer - which reports nothing - says nothing rather than claiming a clean
+  finish.
+
+**What was deliberately not done.** Truncation is not repaired for a letter the way it is for a CV: a
+CV's sections are visibly listed, so a short one announces itself, while a letter reads as continuous
+prose and a repaired one would present its missing paragraphs as finished. And a capped answer that
+happens to parse is still kept - the stop reason explains a failure rather than overruling a success,
+which is what the CV path already does.
+
+**So the next native run should capture the message**, which will now name the cause. If it reads
+"stopped at its output token limit", the fix is the cap or the prompt; if it names a clean stop, the
+model is answering with something that is not the JSON asked for and the skill is the place to look.
 
 ### Behaviour the maintainer wants changed
 

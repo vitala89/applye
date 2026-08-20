@@ -42,6 +42,22 @@ pub struct AiResponse {
     pub tokens_input: u32,
     pub tokens_output: u32,
     pub cached_tokens: u32,
+    /// Why the provider stopped generating, verbatim: `stop_reason` on
+    /// Anthropic, `finish_reason` on the OpenAI-compatible shape.
+    ///
+    /// Both providers report it in the same JSON this code already parses for
+    /// `usage`, and it used to be dropped - so an answer cut off at the token
+    /// cap reached the frontend as a plain string, and the only trace was that
+    /// its JSON did not close. `JSON.parse` then threw
+    /// `Unexpected end of JSON input`, which is indistinguishable from a model
+    /// that returned nonsense. The value is passed through rather than
+    /// interpreted here: the vendors spell "I hit the cap" differently
+    /// (`max_tokens` against `length`), and normalising it in Rust would put
+    /// the vendor knowledge one layer away from the code that reads it.
+    ///
+    /// `None` on the CLI bridge, which reports no equivalent.
+    #[serde(default)]
+    pub stop_reason: Option<String>,
 }
 
 async fn dispatch(req: AiRequest, api_key: Option<String>) -> Result<AiResponse, String> {

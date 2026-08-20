@@ -97,6 +97,20 @@ const SECTION_HEADINGS: &[&str] = &[
 /// Words that make a line plausible as a job title. A JD line that carries none
 /// of them is almost never the role, and the cost of being wrong here is a bogus
 /// title on the card and in every generated document.
+///
+/// **Every entry here is a role noun.** The list used to also hold `frontend`,
+/// `backend`, `fullstack`, `mobile`, `android`, `ios`, `web`, `data`, `product`,
+/// `project`, `sales`, `support` and `security` - domain words that are ordinary
+/// English and appear in the prose of a posting constantly. `B8` was one of
+/// them: a hard-wrapped scanned listing put `Roughly 70% frontend, 30% Node
+/// services. An internal logistics tool used by 300` on a line of its own, and
+/// the single word `frontend` was the entire reason it was accepted as the role.
+///
+/// Nothing is lost by demoting them, because the titles they appear in carry a
+/// role noun anyway: `Frontend Engineer` on `engineer`, `Data Scientist` on
+/// `scientist`, `Head of Data` on `head`. `has_role_word_alone_is_not_enough` in
+/// the tests below walks the demoted list and asserts none of them qualifies a
+/// line on its own.
 const ROLE_WORDS: &[&str] = &[
     "engineer",
     "developer",
@@ -156,22 +170,6 @@ const ROLE_WORDS: &[&str] = &[
     "devops",
     "sre",
     "qa",
-    "frontend",
-    "front-end",
-    "backend",
-    "back-end",
-    "fullstack",
-    "full-stack",
-    "mobile",
-    "android",
-    "ios",
-    "web",
-    "data",
-    "product",
-    "project",
-    "sales",
-    "support",
-    "security",
 ];
 
 /// Connector words allowed inside a multi-word company name ("Ben & Jerry's",
@@ -316,6 +314,79 @@ fn is_section_heading(line: &str) -> bool {
     SECTION_HEADINGS.contains(&normalized.as_str())
 }
 
+/// Words no job title begins with. A line that opens with one of these is the
+/// middle of a sentence, whatever else it contains.
+const SENTENCE_OPENERS: &[&str] = &[
+    "and", "but", "or", "so", "because", "which", "that", "who", "with", "for", "to", "in", "on",
+    "at", "as", "of", "the", "a", "an", "we", "you", "our", "your", "this", "it", "they",
+];
+
+/// The longest a real job title runs, in words. German postings are the long
+/// end - "Senior Softwareentwickler (m/w/d) für Frontend im Bereich Logistik" is
+/// nine - so the cut sits above them and still refuses a wrapped sentence.
+const MAX_TITLE_WORDS: usize = 10;
+
+/// Below this many words, a full stop is read as an abbreviation rather than as
+/// the end of a sentence: "Sr. Engineer" and "Dipl.-Ing. Maschinenbau Manager"
+/// are titles, and rejecting them would trade one wrong answer for another.
+const ABBREVIATION_WORD_LIMIT: usize = 5;
+
+/// True when a line reads as prose rather than as a title.
+///
+/// `B8`: a scanned posting is hard-wrapped at about eighty columns, so a
+/// fragment of a sentence arrives as a line of the document. The reported one
+/// was **79 characters** - one under the length cut the positional pass already
+/// had, which is the whole reason it survived - and it was accepted as the role,
+/// then read by the archetype screen, the score and the tailoring prompt.
+///
+/// Five independent signals, deliberately not one clever test. The reported
+/// fragment is caught by three of them, so the fix does not hang on any single
+/// rule being right about every posting in the world.
+///
+/// Applied to the **positional** pass only. A labelled line states what its
+/// value is; position is the only evidence the second pass has, and it is the
+/// pass that needs the strictness.
+fn looks_like_prose(line: &str) -> bool {
+    let t = line.trim();
+    let words: Vec<&str> = t.split_whitespace().collect();
+
+    // 1. A finished sentence.
+    if t.ends_with('.') {
+        return true;
+    }
+    // 2. A quantity. Titles do not carry percentages; job descriptions do.
+    if t.chars()
+        .zip(t.chars().skip(1))
+        .any(|(a, b)| a.is_ascii_digit() && b == '%')
+    {
+        return true;
+    }
+    // 3. An opener no title uses. Checked by word rather than by case, so
+    //    "And a senior engineer ..." is caught alongside its lowercase twin -
+    //    and "iOS Developer" is not, which a bare is-lowercase test would be.
+    if let Some(first) = words.first() {
+        let w = first.trim_matches(|c: char| !c.is_alphanumeric());
+        if SENTENCE_OPENERS.contains(&w.to_lowercase().as_str()) {
+            return true;
+        }
+    }
+    // 4. Too long to be a name.
+    if words.len() > MAX_TITLE_WORDS {
+        return true;
+    }
+    // 5. A sentence that ends and another that begins, on one line. Guarded by
+    //    length so an abbreviation in a short title is not mistaken for it.
+    if words.len() > ABBREVIATION_WORD_LIMIT {
+        let chars: Vec<char> = t.chars().collect();
+        for i in 0..chars.len().saturating_sub(2) {
+            if chars[i] == '.' && chars[i + 1].is_whitespace() && chars[i + 2].is_uppercase() {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 /// True when a line contains a word that job titles are made of. Checked against
 /// word boundaries, so "leadership" does not qualify on account of "lead".
 fn has_role_word(line: &str) -> bool {
@@ -347,7 +418,13 @@ pub fn extract_title(text: &str) -> Option<String> {
     text.lines()
         .take(20)
         .map(|l| l.trim())
-        .find(|l| !l.is_empty() && l.len() < 80 && !is_section_heading(l) && has_role_word(l))
+        .find(|l| {
+            !l.is_empty()
+                && l.len() < 80
+                && !is_section_heading(l)
+                && !looks_like_prose(l)
+                && has_role_word(l)
+        })
         .map(|l| l.to_string())
 }
 
@@ -594,5 +671,170 @@ You will build payment integrations as a Backend Engineer.";
     fn leadership_does_not_count_as_the_word_lead() {
         let jd = "Strong leadership skills required.\nGreat teamwork too.";
         assert_eq!(extract_title(jd), None);
+    }
+
+    /// `B8`, verbatim from the native gate walk of 2026-08-20. A scanned
+    /// posting is hard-wrapped at about eighty columns, so a fragment of a
+    /// sentence becomes a "line" - and this one is **79 characters**, one under
+    /// the length cut, carrying exactly one qualifier word (`frontend`). It
+    /// reached the job card, the archetype screen, the score and the tailoring
+    /// prompt as the role.
+    #[test]
+    fn rejects_the_wrapped_prose_fragment_from_the_gate_walk() {
+        let jd = "Roughly 70% frontend, 30% Node services. An internal logistics tool used by 300\npeople across four warehouses.";
+        assert_eq!(extract_title(jd), None);
+    }
+
+    #[test]
+    fn rejects_a_line_that_ends_a_sentence() {
+        let jd = "You will work as a backend engineer.\nMore text follows.";
+        assert_eq!(extract_title(jd), None);
+    }
+
+    #[test]
+    fn rejects_a_line_quoting_a_percentage() {
+        let jd = "Around 60% backend engineer work\nAnd other duties";
+        assert_eq!(extract_title(jd), None);
+    }
+
+    #[test]
+    fn rejects_a_line_that_starts_mid_sentence() {
+        let jd = "and a senior engineer will own the roadmap\nMore text follows.";
+        assert_eq!(extract_title(jd), None);
+    }
+
+    #[test]
+    fn rejects_a_line_too_long_to_be_a_title() {
+        let jd = "We need an engineer who can also mentor, hire, plan and report widely\nMore.";
+        assert_eq!(extract_title(jd), None);
+    }
+
+    #[test]
+    fn rejects_a_sentence_that_continues_after_a_full_stop() {
+        let jd = "Our team ships fast. A senior engineer leads it\nMore text follows.";
+        assert_eq!(extract_title(jd), None);
+    }
+
+    // The other half of the rule, and the half that a strictness change breaks
+    // silently: these were titles before and must still be titles after.
+
+    #[test]
+    fn a_qualifier_still_counts_beside_a_strong_role_word() {
+        for title in [
+            "Frontend Engineer",
+            "Senior Backend Developer",
+            "Staff Data Scientist",
+            "Mobile Product Manager",
+            "Head of Data",
+        ] {
+            let jd = format!("About us\n{title}\nYou will build things here.");
+            assert_eq!(
+                extract_title(&jd).as_deref(),
+                Some(title),
+                "{title} was rejected"
+            );
+        }
+    }
+
+    /// An abbreviation is a full stop that does not end a sentence, and a short
+    /// title is where they appear. Rejecting these would trade one wrong answer
+    /// for another.
+    #[test]
+    fn an_abbreviated_title_survives_the_sentence_rules() {
+        for title in ["Sr. Engineer", "Dipl.-Ing. Maschinenbau Manager"] {
+            let jd = format!("About us\n{title}\nYou will build things here.");
+            assert_eq!(
+                extract_title(&jd).as_deref(),
+                Some(title),
+                "{title} was rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn a_german_posting_title_survives() {
+        let jd = "Über uns\nSenior Frontend Engineer (m/w/d)\nDu baust Oberflächen.";
+        assert_eq!(
+            extract_title(jd).as_deref(),
+            Some("Senior Frontend Engineer (m/w/d)")
+        );
+    }
+
+    /// A label is an explicit statement of what the value is, so none of the
+    /// prose rules apply to it - position is the only evidence the second pass
+    /// has, and it is the only pass that needs the strictness.
+    #[test]
+    fn a_labelled_title_is_exempt_from_the_prose_rules() {
+        let jd = "Position: 60% frontend, 40% backend work.\nWe are hiring.";
+        assert_eq!(
+            extract_title(jd).as_deref(),
+            Some("60% frontend, 40% backend work.")
+        );
+    }
+
+    #[test]
+    fn a_qualifier_alone_is_not_a_title() {
+        let jd = "About us\nWe ship frontend and mobile products\nYou will help.";
+        assert_eq!(extract_title(jd), None);
+    }
+
+    /// The words demoted out of `ROLE_WORDS` for `B8`, walked one at a time.
+    /// Each is placed on a line that passes every other rule - short, capitalised,
+    /// no punctuation, no opener - so the only thing that can reject it is the
+    /// absence of a role noun. A word creeping back into the list fails here.
+    #[test]
+    fn has_role_word_alone_is_not_enough() {
+        for demoted in [
+            "frontend",
+            "front-end",
+            "backend",
+            "back-end",
+            "fullstack",
+            "full-stack",
+            "mobile",
+            "android",
+            "ios",
+            "web",
+            "data",
+            "product",
+            "project",
+            "sales",
+            "support",
+            "security",
+        ] {
+            let jd = format!("About us\nMostly {demoted} work here\nYou will help.");
+            assert_eq!(
+                extract_title(&jd),
+                None,
+                "{demoted} alone was accepted as a title"
+            );
+        }
+    }
+
+    /// The counterpart: each demoted word next to a role noun is still a title,
+    /// which is why demoting them costs nothing.
+    #[test]
+    fn a_demoted_word_beside_a_role_noun_is_still_a_title() {
+        for title in [
+            "Frontend Engineer",
+            "Backend Developer",
+            "Full-Stack Architect",
+            "Mobile Designer",
+            "iOS Developer",
+            "Web Analyst",
+            "Data Scientist",
+            "Product Manager",
+            "Project Coordinator",
+            "Sales Representative",
+            "Support Specialist",
+            "Security Officer",
+        ] {
+            let jd = format!("About us\n{title}\nYou will build things here.");
+            assert_eq!(
+                extract_title(&jd).as_deref(),
+                Some(title),
+                "{title} was rejected"
+            );
+        }
     }
 }

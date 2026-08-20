@@ -25,8 +25,8 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
    letter is paid for twice. **Instrumented on 2026-08-20 rather than fixed**: the failure now names
    its cause, and the parse asymmetry found underneath it is closed. The next occurrence is what
    settles it.
-3. **`B8`** - the job title is a fragment of the description, and it feeds the archetype screen, the
-   score and the tailoring prompt.
+3. ~~**`B8`** - the job title is a fragment of the description.~~ **Fixed** in the deterministic
+   extractor, see the entry below. Still owed a native re-parse of a hard-wrapped posting.
 4. **`S1`** - two and a half minutes to a first document, half of it in the dual critique.
 5. **`B2`**, then the print family **`B4` `B5` `B6`**, then **`B9`** and **`B10`**.
 
@@ -189,7 +189,7 @@ the application is there, the stage read fails, and the question - does the pane
 form when it should not - can be asked. **Check `D` "the interview stage panel" is therefore still
 unrun**, and it is a regression check for a real bug, so it should not be left that way.
 
-**B8. The job title is a truncated sentence from the description.**
+**B8. The job title is a truncated sentence from the description. FIXED 2026-08-20.**
 On a scanned Vantaform GmbH listing, both the job card and the `FIT SCORING` card show
 `Roughly 70% frontend, 30% Node services. An internal logistics tool used by 300` - a fragment of the
 body text, cut mid-sentence, where the **role title** belongs. The company and location resolve
@@ -200,6 +200,42 @@ archetype screen, the score and the tailoring prompt, so every one of them is re
 sentence fragment instead of a job title. The oversized heading in the scoring card is what made it
 visible; the heading style itself looks deliberate, and **the defect is the value put into it**, not
 its size.
+
+**Fixed, 2026-08-20, and the cause is not truncation at all.** Nothing cut that sentence: a scanned
+posting is hard-wrapped at about eighty columns, so a fragment of a sentence _is_ a line of the
+document. `extract_title` in `apps/desktop/src-tauri/src/commands/job_identity.rs` takes the first
+body line under 80 characters that is not a section heading and carries a role word. **The reported
+fragment is 79 characters** - one under the cut, which is why it and not some other line - and it
+carried exactly one role word, `frontend`.
+
+Two changes, both in the deterministic pass:
+
+- **`ROLE_WORDS` was a list of role nouns with thirteen domain words mixed in** - `frontend`,
+  `backend`, `mobile`, `web`, `data`, `product`, `sales`, `support`, `security` and friends - which
+  are ordinary English and appear in the prose of a posting constantly. They are gone. Nothing is
+  lost, because the titles they appear in carry a role noun anyway: `Frontend Engineer` on
+  `engineer`, `Data Scientist` on `scientist`, `Head of Data` on `head`. A test walks all thirteen
+  and asserts none of them qualifies a line alone; another walks the same words inside real titles
+  and asserts every one still passes.
+- **A candidate that reads as a sentence is refused**: it ends with a full stop, quotes a percentage,
+  opens with a word no title opens with, runs past ten words, or ends one sentence and starts another
+  on the same line. Five independent signals rather than one clever test, and **the reported fragment
+  is caught by three of them plus the role-word rule**, so the fix does not depend on any one being
+  right about every posting in the world.
+
+**The labelled pass is untouched.** `Job title: ...` is an explicit statement of what the value is;
+position is the only evidence the second pass has, and it is the pass that needed the strictness.
+
+**Strictness here is cheap, which is why it was the right lever.** Returning `None` is already a
+supported outcome: the AI step runs on an empty title and the identity dialog follows. What that
+also means is that **this fix cannot be confirmed by a unit test alone** - the walk should re-parse a
+hard-wrapped posting and check that the placeholder, then `job-identify`, then the dialog produce a
+real role.
+
+**One thing was found and deliberately left.** A wrong deterministic title is permanent:
+`job-identity-resolver.service.ts` fills a title only when it is empty, so the AI never gets a turn
+to correct one. Making a positional guess a weaker provenance that the AI may overwrite is a
+behaviour change of its own, and it needs its own decision rather than riding along here.
 
 **B9. The wizard's footer padding is inconsistent.**
 The row holding **Back**, **Cancel** and **Continue** sometimes has bottom padding and sometimes has

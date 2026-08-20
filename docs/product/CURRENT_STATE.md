@@ -1,5 +1,16 @@
 # Current Operational State
 
+- **`B8` is fixed, and the premise in its own title was wrong.** Nothing truncated the job title: a
+  scanned posting is hard-wrapped at about eighty columns, so a fragment of a sentence **is** a line
+  of the document, and the reported one is **79 characters** - one under the length cut the
+  extractor already had. It qualified on the single word `frontend`, which sat in `ROLE_WORDS`
+  alongside twelve other domain words that are ordinary English. Those are gone, and a candidate
+  that reads as a sentence is now refused by five independent signals. **Strictness was the cheap
+  lever**: returning nothing is already a supported outcome, and the `job-identify` call and the
+  identity dialog both exist for it. **Still owed a native re-parse of a hard-wrapped posting** - the
+  tests pin the rule, but whether the chain then produces a right title depends on the AI step and
+  the dialog. Known and deliberately left: a wrong deterministic title is still permanent, because
+  the AI fills a title only when it is empty.
 - **`B11` is instrumented, not closed, and the difference is deliberate.** The cover letter that
   fails on the first attempt cannot be reproduced without a real provider call, so the work was to
   make the next occurrence say what happened: `AiResponse` now carries the provider's `stop_reason` /

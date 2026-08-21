@@ -84,33 +84,32 @@ const PAGE_RULE_ELEMENT_ID = 'wysiwyg-page-rule';
 const PRINTING_BODY_CLASS = 'printing-cv';
 
 /**
- * The `@page` declaration for these settings, in millimetres.
+ * The `@page` declaration: the paper size, and **no margin**.
  *
- * **The margins belong here, and the round trip that proved it is worth
- * keeping.** `B4` reported the exported PDF ignoring the Style card's margins,
- * and the first attempt moved them into `.page-card`'s padding with
- * `margin: 0` here - on the reasoning that padding is ordinary box layout and
- * a page margin is a feature the renderer has to honour.
+ * `B4`, and the answer took three rejected attempts to find because the margins
+ * are applied in a **third** place that neither of them touched.
+ * `export_pdf_wysiwyg_core` in `commands/print.rs` reads the document's page
+ * settings and puts them on `NSPrintInfo` - `setTopMargin`, `setRightMargin`,
+ * `setBottomMargin`, `setLeftMargin` - so **the print system already insets the
+ * page** before any CSS is consulted. A `@page` margin on top of that is the
+ * same millimetres a second time.
  *
- * That fixed page one and broke page two, and the native pass of 2026-08-21
- * showed why. `paginate.util.ts` packs content into
- * `pageHeightPx - marginTop - marginBottom`, so a card carrying the margins as
- * padding is **exactly one page tall**. Printed onto a sheet whose printable
- * area is smaller than the paper by any amount at all, it overflows, and
- * `break-inside: avoid` moves a whole section onto a second page - which has no
- * top inset, because padding belongs to a box and not to each page it spans.
+ * The arithmetic matches what the native pass saw. A4 with 20mm margins gives a
+ * 257mm content box, which is the 971px `paginate.util.ts` packs a card into.
+ * Applied twice it is 217mm, or 820px - 151px short - and the four or five
+ * atoms that no longer fit are exactly the ones that appeared at the top of the
+ * exported page two.
  *
- * A page margin repeats on every page. That is the property this needs, and it
- * is why the tripwire that forbade `margin: 0` was right about the outcome even
- * though its stated reason described a different configuration.
+ * Both halves arrived in the same commit (`eb431567`, 2026-07-15), so this has
+ * never worked; the walk of 2026-08-20 was simply the first time an export was
+ * measured against the Style card.
+ *
+ * **The size stays.** `NSPrintInfo` is told the paper too, but the CSS page box
+ * has to agree with it or the layout is done against the wrong sheet.
  */
 export function pageRuleFor(page: PageSettings | undefined): string {
   const r = resolvePageSettings(page);
-  const m = r.margin;
-  return (
-    `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
-    ` margin: ${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm; }`
-  );
+  return `@page { size: ${r.widthMm}mm ${r.heightMm}mm; margin: 0; }`;
 }
 
 /**

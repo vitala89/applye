@@ -44,6 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-21, the margins were applied twice, and the second place was Rust
+
+- **Status:** complete for the half that can be fixed in one change. The editor's own Export button is a second path, specified and not implemented.
+- **Agent/tool:** Claude Code, Opus 5. Triage **9/10**, budget announced. Grilling gate ran once, after the analysis rather than before it - the fork only appeared once the cause was known. No subagents.
+- **Branch:** `fix/print-margins-belong-to-the-print-system`, cut from `origin/main` at `ba31f9a9`.
+
+- **The maintainer asked the question that ended it: "why did this work before?"** Three attempts had each been an honest reading of the evidence then available, and all three had moved the margins between two CSS layers. **There is a third.** `export_pdf_wysiwyg_core` in `commands/print.rs` reads the document's page settings and puts them on `NSPrintInfo` - `setTopMargin`, `setRightMargin`, `setBottomMargin`, `setLeftMargin`. The print system insets the page before any CSS is consulted, so a `@page` margin is the same millimetres a second time.
+- **The arithmetic matches the exports, which is what makes this diagnosis different from the previous three.** A4 with 20mm margins is a 257mm content box = the 971px `paginate.util.ts` packs a card into. Applied twice: 217mm, 820px, **151px short** - and the four or five displaced atoms are exactly what appeared at the top of exported page two while the preview kept them on page one.
+- **"It worked before the refactor" is a true memory of a different thing.** Both halves arrived in the same commit, `eb431567` on 2026-07-15, so this path has never produced correct margins. `#466`, the print-protocol refactor the maintainer remembered, moved the code without changing it - verified by reading its diff. No export had been measured against the Style card until the walk of 2026-08-20.
+- **None of the three attempts was the right configuration**, and the shape is worth keeping: original was `@page` margins + card padding 0 (twice); the first fix was `@page` 0 + card padding (a card exactly one page tall, page two flush); the second and third went back to `@page` margins (twice again). The correct one is **`@page` 0 + card padding 0**, which nobody had tried.
+
+- **What this change does and does not fix.** It makes the **save-to-file** export exact, because `NSPrintInfo` carries the document's own margins there. **The editor's Export button is a second path**: it calls `window.print()`, so its `NSPrintInfo` comes from the macOS dialog's defaults and the Style card's margins cannot reach it at all.
+- **The maintainer chose to route that button through the same Rust export the Documents list uses**, which makes both paths exact and leaves one print path instead of two. It is deliberately **not** in this change: it replaces a print dialog with a save dialog, and the Rust path renders the **saved** document, so the editor must persist before exporting - and `cv-detail.component.ts` deliberately does not persist a half-typed draft on a raw Cmd+P, a rule the new path must not break.
+
+- **Files changed:** `wysiwyg-print.ts` and its spec, `cv-detail.style.spec.ts`, plus documents. No stylesheet: the card already carries `padding: 0` in print, so the CSS half needed only the `@page` rule.
+- **Validation, all run and observed:** `nx run desktop:type-check` green; `nx run-many --target=lint --projects=desktop --skip-nx-cache` green with the one pre-existing warning; `nx test desktop` **1169 passed**; `nx build desktop` green, 1.51 MB / 280.82 kB; `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check` passed.
+- **What to test next is a different button**: the Documents list's **Export PDF**, not the editor's. That is the path this change makes exact, and testing the editor's would report the same defect for a reason this change does not address.
+- **The lesson, recorded because it cost four rounds.** Every attempt reasoned inside one layer - CSS - because that is where the symptom was visible. The margins had three owners and the third was in another language, in another process boundary. **When a value can be applied by more than one layer, count the layers before choosing which one to change.**
+- **Next first action:** route the editor's Export through the Rust path, with the save question decided; then `P1`/`P2`/`B12`.
+
 ### 2026-08-21, hiding is not removing
 
 - **Status:** complete as a change. `B4`'s **third** attempt, and the third that this repository cannot verify. Owed a native pass on both pages of a two-page CV.

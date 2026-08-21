@@ -240,7 +240,45 @@ Five tests cover the marking, including the two that matter: that no sibling of 
 and that **nothing is marked when there is no sheet**, because blanking an export is worse than
 failing one.
 
-**Still owed a native pass**, and on **both** pages of a two-page CV.
+**Three attempts, and the cause was in a third place none of them looked.**
+
+`export_pdf_wysiwyg_core` in `apps/desktop/src-tauri/src/commands/print.rs` reads the document's page
+settings and puts them on `NSPrintInfo` - `setTopMargin`, `setRightMargin`, `setBottomMargin`,
+`setLeftMargin`. **The print system already insets the page before any CSS is consulted.** A `@page`
+margin on top of that is the same millimetres a second time.
+
+The arithmetic matches the exports exactly. A4 with 20mm margins is a 257mm content box, which is the
+971px `paginate.util.ts` packs a card into. Applied twice it is 217mm, or 820px - **151px short** -
+and the four or five atoms that no longer fit are precisely the ones that appeared at the top of the
+exported page two while the on-screen preview kept them on page one.
+
+**Both halves arrived in the same commit** - `eb431567`, 2026-07-15 - so this path has never produced
+correct margins. "It worked before the refactor" is a true memory of a different thing: `#466` moved
+the print protocol without changing it, and no export had been measured against the Style card until
+the walk of 2026-08-20.
+
+**So none of the three attempts was the right configuration**, and the table is worth keeping:
+
+| attempt          | `@page` | card padding | result                                     |
+| ---------------- | ------- | ------------ | ------------------------------------------ |
+| original         | margins | 0            | margins twice                              |
+| first fix        | 0       | margins      | card exactly one page tall, page two flush |
+| second and third | margins | 0            | margins twice again                        |
+| **correct**      | **0**   | **0**        | the print system applies them once         |
+
+**Fixed by removing the margins from the CSS**, which makes the **save-to-file** export exact -
+`NSPrintInfo` carries the document's own margins there.
+
+**The editor's Export button is a second path and is not fixed by this.** It calls `window.print()`,
+so `NSPrintInfo` comes from the macOS dialog's defaults and the Style card's margins cannot reach it
+at all. The maintainer's decision is to route that button through the same Rust export the Documents
+list uses, which makes both paths exact and leaves one print path instead of two. **That is its own
+change**: it replaces a print dialog with a save dialog, and the Rust path renders the **saved**
+document, so the editor has to persist before exporting - and `cv-detail.component.ts` deliberately
+does _not_ persist a half-typed draft on a raw Cmd+P, which is a rule the new path must not break.
+
+**What to test next, and it is a different button:** the Documents list's **Export PDF**, not the
+editor's. That is the path this change makes exact.
 
 **B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
 On the exported page two, `EDUCATION` starts at the left margin with its rule running the full

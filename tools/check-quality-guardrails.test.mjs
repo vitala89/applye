@@ -291,15 +291,15 @@ test('file-size guard counts Rust source and inline tests separately', (t) => {
       '}',
     ].join('\n');
 
-  // 480 source lines is under the 500 budget; 700 test lines would blow the old
+  // 380 source lines is under the 400 budget; 700 test lines would blow the old
   // single 800-line rule outright, and must not count against source.
-  writeFileSync(file, `${source(480)}\n${tests(700)}\n`);
+  writeFileSync(file, `${source(380)}\n${tests(700)}\n`);
   commitAll(directory);
   let result = run(process.execPath, [fileSizeScript], { cwd: directory });
   assert.equal(result.status, 0, result.stderr || result.stdout);
 
   // Inline tests have their own budget and it does bite.
-  writeFileSync(file, `${source(480)}\n${tests(700)}\n`);
+  writeFileSync(file, `${source(380)}\n${tests(700)}\n`);
   appendFileSync(file, `${tests(10)}\n`);
   result = run(process.execPath, [fileSizeScript], { cwd: directory });
   assert.equal(result.status, 1, result.stdout);
@@ -307,10 +307,10 @@ test('file-size guard counts Rust source and inline tests separately', (t) => {
 
   // Growing the source half is reported against the source budget, naming the
   // half that grew rather than a combined number.
-  writeFileSync(file, `${source(520)}\n${tests(700)}\n`);
+  writeFileSync(file, `${source(420)}\n${tests(700)}\n`);
   result = run(process.execPath, [fileSizeScript], { cwd: directory });
   assert.equal(result.status, 1, result.stdout);
-  assert.match(result.stderr, /rust source .*crossed the 500-line budget/i);
+  assert.match(result.stderr, /rust source .*crossed the 400-line budget/i);
 });
 
 /**
@@ -340,11 +340,11 @@ test('file-size guard is not fooled by braces inside Rust literals', (t) => {
     "    fn borrow<'a>(value: &'a str) -> &'a str { value }",
   ];
 
-  // 450 source lines sits under the 500 budget with room to spare. The test
+  // 380 source lines sits under the 400 budget with room to spare. The test
   // module is large enough that misreading it as source would blow that budget,
   // so a masking bug fails this test rather than merely skewing a number.
   const source = Array.from(
-    { length: 450 },
+    { length: 380 },
     (_, index) => `pub fn f${index}() -> u8 { ${index % 250} }`,
   );
   const testBlock = [
@@ -370,7 +370,7 @@ test('file-size guard is not fooled by braces inside Rust literals', (t) => {
   // budget-status assertion would happily accept.
   assert.match(
     result.stdout,
-    /near\s+450\/500\s+apps\/demo\/tricky\.rs \(Rust source\)/,
+    /near\s+380\/400\s+apps\/demo\/tricky\.rs \(Rust source\)/,
     result.stdout,
   );
   assert.match(result.stdout, /Rust source\s+0\/1 over budget/, result.stdout);

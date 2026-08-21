@@ -48,24 +48,65 @@ inject(WizardNavService)` and `wizard.open()` in the template is allowed, and pr
 
 ## Source file size budgets
 
-Budgets count non-empty physical lines. They are design alarms, not targets to fill.
+Budgets count non-empty physical lines, **comment lines excluded**. The counter blanks each
+language's comments before counting - the real TypeScript compiler scanner for TS/JS, so a `//` or
+`/*` inside a string or template literal is never mistaken for one, and a hand-written masker for
+SCSS/CSS, HTML, and Rust (`tools/lib/comment-mask.mjs`) - so a line that is only a comment does not
+count, while a line that mixes code and a trailing comment still counts once, as code. They are
+design alarms, not targets to fill.
+
+This is deliberate, not an oversight: the budget exists to pressure decomposition when logic or
+responsibility grows too large to review, and a comment documents existing complexity rather than
+adding it. Counting comments against the same budget that this document and `AGENTS.md` require
+("why, not what") was a direct contradiction, and it had already produced one wrong incentive:
+deleting an explanation to fit under a limit rather than restructuring the code.
 
 | File category                  |    Budget | Required action before exceeding it                                                         |
 | ------------------------------ | --------: | ------------------------------------------------------------------------------------------- |
-| TypeScript / JavaScript source | 400 lines | Extract a focused service, store, pure helper, domain module, or child component            |
-| Application-layer store        | 250 lines | Split by responsibility into a second store or a pure use-case module                       |
+| TypeScript / JavaScript source | 350 lines | Extract a focused service, store, pure helper, domain module, or child component            |
+| Application-layer store        | 225 lines | Split by responsibility into a second store or a pure use-case module                       |
 | Angular template               | 300 lines | Extract a child component or repeated view section                                          |
-| SCSS / CSS                     | 400 lines | Split by component or responsibility and reuse design tokens                                |
-| Rust source module             | 500 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
-| TypeScript test file           | 600 lines | Split by behavior or unit under test                                                        |
-| Rust inline tests              | 600 lines | Move large inline tests to focused test modules or fixtures                                 |
+| SCSS / CSS                     | 380 lines | Split by component or responsibility and reuse design tokens                                |
+| Rust source module             | 400 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
+| TypeScript test file           | 580 lines | Split by behavior or unit under test                                                        |
+| Rust inline tests              | 540 lines | Move large inline tests to focused test modules or fixtures                                 |
+
+### Why these numbers, not the old ones
+
+Excluding comments from the count would silently loosen every budget above by however many comment
+lines a file happens to carry, unless the numbers moved too. They did, and the amount is measured,
+not guessed: a repo-wide pass through the same maskers (`git ls-files`, tracked source under
+`apps/`, `libs/`, `tools/`) found comments are roughly this share of non-empty lines per category:
+
+| Category                     | Comments, measured |
+| ---------------------------- | -----------------: |
+| Application-layer store      |                30% |
+| Rust source                  |                20% |
+| TypeScript/JavaScript source |                19% |
+| Stylesheet                   |                11% |
+| Rust inline tests            |                10% |
+| TypeScript/JavaScript test   |                 7% |
+| Angular template             |                 3% |
+
+Each new budget is the lower of two candidates: the old budget fully compensated for its category's
+measured cut, and the largest file already in the repository for that category (with a small
+margin). The second candidate is what actually constrained the table above - full compensation would
+put the store budget near 175, but `portal-answers.service.ts` already sits at 218 effective lines,
+and this change must not fail a file nobody has touched. Angular templates kept their original 300:
+the measured cut is 3% overall and 0% at the median, so most templates carry no comments to exclude,
+and lowering the number would not restore any pressure comments never relaxed. Every number above was
+checked against a full `--all` audit before landing: every currently-tracked file is at or under its
+new budget, so this change tightens pressure going forward without creating a backlog of newly
+over-budget files today. Tightening further toward the fully-compensated values, the way the Rust
+800-to-500 split below was a deliberate campaign, remains available as a separate decision.
 
 Rust is measured in two parts, because its tests live in the same file by convention. A single
-number covering both said little about either: under the previous combined 800-line rule,
+number covering both said little about either: under a since-replaced combined 800-line rule,
 `tailoring.rs` passed at 699 lines of which only 266 were source, while `discover_parsers.rs` passed
 on nearly the same score with 694 lines of source and 3 of tests. The counter now finds each
 `#[cfg(test)]` item and bills it to the test budget, so a well-tested module is not punished for its
-tests and a dense one is not excused by them. 500 is therefore stricter than the 800 it replaces.
+tests and a dense one is not excused by them. 400 folds the comment-stripping cut above into what was
+already the stricter 500-line successor to that 800-line rule.
 
 The automated gate checks source code under `apps/`, `libs/`, and `tools/`. Generated files,
 lockfiles, snapshots, migrations, fixtures, vendored code, the central translation catalogue, and

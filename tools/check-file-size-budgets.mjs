@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { effectiveLineCount, maskFor, maskRust, rustTestLines } from './lib/comment-mask.mjs';
 
 const argv = process.argv.slice(2);
 const staged = argv.includes('--staged');
@@ -12,35 +13,52 @@ const explicitBase = baseIndex >= 0 ? argv[baseIndex + 1] : undefined;
 
 const ZERO_SHA = /^0+$/;
 
+/**
+ * Every non-Rust budget below was lowered from its pre-comment-stripping value
+ * once comments stopped counting (see `comment-mask.mjs`), so the gate keeps
+ * pressuring the same effective code volume it did before rather than quietly
+ * loosening by however many comment lines a file happens to carry. The cut is
+ * measured, not guessed: a repo-wide pass (`git ls-files` through the same
+ * maskers, tracked source only) found comments are 19-30% of non-empty lines
+ * in TypeScript/JavaScript source and stores, 3% in templates, 7% in tests,
+ * and 11% in stylesheets - see `docs/governance/CODE_QUALITY.md`. Each budget
+ * below is set at the lower of "fully compensated for that measured cut" and
+ * "at least as high as the largest file already in the repository", so this
+ * change cannot silently fail a file nobody has touched - it can only make an
+ * already-large file `near` instead of comfortably clear.
+ */
 const budgets = [
   {
     label: 'TypeScript/JavaScript test',
-    max: 600,
+    max: 580,
     matches: (file) => /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(file),
   },
   {
     // Tighter than an ordinary source file on purpose (ADR-0005). Once a page
     // component stops being the god-object, its store is the next candidate,
-    // and 250 is what forces a large page to decompose into several stores by
+    // and 225 is what forces a large page to decompose into several stores by
     // responsibility rather than into one relocated lump.
     label: 'Application-layer store',
-    max: 250,
+    max: 225,
     matches: (file) =>
       /\.store\.[cm]?ts$/.test(file) || /^libs\/application\/.*\.[cm]?ts$/.test(file),
   },
   {
     label: 'TypeScript/JavaScript source',
-    max: 400,
+    max: 350,
     matches: (file) => /\.[cm]?[jt]sx?$/.test(file),
   },
   {
+    // Left at 300: the measured cut here is 3% overall and 0% at the median -
+    // most templates carry no comments at all, so lowering this budget would
+    // not restore any pressure comments never relaxed in the first place.
     label: 'Angular template',
     max: 300,
     matches: (file) => file.endsWith('.html'),
   },
   {
     label: 'Stylesheet',
-    max: 400,
+    max: 380,
     matches: (file) => /\.(?:scss|css)$/.test(file),
   },
   {
@@ -53,14 +71,21 @@ const budgets = [
 ];
 
 /**
- * Rust source excludes inline `#[cfg(test)]` items, so this is stricter than the
- * 800 it replaces even though the number is smaller: 800 used to cover both
- * halves at once, which let a module with a large test suite pass while a file
- * of nearly 700 lines of pure logic passed on the same score.
+ * Rust source excludes inline `#[cfg(test)]` items, so this was already
+ * stricter than the 800 it replaced even though the number was smaller: 800
+ * used to cover both halves at once, which let a module with a large test
+ * suite pass while a file of nearly 700 lines of pure logic passed on the
+ * same score. 400 (down from 500) folds in the comment-stripping cut above -
+ * measured at 20% for Rust source - and still clears the largest source file
+ * in the repository today by a comfortable margin.
  */
-const RUST_SOURCE_MAX = 500;
-/** Matches the TypeScript test budget; test code is repetitive by nature. */
-const RUST_TEST_MAX = 600;
+const RUST_SOURCE_MAX = 400;
+/**
+ * Matches the TypeScript test budget in spirit; test code is repetitive by
+ * nature. 540 (down from 600) folds in the measured 10% comment cut for
+ * inline Rust tests.
+ */
+const RUST_TEST_MAX = 540;
 
 const excludedPatterns = [
   /(^|\/)node_modules\//,
@@ -170,122 +195,6 @@ function budgetFor(file) {
   return budgets.find((budget) => budget.matches(file));
 }
 
-function effectiveLineCount(content) {
-  return content.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
-}
-
-/**
- * Blank out comments and literal contents, keeping every newline in place, so
- * braces and `#[cfg(test)]` can be found without a `{` inside a JSON fixture
- * string closing a module early. Rust needs the awkward cases handled: nested
- * block comments, raw strings with any number of hashes, and `'a` lifetimes,
- * which look like an unterminated char literal to a naive scanner.
- */
-function maskRust(source) {
-  const out = Array.from(source);
-  const blank = (from, to) => {
-    for (let k = from; k < to && k < out.length; k += 1) {
-      if (out[k] !== '\n') out[k] = ' ';
-    }
-  };
-  let i = 0;
-  while (i < source.length) {
-    const two = source.slice(i, i + 2);
-    if (two === '//') {
-      const end = source.indexOf('\n', i);
-      blank(i, end === -1 ? source.length : end);
-      i = end === -1 ? source.length : end;
-      continue;
-    }
-    if (two === '/*') {
-      let depth = 1;
-      let j = i + 2;
-      while (j < source.length && depth > 0) {
-        if (source.slice(j, j + 2) === '/*') {
-          depth += 1;
-          j += 2;
-        } else if (source.slice(j, j + 2) === '*/') {
-          depth -= 1;
-          j += 2;
-        } else {
-          j += 1;
-        }
-      }
-      blank(i, j);
-      i = j;
-      continue;
-    }
-    // Raw string: r, br, or rb followed by hashes and a quote.
-    const raw = /^(?:b?r|rb)(#*)"/.exec(source.slice(i, i + 16));
-    if (raw) {
-      const close = `"${raw[1]}`;
-      const start = i + raw[0].length;
-      const end = source.indexOf(close, start);
-      const stop = end === -1 ? source.length : end + close.length;
-      blank(start, end === -1 ? source.length : end);
-      i = stop;
-      continue;
-    }
-    if (source[i] === '"' || (source[i] === 'b' && source[i + 1] === '"')) {
-      let j = source[i] === '"' ? i + 1 : i + 2;
-      while (j < source.length && source[j] !== '"') j += source[j] === '\\' ? 2 : 1;
-      blank(i, j);
-      i = j + 1;
-      continue;
-    }
-    if (source[i] === "'") {
-      // A char literal closes within a few characters; anything else is a
-      // lifetime and must not swallow the rest of the file.
-      const rest = source.slice(i, i + 8);
-      const ch = /^'(?:\\(?:x[0-9a-fA-F]{2}|u\{[0-9a-fA-F]{1,6}\}|.)|[^'\\])'/.exec(rest);
-      if (ch) {
-        blank(i, i + ch[0].length);
-        i += ch[0].length;
-      } else {
-        i += 1;
-      }
-      continue;
-    }
-    i += 1;
-  }
-  return out.join('');
-}
-
-/**
- * Line numbers (0-based) belonging to `#[cfg(test)]` items. Inline test modules
- * are the Rust convention, so counting them against the source budget would
- * measure a well-tested module as a bloated one and quietly push tests out of
- * the file they belong to.
- */
-function rustTestLines(source) {
-  const masked = maskRust(source);
-  const lineOf = [];
-  let line = 0;
-  for (const ch of masked) {
-    lineOf.push(line);
-    if (ch === '\n') line += 1;
-  }
-  const marked = new Set();
-  const attr = /#\[cfg\(test\)\]/g;
-  let match;
-  while ((match = attr.exec(masked)) !== null) {
-    const j = masked.indexOf('{', match.index);
-    if (j === -1) break;
-    let depth = 0;
-    let k = j;
-    for (; k < masked.length; k += 1) {
-      if (masked[k] === '{') depth += 1;
-      else if (masked[k] === '}') {
-        depth -= 1;
-        if (depth === 0) break;
-      }
-    }
-    for (let p = match.index; p <= Math.min(k, masked.length - 1); p += 1) marked.add(lineOf[p]);
-    attr.lastIndex = k;
-  }
-  return marked;
-}
-
 /**
  * One file can be measured against more than one budget. Rust is the only case
  * today: its tests live in the same file by convention, so source and tests are
@@ -296,10 +205,13 @@ function measure(file, content) {
   const budget = budgetFor(file);
   if (!budget) return [];
   if (!file.endsWith('.rs')) {
-    return [{ label: budget.label, max: budget.max, lines: effectiveLineCount(content) }];
+    return [
+      { label: budget.label, max: budget.max, lines: effectiveLineCount(maskFor(file, content)) },
+    ];
   }
-  const testLines = rustTestLines(content);
-  const lines = content.split(/\r?\n/);
+  const masked = maskRust(content);
+  const testLines = rustTestLines(masked);
+  const lines = masked.split(/\r?\n/);
   let source = 0;
   let tests = 0;
   lines.forEach((text, index) => {

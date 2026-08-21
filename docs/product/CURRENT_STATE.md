@@ -1,5 +1,23 @@
 # Current Operational State
 
+- **`PR #511`'s width fix was rebuilt (`nx reset`) and re-exported, and the same export still sheared
+  text off the right edge - a third, distinct cause in the same print pipeline, now also fixed and
+  not yet natively confirmed.** The maintainer's next export showed more than the word-wrap symptom
+  `#511` targeted: "Berlin, Germany" printed as "Berlin, Germa", "2022 - Present" as "2022 - Prese",
+  right across the page - confirmed both by opening the PDF in a real viewer (WPS Office) and by
+  reading the PDF's own clip rectangles and text-run x-positions with `pypdf`, which put a right-aligned
+  date starting at a coordinate that, added to its own width, lands past the page's own clip boundary.
+  Cause: `.cvpreview-viewport` and `.letter-sheet-viewport` - the on-screen scroll frame around
+  `<lib-paginated-sheet>`, giving the editor's page breathing room against the panel behind it - carry
+  `padding: var(--space-4)` (12px), and neither the component stylesheets (view-encapsulated, cannot
+  reach the print seam) nor the global print stylesheet ever addressed either class. `#511` already
+  made `.page-card` measure and paint at the exact width `contentWidthPx()` gives it, but this
+  unaddressed padding still pushed that correctly-sized box 12px right of the margin `NSPrintInfo` had
+  already established - correct on its own left edge, 12px too far on its right - and WKWebView clips
+  at the physical page edge, not at any CSS overflow, so that 12px sliver of every atom's content never
+  made it onto the page. Both wrappers are zeroed for print now (PR #512). **Not verified natively** -
+  the previous fix WAS rebuilt and exported before this was found, but this fix itself has not yet been
+  through the same cycle.
 - **A second, more subtle preview-vs-export text-reflow bug was found and fixed, and it is not yet
   natively confirmed.** A maintainer-provided CV export showed "Design systems", the Skills section's
   last line, wrapping to two lines in the PDF while sitting on one line in the live editor preview -

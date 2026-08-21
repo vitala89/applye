@@ -737,6 +737,9 @@ export const ru: TranslationMap = stub(en, {
     open_cover_letter_document: 'Открыть связанное сопроводительное письмо',
     mark_applied: 'Отметить как «отклик отправлен»',
     applying: 'Готовим документы…',
+    application_saved_ok: 'Заявка сохранена.',
+    retailor_locked:
+      'Отклик отправлен - отправленная версия окончательна, повторная адаптация недоступна.',
     change_status_action: 'Изменить',
     edit_locked_action: 'Редактировать',
     edit_confirm_title: 'Редактировать отклик, который уже в работе?',
@@ -1329,6 +1332,7 @@ export const ru: TranslationMap = stub(en, {
     cv_photo_placement_right: 'Справа',
     cv_preview_action: 'Предпросмотр',
     cv_edit_action: 'Редактировать',
+    locked_badge: 'Отклик отправлен - заблокировано',
     cv_preview_empty:
       'Пока нечего показывать - добавьте содержимое или сгенерируйте базовое резюме.',
     cv_present: 'по настоящее время',

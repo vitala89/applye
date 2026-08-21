@@ -342,10 +342,12 @@ export class JobsComponent implements OnInit, OnDestroy {
     };
   }
 
-  /** Mark as Applied, then leave for My Jobs - the store does the work and says
-   * whether the job is done with this screen; routing stays here (ADR-0005). */
-  async markApplied(): Promise<void> {
-    if (await this.actions.markApplied()) await this.router.navigate(['/jobs']);
+  /** Create Application, then leave for My Jobs - the store does the work and
+   * says whether the job is done with this screen; routing stays here
+   * (ADR-0005). Apply itself is a separate, unrouted action - see
+   * `JobActionsStore.applyNow`, bound directly from the template. */
+  async createApplication(): Promise<void> {
+    if (await this.actions.createApplication()) await this.router.navigate(['/jobs']);
   }
 
   /** Same shape: the store deletes, the page leaves a screen with no job. */

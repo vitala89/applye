@@ -140,7 +140,7 @@ import {
               class="btn btn--primary btn--md"
               type="button"
               [disabled]="busy()"
-              (click)="markApplied.emit()"
+              (click)="createApplication.emit()"
             >
               <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
               {{ busy() ? t()('jobs.wizard.applying') : t()('jobs.wizard.create_application') }}
@@ -218,7 +218,10 @@ export class ApplyWizard {
   readonly closeWizard = output<void>();
   /** Abandon this job's tailoring entirely (the parent confirms first). */
   readonly discard = output<void>();
-  readonly markApplied = output<void>();
+  /** "Create Application" - saves the application and commits documents.
+   * Deliberately not "apply": the user presses Apply themselves, once, on the
+   * job summary screen after actually submitting the employer's form (`P1`). */
+  readonly createApplication = output<void>();
   /** Commit the re-tailored resume for a job that already has a status
    * (applied/interview/…) - persists the updated score and confirms. */
   readonly updateApplication = output<void>();

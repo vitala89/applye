@@ -185,7 +185,14 @@ import {
               <lucide-icon [img]="icons().checkCircle" [size]="12" aria-hidden="true" />
               {{ t()('jobs.wizard.tailored_badge') }}
             </span>
-            <button class="btn btn--secondary btn--md" type="button" (click)="tailorApply.emit()">
+            <button
+              class="btn btn--secondary btn--md"
+              type="button"
+              [disabled]="retailorLocked()"
+              [title]="retailorLocked() ? t()('jobs.retailor_locked') : ''"
+              [attr.aria-label]="retailorLocked() ? t()('jobs.retailor_locked') : null"
+              (click)="tailorApply.emit()"
+            >
               <lucide-icon [img]="icons().wand" [size]="15" aria-hidden="true" />
               {{ t()('jobs.retailor_cta') }}
             </button>
@@ -213,6 +220,9 @@ export class ScoringView {
   /** True once the CV has been tailored for this job - flips the CTA to a
    * Tailored badge + Retailor button. */
   readonly tailored = input<boolean>(false);
+  /** True once the application has left 'saved' - the version that was sent
+   * is final, so Retailor is disabled rather than hidden (`P2`). */
+  readonly retailorLocked = input<boolean>(false);
 
   readonly tailorApply = output<void>();
 

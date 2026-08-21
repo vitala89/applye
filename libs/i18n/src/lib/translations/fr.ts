@@ -744,6 +744,9 @@ export const fr: TranslationMap = stub(en, {
     open_cover_letter_document: 'Ouvrir la lettre de motivation liée',
     mark_applied: 'Marquer comme candidature envoyée',
     applying: 'Préparation des documents…',
+    application_saved_ok: 'Candidature enregistrée.',
+    retailor_locked:
+      'Candidature envoyée - la version envoyée est définitive et ne peut plus être réadaptée.',
     change_status_action: 'Modifier',
     edit_locked_action: 'Modifier',
     edit_confirm_title: 'Modifier une candidature déjà engagée ?',
@@ -1340,6 +1343,7 @@ export const fr: TranslationMap = stub(en, {
     cv_photo_placement_right: 'Droite',
     cv_preview_action: 'Aperçu',
     cv_edit_action: 'Modifier',
+    locked_badge: 'Candidature envoyée - verrouillé',
     cv_preview_empty:
       "Rien à prévisualiser pour l'instant - ajoutez du contenu ou générez un CV de base.",
     cv_present: "Aujourd'hui",

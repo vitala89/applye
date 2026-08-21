@@ -68,21 +68,22 @@ export class JobActionsStore {
   }
 
   /**
-   * Mark as Applied - reuses the SAME status-transition command the pipeline
-   * kanban's drag-and-drop uses (`db_set_application_status`): it writes
-   * `status_history` and computes `follow_up_at` deterministically from
-   * `settings.followup_days_after_apply` in SQL, 0 AI tokens. No date math is
-   * duplicated here.
+   * "Create Application" - ensures the application row exists and commits
+   * whatever CV / cover letter the tailoring produced. Deliberately does not
+   * flip `status`: creating an application is not applying to it (`P1`).
    *
-   * Returns whether the caller should send the user back to My Jobs; re-entering
-   * the job then shows its Applied + Tailored state.
+   * Returns whether the caller should send the user back to My Jobs;
+   * re-entering the job then shows its saved + Tailored state, with Apply
+   * available.
    */
-  async markApplied(): Promise<boolean> {
+  async createApplication(): Promise<boolean> {
     const id = this.detail.job()?.id;
     if (!id) return false;
-    // The commit generates any missing CV / cover letter, refreshes a stale one
-    // and writes both into the library, even after a portal application.
-    const updated = await this.svc.markApplied(
+    // The commit generates any missing CV, refreshes a stale one and writes
+    // it into the library, even after a portal application. A missing cover
+    // letter is left alone - the user's own Generate step writes that one
+    // (`B12`).
+    const updated = await this.svc.createApplication(
       () => this.docs.ensureApplicationDraft(),
       () => this.docs.commit(this.tailoring.finalCvMd(), true),
     );
@@ -92,6 +93,22 @@ export class JobActionsStore {
     this.nav.forget(id);
     this.passDrafts.clear(id);
     return true;
+  }
+
+  /**
+   * "Apply" - the user's own self-report, pressed after they have actually
+   * submitted the employer's form on the employer's site (`P1`). Writes no
+   * documents, only the status transition, and it is terminal (`P2`):
+   * `jobLocked` reads `true` immediately after, which closes editing and
+   * disables Retailor.
+   */
+  async applyNow(): Promise<void> {
+    const job = this.detail.job();
+    const app = this.detail.application();
+    if (!job?.id || !app?.id) return;
+    const updated = await this.svc.apply(app.id, job.id);
+    if (!updated) return;
+    this.detail.application.set(updated);
   }
 
   /** "Cancel" - drops the override and discards the in-progress description edit

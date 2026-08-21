@@ -22,7 +22,8 @@ describe('JobActionsStore', () => {
   let busy: ReturnType<typeof signal<boolean>>;
   let wizardOpen: ReturnType<typeof signal<boolean>>;
   let saveResult: Application | null;
-  let markAppliedResult: Application | null;
+  let createApplicationResult: Application | null;
+  let applyResult: Application | null;
   let removeResult: boolean;
   let discardResult: boolean;
   let committed: string[];
@@ -39,7 +40,8 @@ describe('JobActionsStore', () => {
     busy = signal(false);
     wizardOpen = signal(true);
     saveResult = { id: 9, status: 'saved' } as Application;
-    markAppliedResult = { id: 9, status: 'applied' } as Application;
+    createApplicationResult = { id: 9, status: 'saved' } as Application;
+    applyResult = { id: 9, status: 'applied' } as Application;
     removeResult = true;
     discardResult = true;
     committed = [];
@@ -63,11 +65,15 @@ describe('JobActionsStore', () => {
               calls.push(`save:${id}`);
               return Promise.resolve(saveResult);
             },
-            markApplied: async (ensure: () => Promise<void>, commit: () => Promise<void>) => {
-              calls.push('markApplied');
+            createApplication: async (ensure: () => Promise<void>, commit: () => Promise<void>) => {
+              calls.push('createApplication');
               await ensure();
               await commit();
-              return markAppliedResult;
+              return createApplicationResult;
+            },
+            apply: (id: number, jobId: number) => {
+              calls.push(`apply:${id}:${jobId}`);
+              return Promise.resolve(applyResult);
             },
             remove: (id: number) => {
               calls.push(`remove:${id}`);
@@ -170,24 +176,51 @@ describe('JobActionsStore', () => {
     });
   });
 
-  describe('markApplied', () => {
+  describe('createApplication', () => {
     it('commits the tailored CV, unlocks editing, and asks the caller to leave', async () => {
-      const leave = await store.markApplied();
+      const leave = await store.createApplication();
 
       expect(leave).toBe(true);
-      expect(calls).toEqual(['markApplied', 'ensureDraft', 'forget:3']);
+      expect(calls).toEqual(['createApplication', 'ensureDraft', 'forget:3']);
       expect(committed).toEqual(['the tailored CV']);
-      expect(application()).toEqual({ id: 9, status: 'applied' });
+      expect(application()).toEqual({ id: 9, status: 'saved' });
       expect(editingLocked()).toBe(false);
     });
 
-    // The navigation is the page's, so a failed transition must not report a
-    // move the user should make - it would leave a job that is still 'saved'.
-    it('does not ask the caller to leave when the transition failed', async () => {
-      markAppliedResult = null;
+    // The navigation is the page's, so a failed write must not report a move
+    // the user should make - it would leave a job with no application at all.
+    it('does not ask the caller to leave when the write failed', async () => {
+      createApplicationResult = null;
 
-      expect(await store.markApplied()).toBe(false);
+      expect(await store.createApplication()).toBe(false);
       expect(editingLocked()).toBe(true);
+    });
+  });
+
+  describe('applyNow', () => {
+    it('flips the status and writes no documents', async () => {
+      application.set({ id: 9, status: 'saved' } as Application);
+
+      await store.applyNow();
+
+      expect(calls).toEqual(['apply:9:3']);
+      expect(committed).toEqual([]);
+      expect(application()).toEqual({ id: 9, status: 'applied' });
+    });
+
+    it('does nothing without an application to flip', async () => {
+      await store.applyNow();
+
+      expect(calls).toEqual([]);
+    });
+
+    it('leaves the application alone when the write failed', async () => {
+      application.set({ id: 9, status: 'saved' } as Application);
+      applyResult = null;
+
+      await store.applyNow();
+
+      expect(application()).toEqual({ id: 9, status: 'saved' });
     });
   });
 
@@ -314,8 +347,8 @@ describe('JobActionsStore', () => {
       expect(passDrafts.ids(3)).toEqual([]);
     });
 
-    it('on marking the job applied', async () => {
-      await store.markApplied();
+    it('on creating the application', async () => {
+      await store.createApplication();
 
       expect(passDrafts.ids(3)).toEqual([]);
     });
@@ -326,10 +359,10 @@ describe('JobActionsStore', () => {
       expect(passDrafts.ids(3)).toEqual([]);
     });
 
-    it('leaves the pass alone when the transition failed', async () => {
-      markAppliedResult = null;
+    it('leaves the pass alone when the write failed', async () => {
+      createApplicationResult = null;
 
-      await store.markApplied();
+      await store.createApplication();
 
       expect(passDrafts.ids(3)).toEqual([11]);
     });

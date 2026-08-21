@@ -56,6 +56,7 @@ describe('CvDetailComponent personal-details top card visibility', () => {
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest.fn().mockResolvedValue([]),
       documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
     };
 
@@ -225,6 +226,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest.fn().mockResolvedValue([]),
       documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
     };
 
@@ -338,6 +340,7 @@ describe('CvDetailComponent export/print hardening', () => {
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest.fn().mockResolvedValue([]),
       // The Export action saves before it exports, so this describe needs the
       // write its siblings already stub.
       documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
@@ -447,6 +450,7 @@ describe('CvDetailComponent back navigation', () => {
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest.fn().mockResolvedValue([]),
     };
     const navigate = jest.fn();
 
@@ -496,5 +500,74 @@ describe('CvDetailComponent back navigation', () => {
     const { component, navigate } = await setup({});
     component.back();
     expect(navigate).toHaveBeenCalledWith(['/documents']);
+  });
+});
+
+describe('CvDetailComponent applied lock (P2)', () => {
+  async function setup(linkedApp: Record<string, unknown> | null) {
+    const docItem = {
+      id: 1,
+      docType: 'cv' as const,
+      source: 'generated' as const,
+      isDefault: false,
+      regionTag: 'generic',
+      styleJson: JSON.stringify(CV_STYLE_DEFAULT),
+      contentJson: JSON.stringify({ sections: [] }),
+    };
+    const dbStub: Partial<ProfileSettingsGateway> = {
+      documentLibraryGet: jest.fn().mockResolvedValue(docItem),
+      cvTemplatesList: jest.fn().mockResolvedValue([]),
+      getProfile: jest.fn().mockResolvedValue(null),
+      checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest
+        .fn()
+        .mockResolvedValue(linkedApp ? [{ cvDocumentId: 1, ...linkedApp }] : []),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [CvDetailComponent],
+      providers: [
+        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: JobsGateway, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
+        { provide: AiService, useValue: {} },
+        TranslateService,
+        ToastService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => '1' }, queryParamMap: { get: () => null } },
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(CvDetailComponent);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('stays editable while the linking application is still saved', async () => {
+    const fixture = await setup({ status: 'saved' });
+
+    expect(fixture.componentInstance.locked()).toBe(false);
+    expect(fixture.componentInstance.previewMode()).toBe(false);
+  });
+
+  it('forces Preview and hides Edit once the application has left saved', async () => {
+    const fixture = await setup({ status: 'applied' });
+
+    expect(fixture.componentInstance.locked()).toBe(true);
+    expect(fixture.componentInstance.previewMode()).toBe(true);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain(fixture.componentInstance['t']()('documents.locked_badge'));
+  });
+
+  it('stays editable when no application links this document at all', async () => {
+    const fixture = await setup(null);
+
+    expect(fixture.componentInstance.locked()).toBe(false);
   });
 });

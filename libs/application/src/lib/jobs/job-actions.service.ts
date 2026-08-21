@@ -28,11 +28,12 @@ export class JobActionsService {
   /** Writable so the page can alias them onto the template. */
   readonly busy = signal(false);
   /**
-   * Set only while Mark as Applied runs, so the button can say what is
-   * happening. `busy` alone cannot: saving a lead raises it too, and the two
-   * take very different amounts of time - committing the documents generates
-   * whatever the application is missing, which can run for minutes against the
-   * configured provider. A dead button for that long reads as a hang.
+   * Set only while Create/Update Application runs, so the button can say what
+   * is happening. `busy` alone cannot: saving a lead raises it too, and the
+   * two take very different amounts of time - committing the documents
+   * generates whatever the application is missing, which can run for minutes
+   * against the configured provider. A dead button for that long reads as a
+   * hang.
    */
   readonly applying = signal(false);
   readonly message = signal('');
@@ -81,27 +82,26 @@ export class JobActionsService {
   }
 
   /**
-   * Record that the user applied. Distinct from `save`, which tracks a lead:
-   * this one shows on the Pipeline board.
+   * Create (or update) the application: ensure its row exists and commit
+   * whatever CV / cover letter the tailoring produced. Deliberately does
+   * **not** touch `status` - creating an application is not applying to it
+   * (`P1`); the user presses `apply` themselves, after they have actually
+   * submitted the employer's form on the employer's site.
    *
-   * `commitDocuments` runs **before** the status flips, and its failure aborts
-   * the whole thing. A job marked applied must already own its CV and cover
-   * letter, or the user is applied to a job with nothing attached to it. The
-   * page owns that step because it reads the tailoring on screen.
+   * `ensureApplication` is the page's draft hook, and this service
+   * deliberately writes no application row of its own. A row written here
+   * would not reach the signal the page holds, so the first step of
+   * `commitDocuments` to ask for a draft would find none and write a
+   * **second** row for the same job - the status then lands on one of them
+   * and the other is orphaned.
    *
-   * `ensureApplication` is the page's draft hook, and this service deliberately
-   * writes no application row of its own. A row written here would not reach
-   * the signal the page holds, so the first step of `commitDocuments` to ask
-   * for a draft would find none and write a **second** row for the same job -
-   * the status then lands on one of them and the other is orphaned.
-   *
-   * Returns the application as the database recorded it, or null when the write
-   * failed or another action was already running. On success `busy` is
-   * deliberately left set, the same rule `remove` follows: the caller navigates
-   * away, and clearing it first puts a live button back on screen for the frame
-   * before the route changes.
+   * Returns the application as the database recorded it, or null when the
+   * write failed or another action was already running. On success `busy` is
+   * deliberately left set, the same rule `remove` follows: the caller
+   * navigates away, and clearing it first puts a live button back on screen
+   * for the frame before the route changes.
    */
-  async markApplied(
+  async createApplication(
     ensureApplication: () => Promise<Application>,
     commitDocuments: () => Promise<void>,
   ): Promise<Application | null> {
@@ -112,17 +112,42 @@ export class JobActionsService {
     try {
       const app = await ensureApplication();
       await commitDocuments();
-      const updated = await this.db.setApplicationStatus(app.id as number, 'applied');
-      // Mirror the status the DB actually recorded, not the literal we asked
-      // for - the DB is the single source of truth for the overview row.
-      this.jobsStore.patchOverviewRow(app.jobId, { status: updated.status });
-      this.toast.success(this.t()('jobs.applied_ok'));
-      return updated;
+      this.toast.success(this.t()('jobs.application_saved_ok'));
+      return app;
     } catch (e) {
       this.fail(e);
       this.busy.set(false);
       this.applying.set(false);
       return null;
+    }
+  }
+
+  /**
+   * Record that the user applied - a self-report, pressed after they have
+   * actually submitted the employer's form on the employer's site (`P1`).
+   * Distinct from `createApplication`: this writes no documents, only the
+   * status transition, and is terminal (`P2`) - the caller is expected to
+   * disable Retailor and lock editing once it lands.
+   *
+   * Returns the application as the database recorded it, or null when the
+   * write failed or another action was already running.
+   */
+  async apply(applicationId: number, jobId: number): Promise<Application | null> {
+    if (this.busy()) return null;
+    this.busy.set(true);
+    this.message.set('');
+    try {
+      const updated = await this.db.setApplicationStatus(applicationId, 'applied');
+      // Mirror the status the DB actually recorded, not the literal we asked
+      // for - the DB is the single source of truth for the overview row.
+      this.jobsStore.patchOverviewRow(jobId, { status: updated.status });
+      this.toast.success(this.t()('jobs.applied_ok'));
+      return updated;
+    } catch (e) {
+      this.fail(e);
+      return null;
+    } finally {
+      this.busy.set(false);
     }
   }
 

@@ -734,6 +734,9 @@ export const uk: TranslationMap = stub(en, {
     open_cover_letter_document: "Відкрити пов'язаний супровідний лист",
     mark_applied: 'Позначити як «відгук надіслано»',
     applying: 'Готуємо документи…',
+    application_saved_ok: 'Заявку збережено.',
+    retailor_locked:
+      'Відгук надіслано - надіслана версія остаточна, повторне доопрацювання недоступне.',
     change_status_action: 'Змінити',
     edit_locked_action: 'Редагувати',
     edit_confirm_title: 'Редагувати відгук, який уже в роботі?',
@@ -1325,6 +1328,7 @@ export const uk: TranslationMap = stub(en, {
     cv_photo_placement_right: 'Праворуч',
     cv_preview_action: 'Попередній перегляд',
     cv_edit_action: 'Редагувати',
+    locked_badge: 'Відгук надіслано - заблоковано',
     cv_preview_empty: 'Поки нічого показувати - додайте вміст або згенеруйте базове резюме.',
     cv_present: 'дотепер',
     cv_theme_label: 'Тема',

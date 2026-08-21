@@ -14,7 +14,7 @@
       <button
         class="btn btn--primary btn--md"
         [disabled]="jobActions.busy()"
-        (click)="markAppliedRequested.emit()"
+        (click)="applyRequested.emit()"
       >
         {{ t()(jobActions.applying() ? 'jobs.applying' : 'jobs.mark_applied') }}
       </button>

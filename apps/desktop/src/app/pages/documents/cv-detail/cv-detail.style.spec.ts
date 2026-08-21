@@ -29,6 +29,7 @@ describe('CvDetailComponent per-section style', () => {
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest.fn().mockResolvedValue([]),
     };
 
     await TestBed.configureTestingModule({

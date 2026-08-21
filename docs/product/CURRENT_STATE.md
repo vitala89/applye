@@ -1,5 +1,18 @@
 # Current Operational State
 
+- **`B4` is confirmed natively, and `P1`/`P2`/`B12` are implemented as one change.** Exporting the same
+  two-page CV from both the Documents-list button and the editor's Export button, in one running
+  session, produced identical `/MediaBox`, clip box and text scale - the margin fix holds. Separately:
+  `JobActionsStore.markApplied` split into `createApplication` (saves, commits documents, never writes
+  `status`) and `applyNow` (writes only the status transition); the wizard's "Create Application" no
+  longer applies the job, and the summary screen's existing Mark-Applied button is now the one Apply
+  control. `decideCoverLetterAction` no longer auto-creates an unlinked cover letter (`B12`) - a skipped
+  document stays skipped. Retailor is disabled with an explanation once an application leaves `saved`,
+  and both document editors gained a `DocumentApplicationLockService` that forces Preview and hides
+  editing once their linked application is past `saved`, regardless of how the editor was opened.
+  **Not verified natively** - the read-only editor mode and the disabled Retailor need a native pass.
+  `B2`, `B6` and `B10` were confirmed by the maintainer on 2026-08-21; `B4`'s native confirmation is
+  recorded in `NATIVE_GATE_BACKLOG.md`.
 - **`B10` is fixed in three places, and `B9` was looked for and not found.** The spinner wandered
   because the animation sits on the `<lucide-icon>` wrapper, which is a line box reserving about
   **1.84px** of descender space - a mechanism `_button.scss` had already measured for buttons - so a

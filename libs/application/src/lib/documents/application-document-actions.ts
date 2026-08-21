@@ -62,16 +62,17 @@ export async function decideCvAction(input: {
 }
 
 /**
- * The cover letter rule. Unlike the CV it has no tailoring precondition - it is
- * built from the profile and the job description, both of which exist by the
- * time an application can be committed - so a missing one is always created.
+ * The cover letter rule. A missing cover letter is never created by a commit -
+ * only the user's own "Generate cover letter" writes one. A document the user
+ * deliberately skipped in Review stays skipped (`B12`): committing an
+ * application must not spend tokens and minutes on something declined.
  */
 export async function decideCoverLetterAction(input: {
   linked: boolean;
   regenerateStale: boolean;
   isStale: () => Promise<boolean>;
 }): Promise<DocumentAction> {
-  if (!input.linked) return 'create';
+  if (!input.linked) return 'keep';
   if (!input.regenerateStale) return 'keep';
   return (await input.isStale()) ? 'regenerate' : 'keep';
 }

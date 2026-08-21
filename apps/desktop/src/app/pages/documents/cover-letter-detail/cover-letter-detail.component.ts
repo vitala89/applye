@@ -10,6 +10,7 @@ import {
   CoverLetterNoProfileError,
   CoverLetterStyleStore,
   CoverLetterTextField,
+  DocumentApplicationLockService,
   DocumentExportService,
   paragraphStyleKey,
 } from '@applye/application';
@@ -64,6 +65,7 @@ const COVER_LETTER_BACK_KEYS: BackLabelKeys = {
     CoverLetterDocumentStore,
     CoverLetterAiStore,
     DocumentExportService,
+    DocumentApplicationLockService,
   ],
 })
 export class CoverLetterDetailComponent {
@@ -95,6 +97,10 @@ export class CoverLetterDetailComponent {
    * them (ADR-0005, amendment three). */
   protected readonly docs = inject(CoverLetterDocumentStore);
   private readonly exportSvc = inject(DocumentExportService);
+  /** True once this letter is linked to an application that has left 'saved'
+   * - applied is terminal (`P2`). */
+  private readonly lock = inject(DocumentApplicationLockService);
+  readonly locked = this.lock.locked;
 
   /** Read-only aliases onto the document store, for the same reason as the
    * content aliases below: the template is over budget and prefixing its
@@ -160,7 +166,8 @@ export class CoverLetterDetailComponent {
   }
 
   async load(): Promise<void> {
-    await this.docs.load(Number(this.route.snapshot.paramMap.get('id')));
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    await this.docs.load(id);
     if (this.loadError()) return;
     // Opened from the apply wizard's "Review letter": show the rendered result
     // first, not the raw editor. The user can toggle to Edit. Route state, so
@@ -168,6 +175,10 @@ export class CoverLetterDetailComponent {
     if (this.route.snapshot.queryParamMap.get('preview') === '1') {
       this.previewMode.set(true);
     }
+    await this.lock.check('cover_letter', id);
+    // Applied is terminal (`P2`): force Preview and keep it there regardless
+    // of how the editor was entered.
+    if (this.locked()) this.previewMode.set(true);
   }
 
   back(): void {

@@ -22,6 +22,7 @@
         [ngModel]="label()"
         (ngModelChange)="label.set($event)"
         [placeholder]="t()('documents.cover_letter_untitled')"
+        [readonly]="locked()"
       />
       <div class="coverdetail__spacer"></div>
 
@@ -38,19 +39,25 @@
         <strong>{{ wordCount() }}</strong>
       </span>
 
-      <button
-        appButton
-        [variant]="previewMode() ? 'primary' : 'secondary'"
-        size="sm"
-        (click)="previewMode.set(!previewMode())"
-      >
-        <lucide-icon
-          [img]="previewMode() ? icons.edit : icons.preview"
-          [size]="14"
-          aria-hidden="true"
-        />
-        {{ previewMode() ? t()('documents.cv_edit_action') : t()('documents.cv_preview_action') }}
-      </button>
+      @if (locked()) {
+        <span class="badge" [title]="t()('jobs.retailor_locked')">{{
+          t()('documents.locked_badge')
+        }}</span>
+      } @else {
+        <button
+          appButton
+          [variant]="previewMode() ? 'primary' : 'secondary'"
+          size="sm"
+          (click)="previewMode.set(!previewMode())"
+        >
+          <lucide-icon
+            [img]="previewMode() ? icons.edit : icons.preview"
+            [size]="14"
+            aria-hidden="true"
+          />
+          {{ previewMode() ? t()('documents.cv_edit_action') : t()('documents.cv_preview_action') }}
+        </button>
+      }
 
       @if (previewMode()) {
         <button appButton variant="primary" size="sm" (click)="exportPdfWysiwyg()">
@@ -58,36 +65,43 @@
         </button>
       }
 
-      <button
-        appButton
-        variant="secondary"
-        size="sm"
-        class="draft-accent"
-        [disabled]="drafting() || regeneratingBlock() !== null"
-        (click)="draftWithAI()"
-      >
-        <lucide-icon [img]="icons.draft" [size]="14" [class.spin]="drafting()" aria-hidden="true" />
-        {{
-          drafting()
-            ? t()('documents.cover_letter_drafting')
-            : t()('documents.cover_letter_draft_ai')
-        }}
-      </button>
+      @if (!locked()) {
+        <button
+          appButton
+          variant="secondary"
+          size="sm"
+          class="draft-accent"
+          [disabled]="drafting() || regeneratingBlock() !== null"
+          (click)="draftWithAI()"
+        >
+          <lucide-icon
+            [img]="icons.draft"
+            [size]="14"
+            [class.spin]="drafting()"
+            aria-hidden="true"
+          />
+          {{
+            drafting()
+              ? t()('documents.cover_letter_drafting')
+              : t()('documents.cover_letter_draft_ai')
+          }}
+        </button>
 
-      <button
-        appButton
-        variant="primary"
-        size="sm"
-        [disabled]="saving() || justSaved()"
-        (click)="save()"
-      >
-        <lucide-icon
-          [img]="justSaved() ? icons.check : icons.save"
-          [size]="14"
-          aria-hidden="true"
-        />
-        {{ justSaved() ? 'Saved' : saving() ? t()('common.loading') : t()('actions.save') }}
-      </button>
+        <button
+          appButton
+          variant="primary"
+          size="sm"
+          [disabled]="saving() || justSaved()"
+          (click)="save()"
+        >
+          <lucide-icon
+            [img]="justSaved() ? icons.check : icons.save"
+            [size]="14"
+            aria-hidden="true"
+          />
+          {{ justSaved() ? 'Saved' : saving() ? t()('common.loading') : t()('actions.save') }}
+        </button>
+      }
     </header>
 
     <div class="coverdetail__body">

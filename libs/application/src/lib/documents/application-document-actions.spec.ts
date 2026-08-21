@@ -138,14 +138,25 @@ describe('decideCoverLetterAction', () => {
     staleCalls = 0;
   });
 
-  it('always creates a missing cover letter, with no tailoring precondition', async () => {
+  it('never creates a missing cover letter - a skipped document stays skipped (B12)', async () => {
     const action = await decideCoverLetterAction({
       linked: false,
       regenerateStale: false,
       isStale: stale(false),
     });
 
-    expect(action).toBe('create');
+    expect(action).toBe('keep');
+    expect(staleCalls).toBe(0);
+  });
+
+  it('does not generate one even when the caller asked to refresh stale documents', async () => {
+    const action = await decideCoverLetterAction({
+      linked: false,
+      regenerateStale: true,
+      isStale: stale(false),
+    });
+
+    expect(action).toBe('keep');
     expect(staleCalls).toBe(0);
   });
 

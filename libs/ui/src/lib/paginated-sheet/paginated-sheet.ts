@@ -74,9 +74,34 @@ export class PaginatedSheetComponent implements AfterViewInit, OnDestroy {
     return Math.max(1, g.pageWidthPx - g.marginLeftPx - g.marginRightPx);
   });
 
+  /**
+   * Headroom subtracted from every page's usable height, on top of its
+   * margins. Pagination runs once, on the editor's own on-screen layout,
+   * *before* the print pass ever starts (`awaitPrintSettle` marks the print
+   * class only after settling) - so a card is packed to fit a height measured
+   * under normal CSS, then handed to WKWebView's print layout, which can
+   * legally come out a few points taller for the same content (the same class
+   * of on-screen-vs-print divergence `contentWidthPx` exists to close for
+   * width, measured at 10-13pt in practice). A page-card that comes out even
+   * fractionally too tall forces the browser to break inside a box marked
+   * `break-inside: avoid` - and the observed failure there is not a quietly
+   * shifted page break, it is the box's own last atom (a section title glued
+   * to content the paginator judged fit) printing twice: once, incomplete, at
+   * the foot of the page that overflowed, and again in full at the top of the
+   * next. This margin exists so a card is never packed close enough to that
+   * edge for the print pass's own layout to cross it.
+   */
+  private static readonly PRINT_HEIGHT_SAFETY_MARGIN_PX = 16;
+
   private readonly usableH = computed(() => {
     const g = this.geometry();
-    return Math.max(1, g.pageHeightPx - g.marginTopPx - g.marginBottomPx);
+    return Math.max(
+      1,
+      g.pageHeightPx -
+        g.marginTopPx -
+        g.marginBottomPx -
+        PaginatedSheetComponent.PRINT_HEIGHT_SAFETY_MARGIN_PX,
+    );
   });
 
   /** Pages as ordered atom-index arrays. */

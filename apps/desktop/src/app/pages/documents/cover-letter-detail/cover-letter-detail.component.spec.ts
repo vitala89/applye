@@ -15,6 +15,7 @@ describe('CoverLetterDetailComponent preview atoms', () => {
     const dbStub: Partial<ProfileSettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest.fn().mockResolvedValue([]),
     };
 
     await TestBed.configureTestingModule({
@@ -110,6 +111,7 @@ describe('CoverLetterDetailComponent back navigation', () => {
     const dbStub: Partial<ProfileSettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest.fn().mockResolvedValue([]),
     };
     const navigate = jest.fn();
 
@@ -158,5 +160,73 @@ describe('CoverLetterDetailComponent back navigation', () => {
     const { component, navigate } = await setup({});
     component.back();
     expect(navigate).toHaveBeenCalledWith(['/documents'], { queryParams: { tab: 'cover-letter' } });
+  });
+});
+
+describe('CoverLetterDetailComponent applied lock (P2)', () => {
+  const docItem = {
+    id: 1,
+    docType: 'cover_letter' as const,
+    source: 'manual' as const,
+    isDefault: false,
+    contentJson: JSON.stringify({
+      address: {},
+      date: '',
+      subject: '',
+      greeting: '',
+      bodyParagraphs: [''],
+      closing: '',
+      signature: '',
+    }),
+    styleJson: JSON.stringify({ fontSizePt: 13 }),
+  };
+
+  async function setup(linkedApp: Record<string, unknown> | null) {
+    const dbStub: Partial<ProfileSettingsGateway> = {
+      documentLibraryGet: jest.fn().mockResolvedValue(docItem),
+      checkStyleSafety: jest.fn().mockResolvedValue([]),
+      listApplications: jest
+        .fn()
+        .mockResolvedValue(linkedApp ? [{ coverLetterDocumentId: 1, ...linkedApp }] : []),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [CoverLetterDetailComponent],
+      providers: [
+        { provide: JobsGateway, useValue: dbStub },
+        { provide: DocumentsGateway, useValue: dbStub },
+        { provide: AiService, useValue: {} },
+        TranslateService,
+        ToastService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => '1' }, queryParamMap: { get: () => null } },
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(CoverLetterDetailComponent);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('stays editable while the linking application is still saved', async () => {
+    const fixture = await setup({ status: 'saved' });
+
+    expect(fixture.componentInstance.locked()).toBe(false);
+    expect(fixture.componentInstance.previewMode()).toBe(false);
+  });
+
+  it('forces Preview and hides Edit once the application has left saved', async () => {
+    const fixture = await setup({ status: 'applied' });
+
+    expect(fixture.componentInstance.locked()).toBe(true);
+    expect(fixture.componentInstance.previewMode()).toBe(true);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain(fixture.componentInstance['t']()('documents.locked_badge'));
   });
 });

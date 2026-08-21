@@ -41,6 +41,7 @@ import {
   CvPhotoStore,
   CvRegenerationStore,
   CvStyleStore,
+  DocumentApplicationLockService,
   DocumentExportService,
   isCvSectionLocked,
 } from '@applye/application';
@@ -109,6 +110,7 @@ const CV_BACK_KEYS: BackLabelKeys = {
     CvRegenerationStore,
     CvDetailPageStore,
     DocumentExportService,
+    DocumentApplicationLockService,
   ],
 })
 export class CvDetailComponent {
@@ -194,6 +196,9 @@ export class CvDetailComponent {
    * which reads and writes these signals directly. */
   private readonly page = inject(CvDetailPageStore);
   private readonly exportSvc = inject(DocumentExportService);
+  /** Locked once linked to an application past 'saved' - applied is terminal (`P2`). */
+  private readonly lock = inject(DocumentApplicationLockService);
+  readonly locked = this.lock.locked;
   readonly livePanelOpen = this.page.livePanelOpen;
   readonly liveSelection = this.page.liveSelection;
   readonly previewMode = this.page.previewMode;
@@ -309,7 +314,10 @@ export class CvDetailComponent {
     if (this.route.snapshot.queryParamMap.get('preview') === '1') {
       this.previewMode.set(true);
     }
-    await this.document.load(Number(this.route.snapshot.paramMap.get('id')));
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    await this.document.load(id);
+    await this.lock.check('cv', id);
+    if (this.locked()) this.previewMode.set(true);
   }
 
   back(): void {

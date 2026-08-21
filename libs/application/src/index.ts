@@ -20,6 +20,7 @@ export * from './lib/documents/cv-gap-dialog.service';
 export * from './lib/documents/cover-letter-draft.service';
 export * from './lib/documents/cover-letter-response';
 export * from './lib/documents/doc-card-status';
+export * from './lib/documents/document-application-lock.service';
 export * from './lib/documents/document-export.service';
 export * from './lib/documents/document-gen.service';
 export * from './lib/documents/export-filename';

@@ -729,6 +729,9 @@ export const de: TranslationMap = {
     open_cover_letter_document: 'Verknüpftes Anschreiben öffnen',
     mark_applied: 'Als beworben markieren',
     applying: 'Dokumente werden vorbereitet…',
+    application_saved_ok: 'Bewerbung gespeichert.',
+    retailor_locked:
+      'Beworben - die gesendete Version ist endgültig und kann nicht erneut angepasst werden.',
     change_status_action: 'Ändern',
     edit_locked_action: 'Bearbeiten',
     edit_confirm_title: 'Eine laufende Bewerbung bearbeiten?',
@@ -1329,6 +1332,7 @@ export const de: TranslationMap = {
     cv_photo_placement_right: 'Rechts',
     cv_preview_action: 'Vorschau',
     cv_edit_action: 'Bearbeiten',
+    locked_badge: 'Beworben - gesperrt',
     cv_preview_empty:
       'Noch nichts zum Anzeigen - füge Inhalte hinzu oder erstelle eine Basisversion.',
     cv_present: 'Heute',

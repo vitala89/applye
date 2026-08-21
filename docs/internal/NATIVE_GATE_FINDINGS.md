@@ -342,6 +342,14 @@ with this one.
 with the editor. They should break in the same place, the two buttons should produce the same file,
 and no text should be missing from the end of page one.
 
+**Confirmed natively, 2026-08-21.** Exported the same two-page tailored CV from both buttons in one
+running session and read the resulting files: identical `/MediaBox 0 0 595 842`, identical clip box
+`56.69292 56.69292 481 728` on every page (20mm on all sides, matching the Style card), identical text
+scale `0.8000236`. Both files are 2 pages. `B4` is closed. One loose end found while checking: the
+editor's Export button still opens the native macOS print sheet rather than the direct save dialog the
+Documents-list button uses - a UI difference from what this entry describes, though the exported
+geometry is exact from either path.
+
 **B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
 On the exported page two, `EDUCATION` starts at the left margin with its rule running the full
 width, and `LANGUAGES` directly below it starts roughly a third of the way in, with a rule that stops
@@ -570,6 +578,24 @@ which is what the CV path already does.
 model is answering with something that is not the JSON asked for and the skill is the place to look.
 
 ### Behaviour the maintainer wants changed
+
+**P1/P2/B12. FIXED 2026-08-21, as one change.** `JobActionsService.markApplied` split in two:
+`createApplication` (ensures the row, commits documents, never writes `status`) and `apply` (writes
+only the status transition, no documents). The wizard's "Create Application" button now calls the
+former and leaves the job `saved`; the summary screen's existing `canMarkApplied`-gated button
+(`job-detail-actions`) is repointed at the latter and is the one place "Apply" lives - it was already
+the right slot, just doing too much. `decideCoverLetterAction`'s `!linked` branch now answers `keep`
+instead of `create` (`B12`): a cover letter the user skipped in Review stays skipped, matching the CV
+rule's own precondition. Retailor (`scoring-view`'s CTA) is disabled with a `title`/`aria-label`
+explanation once `jobLocked` (`status !== 'saved'`) - Retailor was already unreachable in the wizard
+footer for the same jobs, this closes the summary-screen entry point. CV and cover-letter editors gained
+a `DocumentApplicationLockService` (component-scoped, reverse-looks-up `listApplications()` for a match
+on `cvDocumentId`/`coverLetterDocumentId`): once the linked application has left `saved`, the editor
+forces Preview and hides Edit/Save/Draft, regardless of how it was opened - Documents list, My Jobs, or
+the wizard. **Delete was not added to the editor** - it already works from the Documents list regardless
+of lock state, and building a second delete entry point was judged out of scope for this change; flagged
+if the maintainer wants it. **Not verified natively** - the read-only editor mode and the disabled
+Retailor need a native pass, same as everything else print/UI in this file.
 
 **P1. Creating an application must not mark it `applied` by itself.**
 Today the tailor flow's **Create application** step writes the status as `applied` immediately. That

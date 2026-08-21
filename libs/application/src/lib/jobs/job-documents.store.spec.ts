@@ -164,11 +164,11 @@ describe('JobDocumentsStore', () => {
   });
 
   describe('commit', () => {
-    it('creates both documents when neither is linked', async () => {
+    it('creates the CV but not a cover letter the user never generated (B12)', async () => {
       await store.commit('tailored markdown', true);
 
       expect(createdCv).toEqual(['tailored markdown']);
-      expect(createdCoverLetter).toBe(1);
+      expect(createdCoverLetter).toBe(0);
       expect(committed).toEqual(['cv', 'cover_letter']);
     });
 
@@ -205,11 +205,11 @@ describe('JobDocumentsStore', () => {
       await store.commit('', true);
 
       // No tailored source, so the CV is neither rebuilt nor even tested for
-      // staleness. The cover letter has no such precondition: it is missing, so
-      // it is created outright, which also skips the staleness check.
+      // staleness. The cover letter is missing and stays missing (B12): a
+      // commit never generates one on its own.
       expect(staleCalls).toEqual([]);
       expect(createdCv).toEqual([]);
-      expect(createdCoverLetter).toBe(1);
+      expect(createdCoverLetter).toBe(0);
     });
   });
 

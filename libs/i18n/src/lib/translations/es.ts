@@ -742,6 +742,8 @@ export const es: TranslationMap = stub(en, {
     open_cover_letter_document: 'Abrir la carta de presentación vinculada',
     mark_applied: 'Marcar como postulado',
     applying: 'Preparando documentos…',
+    application_saved_ok: 'Solicitud guardada.',
+    retailor_locked: 'Postulado - la versión enviada es definitiva y no se puede volver a adaptar.',
     change_status_action: 'Cambiar',
     edit_locked_action: 'Editar',
     edit_confirm_title: '¿Editar una candidatura que ya está en marcha?',
@@ -1335,6 +1337,7 @@ export const es: TranslationMap = stub(en, {
     cv_photo_placement_right: 'Derecha',
     cv_preview_action: 'Vista previa',
     cv_edit_action: 'Editar',
+    locked_badge: 'Postulado - bloqueado',
     cv_preview_empty:
       'Todavía no hay nada que previsualizar: añade contenido o genera un CV de base.',
     cv_present: 'Actualidad',

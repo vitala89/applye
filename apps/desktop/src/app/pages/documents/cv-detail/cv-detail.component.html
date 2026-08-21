@@ -22,43 +22,52 @@
         [ngModel]="label()"
         (ngModelChange)="label.set($event)"
         [placeholder]="t()('documents.cv_field_label')"
+        [readonly]="locked()"
       />
       <div class="cvdetail__spacer"></div>
-      <button
-        appButton
-        [variant]="previewMode() ? 'primary' : 'secondary'"
-        size="sm"
-        (click)="togglePreview()"
-      >
-        <lucide-icon
-          [img]="previewMode() ? icons.edit : icons.preview"
-          [size]="14"
-          aria-hidden="true"
-        />
-        {{ previewMode() ? t()('documents.cv_edit_action') : t()('documents.cv_preview_action') }}
-      </button>
+      @if (locked()) {
+        <span class="badge" [title]="t()('jobs.retailor_locked')">{{
+          t()('documents.locked_badge')
+        }}</span>
+      } @else {
+        <button
+          appButton
+          [variant]="previewMode() ? 'primary' : 'secondary'"
+          size="sm"
+          (click)="togglePreview()"
+        >
+          <lucide-icon
+            [img]="previewMode() ? icons.edit : icons.preview"
+            [size]="14"
+            aria-hidden="true"
+          />
+          {{ previewMode() ? t()('documents.cv_edit_action') : t()('documents.cv_preview_action') }}
+        </button>
+      }
       @if (previewMode()) {
         <button appButton variant="primary" size="sm" (click)="exportPdfWysiwyg()">
           {{ t()('documents.cv_style_export_pdf_wysiwyg') }}
         </button>
       }
-      <button appButton variant="secondary" size="sm" (click)="openSaveTemplate()">
-        {{ t()('documents.cv_save_as_template_action') }}
-      </button>
-      <button
-        appButton
-        variant="primary"
-        size="sm"
-        [disabled]="saving() || justSaved()"
-        (click)="save()"
-      >
-        <lucide-icon
-          [img]="justSaved() ? icons.check : icons.save"
-          [size]="14"
-          aria-hidden="true"
-        />
-        {{ justSaved() ? 'Saved' : saving() ? t()('common.loading') : t()('actions.save') }}
-      </button>
+      @if (!locked()) {
+        <button appButton variant="secondary" size="sm" (click)="openSaveTemplate()">
+          {{ t()('documents.cv_save_as_template_action') }}
+        </button>
+        <button
+          appButton
+          variant="primary"
+          size="sm"
+          [disabled]="saving() || justSaved()"
+          (click)="save()"
+        >
+          <lucide-icon
+            [img]="justSaved() ? icons.check : icons.save"
+            [size]="14"
+            aria-hidden="true"
+          />
+          {{ justSaved() ? 'Saved' : saving() ? t()('common.loading') : t()('actions.save') }}
+        </button>
+      }
     </header>
 
     <div class="cvdetail__body">

@@ -38,7 +38,7 @@ export class JobDetailActionsComponent {
   readonly isTailored = input(false);
 
   readonly saveRequested = output<void>();
-  readonly markAppliedRequested = output<void>();
+  readonly applyRequested = output<void>();
   readonly deleteRequested = output<void>();
   readonly cvRequested = output<number>();
   readonly coverLetterRequested = output<number>();

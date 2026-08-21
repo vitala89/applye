@@ -169,10 +169,16 @@ The print protocol now lives in one module for both editors, and printing is a n
 exists for: `window.print` is overridden by Tauri's webview plugin on macOS, and jsdom implements
 none of it, so the unit tests stub it out entirely.
 
-- [ ] **Export the CV to PDF from Preview mode.** The margins in the output match the four values in
+- [x] **Export the CV to PDF from Preview mode.** The margins in the output match the four values in
       the Style card, the page is the selected size, and no editor chrome, caret, selection outline or
       side panel appears. Then export a **second** time in the same session: a fresh `<style>` per
-      export would accumulate, and the second export's margins must win.
+      export would accumulate, and the second export's margins must win. **Confirmed 2026-08-21**: a
+      two-page tailored CV exported from both the Documents-list button and the editor's Export button
+      in the same running session produced identical geometry - `/MediaBox 0 0 595 842`, clip box
+      `56.69292 56.69292 481 728` (20mm on all sides, matching the Style card) on every page, and text
+      scale `0.8000236` in both files. The editor's button still raises the native macOS print sheet
+      rather than a direct save dialog - cosmetically different from the Documents-list path, worth a
+      look, but the exported geometry is exact either way.
 - [ ] **Export the cover letter to PDF.** Same check. It now runs the same code as the CV, which it
       did not before.
 - [ ] **Press Cmd/Ctrl+P directly in the CV preview with a leaf selected.** The printed output shows

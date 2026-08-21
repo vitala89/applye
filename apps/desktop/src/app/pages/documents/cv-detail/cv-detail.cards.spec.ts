@@ -66,6 +66,7 @@ describe('CvDetailComponent card wiring', () => {
       }),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
       documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
+      listApplications: jest.fn().mockResolvedValue([]),
     };
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],

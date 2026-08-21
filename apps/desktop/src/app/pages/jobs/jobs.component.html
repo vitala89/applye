@@ -46,7 +46,7 @@
         [canMarkApplied]="actions.canMarkApplied()"
         [isTailored]="isTailored()"
         (saveRequested)="actions.saveJob()"
-        (markAppliedRequested)="markApplied()"
+        (markAppliedRequested)="actions.applyNow()"
         (deleteRequested)="actions.openDeleteConfirm()"
         (cvRequested)="docs.openCv($event)"
         (coverLetterRequested)="docs.openCoverLetter($event)"
@@ -148,6 +148,7 @@
           [job]="job()"
           [icons]="icons"
           [tailored]="isTailored()"
+          [retailorLocked]="actions.jobLocked()"
           (tailorApply)="actions.openWizard()"
         />
       } @else if (actions.applyResult()) {
@@ -178,7 +179,7 @@
           [busy]="tailoring() || updatingScore() || drafts.anyPreparing()"
           (closeWizard)="actions.closeWizard()"
           (discard)="actions.askDiscardTailoring()"
-          (markApplied)="markApplied()"
+          (createApplication)="createApplication()"
           (updateApplication)="actions.updateApplication()"
           (cancelEdit)="actions.cancelEditingLocked()"
           (stepChange)="tailorStore.goToStep($event)"

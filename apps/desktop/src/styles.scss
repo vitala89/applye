@@ -210,11 +210,23 @@
     box-shadow: none;
     border: 0;
     overflow: hidden; // guard against a sub-pixel spill adding a blank page
-    // Drop the inline simulated margins and the fixed page height: the @page
-    // rule provides the margins, and a content-sized card cannot round-overflow
-    // onto a blank page. Width fills the page's content area (= the measured
-    // column).
-    width: auto !important;
+    // Drop the inline simulated margins and the fixed page height: the native
+    // print margins (NSPrintInfo, set by `macos_print_to_pdf`) provide the real
+    // ones, and a content-sized card cannot round-overflow onto a blank page.
+    //
+    // **Width pins to `--pc-content-width` (the same `contentWidthPx()` the
+    // paginated sheet already measured every atom against), not `auto`.** Auto
+    // asked WKWebView to re-derive the printable width itself from the paper
+    // size and native margins - mathematically the same number as
+    // `contentWidthPx()`, but computed by a second, independent pipeline
+    // (Rust f64 -> Cocoa NSPrintInfo -> WKWebView's own print layout) subject to
+    // its own rounding. A sub-pixel difference there is enough to wrap a
+    // boundary line differently than the on-screen measurement did, so the atom
+    // renders one line taller than it was paginated for and spills past the
+    // page break the paginator already fixed - the exact shape of a word
+    // stranded at the top of the wrong PDF page. Pinning to the measured value
+    // removes that second pipeline instead of trusting it to agree.
+    width: var(--pc-content-width) !important;
     height: auto !important;
     padding: 0 !important;
   }

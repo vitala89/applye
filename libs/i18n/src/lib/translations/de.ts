@@ -1417,7 +1417,7 @@ export const de: TranslationMap = {
     cv_style_page_count: 'Seite {n}',
     cv_style_overflow_warning:
       'Der Inhalt ist höher als der nutzbare Seitenbereich - Ränder oder Inhalt reduzieren.',
-    cv_style_export_pdf_wysiwyg: 'PDF exportieren (Druck)',
+    cv_style_export_pdf_wysiwyg: 'PDF exportieren',
     cv_style_export_pixel_note:
       'Das PDF entspricht exakt der Vorschau. Das DOCX stimmt bei Größe, Rändern und Struktur überein, jedoch nicht pixelgenau.',
     cv_section_move_up: 'Abschnitt nach oben verschieben',

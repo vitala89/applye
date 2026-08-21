@@ -1383,7 +1383,7 @@ export const en: TranslationMap = {
     cv_style_page_count: 'Page {n}',
     cv_style_overflow_warning:
       'Content is taller than the usable page area - reduce margins or content.',
-    cv_style_export_pdf_wysiwyg: 'Export PDF (print)',
+    cv_style_export_pdf_wysiwyg: 'Export PDF',
     cv_style_export_pixel_note:
       'PDF matches the preview exactly. DOCX matches size, margins, and structure but not pixels.',
     cv_section_move_up: 'Move section up',

@@ -1412,7 +1412,7 @@ export const uk: TranslationMap = stub(en, {
     cv_style_page_count: 'Сторінка {n}',
     cv_style_overflow_warning:
       'Вміст вищий за корисну область сторінки - зменште поля або обсяг тексту.',
-    cv_style_export_pdf_wysiwyg: 'Експорт PDF (друк)',
+    cv_style_export_pdf_wysiwyg: 'Експорт PDF',
     cv_style_export_pixel_note:
       'PDF точно збігається з попереднім переглядом. DOCX зберігає розмір, поля та структуру, але не пікселі.',
     cv_section_move_up: 'Перемістити розділ вище',

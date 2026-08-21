@@ -44,6 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-21, hiding is not removing
+
+- **Status:** complete as a change. `B4`'s **third** attempt, and the third that this repository cannot verify. Owed a native pass on both pages of a two-page CV.
+- **Agent/tool:** Claude Code, Opus 5. Triage **7/10** (radius 1, ambiguity 1, risk 1, verification 2, unknowns 0 - the cause was named by the symptom). No grilling: one honest reading. No subagents.
+- **Branch:** `fix/print-hides-siblings-from-layout`, cut from `origin/main` at `35da378e`.
+
+- **The symptom named the cause, which is why this round did not need a decision.** The maintainer rebuilt with the previous fix and reported that **page one's top inset was larger than the Style card asks for**. An inset larger than the page margin is a flow that starts lower than the page area, and there is only one thing in this print path that can do that.
+- **`visibility: hidden` reveals without reclaiming.** The property is _defined_ to preserve layout. The print stylesheet hid the whole application that way and made the sheet visible again, so every hidden sibling above the sheet kept its full height. **This was harmless for as long as the sheet was pinned** with `position: absolute`, because a pinned box is out of flow - and the previous fix, which unclipped the flow so `@page` margins could reach every page, is exactly what made the borrowed height real. One fix uncovered the other; the earlier entry had already named this hole and declined to patch it blind while the build question was open, which turned out to be the right call for a different reason than expected.
+- **`display: none` removes a box, and the ancestors must be spared.** The CSS way to say that is `:has()`, and it **fails in the wrong direction**: an engine that does not understand the selector drops the whole rule and prints the entire application. `markPrintPath` in `wysiwyg-print.ts` walks from the sheet up to `<body>` marking each ancestor instead - deterministic, no selector support required, and **assertable in jsdom**, which none of the layout behind this bug is.
+- **Both print paths mark**: the editor's `printWithPageRule`, which un-marks on `afterprint`, and `awaitPrintSettle` for the silent export windows, which deliberately does not - that window is opened to be snapshotted and closed, so there is no "after", and an un-mark racing the snapshot could blank the export.
+- **The `visibility` pair stays underneath as the floor.** If the marking ever fails to run, the page is hidden rather than printed: the old bug rather than a much louder new one.
+
+- **Files changed:** `apps/desktop/src/styles.scss`, `wysiwyg-print.ts` and its spec, `print-settle.util.ts`, plus documents.
+- **`check-style-move.mjs`: 0 lost, 2 gained** - the two `display: none` rules and nothing else.
+- **Validation, all run and observed:** `nx run desktop:type-check` green; `nx run-many --target=lint --projects=desktop --skip-nx-cache` green with the one pre-existing warning; `nx test desktop` **1169 passed**, five new; `nx build desktop` green, 1.51 MB / 280.85 kB; `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check` passed.
+- **What the five new tests claim**, and it is worth being exact because the last two rounds over-claimed: they assert that every ancestor up to `<body>` is marked, that **no sibling and not the sheet** is marked, that the undo restores the document, that **nothing is marked when there is no sheet**, and that the editor's print marks and un-marks around `window.print()`. They say nothing about the printed page, which has no layout in jsdom.
+- **Privacy/security impact:** none.
+- **Three attempts on one defect is worth recording as a pattern, not an apology.** Each was rejected by a native pass and each rejection named the next cause: page one lost its margins (pinning), page two lost its inset (a page-tall card cannot carry margins as padding), page one gained too much inset (hidden siblings keep their height). The repository could not have distinguished any of them; the maintainer's exports could, and did, in three rounds of a few minutes each.
+- **Next first action:** the export, on **both** pages of a two-page CV. Then `P1`/`P2`/`B12`, which is specified and waiting.
+
 ### 2026-08-21, the first native pass on four unseen fixes, and one of them was wrong
 
 - **Status:** complete. **Three of the four fixes are confirmed by the maintainer's own pass; the fourth was rejected and is re-fixed here**, differently, and is owed another pass.

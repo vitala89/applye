@@ -41,6 +41,7 @@ import {
   CvPhotoStore,
   CvRegenerationStore,
   CvStyleStore,
+  DocumentExportService,
   isCvSectionLocked,
 } from '@applye/application';
 
@@ -60,7 +61,6 @@ import { CvPhotoEditorComponent } from './section-editors/cv-photo-editor.compon
 import { CvSettingsCardComponent } from './cv-settings-card/cv-settings-card.component';
 import { CvPageStyleCardComponent } from './cv-page-style-card/cv-page-style-card.component';
 import { CvSaveTemplateModalComponent } from './cv-save-template-modal/cv-save-template-modal.component';
-import { printWithPageRule } from '../wysiwyg-print';
 import {
   applyWizardReturnParams,
   backLabel,
@@ -102,7 +102,14 @@ const CV_BACK_KEYS: BackLabelKeys = {
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
-  providers: [CvPhotoStore, CvStyleStore, CvDocumentStore, CvRegenerationStore, CvDetailPageStore],
+  providers: [
+    CvPhotoStore,
+    CvStyleStore,
+    CvDocumentStore,
+    CvRegenerationStore,
+    CvDetailPageStore,
+    DocumentExportService,
+  ],
 })
 export class CvDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -186,6 +193,7 @@ export class CvDetailComponent {
    * Component-scoped (ADR-0005, amendment sixty-four). Aliased for the template,
    * which reads and writes these signals directly. */
   private readonly page = inject(CvDetailPageStore);
+  private readonly exportSvc = inject(DocumentExportService);
   readonly livePanelOpen = this.page.livePanelOpen;
   readonly liveSelection = this.page.liveSelection;
   readonly previewMode = this.page.previewMode;
@@ -239,21 +247,17 @@ export class CvDetailComponent {
     this.styleStore.applyStyle(routeCvStyleChange(this.style(), sel, change));
   }
 
-  /**
-   * WYSIWYG PDF export via the OS print dialog. `printWithPageRule` owns the
-   * print protocol itself and carries its reasoning; what is CV-specific is
-   * everything before the call.
-   */
+  /** Export this CV to PDF through the one export path - see
+   * `DocumentExportService`, which carries why this is not `window.print()`
+   * and why it saves first. */
   async exportPdfWysiwyg(): Promise<void> {
-    // Commit any in-progress inline edit and drop every editor affordance BEFORE
-    // printing: blur the focused leaf so its `(blur)` handler commits the draft,
-    // then clear the live selection so the page cards render committed text with
-    // no native control, caret, selection outline, or side panel. Then wait for
-    // Angular to render that resting state and for the sheet to finish a fresh
-    // pagination pass, so the exported PDF matches the on-screen preview exactly.
+    // Commit the in-progress inline edit and drop the editor chrome before the
+    // write: the saved document is what the export renders.
     this.commitAndCloseEditors();
     await this.nextStableFrame();
-    printWithPageRule(this.style().page);
+    const saved = await this.document.save();
+    if (!saved) return;
+    await this.exportSvc.run('cv', 'pdf', saved, () => Promise.resolve());
   }
 
   /** Blur the focused inline editor - firing its `(blur)` handler, which commits

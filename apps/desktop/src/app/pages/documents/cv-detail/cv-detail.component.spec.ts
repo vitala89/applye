@@ -338,6 +338,10 @@ describe('CvDetailComponent export/print hardening', () => {
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      // The Export action saves before it exports, so this describe needs the
+      // write its siblings already stub.
+      documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
+      documentLibraryList: jest.fn().mockResolvedValue([]),
     };
 
     await TestBed.configureTestingModule({
@@ -391,7 +395,12 @@ describe('CvDetailComponent export/print hardening', () => {
     return editor;
   }
 
-  it('Export action commits the active draft, drops all editor chrome, then prints', async () => {
+  // The Export action no longer raises the OS print dialog. It saves and then
+  // hands the document to the same export the Documents list uses, because that
+  // path drives the print from Rust with the document's own margins on
+  // `NSPrintInfo` - and the dialog owns its own, so the Style card's margins
+  // could never reach an export made from here (`B4`).
+  it('Export action commits the active draft, drops all editor chrome, then saves and exports', async () => {
     startInlineDraft('Draft summary via export');
 
     await component.exportPdfWysiwyg();
@@ -402,10 +411,11 @@ describe('CvDetailComponent export/print hardening', () => {
     expect(component.liveSelection()).toBeNull();
     expect(root.querySelector('.cvpreview__leaf-editor')).toBeNull();
     expect(root.querySelector('.cvpreview__selected')).toBeNull();
-    // The Export action COMMITS the draft, so the printed page carries it.
+    // The Export action COMMITS the draft, so the exported document carries it.
     const resting = root.querySelector('.page-card p.cvpreview__summary');
     expect(resting?.textContent).toContain('Draft summary via export');
-    expect(printSpy).toHaveBeenCalledTimes(1);
+    // And it does NOT raise the print dialog any more.
+    expect(printSpy).not.toHaveBeenCalled();
   });
 
   it('Direct OS/browser print (beforeprint) shows last-committed text and discards the uncommitted draft', () => {

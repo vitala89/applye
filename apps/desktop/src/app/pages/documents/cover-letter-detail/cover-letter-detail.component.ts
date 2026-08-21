@@ -10,6 +10,7 @@ import {
   CoverLetterNoProfileError,
   CoverLetterStyleStore,
   CoverLetterTextField,
+  DocumentExportService,
   paragraphStyleKey,
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
@@ -24,7 +25,6 @@ import { CoverLetterRecipientBlockComponent } from './cover-letter-recipient-blo
 import { CoverLetterSettingsCardComponent } from './cover-letter-settings-card/cover-letter-settings-card.component';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
 import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/cover-letter-style-popover.component';
-import { printWithPageRule } from '../wysiwyg-print';
 import {
   applyWizardReturnParams,
   backLabel,
@@ -63,6 +63,7 @@ const COVER_LETTER_BACK_KEYS: BackLabelKeys = {
     CoverLetterStyleStore,
     CoverLetterDocumentStore,
     CoverLetterAiStore,
+    DocumentExportService,
   ],
 })
 export class CoverLetterDetailComponent {
@@ -93,6 +94,7 @@ export class CoverLetterDetailComponent {
    * gateway calls; this page owns the toast and the navigation that follow
    * them (ADR-0005, amendment three). */
   protected readonly docs = inject(CoverLetterDocumentStore);
+  private readonly exportSvc = inject(DocumentExportService);
 
   /** Read-only aliases onto the document store, for the same reason as the
    * content aliases below: the template is over budget and prefixing its
@@ -264,18 +266,23 @@ export class CoverLetterDetailComponent {
   }
 
   /**
-   * WYSIWYG PDF export via the OS print dialog. Injects a `@page` rule sized
-   * from the current page settings, toggles `printing-cv` on `<body>` so the
-   * print stylesheet isolates `.letter-sheet`, then invokes the standard DOM
-   * `window.print()`. Tauri's webview plugin already overrides
-   * `window.print` on macOS to route through its native print command (gated
-   * by the `core:webview:allow-print` capability); on Windows/Linux the
-   * webview's built-in print is used directly - no `@tauri-apps/api` import
-   * is needed or available for this in the installed SDK version. Mirrors
-   * `exportPdfWysiwyg` on `CvDetailComponent`.
+   * Export this cover letter to PDF.
+   *
+   * Saves first, then hands the document to the same export the Documents list
+   * uses: a save dialog, then `cover_letter_document_export_pdf_wysiwyg`, which
+   * opens a hidden window on the chromeless print route and has Rust drive the
+   * print with the document's own margins on `NSPrintInfo`.
+   *
+   * It used to call `window.print()`. That dialog owns its own `NSPrintInfo`,
+   * so the Style card's margins could not reach the output at all - the same
+   * defect, and the same fix, as `exportPdfWysiwyg` on `CvDetailComponent`
+   * (`B4`). Saving first is required because the hidden window renders the
+   * document as it is stored.
    */
   async exportPdfWysiwyg(): Promise<void> {
-    printWithPageRule(this.style().page);
+    const saved = await this.docs.save();
+    if (!saved) return;
+    await this.exportSvc.run('cover_letter', 'pdf', saved, () => Promise.resolve());
   }
 
   async save(): Promise<void> {

@@ -455,48 +455,26 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.sections().map((s) => s.order)).toEqual([0, 1, 2]);
   });
 
-  it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', async () => {
+  // Export no longer raises the OS print dialog, so the print protocol - the
+  // `@page` rule and the `printing-cv` body class - is no longer this button's
+  // job. It saves and hands the document to the same export the Documents list
+  // uses, which drives the print from Rust with the document's own margins on
+  // `NSPrintInfo`. The macOS dialog owns its own, so the Style card's margins
+  // could never reach an export made from here (`B4`).
+  //
+  // Kept as a tripwire rather than deleted: a well-meant `window.print()` put
+  // back on this path would restore a second export that answers differently
+  // from the first, and that is the defect, not the mechanism.
+  it('exportPdfWysiwyg does not print - it saves and exports', async () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     document.body.classList.remove('printing-cv');
+    document.getElementById('wysiwyg-page-rule')?.remove();
 
-    // Export now commits/closes editors and awaits a stable render + pagination
-    // pass before printing, so the print() call is asynchronous.
     await component.exportPdfWysiwyg();
 
-    // Root-cause guard: the class must survive the print() call. Removing it
-    // synchronously stripped the @media-print styles before the async macOS
-    // print snapshot, so the OS captured the whole app instead of the sheet.
-    expect(printSpy).toHaveBeenCalled();
-    expect(document.body.classList.contains('printing-cv')).toBe(true);
-
-    // afterprint is what clears it.
-    window.dispatchEvent(new Event('afterprint'));
+    expect(printSpy).not.toHaveBeenCalled();
     expect(document.body.classList.contains('printing-cv')).toBe(false);
-
-    printSpy.mockRestore();
-  });
-
-  // This tripwire has been rewritten three times, and each rewrite was an
-  // honest reading of the evidence then available. It is settled now, and the
-  // reason is a place none of the earlier rounds looked: `commands/print.rs`
-  // puts the document's margins on `NSPrintInfo` (`setTopMargin` and its three
-  // siblings), so **the print system insets the page before any CSS is read**.
-  // A `@page` margin is the same millimetres a second time - 257mm of content
-  // box becomes 217mm, 151px short of the 971px the paginator packed, and the
-  // displaced atoms are what the native pass saw at the top of page two.
-  //
-  // So `margin: 0` is correct here, and the reason the original tripwire gave
-  // for forbidding it - scaled margins and a blank page - belonged to a
-  // configuration that also kept the card at a fixed page size. The card is
-  // content-sized and carries no padding in print; the only margin in the
-  // output is the one the print system applies.
-  it('exportPdfWysiwyg injects an @page rule that adds no margin of its own', async () => {
-    const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
-    await component.exportPdfWysiwyg();
-    const rule = document.getElementById('wysiwyg-page-rule')?.textContent ?? '';
-
-    expect(rule).toContain('margin: 0');
-    expect(rule).not.toMatch(/margin: \d+mm/);
+    expect(document.getElementById('wysiwyg-page-rule')).toBeNull();
     printSpy.mockRestore();
   });
 

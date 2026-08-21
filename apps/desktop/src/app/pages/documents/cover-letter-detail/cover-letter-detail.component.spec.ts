@@ -87,18 +87,20 @@ describe('CoverLetterDetailComponent preview atoms', () => {
     expect(component.openStyleKey()).toBeNull();
   });
 
-  it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {
+  // Export no longer raises the OS print dialog. It saves and hands the letter
+  // to the same export the Documents list uses, which drives the print from
+  // Rust with the document's own margins on `NSPrintInfo` - the macOS dialog
+  // owns its own, so the Style card's margins could never reach an export made
+  // from here (`B4`). Kept as a tripwire: a `window.print()` put back on this
+  // path restores a second export that answers differently from the first.
+  it('exportPdfWysiwyg does not print - it saves and exports', async () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     document.body.classList.remove('printing-cv');
 
-    void component.exportPdfWysiwyg();
+    await component.exportPdfWysiwyg();
 
-    expect(printSpy).toHaveBeenCalled();
-    expect(document.body.classList.contains('printing-cv')).toBe(true);
-
-    window.dispatchEvent(new Event('afterprint'));
+    expect(printSpy).not.toHaveBeenCalled();
     expect(document.body.classList.contains('printing-cv')).toBe(false);
-
     printSpy.mockRestore();
   });
 });

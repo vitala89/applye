@@ -135,6 +135,27 @@
     display: none !important;
   }
 
+  // `.cvpreview-viewport` (`cv-preview.component.scss`) and
+  // `.letter-sheet-viewport` (`cover-letter-preview.component.scss`) are the
+  // on-screen scroll frame around `<lib-paginated-sheet>` for the CV and the
+  // cover letter respectively - `padding: var(--space-4)` (12px) gives the
+  // editor's page some breathing room against the panel behind it. That
+  // padding is component-scoped and this print block cannot reach it by
+  // writing the rule there (see the file header above), and nothing here had
+  // reached it either: every `.page-card` still measures and paints at the
+  // exact width `contentWidthPx()` gives it, but the viewport's own left
+  // padding pushed that whole box 12px right of the margin `NSPrintInfo`
+  // already established - correct on its own left edge, 12px too far on its
+  // right. WKWebView's print pass clips at the physical page edge, not at
+  // any CSS overflow, so the pushed-right sliver of every atom's content - a
+  // right-aligned date, the tail of a wrapped line - printed past the true
+  // margin and never made it onto the page.
+  body.printing-cv .cvpreview-viewport,
+  body.printing-cv .letter-sheet-viewport {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
   // **Drop everything that is not the sheet from layout, not merely from view.**
   //
   // This used to be `visibility: hidden` on everything and `visible` on the

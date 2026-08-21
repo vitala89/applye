@@ -46,6 +46,22 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The exported CV wrapped a line the live preview did not, orphaning a word onto the wrong page.**
+  A maintainer-provided export showed the Skills section's last line, "Design systems", split across
+  two lines in the PDF while sitting on one in the editor preview - stranding "systems" at the top of
+  page 2, ahead of the LANGUAGES section that belongs there. `body.printing-cv .page-card` forced
+  `width: auto !important` during print, so WKWebView re-derived the printable width itself from the
+  paper size and `NSPrintInfo`'s native margins (set from Rust) rather than reusing the width
+  `<lib-paginated-sheet>` had already measured every atom against to decide page breaks - a second,
+  independent pipeline (Rust `f64` -> Cocoa -> WKWebView print layout) computing what should be the
+  same number as `contentWidthPx()`, but not guaranteed to land on it bit-for-bit. A sub-pixel
+  difference between the two is enough to flip a word-wrap decision on a boundary line, so the atom
+  renders one line taller in print than the paginator measured it at and spills past the page break
+  already fixed. `.page-card` now pins its print-time width to `contentWidthPx()` via a CSS custom
+  property instead of asking the browser to recompute it. **Not verified natively** - found and fixed
+  by reading the print CSS, the paginated-sheet measurement code and the Rust margin-setting code, not
+  from a native repro; needs a `tauri dev` export compared against the live preview.
+
 - **Create Application applied the job for you, and a skipped cover letter got generated anyway.** The wizard's final button was labelled "Create Application" but ran `markApplied`, which ensured the row, committed documents **and** flipped the status to `applied` in one call - so pressing it applied to a job the user had not yet submitted anywhere. That call is now two: `createApplication` saves the row and commits documents without touching status, and a new `apply` writes only the status transition - the existing Mark-Applied button on the job summary is now where "Apply" lives, pressed by the user after they have actually submitted the employer's form. Riding along in the same commit call was `B12`: `decideCoverLetterAction` answered `create` for every unlinked cover letter with no precondition, so a user who deliberately generated only a CV in Review had a cover letter built and paid for behind Create Application anyway - it answers `keep` now, matching the CV rule's own "nothing to build from" short circuit. **Applied is terminal for everything now, not only the description.** Retailor (the summary screen's CTA) is disabled with an explanation once an application leaves `saved`; both document editors gained a `DocumentApplicationLockService` that reverse-looks-up whether the open CV or cover letter is linked to an application past `saved` and, if so, forces Preview and hides Edit/Save/Draft - by document identity, so the lock holds whether the editor was opened from the Documents list, My Jobs, or the wizard. Delete was deliberately not added to the locked editor: it already works from the Documents list regardless of lock state.
 
 - **The exported PDF export path is confirmed natively.** `B4`'s fifth reading (WKWebView prints at 90 PPI, not 96) held up: a two-page tailored CV exported from both the Documents-list button and the editor's Export button in one running session produced identical `/MediaBox`, clip box (20mm on every side, matching the Style card) and text scale. The editor's Export button still raises the native macOS print sheet rather than a direct save dialog - a UI difference worth a look, though the exported geometry is exact either way.

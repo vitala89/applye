@@ -1,5 +1,20 @@
 # Current Operational State
 
+- **A second, more subtle preview-vs-export text-reflow bug was found and fixed, and it is not yet
+  natively confirmed.** A maintainer-provided CV export showed "Design systems", the Skills section's
+  last line, wrapping to two lines in the PDF while sitting on one line in the live editor preview -
+  orphaning "systems" at the top of the exported page 2, ahead of the LANGUAGES section that actually
+  belongs there. Cause: `body.printing-cv .page-card` forced `width: auto !important` during print,
+  so WKWebView re-derived the printable width itself from the paper size and the native print margins
+  (`NSPrintInfo`, set from Rust) - a second, independent computation of the same width
+  `<lib-paginated-sheet>` had already measured every atom against before deciding page breaks. The two
+  pipelines should agree mathematically, but a sub-pixel rounding difference between them is enough to
+  flip a word-wrap decision on a boundary line, so that atom renders one line taller in print than it
+  was paginated for and spills past the page break already fixed. `.page-card` now pins its print-time
+  width to the same `contentWidthPx()` the measurement pass uses, via a CSS custom property, removing
+  the second computation instead of trusting it to agree (PR #511). **Not verified natively** - derived
+  from reading the print CSS, the paginated-sheet measurement code and the Rust margin-setting code,
+  not from a native repro; needs a `tauri dev` export compared against the live preview.
 - **`B4` is confirmed natively, and `P1`/`P2`/`B12` are implemented as one change.** Exporting the same
   two-page CV from both the Documents-list button and the editor's Export button, in one running
   session, produced identical `/MediaBox`, clip box and text scale - the margin fix holds. Separately:

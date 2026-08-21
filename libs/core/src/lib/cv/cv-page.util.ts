@@ -107,6 +107,43 @@ function normalizeMargins(margin: unknown): {
 /** Resolves `PageSettings` (new or legacy) to concrete mm + %. Single source of
  * truth for the preview; the Rust `resolve_page` mirrors these numbers for
  * DOCX export. */
+/**
+ * Points per CSS pixel in the print pipeline, measured from exported PDFs
+ * rather than assumed.
+ *
+ * WKWebView writes every text-drawing matrix in an exported CV as
+ * `0.8 0 0 -0.8 x y cm`. **The factor does not move when the page box does**:
+ * two exports of the same document, one with 20mm margins and one with none,
+ * carry `0.8000236` and `0.8008075` - a tenth of a percent apart, while the
+ * printable box changed by 40mm in each direction. So it is a fixed CSS-px to
+ * point mapping and not a shrink-to-fit, which is the distinction that decides
+ * whether this can be fixed by a constant at all.
+ */
+export const PRINT_PT_PER_PX = 0.8;
+
+/**
+ * CSS pixels per millimetre, as the **print** pipeline counts them.
+ *
+ * `72 / 25.4` points per millimetre, divided by `PRINT_PT_PER_PX`: 3.5433, or
+ * 90 CSS pixels to the inch. The previews used `96 / 25.4` - the display
+ * convention, and the obvious choice - which models every page **6.67% larger
+ * than the sheet it prints on**.
+ *
+ * That single ratio is `B4`. It made the measured column 642.5px wide where the
+ * printable area is 602, so text wrapped differently in the export than in the
+ * preview; and it packed 971.3px of content into a card where only 910.75px
+ * could be printed, so the bottom of every card was **clipped away** - the
+ * exported PDF was missing text, not merely mis-margined. Four earlier attempts
+ * moved the margins between layers and none of them touched this, because the
+ * margins were only ever the thing the eye noticed.
+ *
+ * **Measured on macOS**, which is the only platform with a print path today
+ * (`macos_print_to_pdf` in `commands/print.rs`). A webview that maps pixels to
+ * points differently would need this to become a per-platform value; the
+ * comment above says how to measure it from an exported file.
+ */
+export const PRINT_PX_PER_MM = 72 / 25.4 / PRINT_PT_PER_PX;
+
 export function resolvePageSettings(page: PageSettings | undefined): ResolvedPage {
   const size = page?.size === 'letter' ? 'letter' : 'a4';
   const [widthMm, heightMm] = size === 'letter' ? [215.9, 279.4] : [210, 297];

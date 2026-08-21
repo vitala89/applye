@@ -1417,7 +1417,7 @@ export const ru: TranslationMap = stub(en, {
     cv_style_page_count: 'Страница {n}',
     cv_style_overflow_warning:
       'Содержимое выше полезной области страницы - уменьшите поля или объём текста.',
-    cv_style_export_pdf_wysiwyg: 'Экспорт PDF (печать)',
+    cv_style_export_pdf_wysiwyg: 'Экспорт PDF',
     cv_style_export_pixel_note:
       'PDF в точности совпадает с предпросмотром. DOCX сохраняет размер, поля и структуру, но не пиксели.',
     cv_section_move_up: 'Переместить раздел выше',

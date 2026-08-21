@@ -1428,7 +1428,7 @@ export const fr: TranslationMap = stub(en, {
     cv_style_page_count: 'Page {n}',
     cv_style_overflow_warning:
       'Le contenu dépasse la hauteur utile de la page - réduisez les marges ou le contenu.',
-    cv_style_export_pdf_wysiwyg: 'Exporter le PDF (impression)',
+    cv_style_export_pdf_wysiwyg: 'Exporter le PDF',
     cv_style_export_pixel_note:
       "Le PDF est identique à l'aperçu. Le DOCX respecte la taille, les marges et la structure, mais pas les pixels.",
     cv_section_move_up: 'Monter la section',

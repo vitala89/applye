@@ -46,6 +46,24 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **A rebuilt export still sheared text off the right edge, and the cause was a third, independent gap
+  in the same print pipeline.** A fresh export - made after the previous entry's fix was merged and the
+  build reset with `nx reset` - showed more than that fix targeted: "Berlin, Germany" printed as
+  "Berlin, Germa", "2022 - Present" as "2022 - Prese", right across the page, confirmed by opening the
+  PDF in a real viewer and by reading the file's own clip rectangles and text-run positions with
+  `pypdf`. `.cvpreview-viewport` and `.letter-sheet-viewport` - the on-screen scroll frame around
+  `<lib-paginated-sheet>`, giving the editor's page breathing room against the panel behind it - carry
+  `padding: var(--space-4)` (12px), and nothing had ever reached it for print: the rule cannot live in
+  the component stylesheet (view encapsulation keeps it from the print seam, same as every other atom
+  rule in this pipeline), and the global print stylesheet never wrote one for either class name. The
+  previous fix already made `.page-card` measure and paint at the exact width `contentWidthPx()` gives
+  it, but this unaddressed padding still pushed that correctly-sized box 12px right of the margin
+  `NSPrintInfo` had already established - correct on its own left edge, 12px too far on its right - and
+  WKWebView clips at the physical page edge, not at any CSS overflow, so a 12px sliver of every atom's
+  content never made it onto the page. Both wrappers are zeroed for print now, alongside the other
+  app-shell spacing this same media query already clears. **Not verified natively** - the previous fix
+  had already been through a real rebuild and export when this was found, but this fix itself has not.
+
 - **The exported CV wrapped a line the live preview did not, orphaning a word onto the wrong page.**
   A maintainer-provided export showed the Skills section's last line, "Design systems", split across
   two lines in the PDF while sitting on one in the editor preview - stranding "systems" at the top of

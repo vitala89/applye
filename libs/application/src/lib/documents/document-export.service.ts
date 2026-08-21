@@ -24,6 +24,29 @@ export interface LastExport {
  * editor's own preview), which is what keeps the file pixel-identical to the
  * editor in every theme. DOCX goes through the plain export command.
  */
+/**
+ * **The one export path, and why there is only one.**
+ *
+ * Both document editors used to export with `window.print()`, raising the macOS
+ * print dialog. That dialog owns its own `NSPrintInfo`, so **the Style card's
+ * margins could not reach an export made from an editor at all**: the same
+ * document exported from the two buttons carried clip boxes of `0 0 595 841`
+ * from the editor and `56.69 56.69 481 728` from the Documents list. Two
+ * buttons, one document, two answers - and no amount of CSS could have closed
+ * it, because the dialog is not ours to configure (`B4`).
+ *
+ * Everything exports through here now: a save dialog, then the Rust command
+ * that opens a hidden window on the chromeless print route and drives the print
+ * with the document's own page settings on `NSPrintInfo`.
+ *
+ * **Callers save before calling, and that is deliberate.** The hidden window
+ * renders the document **as it is stored**, so an unsaved edit would simply be
+ * missing from the file. It does not contradict the editors' rule that a raw
+ * Cmd+P must never persist a half-typed draft: there the user did not ask for a
+ * write, while pressing Export **is** asking for this document to become a
+ * file, and a file of something other than what was asked for is worse than a
+ * save the user did not name.
+ */
 @Injectable()
 export class DocumentExportService {
   private readonly db = inject(DocumentsGateway);

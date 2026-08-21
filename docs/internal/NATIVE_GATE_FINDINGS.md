@@ -315,9 +315,32 @@ it from an exported file.
 margins were what the eye noticed. The margins were correct from the second attempt onward. What was
 wrong was the size of the page the preview believed in.
 
-**What to test next:** export a two-page CV from the Documents list and compare the page break with
-the editor. They should now break in the same place, and no text should be missing from the end of
-page one.
+**Then the second path was closed, on the maintainer's own proposal.** The editor's Export button
+called `window.print()` and raised the macOS print dialog, which owns its own `NSPrintInfo` - so the
+Style card's margins could not reach an export made from there **at all**. The measurement showed it
+plainly: the same document exported from the two buttons carried clip boxes of `0 0 595 841` from the
+editor and `56.69 56.69 481 728` from the Documents list. Two buttons, one document, two answers.
+
+Both editors now **save and then hand the document to the same export the Documents list uses**. One
+print path, driven from Rust with the document's own margins.
+
+**Saving first is a deliberate exception, not an oversight.** The hidden window renders the document
+as it is stored, so an unsaved edit would simply be missing from the file. The rule on
+`handleBeforePrint` still stands - a raw Cmd+P must never persist a half-typed draft, because the
+user did not ask for a write - but pressing Export **is** asking for this document to become a file.
+
+`printWithPageRule` and `pageRuleFor` are deleted: nothing called them once both editors moved.
+`markPrintPath` stays, because the export windows still need it.
+
+**Found while removing them, and not fixed here:** a raw Cmd+P in either editor sets no
+`printing-cv` class and injects no page rule, so it prints the whole application - the sidebar, the
+editor column and all. That was already true before this change; the Export button was the only thing
+that ever set the class. It is a real defect and it belongs in its own entry rather than riding along
+with this one.
+
+**What to test next:** export a two-page CV from **either** button now, and compare the page break
+with the editor. They should break in the same place, the two buttons should produce the same file,
+and no text should be missing from the end of page one.
 
 **B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
 On the exported page two, `EDUCATION` starts at the left margin with its rule running the full

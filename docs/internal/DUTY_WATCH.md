@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-21, one document, one export path
+
+- **Status:** complete. The second export path is closed; `B4`'s remaining gap is now a single block between preview and file, which the next export will measure.
+- **Agent/tool:** Claude Code, Opus 5. Triage **7/10**. The decision had already been taken in an earlier round and the maintainer proposed it again in their own words, so no fresh gate. No subagents.
+- **Branch:** `fix/one-export-path`, cut from `origin/main` at `a6474b95`.
+
+- **The measurement that justified it, from the maintainer's own pair of exports:** the same document, the same margins, two buttons.
+  - editor's Export: clip `0 0 595 841` - **the whole sheet, no margins at all**;
+  - Documents list: clip `56.69 56.69 481 728` - **20mm, correct**.
+- **The cause is structural, not a bug in either button.** `window.print()` raises the macOS dialog, and that dialog owns its own `NSPrintInfo`. The Style card's margins have no route into it. No amount of CSS could have fixed that path, which is why it kept reporting the defect after the CSS was already right.
+- **Both editors now save, then call the same export the Documents list uses.** One path, driven from Rust with the document's own page settings.
+- **Saving first is the part that needed thought.** The hidden window renders the **stored** document, so an unsaved edit would be missing from the file. `cv-detail.component.ts` deliberately does not persist a half-typed draft on a raw Cmd+P, and that rule is untouched: the user did not ask for a write there. Pressing Export **is** asking for this document to become a file, and a file of something other than what was asked for is worse than a save the user did not name. The reasoning is written above the method, not in a commit message.
+- **`printWithPageRule` and `pageRuleFor` are deleted.** Nothing called them once both editors moved; `wysiwyg-print.ts` goes from 132 to 56 lines and keeps only `markPrintPath`, which the export windows still need.
+- **Found while removing them, recorded and not fixed:** a raw Cmd+P in either editor sets no `printing-cv` class and injects no page rule, so it prints the **whole application**. That was already true - the Export button was the only thing that ever set the class - so it is not a regression, and it is a defect of its own rather than a rider on this change.
+
+- **Three specs changed rather than deleted**, and each says why in its own comment: the CV editor's export test now asserts that it does **not** print, the cover letter's likewise, and the print-protocol spec keeps only what survives. They are tripwires: a well-meant `window.print()` put back on either path restores a second export that answers differently from the first, which is the defect rather than the mechanism.
+- **The desktop suite failed once with `Exceeded timeout of 5000 ms` and no assertion failing.** That is the shape `PR #487` measured and named: nine jest workers on a loaded machine, and the machine was running the maintainer's Tauri dev server and a PDF viewer. Re-run at `--maxWorkers=2`: **1160 passed**. Checked the load before the code, as the log says to.
+- **Validation, all run and observed:** `nx run desktop:type-check` green; `nx run-many --target=lint --projects=core,application,desktop --skip-nx-cache` green with pre-existing warnings only; `nx test desktop` **1160 passed**, `nx test core` **478 passed**; `nx build desktop` green, 1.51 MB / 280.65 kB; `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check` passed.
+- **Privacy/security impact:** none.
+- **Next first action:** export a two-page CV from either button and compare the break with the editor - they should now break in the same place and produce the same file. Then `P1`/`P2`/`B12`, which has been specified and waiting for several rounds.
+
 ### 2026-08-21, the preview believed in a page 6.67% too big
 
 - **Status:** complete, and this is the first reading of `B4` backed by measurements rather than by reasoning about the code. Owed one confirming export.

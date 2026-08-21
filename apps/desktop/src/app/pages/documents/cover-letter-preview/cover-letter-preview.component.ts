@@ -13,6 +13,7 @@ import {
   effectiveCoverLetterBlockStyle,
   effectiveCoverLetterParagraphStyle,
   formatLetterDate,
+  PRINT_PX_PER_MM,
   resolvePageSettings,
   stripSubjectLabel,
   type CoverLetterBlockKey,
@@ -48,15 +49,12 @@ export class CoverLetterPreviewComponent {
    * so an embedder that has no language still renders. */
   readonly language = input<string>('en');
 
-  /** px per mm at 96dpi - fixes the on-screen sheet to real page proportions. */
-  private static readonly PX_PER_MM = 96 / 25.4;
-
   /** Preview page geometry (px) - real A4/Letter proportions plus margins,
    * consumed by `<lib-paginated-sheet>`, which owns pagination/measurement.
    * Mirrors `geometry` on `CvPreviewComponent`. */
   readonly geometry = computed<SheetGeometry>(() => {
     const r = resolvePageSettings(this.style().page);
-    const px = CoverLetterPreviewComponent.PX_PER_MM;
+    const px = PRINT_PX_PER_MM;
     return {
       pageWidthPx: r.widthMm * px,
       pageHeightPx: r.heightMm * px,

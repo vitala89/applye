@@ -35,6 +35,7 @@ import type {
 import {
   getBuiltinTheme,
   orderedVisibleSections,
+  PRINT_PX_PER_MM,
   resolvePageSettings,
   sectionLabelKey,
   themeCssVars,
@@ -250,14 +251,11 @@ export class CvPreviewComponent {
   /** Theme custom properties for the preview viewport; inherited by all page cards. */
   readonly themeVars = computed<Record<string, string>>(() => themeCssVars(this.activeTheme()));
 
-  /** px per mm at 96dpi - fixes the on-screen sheet to real page proportions. */
-  private static readonly PX_PER_MM = 96 / 25.4;
-
   /** Preview page geometry (px) - real A4/Letter proportions plus margins,
    * consumed by `<lib-paginated-sheet>`, which owns pagination/measurement. */
   readonly geometry = computed<SheetGeometry>(() => {
     const r = resolvePageSettings(this.style().page);
-    const px = CvPreviewComponent.PX_PER_MM;
+    const px = PRINT_PX_PER_MM;
     return {
       pageWidthPx: r.widthMm * px,
       pageHeightPx: r.heightMm * px,

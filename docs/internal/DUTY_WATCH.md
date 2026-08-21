@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-21, the preview believed in a page 6.67% too big
+
+- **Status:** complete, and this is the first reading of `B4` backed by measurements rather than by reasoning about the code. Owed one confirming export.
+- **Agent/tool:** Claude Code, Opus 5. Triage **7/10** after the measurement; **unknowns 0**, because the number was read out of the file rather than chosen. No grilling: nothing was left to decide once the two exports were compared. No subagents.
+- **Branch:** `fix/preview-models-the-page-at-print-scale`, cut from `origin/main` at `f2ded0ab`.
+
+- **The maintainer supplied the artefact that ended it**: the same CV exported twice, once with 20mm margins and once with all four set to zero. That pair is what no amount of code reading could substitute for.
+  - clip boxes: `56.69 56.69 481 728` and `0 0 595 841` - `NSPrintInfo` doing exactly what it is told. **The margins were never the problem.**
+  - text-matrix scale: `0.8000236` and `0.8008075`. **A tenth of a percent apart while the printable box changed by 40mm in each direction.** That is the whole diagnosis: a fixed CSS-px-to-point mapping, not a shrink-to-fit. WKWebView prints 0.8pt per px - 90 to the inch.
+- **The previews used `96 / 25.4`**, the display convention and the obvious choice, which models every page **6.67% larger than the sheet**. Both symptoms follow from that one ratio: the measured column is 642.5px where the printable area is 602, so text wraps differently in the export; and the paginator packs 971.3px into a card where 910.75px can print, so the remainder is **clipped**.
+- **The export was losing text, not mis-margining it.** On the 20mm file the last text baseline is at `y = 47.07` with the clip floor at `56.69` - drawn below the visible box. That reframes `B4` from cosmetic to data-losing, and it is why the page breaks never matched the editor no matter what happened to the margins.
+- **`PRINT_PX_PER_MM = 72 / 25.4 / 0.8`** lives in `libs/core/src/lib/cv/cv-page.util.ts` with the measurement written above it, and both previews use it. An A4 sheet maps to 595.3 x 841.9pt, and the column and usable height come out at 602.0 x 910.7px - the numbers the clip box carries.
+- **Measured on macOS**, the only platform with a print path today (`macos_print_to_pdf`). A webview mapping pixels to points differently would need this per-platform; the constant's comment says how to re-measure it from an exported file, which is the part that makes the number maintainable rather than magic.
+
+- **Why four attempts missed it, recorded because the pattern is the lesson.** Every one moved the margins between layers, because the margins were what the eye noticed - and they had been correct since the second attempt. The wrong thing was never a margin; it was **the size of the page the preview believed in**, which no symptom named until the exports were compared side by side. Reading code cannot find a number that is only visible in the output.
+- **Files changed:** `libs/core/src/lib/cv/cv-page.util.ts` and a new `print-scale.spec.ts`, both preview components and their specs.
+- **Validation, all run and observed:** `nx run desktop:type-check` green; `nx run-many --target=lint --projects=core,desktop --skip-nx-cache` green with pre-existing warnings only; `nx test core` **478 passed**, six new; `nx test desktop` **1169 passed**; `nx build desktop` green, 1.51 MB / 280.66 kB; `nx build web` green, run because `libs/core` changed; `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check` passed.
+- **What the new tests claim:** they pin the two measured numbers against the printable boxes the real exports carry - the column at 481.6pt, the usable height at 728.6pt, a whole A4 sheet at 595.3 x 841.9pt, and the 96/90 ratio that clipped the export. They are evidence transcribed, not arithmetic restated.
+- **Privacy/security impact:** none.
+- **Next first action:** export a two-page CV from the Documents list and compare the page break with the editor - they should break in the same place, and no text should be missing from the end of page one. Then `P1`/`P2`/`B12`.
+
 ### 2026-08-21, the margins were applied twice, and the second place was Rust
 
 - **Status:** complete for the half that can be fixed in one change. The editor's own Export button is a second path, specified and not implemented.

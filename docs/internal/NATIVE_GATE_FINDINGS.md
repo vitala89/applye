@@ -277,8 +277,47 @@ change**: it replaces a print dialog with a save dialog, and the Rust path rende
 document, so the editor has to persist before exporting - and `cv-detail.component.ts` deliberately
 does _not_ persist a half-typed draft on a raw Cmd+P, which is a rule the new path must not break.
 
-**What to test next, and it is a different button:** the Documents list's **Export PDF**, not the
-editor's. That is the path this change makes exact.
+**And that was still not it. The fifth reading is the one with numbers, taken from the exported files
+themselves.**
+
+Two exports of the same CV, one with 20mm margins and one with none:
+
+|                   | 20mm export           | 0mm export    |
+| ----------------- | --------------------- | ------------- |
+| `/MediaBox`       | `0 0 595 842`         | `0 0 595 842` |
+| clip box          | `56.69 56.69 481 728` | `0 0 595 841` |
+| text matrix scale | `0.8000236`           | `0.8008075`   |
+
+The clip box is `NSPrintInfo` doing exactly what it is told, twice - so the margins were never the
+problem. **The scale did not move when the printable box changed by 40mm in each direction**, which
+is what distinguishes a fixed CSS-px-to-point mapping from a shrink-to-fit, and it is the whole
+diagnosis: WKWebView prints **0.8 points per CSS pixel**, or 90 pixels to the inch.
+
+The previews modelled the page at `96 / 25.4` - the display convention, and the obvious choice. That
+is **6.67% larger than the sheet**, and both consequences are visible in the exports:
+
+- the measured column is 642.5px where the printable area is **602**, so text wraps differently in
+  the export than in the preview;
+- the paginator packs **971.3px** of content into a card where only **910.75px** can print, and the
+  remainder is **clipped away**. On the 20mm export the last text baseline sits at `y = 47.07` with
+  the clip floor at `56.69` - drawn below the visible box. **The exported PDF is missing text**,
+  which is a different and worse defect than a wrong margin.
+
+`PRINT_PX_PER_MM` in `libs/core/src/lib/cv/cv-page.util.ts` is `72 / 25.4 / 0.8`, and both previews
+use it. An A4 sheet then maps to 595.3 x 841.9pt - exactly A4 - and the measured column and usable
+height come out at 602.0 x 910.7px, which are the numbers the clip box carries.
+
+**Measured on macOS, the only platform with a print path today.** A webview that maps pixels to
+points differently would need this to become per-platform; the constant's comment says how to measure
+it from an exported file.
+
+**Why four attempts missed it.** Every one of them moved the margins between layers, because the
+margins were what the eye noticed. The margins were correct from the second attempt onward. What was
+wrong was the size of the page the preview believed in.
+
+**What to test next:** export a two-page CV from the Documents list and compare the page break with
+the editor. They should now break in the same place, and no text should be missing from the end of
+page one.
 
 **B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
 On the exported page two, `EDUCATION` starts at the left margin with its rule running the full

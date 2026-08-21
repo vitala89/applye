@@ -1,5 +1,5 @@
 import { ComponentFixture } from '@angular/core/testing';
-import { CV_STYLE_DEFAULT } from '@applye/core';
+import { CV_STYLE_DEFAULT, PRINT_PX_PER_MM } from '@applye/core';
 
 import { CvPreviewComponent } from './cv-preview.component';
 import { CvPreviewStyleService } from './cv-preview-style.service';
@@ -16,14 +16,21 @@ describe('CvPreviewComponent', () => {
     ({ component, fixture, styles } = await createCvPreview());
   });
 
+  // The page is modelled at the scale the **print** pipeline uses, not the
+  // display convention. Exported PDFs write every text matrix at 0.8 points per
+  // CSS pixel - 90 to the inch - and `96 / 25.4` therefore modelled every page
+  // 6.67% larger than the sheet: the measured column came out wider than the
+  // printable area so text wrapped differently in the export, and the paginator
+  // packed 971px of content into a card where only 911px could print, so the
+  // bottom of each card was clipped away. That is `B4`. See `PRINT_PX_PER_MM`.
   it('exposes A4 sheet dimensions via geometry', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,
       page: { size: 'a4', margin: { top: 20, right: 20, bottom: 20, left: 20 } },
     });
     const g = component.geometry();
-    expect(g.pageWidthPx).toBeCloseTo((210 * 96) / 25.4);
-    expect(g.marginTopPx).toBeCloseTo((20 * 96) / 25.4);
+    expect(g.pageWidthPx).toBeCloseTo(210 * PRINT_PX_PER_MM);
+    expect(g.marginTopPx).toBeCloseTo(20 * PRINT_PX_PER_MM);
   });
 
   it('produces different width for Letter', () => {
@@ -31,7 +38,7 @@ describe('CvPreviewComponent', () => {
       ...CV_STYLE_DEFAULT,
       page: { size: 'letter', margin: { top: 20, right: 20, bottom: 20, left: 20 } },
     });
-    expect(component.geometry().pageWidthPx).toBeCloseTo((215.9 * 96) / 25.4);
+    expect(component.geometry().pageWidthPx).toBeCloseTo(215.9 * PRINT_PX_PER_MM);
   });
 
   it('renders the paginated sheet', () => {

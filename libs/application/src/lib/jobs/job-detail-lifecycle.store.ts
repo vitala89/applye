@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService } from '../documents/document-export.service';
 import { ToastService } from '../shell/toast.service';
@@ -56,13 +56,6 @@ export class JobDetailLifecycleStore {
   private readonly toast = inject(ToastService);
   private readonly t = inject(TranslateService).t;
 
-  /**
-   * The description is being edited against an applied job, so the screen is
-   * unlocked on purpose. Reset on every job change: the unlock was granted for
-   * the job that was open, not for the next one.
-   */
-  readonly editingLocked = signal(false);
-
   /** The job id the screen currently reflects, so a route param change to a
    * different job triggers a real reload instead of leaving stale content. */
   private loadedJobId: number | null = null;
@@ -116,7 +109,6 @@ export class JobDetailLifecycleStore {
     this.finalChecksSvc.reset();
     this.reviewStatus.reset();
     this.exportSvc.resetStatus();
-    this.editingLocked.set(false);
     this.wizardNav.crossJobConfirmOpen.set(false);
     this.jobActions.deleteConfirmOpen.set(false);
   }

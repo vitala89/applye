@@ -43,13 +43,13 @@ export class JobActionsStore {
   readonly applyResult = signal<'updated' | null>(null);
 
   /**
-   * True with no application yet, one still in 'saved', or the user overrode the
-   * lock via "Edit". Anything else (applied/interview/offer/rejected/cancelled)
-   * shows the status dropdown + Edit instead of an actionable Mark-as-Applied.
+   * True with no application yet, or one still in 'saved'. Anything else
+   * (applied/interview/offer/rejected/cancelled) shows the status badge
+   * instead of an actionable Apply - applied is terminal (`P2`).
    */
   readonly canMarkApplied = computed(() => {
     const status = this.detail.application()?.status;
-    return !status || status === 'saved' || this.lifecycle.editingLocked();
+    return !status || status === 'saved';
   });
 
   /** Locked exactly when Mark-as-Applied isn't available. */
@@ -89,7 +89,6 @@ export class JobActionsStore {
     );
     if (!updated) return false;
     this.detail.application.set(updated);
-    this.lifecycle.editingLocked.set(false);
     this.nav.forget(id);
     this.passDrafts.clear(id);
     return true;
@@ -109,13 +108,6 @@ export class JobActionsStore {
     const updated = await this.svc.apply(app.id, job.id);
     if (!updated) return;
     this.detail.application.set(updated);
-  }
-
-  /** "Cancel" - drops the override and discards the in-progress description edit
-   * (reverts jdText to the persisted value). Nothing was ever saved. */
-  cancelEditingLocked(): void {
-    this.lifecycle.editingLocked.set(false);
-    this.detail.jdText.set(this.detail.job()?.jdText ?? '');
   }
 
   /** Opening the wizard / returning to the summary should always land the user

@@ -145,11 +145,6 @@ import {
               <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
               {{ busy() ? t()('jobs.wizard.applying') : t()('jobs.wizard.create_application') }}
             </button>
-            @if (overrideEditing()) {
-              <button class="btn btn--secondary btn--sm" type="button" (click)="cancelEdit.emit()">
-                {{ t()('actions.cancel') }}
-              </button>
-            }
           } @else if (applicationStatus(); as status) {
             <span class="badge" [class]="statusBadgeClass(status)">
               {{ t()('status.' + status) }}
@@ -204,10 +199,6 @@ export class ApplyWizard {
   readonly jobTitle = input<string>('');
   readonly company = input<string>('');
   readonly applicationStatus = input<ApplicationStatus | null>(null);
-  /** Parent's "Change" override - same live-edit-mode signal as
-   * JobsComponent.editingLocked, so this footer stays in sync with the
-   * top-level lock state. */
-  readonly overrideEditing = input<boolean>(false);
   readonly initialStep = input<number>(0);
   /** True while a step's async work is in flight (tailoring, rescoring,
    * document generation). Blocks Next/Continue so the user cannot advance
@@ -225,7 +216,6 @@ export class ApplyWizard {
   /** Commit the re-tailored resume for a job that already has a status
    * (applied/interview/…) - persists the updated score and confirms. */
   readonly updateApplication = output<void>();
-  readonly cancelEdit = output<void>();
   /** Emitted whenever the active step changes - lets the parent kick off
    * work tied to a step (e.g. auto-rescore on entering the Updated score
    * step) without the wizard knowing what that work is. */
@@ -257,7 +247,7 @@ export class ApplyWizard {
   /** Mirrors JobsComponent.canMarkApplied - same gate, same reasoning. */
   protected readonly canMarkApplied = computed(() => {
     const status = this.applicationStatus();
-    return !status || status === 'saved' || this.overrideEditing();
+    return !status || status === 'saved';
   });
 
   protected goBack(): void {

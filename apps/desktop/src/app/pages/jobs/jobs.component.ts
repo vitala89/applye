@@ -217,12 +217,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   // Job Detail: the application row (if this job is on the board) + action state.
   readonly application = this.store.application;
 
-  /** Editing override for the scoring view only. The job-detail UI no longer
-   * exposes a re-edit affordance once a job leaves Saved (the application is
-   * out the door, so the pasted description is frozen); this stays because the
-   * scoring view still drives it via `overrideEditing` / `cancelEdit`. */
-  readonly editingLocked = this.lifecycle.editingLocked;
-
   /** Confirm dialog when opening the wizard here would abandon an unfinished
    * tailoring session for a different job. */
   readonly crossJobConfirmOpen = this.wizardNav.crossJobConfirmOpen;
@@ -376,7 +370,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     // Re-parsing means the JD (and therefore the score) changed - any earlier
     // tailoring for this job is now stale. Drop it so the Tailored badge and
     // Retailor state clear and the user re-tailors against the updated JD.
-    this.editingLocked.set(false);
     // The one call that spans both stores, which is why it stays here: the
     // scoring block re-parses, the tailoring block is thrown away. Neither
     // store injects the other (`JobTailoringStore`'s header records this).

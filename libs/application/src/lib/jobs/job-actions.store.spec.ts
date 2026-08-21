@@ -18,7 +18,6 @@ describe('JobActionsStore', () => {
   let job: ReturnType<typeof signal<Job | null>>;
   let application: ReturnType<typeof signal<Application | null>>;
   let jdText: ReturnType<typeof signal<string>>;
-  let editingLocked: ReturnType<typeof signal<boolean>>;
   let busy: ReturnType<typeof signal<boolean>>;
   let wizardOpen: ReturnType<typeof signal<boolean>>;
   let saveResult: Application | null;
@@ -36,7 +35,6 @@ describe('JobActionsStore', () => {
     job = signal<Job | null>({ id: 3, title: 'Angular dev', jdText: 'saved text' } as Job);
     application = signal<Application | null>(null);
     jdText = signal('edited text');
-    editingLocked = signal(true);
     busy = signal(false);
     wizardOpen = signal(true);
     saveResult = { id: 9, status: 'saved' } as Application;
@@ -109,7 +107,6 @@ describe('JobActionsStore', () => {
         {
           provide: JobDetailLifecycleStore,
           useValue: {
-            editingLocked,
             resetJobScopedState: () => calls.push('resetJobScoped'),
             loadJob: (id: number) => {
               calls.push(`loadJob:${id}`);
@@ -177,14 +174,13 @@ describe('JobActionsStore', () => {
   });
 
   describe('createApplication', () => {
-    it('commits the tailored CV, unlocks editing, and asks the caller to leave', async () => {
+    it('commits the tailored CV and asks the caller to leave', async () => {
       const leave = await store.createApplication();
 
       expect(leave).toBe(true);
       expect(calls).toEqual(['createApplication', 'ensureDraft', 'forget:3']);
       expect(committed).toEqual(['the tailored CV']);
       expect(application()).toEqual({ id: 9, status: 'saved' });
-      expect(editingLocked()).toBe(false);
     });
 
     // The navigation is the page's, so a failed write must not report a move
@@ -193,7 +189,6 @@ describe('JobActionsStore', () => {
       createApplicationResult = null;
 
       expect(await store.createApplication()).toBe(false);
-      expect(editingLocked()).toBe(true);
     });
   });
 
@@ -234,15 +229,6 @@ describe('JobActionsStore', () => {
       removeResult = false;
 
       expect(await store.confirmDeleteJob()).toBe(false);
-    });
-  });
-
-  describe('cancelEditingLocked', () => {
-    it('drops the override and reverts the in-progress description edit', () => {
-      store.cancelEditingLocked();
-
-      expect(editingLocked()).toBe(false);
-      expect(jdText()).toBe('saved text');
     });
   });
 
@@ -302,8 +288,6 @@ describe('JobActionsStore', () => {
 
   describe('canMarkApplied', () => {
     it('is true with no application, and while one is still saved', () => {
-      editingLocked.set(false);
-
       expect(store.canMarkApplied()).toBe(true);
 
       application.set({ id: 9, status: 'saved' } as Application);
@@ -311,17 +295,11 @@ describe('JobActionsStore', () => {
       expect(store.canMarkApplied()).toBe(true);
     });
 
-    it('is false once the application has left saved, unless the user overrode it', () => {
-      editingLocked.set(false);
+    it('is false once the application has left saved - applied is terminal (P2)', () => {
       application.set({ id: 9, status: 'interview' } as Application);
 
       expect(store.canMarkApplied()).toBe(false);
       expect(store.jobLocked()).toBe(true);
-
-      editingLocked.set(true);
-
-      expect(store.canMarkApplied()).toBe(true);
-      expect(store.jobLocked()).toBe(false);
     });
   });
 

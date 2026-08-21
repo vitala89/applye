@@ -732,12 +732,6 @@ export const de: TranslationMap = {
     application_saved_ok: 'Bewerbung gespeichert.',
     retailor_locked:
       'Beworben - die gesendete Version ist endgültig und kann nicht erneut angepasst werden.',
-    change_status_action: 'Ändern',
-    edit_locked_action: 'Bearbeiten',
-    edit_confirm_title: 'Eine laufende Bewerbung bearbeiten?',
-    edit_confirm_msg:
-      'Diese Bewerbung ist über den Status „Beworben" hinaus, der Lebenslauf wurde also bereits gesendet. Beim Bearbeiten wird die Beschreibung wieder freigegeben und ein erneutes Anpassen möglich. Fortfahren?',
-    edit_confirm_btn: 'Trotzdem bearbeiten',
     cross_job_confirm_title: 'Unfertige Bewerbung verwerfen?',
     cross_job_confirm_msg:
       'Für eine andere Stelle läuft bereits eine Anpassung. Wenn Sie hier eine starten, wird jene abgebrochen. Sie können sie auch über „Anpassung abschließen" zu Ende bringen. Unfertig:',

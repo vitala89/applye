@@ -103,6 +103,38 @@
 // paginates the real content via the `@page` rule injected by
 // `exportPdfWysiwyg()`, which also supplies the real margins.
 @media print {
+  // **The document flows; the app gets out of its way.**
+  //
+  // The sheet used to be pinned with `position: absolute`, and it had to be:
+  // `.shell` is `height: 100vh; overflow: hidden`, `.main` is
+  // `overflow: hidden` and `.content` is the scrolling box, so a statically
+  // flowed sheet was clipped to one viewport. Pinning escaped the clip and cost
+  // the first page its margins - an absolutely positioned box in paged media
+  // does not sit inside the page area the way a flowed one does (`B4`).
+  //
+  // Removing the clip instead is what lets the sheet flow, and a flowed
+  // document is what `@page` margins are for: they repeat on every page, which
+  // is the property that padding on a page-tall card can never have.
+  //
+  // `display: none` on the two chrome elements rather than `visibility:
+  // hidden`, for the same reason the print routes stopped rendering the shell
+  // at all (`B6`): hiding paints nothing and occupies everything.
+  body.printing-cv,
+  body.printing-cv .shell,
+  body.printing-cv .main,
+  body.printing-cv .content {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  body.printing-cv .content {
+    padding: 0 !important;
+  }
+  body.printing-cv .sidebar,
+  body.printing-cv .topbar {
+    display: none !important;
+  }
+
   // Hide everything, then reveal only the paginated sheet content.
   body.printing-cv * {
     visibility: hidden;
@@ -119,30 +151,25 @@
     display: none !important;
   }
 
-  // Pin the sheet to the page origin (the app shell is only `visibility:
-  // hidden`, so it still occupies layout space). `top/left/right: 0` - not
-  // `inset: 0` - leaves the height content-driven so the cards below can
-  // paginate instead of being clipped to one viewport.
+  // Static, not pinned. The clip it used to escape is gone (see above), so the
+  // sheet is an ordinary block at the top of the document and every page it
+  // spans sits inside the `@page` margin area.
   body.printing-cv lib-paginated-sheet {
     @include paper.paper-light;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
     display: block;
     gap: 0;
   }
 
-  // One on-screen page-card = one physical page.
+  // One on-screen page-card = one physical page. The `@page` rule owns the real
+  // margins, so the card sheds its simulated padding and its fixed full-page
+  // height and prints as its content box inside the page's margin area.
   //
-  // **The card keeps its padding, and that padding is the printed margin.**
-  // It used to shed it and let `@page { margin }` supply the inset, which is
-  // the semantically right place for a page margin and did not survive the
-  // engine: the exported PDF put the content closer to the paper edge than the
-  // editor had shown (`B4`). The `@page` rule now sets `margin: 0`, so the page
-  // is the whole sheet and the inset comes from the same padding the preview
-  // draws - one source for the margins instead of two, and ordinary box layout
-  // rather than a paged-media feature the renderer has to honour.
+  // **Keeping the padding here was tried and failed on the second page.** The
+  // paginator packs content into `pageHeight - margins`, so a card carrying the
+  // margins as padding is exactly one page tall; printed onto a sheet whose
+  // printable area is smaller than the paper by any amount, it overflows and
+  // `break-inside: avoid` moves a whole section onto a page with no top inset.
+  // Padding belongs to a box, a margin belongs to every page.
   body.printing-cv .page-card-wrap {
     @include paper.paper-light;
     display: block;
@@ -160,12 +187,13 @@
     box-shadow: none;
     border: 0;
     overflow: hidden; // guard against a sub-pixel spill adding a blank page
-    // Drop the fixed page height so a content-sized card cannot round-overflow
-    // onto a blank page, and let the width fill the sheet - which with
-    // `@page { margin: 0 }` is the whole paper. The inline padding is
-    // deliberately NOT reset: it is the margin now (see above).
+    // Drop the inline simulated margins and the fixed page height: the @page
+    // rule provides the margins, and a content-sized card cannot round-overflow
+    // onto a blank page. Width fills the page's content area (= the measured
+    // column).
     width: auto !important;
     height: auto !important;
+    padding: 0 !important;
   }
 
   // Keep an atom from splitting across the card's internal content box.

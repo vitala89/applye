@@ -44,6 +44,34 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-21, the first native pass on four unseen fixes, and one of them was wrong
+
+- **Status:** complete. **Three of the four fixes are confirmed by the maintainer's own pass; the fourth was rejected and is re-fixed here**, differently, and is owed another pass.
+- **Agent/tool:** Claude Code, Opus 5. The maintainer ran the app; the agent read the evidence and changed the code. Triage **8/10** on the re-fix (radius 2, ambiguity 2, risk 1, verification 2, unknowns 1); grilling gate ran once, one question. No subagents.
+- **Branch:** `fix/print-flow-unclips-the-shell`, cut from `origin/main` at `3fc8df4f` with all four previous fixes merged.
+
+- **What the pass settled**, and it is the first time in this sequence that "fixed" and "seen" are the same word:
+  - **`B2` passes.** All six disclosures opened and closed twice.
+  - **`B6` passes.** A one-page tracker report exports as one page.
+  - **`B10`** - the spinner - was covered by the same session.
+  - **`B4` fails, and differently from before.** Page one came back correct. **Page two lost its inset.**
+
+- **The rejected fix was wrong for a reason that is dimensional, not incidental**, which is worth stating because it is what makes the second attempt trustworthy. `paginate.util.ts` packs content into `pageHeightPx - marginTop - marginBottom`, so a card carrying the margins as **padding** is **exactly one page tall** whatever else is true of it. Printed onto a sheet whose printable area is smaller than the paper by any amount, it overflows, and `break-inside: avoid` moves a whole section down - onto a page with no top inset, because **padding belongs to a box and a margin belongs to every page it spans**. The maintainer's print preview showed `EDUCATION` and the bullet above it displaced off page one and flush at the paper edge, where the on-screen preview had page one ending with `EDUCATION`.
+- **The old tripwire was right about the outcome even though its stated reason described a different configuration.** It has been rewritten twice now and is back to its original assertion, with a comment long enough that the next person to have this idea reads why it fails rather than rediscovering it in an export.
+- **What was actually wrong all along was the pinning, and it is removed at its cause.** The sheet was `position: absolute` because `.shell` is `height: 100vh; overflow: hidden`, `.main` is `overflow: hidden`, and `.content` is the scrolling box - three clips a flowed sheet cannot escape. The print rules unclip all three and drop the sidebar and topbar with `display: none` rather than `visibility: hidden`, the same distinction `B6` turned on. The sheet is an ordinary block at the top of the document now, `@page` owns the margins again, and they repeat per page.
+
+- **Two findings the maintainer raised on the same pass are recorded rather than acted on:**
+  - **`B12`, new.** Create Application generates a cover letter the user deliberately skipped - which is also the answer to "why did it think for so long". `markApplied` calls `JobDocumentsStore.commit`, and with nothing linked `decideCoverLetterAction` answers "create". The code is doing what it was written to do, so it needs a decision and not a patch.
+  - **`P1`/`P2` are now specified concretely**: Create Application saves rather than applies; an **Apply** button is the user's own act, after they submit the employer's form; applied is terminal for **everything** - Retailor disabled, editing closed, and the CV and cover letter read-only or deletable rather than editable. `B12` belongs to that change, because all four are about what Create Application is allowed to do.
+  - `B9` is unchanged and still needs its two screenshots; the maintainer's clue - present on a first tailoring, absent on a re-tailor - narrows it from "varies between steps" to "varies with state", which is a different search.
+
+- **Files changed:** `apps/desktop/src/styles.scss`, `wysiwyg-print.ts` and its spec, `cv-detail.style.spec.ts`, plus documents.
+- **`check-style-move.mjs` reports 1 selector losing declarations and 7 gaining**, all deliberate: the sheet loses its pinning, and the shell containers, the sidebar, the topbar and the card gain the rules above.
+- **Validation, all run and observed:** `nx run desktop:type-check` green; `nx run-many --target=lint --projects=desktop --skip-nx-cache` green with the one pre-existing warning; `nx test desktop` **1164 passed**; `nx build desktop` green, 1.51 MB / 280.85 kB; `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check` passed.
+- **Not covered here:** the export itself, again. The next pass must look at **both** pages of a **two-page** CV, not only the first - which is the lesson this round paid for.
+- **Privacy/security impact:** none.
+- **Next first action:** the maintainer's decision on `P1`/`P2`/`B12`, which is now the largest open item and the only one that changes what the app does rather than how it looks.
+
 ### 2026-08-21, the spinner was turning on a box 1.84px taller than itself
 
 - **Status:** complete for `B10`. **`B9` was looked for and not found**, which is recorded as precisely as a fix rather than guessed at.

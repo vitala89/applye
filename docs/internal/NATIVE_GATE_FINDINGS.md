@@ -169,7 +169,7 @@ than saved). Export from the button works, so the print path itself is alive; it
 entry point that is dead. Nothing else in the app is reached by Cmd+P, so a swallowed shortcut or a
 missing handler is the place to look.
 
-**B4. The exported PDF does not use the margins shown in the editor. FIXED 2026-08-21.**
+**B4. The exported PDF does not use the margins shown in the editor. FIXED 2026-08-21, second attempt.**
 In the live preview the four margin values from the Style card are respected and the page looks
 correct. Export to PDF - both to the print dialog's preview and to a saved file - and **page one
 loses its margins**: the content sits closer to the paper edge than the editor showed.
@@ -195,6 +195,28 @@ break before themselves.
 **What decided it: both shipped configurations have now failed a native pass** - the zero-margin one
 as recorded in that test, and the four-margin one as this finding. Keeping the current rule was not
 the conservative option it looked like.
+
+**The native pass of 2026-08-21 rejected that attempt, and the reason is dimensional rather than
+incidental.** Page one came back correct and **page two lost its inset**: the print preview showed
+`EDUCATION` and the bullet above it moved off page one, landing at the very top edge of page two,
+where the on-screen preview had page one ending with `EDUCATION` and page two starting at `SKILLS`.
+
+`paginate.util.ts` packs content into `pageHeightPx - marginTop - marginBottom`. A card carrying the
+margins as **padding** is therefore **exactly one page tall**, whatever else is true of it. Printed
+onto a sheet whose printable area is smaller than the paper by any amount at all, it overflows, and
+`break-inside: avoid` moves a whole section onto a second page - which has no top inset, because
+**padding belongs to a box and a margin belongs to every page it spans**. The old tripwire was right
+about the outcome even though its stated reason described a different configuration.
+
+**What was actually wrong was the pinning, and that is now removed at its cause.** The sheet was
+`position: absolute` because `.shell` is `height: 100vh; overflow: hidden`, `.main` is
+`overflow: hidden` and `.content` is the scrolling box - three clips a flowed sheet could not escape.
+The print rules unclip all three and drop the sidebar and topbar with `display: none`, so the sheet
+is an ordinary block at the top of the document, the `@page` margins own the inset again, and they
+repeat on every page. The card goes back to `padding: 0`, which makes it shorter than the page area
+and unable to overflow.
+
+**Still owed a native pass**, and this time on **both** pages of a two-page CV.
 
 **B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
 On the exported page two, `EDUCATION` starts at the left margin with its rule running the full
@@ -366,6 +388,23 @@ is a bordered `<span>` with an explicit 14px square, so its box already is the c
 **The guard is a guard, not evidence.** jsdom has no layout, so the spec scans the stylesheets for the
 box; whether the circle now turns on its centre is a thing only a screen can say.
 
+**B12. Create Application generates a cover letter the user never asked for.**
+Reported on the native pass of 2026-08-21, and it is also the answer to "why did Create Application
+think for so long". On the Review-documents step the user pressed **Generate CV** only, deliberately
+skipping the cover letter, and continued. The final **Create Application** button then generated the
+cover letter itself, which is where the wait came from.
+
+**This is the code doing what it was written to do, which is why it needs a decision rather than a
+patch.** `JobActionsStore.markApplied` calls `JobDocumentsStore.commit(tailoredMd, true)`, and that
+method asks `decideCoverLetterAction({ linked: !!this.coverLetter(), ... })` - with nothing linked the
+answer is "create", so `createCoverLetter()` runs. The comment above it says so plainly: the commit
+"generates any missing CV / cover letter".
+
+The maintainer's position is that a document the user skipped must stay skipped: not generating it is
+the whole meaning of not pressing the button, and generating it silently spends tokens and minutes on
+something that was declined. It belongs with `P1` and `P2`, because all three are about what
+**Create Application** is allowed to do.
+
 **B11. Generating a cover letter fails on the first attempt and works on the second.**
 Reported as recurring, not a one-off: the first **Generate cover letter** cuts off, and pressing
 generate again produces the letter normally. CV generation on the same run did not do this.
@@ -433,6 +472,18 @@ and the wording are in place; the gap is one button.
 
 P1 and P2 are one change: without P1 the state is reached by accident, and P2 is what makes reaching
 it meaningful.
+
+**Specified further by the maintainer on 2026-08-21**, and the shape is now concrete:
+
+- **Create Application saves the application; it does not apply.** The status is the tailored/saved
+  one, and an **Apply** button appears for the user to press themselves - after they have actually
+  submitted the employer's form on the employer's site.
+- **Applied is terminal for everything, not only the description.** Retailor is **disabled**, not
+  merely unhelpful. Editing the application is closed.
+- **The documents go read-only.** For an applied job the CV and the cover letter can be read and
+  deleted, and not edited: the version that was sent is the version that exists.
+- **`B12` belongs to the same change.** A document the user skipped must stay skipped, so the commit
+  that runs behind Create Application must stop generating a missing cover letter on its own.
 
 **P4. Moving a card back out of Interview leaves its interview stages with nowhere to live.**
 Drag a card into **Interview**, create its stages, then drag it back to **Applied**. The stages

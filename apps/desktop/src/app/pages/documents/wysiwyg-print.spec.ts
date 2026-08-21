@@ -29,27 +29,27 @@ describe('wysiwyg print', () => {
   });
 
   describe('the @page rule', () => {
-    // `B4`, and the round trip behind it. Moving the margins into the card's
-    // padding with `margin: 0` here fixed page one and broke page two: the
-    // paginator packs content into `pageHeight - margins`, so such a card is
-    // exactly one page tall, overflows any printable area smaller than the
-    // paper, and spills a section onto a page with no top inset. A page margin
-    // repeats on every page; padding belongs to one box.
-    it('carries the resolved size and all four margins, in millimetres', () => {
+    // `B4`. The margins are set on `NSPrintInfo` by `commands/print.rs`, so the
+    // print system insets the page before any CSS is read. A `@page` margin on
+    // top of that is the same millimetres twice: 257mm of content box becomes
+    // 217mm, which is 151px less than the 971px the paginator packed a card
+    // into - and those four or five displaced atoms are what appeared at the
+    // top of the exported page two.
+    it('carries the resolved size and no margin, because the print system owns it', () => {
       const rule = pageRuleFor({
         size: 'a4',
         margin: { top: 1, right: 2, bottom: 3, left: 4 },
       });
 
       expect(rule).toContain('size: 210mm 297mm');
-      expect(rule).toContain('margin: 1mm 2mm 3mm 4mm');
-      expect(rule).not.toContain('margin: 0');
+      expect(rule).toContain('margin: 0');
+      expect(rule).not.toMatch(/margin: \d+mm/);
     });
 
     it('resolves defaults when the document carries no page settings', () => {
       const rule = pageRuleFor(undefined);
 
-      expect(rule).toMatch(/^@page \{ size: \d+mm \d+mm; margin: (\d+mm ?){4}; \}$/);
+      expect(rule).toMatch(/^@page \{ size: \d+mm \d+mm; margin: 0; \}$/);
     });
 
     it('follows the page size rather than hard-coding A4', () => {
@@ -133,20 +133,20 @@ describe('wysiwyg print', () => {
 
       const el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement;
       expect(el).toBeTruthy();
-      expect(el.textContent).toContain('margin: 5mm 5mm 5mm 5mm');
+      expect(el.textContent).toContain('margin: 0');
       expect(document.body.classList.contains('printing-cv')).toBe(true);
       expect(printed).toBe(1);
     });
 
     it('reuses the style element instead of appending one per export', () => {
       printWithPageRule({ size: 'a4', margin: { top: 5, right: 5, bottom: 5, left: 5 } });
-      printWithPageRule({ size: 'a4', margin: { top: 9, right: 9, bottom: 9, left: 9 } });
+      printWithPageRule({ size: 'letter', margin: { top: 9, right: 9, bottom: 9, left: 9 } });
 
       expect(document.querySelectorAll('#wysiwyg-page-rule')).toHaveLength(1);
-      // ...and the second export's margins won, so the element is rewritten
+      // ...and the second export's page size won, so the element is rewritten
       // rather than merely left in place.
       expect(document.getElementById('wysiwyg-page-rule')?.textContent).toContain(
-        'margin: 9mm 9mm 9mm 9mm',
+        'size: 215.9mm 279.4mm',
       );
     });
 

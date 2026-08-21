@@ -476,30 +476,27 @@ describe('CvDetailComponent per-section style', () => {
     printSpy.mockRestore();
   });
 
-  // The tripwire here has now been rewritten twice, and the second rewrite put
-  // it back. It forbade `margin: 0`; a change on 2026-08-21 moved the margins
-  // into the card's padding and rewrote it to allow one, arguing that the
-  // configuration the tripwire condemned had a fixed page-sized card and a
-  // break after every card, unlike the new one.
+  // This tripwire has been rewritten three times, and each rewrite was an
+  // honest reading of the evidence then available. It is settled now, and the
+  // reason is a place none of the earlier rounds looked: `commands/print.rs`
+  // puts the document's margins on `NSPrintInfo` (`setTopMargin` and its three
+  // siblings), so **the print system insets the page before any CSS is read**.
+  // A `@page` margin is the same millimetres a second time - 257mm of content
+  // box becomes 217mm, 151px short of the 971px the paginator packed, and the
+  // displaced atoms are what the native pass saw at the top of page two.
   //
-  // **The native pass that afternoon said otherwise, and the mechanism is
-  // dimensional rather than incidental.** The paginator packs content into
-  // `pageHeight - margins`, so a card carrying the margins as padding is
-  // exactly one page tall whatever else is true of it; printed onto a sheet
-  // whose printable area is smaller than the paper by any amount, it overflows
-  // and `break-inside: avoid` moves a whole section onto a second page with no
-  // top inset. Padding belongs to a box; a margin repeats on every page.
-  //
-  // So the assertion is the original one, and the comment is longer, because
-  // the next person to have this idea should be able to read why it fails
-  // rather than rediscover it in an export.
-  it('exportPdfWysiwyg injects an @page rule carrying the real per-side margins', async () => {
+  // So `margin: 0` is correct here, and the reason the original tripwire gave
+  // for forbidding it - scaled margins and a blank page - belonged to a
+  // configuration that also kept the card at a fixed page size. The card is
+  // content-sized and carries no padding in print; the only margin in the
+  // output is the one the print system applies.
+  it('exportPdfWysiwyg injects an @page rule that adds no margin of its own', async () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     await component.exportPdfWysiwyg();
     const rule = document.getElementById('wysiwyg-page-rule')?.textContent ?? '';
 
-    expect(rule).toMatch(/margin: \d+mm \d+mm \d+mm \d+mm/);
-    expect(rule).not.toContain('margin: 0;');
+    expect(rule).toContain('margin: 0');
+    expect(rule).not.toMatch(/margin: \d+mm/);
     printSpy.mockRestore();
   });
 

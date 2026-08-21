@@ -46,6 +46,23 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The right-edge fix held on rebuild, and the same export found a fourth print-pipeline defect: a
+  section title printing twice.** `pypdf` text extraction showed "LANGUAGES" as the last line of page
+  1's content stream and the first line of page 2's - genuinely painted twice, not a clipping illusion.
+  `languages` is a single, indivisible `SheetAtom`, so the paginator itself can never split it across a
+  page break; the cause is the same on-screen-vs-print gap the previous entry closed for width, now
+  showing up on height. Pagination decides every page break once, on the editor's own on-screen layout,
+  before the print pass ever starts - `awaitPrintSettle` only activates print CSS after its settle
+  ticks, by which point the page-to-atom assignment is already locked in. A page-card packed to fit a
+  height measured under normal screen layout that comes out even fractionally taller once WKWebView
+  actually prints it forces the browser to break inside a box marked `break-inside: avoid` - and the
+  observed failure is consistent with that forced break landing inside the card's own last atom rather
+  than the page boundary quietly moving. `usableH()` now leaves 16px of headroom under the true margin
+  before packing atoms, so a page-card is never packed close enough to the physical edge for that gap
+  to force a split. **Not verified natively**, and flagged more plainly than the previous three: this
+  is the second-order effect of a defect whose exact print-engine internals could not be confirmed
+  without a live WKWebView print pass.
+
 - **A rebuilt export still sheared text off the right edge, and the cause was a third, independent gap
   in the same print pipeline.** A fresh export - made after the previous entry's fix was merged and the
   build reset with `nx reset` - showed more than that fix targeted: "Berlin, Germany" printed as

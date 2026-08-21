@@ -4,204 +4,142 @@ Copy everything below the line into a fresh session.
 
 ---
 
-**Three streams, in this order: fix what the native gate found, then security, then structure.** The
-order is deliberate and explained below. Do not start with the structural work - it is the least
-urgent and the most likely to bury the rest in diff noise.
+**The print bug is fixed and unconfirmed. Confirm it first, in five minutes, before starting
+anything else** - four of its five attempts were rejected by a native export, and the fifth has not
+been looked at yet. Then `P1`/`P2`/`B12`, which is specified in the maintainer's own words and has
+been waiting several rounds.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
 `docs/product/CURRENT_STATE.md`, the recent `docs/internal/DUTY_WATCH.md` entries,
 `docs/governance/CODE_QUALITY.md` and `docs/governance/VALIDATION_MATRIX.md`.
+`docs/internal/NATIVE_GATE_FINDINGS.md` is the work list.
 
-**`docs/internal/NATIVE_GATE_FINDINGS.md` is the work list for stream 1.** It is the record of the
-first full manual walk of the release gate, done on 2026-08-20, and every item in it was seen in the
-running app rather than inferred.
+## Read this before touching the print path
 
-## Where things stand
+`B4` - "the exported PDF does not use the margins shown in the editor" - took **five** attempts, and
+four of them were wrong in the same way. **Every one of them changed the layer where the symptom was
+visible.** The margins turned out to have three owners: the CSS `@page` rule, the card's padding, and
+`NSPrintInfo` in `commands/print.rs`. On top of that the previews modelled the page at `96 / 25.4`
+while WKWebView prints CSS pixels at **0.8 points** - 90 to the inch - so every page was **6.67%
+larger than the sheet** and the bottom of each card was **clipped away**. The export was losing text,
+not mis-margining it.
 
-The eight-gateway migration and the `ADR-0005` file-size campaign are both **finished** - do not
-re-open or re-plan them. Zero files are over budget in all seven categories.
+**Nothing in this repository could distinguish any of those.** jsdom has no layout, and the engine
+that prints is not here. What settled it was the maintainer exporting the same CV twice, once with
+20mm margins and once with none, and the clip box and text-matrix scale being read straight out of
+the two files. **When a defect is only visible in the output, ask for the output.** The general rule
+is in the `2026-08-21` Duty Watch entries and it is the most expensive thing this project has learned
+this month: _when a value can be applied by more than one layer, count the layers before choosing
+which one to change._
 
-The native gate has been walked once: **46 of 83 checks pass, 3 fail, 1 cannot run.** What is unrun
-needs a system setting, a fresh profile, a data shape the seed does not produce, or a release that
-does not exist yet. `NATIVE_GATE_BACKLOG.md` has the per-section breakdown.
+Reading a PDF is cheap and you should do it rather than reason: `/MediaBox` gives the paper, the
+`re W n` clip box gives what the print system allowed, and the `cm` matrices give the scale and where
+text actually landed. `python3` with `zlib` is enough; there is a worked example in the
+`2026-08-21` entry titled "the preview believed in a page 6.67% too big".
 
-## Stream 1: fix what the walk found
+## First task, and it is five minutes
 
-**Order matters here, and it is not the order of severity - it is the order of cost to the user.**
+Export a **two-page** CV from **both** buttons - the editor's Export and the Documents list's - and
+compare with the on-screen preview.
 
-1. **`B1` - cancelling a tailoring destroys work that was paid for.** The job detail blanks, the
-   score is gone, and both generated documents read `Missing` on the next run. One defect failing two
-   backlog checks. **This is the only bug in the list that burns tokens every single time it fires**,
-   so it goes first regardless of how small the others look.
-2. **`B11` - the cover letter generates on the second attempt, never the first.** Every letter is
-   paid for twice. **Capture the provider error on the failed attempt before theorising**: a timeout,
-   a truncated response and a schema rejection need three different fixes, and a bug that clears
-   itself on retry is exactly the kind that gets "fixed" by guessing.
-3. **`B8` - the job title is a truncated sentence from the description.** It feeds the archetype
-   screen, the score and the tailoring prompt, so three things reason about a fragment.
-4. **`S1` - two and a half minutes to a first document**, half of it in the dual critique. Measured,
-   not guessed: the table is in the findings file. Look at the critique first - whether it needs two
-   passes at full document length, whether it can run against a diff, whether it can overlap the
-   build.
-5. Then `B2` (the WebKit disclosure bug), the print family `B4` `B5` `B6`, and `B9` `B10`.
+Expected: the two files are identical, the margins match the Style card, the page break falls where
+the preview shows it, and no text is missing from the end of page one.
 
-**`B2` cannot be verified by any automated check in this repository.** It is a `grid-template-rows:
-0fr → 1fr` transition that WKWebView does not honour while jsdom and Chrome both pass. Whatever
-replaces it needs another native pass on station 4 - say so in the pull request rather than implying
-the suite covers it.
+If the break still differs, the remaining gap was **one block** at last measurement. Ask for the file
+and measure it; do not reason about it. If it matches, tick `B4` in `NATIVE_GATE_BACKLOG.md` along
+with `B2`, `B6` and `B10`, which the maintainer already confirmed on 2026-08-21.
 
-**`P1` and `P2` are one change, and `P2` is already half-built**: an applied job already locks its
-description; only the Retailor button is still offered. `P3`, `P4` and `P5` are **decisions for the
-maintainer**, not defects - do not implement them from the findings file alone. `Q2` and `Q3` are
-evaluation work and should be sized before being started.
+## Then: `P1`, `P2` and `B12`, as one change
 
-## Stream 2: security
+The maintainer specified this, in this order, and each answer is recorded in
+`NATIVE_GATE_FINDINGS.md`:
 
-Run a real review, not a dependency glance. `docs/governance/` and the `aif-security-review` skill
-define the scope; the areas that actually carry risk here are the OS keychain, the Tauri IPC surface
-and its capability declarations, the CSP, the external job sources, and anything that writes files.
+1. **Create Application saves; it does not apply.** The status is the existing `saved` - there is no
+   `tailored` in the schema, and the job detail already shows a Tailored badge from the tailoring
+   cache, so no migration, no seventh status, no Pipeline column.
+2. **An Apply button is the user's own act**, pressed after they have actually submitted the
+   employer's form on the employer's site.
+3. **`applied` is terminal for everything.** Retailor **disabled**, not hidden. Editing closed. The
+   CV and cover letter become **read-only or deletable, not editable** - the version that was sent is
+   the version that exists. **The read-only editor mode does not exist today and is the largest piece
+   of this work.**
+4. **`B12`: nothing is generated that was not asked for.** Today `JobActionsStore.markApplied` calls
+   `JobDocumentsStore.commit`, and with no cover letter linked `decideCoverLetterAction` answers
+   "create" - so Create Application silently generates a cover letter the user deliberately skipped,
+   which is also why it takes so long. Commit what exists; skip what does not.
 
-**Two things are deliberately open and must not be "fixed":**
+`P2` is **half-built already**: an applied job shows `Applied - description is locked` and the
+description is read-only. The gap is the Retailor button and the documents.
 
-- **Dependabot's single alert, `glib` `GHSA-wrw7-89jp-8q8g` (RUSTSEC-2024-0429).** Linux-only,
-  reached through the gtk-rs stack Tauri pins. It is kept open on purpose, as the signal that Tauri
-  has moved off it. `npm audit --omit=dev` reads **0**.
-- **The npm advisory chain `image-size` → `less` → build tooling.** The only remedy npm offers is a
-  semver-major **downgrade** of `@angular-devkit/build-angular`. The repository contains zero `.less`
-  files and both apps set `inlineStyleLanguage: scss`, so the parser never runs.
+Run the grilling gate on the details before implementing - what a disabled Retailor says, what the
+Create Application step shows, what a read-only editor looks like - but **not** on the four decisions
+above. Those are settled and re-asking them wastes the maintainer's time.
 
-Closing either one costs more than it buys. If a review flags them, the answer is the paragraph
-above, not a change.
+## What else is open
 
-**`style-src 'unsafe-inline'` in the CSP is the one genuinely weak directive**, and
-`docs/architecture.md` already says why: Angular emits component styles as inline `<style>` elements
-at runtime, so there is no nonce or hash to name. It permits CSS injection, not script execution.
-Revisit only if Angular ships a nonce-based style pipeline - and if it has, that is a finding worth
-having.
-
-## Stream 3: structure - and two questions that are already answered
-
-The maintainer asked whether page folders should get subfolders, and whether `index.ts` barrels
-should be added. **Both were checked against the repository before this was written; do not
-re-litigate them from taste.**
-
-### Subfolders: the convention exists and is half-applied
-
-`apps/desktop/src/app/pages/jobs` holds **37 entries**, and they are already two different shapes: a
-dozen components live in their own folder with their template, stylesheet and spec beside them
-(`job-tailor-step/`, `job-meta-card/`, `job-final-checks/`), while the page components, the dialogs
-and the pure helpers sit flat in the root. `pages/documents` is the same mixture.
-
-So the question is not whether to introduce a convention - it is whether to **finish** one. That is a
-much cheaper thing to justify, and a much worse thing to leave half-done, because a reader cannot
-tell which shape is intended.
-
-**Recommended shape**, if the maintainer agrees:
-
-- a component gets a folder when it owns more than one file - template, stylesheet or spec;
-- the page's own root component stays flat, so the folder's entry point is obvious;
-- **pure helpers stay flat and keep their spec beside them** - `scoring.utils.ts`,
-  `tailor-phases.ts`, `job-detail-icons.ts`, `unsaved-job.guard.ts`. Wrapping a one-file function in
-  a folder adds a directory level and hides nothing.
-
-**Do this as pure `git mv` with no content edits**, one page per pull request, and say in the
-description that no behaviour changed. A rename mixed with a fix is a diff nobody can review.
-
-### `index.ts` barrels: do not add them inside `apps`
-
-There is currently exactly one in the whole of `apps`, and that is the right number.
-
-Three reasons, in order of how much they cost:
-
-1. **Barrels defeat lazy loading.** Every page here is a lazily-routed chunk. A barrel pulls
-   everything it exports into whichever chunk touches it, and this repository has already paid for
-   that: the Discover extraction moved ~7 kB into the eagerly-loaded shell and the initial bundle
-   budget had to be raised. A barrel per page would do it systematically.
-2. **Barrels create import cycles.** Component A importing sibling B through the folder's own barrel
-   is a cycle, and it is the kind that builds fine until it does not.
-3. **They buy nothing here.** `@nx/enforce-module-boundaries` polices **project** boundaries, not
-   folder ones, and `libs/*/src/index.ts` already gives every library the single public surface the
-   rule reads. A barrel inside an app has no rule to enforce.
-
-Barrels stay where they mean something: **one per library, as its public API.**
-
-### Angular practice
-
-Use the read-only Angular CLI MCP for guidance rather than memory. The house rules that already exist
-and should be checked against rather than reinvented: standalone components, signals over NgRx (the
-reasoning is in `jobs.store.ts` and has not changed), `OnPush`/zoneless, screen state in a
-`libs/application` store rather than in the page, and the file-size budgets - **250 lines for an
-application-layer store, not 400**.
-
-`job-scoring.service.ts` is at **249/250**. When the ratchet refuses a line, pay for it by extracting
-something that is a function of its arguments, the way `tailoring-pass.ts` did - do not squeeze.
+- **`B9`** - the wizard's footer padding. Three candidate causes were eliminated by reading: one
+  footer element rendered outside the step switch, no bottom padding on it to vary, and the shell's
+  page-bottom gap added in July. **It needs evidence, not more reading**: which two steps differ, and
+  the computed `padding-bottom` of `.apply-wizard__footer` and its scrolling ancestor on each. The
+  maintainer's clue - present on a first tailoring, absent on a re-tailor - narrows it from "varies
+  between steps" to "varies with state".
+- **`B5`** - a section indented and narrowed on exported page two. Needs the exported page or the DOM
+  of the card that lands after the break.
+- **`S1`** - blocked on **one query**, not on a decision. `tailoring_cache` already records
+  `tokens_input` and `tokens_output` per pass; the query is in the `S1` entry. Reading the prompt
+  disproved the hypothesis that file used to carry, and `S3` (the profile and JD re-sent uncached on
+  all three passes) was found while doing it.
+- **A raw Cmd+P in either document editor prints the whole application.** It sets no `printing-cv`
+  class and injects no page rule. Pre-existing, found while deleting `printWithPageRule`, recorded
+  under `B4`.
+- **An open question for the maintainer, not a defect:** `quality:file-size` counts **every non-empty
+  line, comments included** (`effectiveLineCount` in `tools/check-file-size-budgets.mjs`). This
+  repository asks for reasoning to be written down and then charges for it: on 2026-08-21
+  `cv-detail.component.ts` crossed 400 because of one doc block, not because of logic. That was
+  resolved well - the explanation moved to the shared service, one copy instead of two - but the next
+  one might be resolved by deleting the explanation. Options are: leave it, exclude comments and
+  lower the thresholds, or budget comments separately. **Do not decide this alone.**
 
 ## Do not re-open
 
-- **The desktop suite is not flaky.** Two watches said it was; PR #487 disproved it with
-  measurements. Failures were `Exceeded timeout of 5000 ms` with **no assertion ever failing** - jest
-  defaults to nine workers on a loaded machine. On an idle one the suite runs in ~11 s. **Check the
-  machine's load before the code.**
-- **The gateway migration and the file-size campaign are finished.**
+- **The gateway migration and the `ADR-0005` file-size campaign are finished.**
+- **The desktop suite is not flaky.** Failures reading `Exceeded timeout of 5000 ms` with **no
+  assertion failing** are nine jest workers on a loaded machine - `PR #487` measured it. It happened
+  again on 2026-08-21 while the maintainer had a Tauri dev server and a PDF viewer running.
+  `--maxWorkers=2` is clean. **Check the machine's load before the code.**
+- **Two dependency advisories are deliberately open**: `glib` `GHSA-wrw7-89jp-8q8g` (Linux-only,
+  reached through the gtk-rs stack Tauri pins) and the `image-size` → `less` npm chain (zero `.less`
+  files, both apps set `inlineStyleLanguage: scss`). Closing either costs more than it buys.
+- **`style-src 'unsafe-inline'`** is an Angular constraint, documented in `docs/architecture.md`.
 
-## What an agent can and cannot do with the native gate
+## Workflow notes that cost time
 
-Recorded on 2026-08-20, because the backlog's old claim that no agent can run it is too broad.
-
-Computer-use **can** drive the app: clicks, drags, window resizes, reading the screen. It **cannot**
-do anything timed - roughly fifteen checks are animation or shimmer, and the round trip to take a
-screenshot is longer than the animation lasts, so the first frame already shows the finished state.
-It also may not change macOS system settings, which rules out every Reduce-motion check.
-
-**One workflow note that costs a confusing ten minutes if unknown:** after every app restart, clicks
-do not reach the Tauri webview until the window is explicitly brought to the front, and the first
-click does not do it.
+- **Cut every branch from `main`, and check.** A branch cut from another feature branch conflicts
+  against its own squash-merged self, which looks like a content conflict and is not.
+- **The database is three files** (`applye.db`, `-wal`, `-shm`). Back up with
+  `sqlite3 … ".backup …"`, never `cp`.
+- **`npm run quality:file-size` reports "no changed source files to check" against a docs-only tree.
+  That is not a pass.** Use `--staged` after `git add`, or `--base origin/main`.
+- **`--skip-nx-cache` on lint is mandatory**: orphaned imports survive a green type-check.
+- **A change in `libs/` may not reach a running dev server.** `npx nx reset` and a full restart, not
+  HMR - this cost a whole round on 2026-08-21 when a fix was merged, rebuilt and still absent.
+- **Only `CHANGELOG.md`, `CURRENT_STATE.md`, `DUTY_WATCH.md` and `NATIVE_GATE_BACKLOG.md` ever
+  conflict.** Keep both sides, newest first, then `prettier --write`.
+- **Run `check-style-move.mjs` whenever a stylesheet changes**, and name a deliberate delta in the
+  pull request rather than letting it read as a move.
 
 ## Gates before commit
 
-`nx run desktop:type-check`, `nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache`,
-`nx test data`, `nx test application`, `nx test desktop`, `nx test core` when `libs/core` changed,
-`nx build desktop`, `cargo check` in `src-tauri` when anything under it changed,
-`npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, `git diff --check`.
+`nx run desktop:type-check`,
+`nx run-many --target=lint --projects=data,application,desktop --skip-nx-cache`, `nx test data`,
+`nx test application`, `nx test desktop`, `nx test core` when `libs/core` changed, `nx build desktop`,
+`nx build web` when `libs/core` changed, `cargo check` and `cargo test --lib` in `src-tauri` when
+anything under it changed, `npm run quality:file-size`, `npm run quality:attribution`,
+`npm run format:check`, `git diff --check`.
 
-`--skip-nx-cache` on lint is mandatory: orphaned imports survived a green type-check five times in
-the gateway series.
+Run triage and the Plan Check from `AGENTS.md` before touching code, and invoke `aif-grilling` when a
+decision changes a `libs/` public API, a database schema, or the privacy or security posture.
 
-`check-style-move.mjs` only when a stylesheet changed. `nx build web` only when something it compiles
-changed - **the web app imports nothing from `@applye/data`**.
-
-**`npm run quality:file-size` reports "no changed source files to check" against a docs-only tree.
-That is not a pass.** Use `--staged` after `git add`, or `--base origin/main`.
-
-## Workflow notes that cost time repeatedly
-
-**The database is three files.** It runs in WAL mode, so `applye.db`, `applye.db-wal` and
-`applye.db-shm` move together. Any instruction naming only the first is wrong - this cost the
-2026-08-20 walk two stations and a scare, and `NATIVE_GATE_SCRIPT.md` was corrected in four places
-because of it. Back up with `sqlite3 … ".backup …"`, never `cp`.
-
-**A repo-wide rename is a mechanical edit to code and a semantic edit to prose.** The last such
-change turned twenty-six comments into false statements while compiling perfectly.
-
-**Pull requests are squash-merged** and `origin/main` moves under you. After a rebase, re-verify
-everything - green before means nothing after. Only `CHANGELOG.md`, `CURRENT_STATE.md`,
-`DUTY_WATCH.md` and `NATIVE_GATE_BACKLOG.md` ever conflict; `DUTY_WATCH.md` conflicts on every
-concurrent merge because entries are appended at the top. Keep both, newest first, then
-`prettier --write`.
-
-**Measure before you write the number.** The budget script counts **non-empty** lines, which is not
-`wc -l`.
-
-## What to do first
-
-1. **`B1`.** Reproduce it, find where the discard path unwinds past its own transaction, fix it, and
-   add the regression test at whatever seam makes the loss observable. It is the only defect that
-   costs money on every occurrence.
-2. Then `B11`, and **capture the provider error before theorising**.
-3. Ask the maintainer about `P1`/`P2` and `P5` before implementing either - both change behaviour
-   users will notice, and `P5` changes a schema.
-
-Run triage and the Plan Check from `AGENTS.md` before touching code, and invoke `aif-grilling` when
-a decision changes a `libs/` public API, a database schema, or the privacy or security posture.
-
-Pick one thing at a time and finish it, including the Duty Watch handoff.
+**Say plainly what a check does and does not prove.** Four rounds of this bug were reported as fixed
+on the strength of a green suite that could not see the defect. A test that pins a technique is a
+guard, not evidence.

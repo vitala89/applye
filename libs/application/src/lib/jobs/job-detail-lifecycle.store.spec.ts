@@ -261,12 +261,9 @@ describe('JobDetailLifecycleStore', () => {
       expect(postTailorSaved()).toBe(false);
     });
 
-    it('closes both confirmations and relocks editing', () => {
-      store.editingLocked.set(true);
-
+    it('closes both confirmations', () => {
       store.resetJobScopedState();
 
-      expect(store.editingLocked()).toBe(false);
       expect(crossJobConfirmOpen()).toBe(false);
       expect(deleteConfirmOpen()).toBe(false);
     });

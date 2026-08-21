@@ -174,14 +174,12 @@
           [icons]="icons"
           [postTailorScore]="postTailorScore()"
           [applicationStatus]="application()?.status ?? null"
-          [overrideEditing]="editingLocked()"
           [initialStep]="wizardInitialStep()"
           [busy]="tailoring() || updatingScore() || drafts.anyPreparing()"
           (closeWizard)="actions.closeWizard()"
           (discard)="actions.askDiscardTailoring()"
           (createApplication)="createApplication()"
           (updateApplication)="actions.updateApplication()"
-          (cancelEdit)="actions.cancelEditingLocked()"
           (stepChange)="tailorStore.goToStep($event)"
         >
           <app-job-tailor-step

@@ -720,12 +720,6 @@ export const en: TranslationMap = {
     applying: 'Preparing documents…',
     application_saved_ok: 'Application saved.',
     retailor_locked: "Applied - the version you sent is final, so it can't be retailored.",
-    change_status_action: 'Change',
-    edit_locked_action: 'Edit',
-    edit_confirm_title: 'Edit an application already in progress?',
-    edit_confirm_msg:
-      'This application has moved past Applied, so its resume has already been sent. Editing reopens the description and lets you retailor. Continue?',
-    edit_confirm_btn: 'Edit anyway',
     cross_job_confirm_title: 'Abandon your unfinished application?',
     cross_job_confirm_msg:
       'You have a tailoring session in progress for another job. Starting one here cancels it. You can also go back and finish it from the "Finish tailoring" button. Unfinished:',

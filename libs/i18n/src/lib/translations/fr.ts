@@ -747,12 +747,6 @@ export const fr: TranslationMap = stub(en, {
     application_saved_ok: 'Candidature enregistrée.',
     retailor_locked:
       'Candidature envoyée - la version envoyée est définitive et ne peut plus être réadaptée.',
-    change_status_action: 'Modifier',
-    edit_locked_action: 'Modifier',
-    edit_confirm_title: 'Modifier une candidature déjà engagée ?',
-    edit_confirm_msg:
-      "Cette candidature a dépassé l'étape « candidature envoyée », le CV est donc déjà parti. La modification rouvre la description et vous permet de réadapter. Continuer ?",
-    edit_confirm_btn: 'Modifier quand même',
     cross_job_confirm_title: 'Abandonner votre candidature inachevée ?',
     cross_job_confirm_msg:
       "Une adaptation est déjà en cours pour une autre offre. En démarrer une ici l'annulera. Vous pouvez aussi revenir la terminer via le bouton « Terminer l'adaptation ». Inachevée :",

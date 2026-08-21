@@ -744,12 +744,6 @@ export const es: TranslationMap = stub(en, {
     applying: 'Preparando documentos…',
     application_saved_ok: 'Solicitud guardada.',
     retailor_locked: 'Postulado - la versión enviada es definitiva y no se puede volver a adaptar.',
-    change_status_action: 'Cambiar',
-    edit_locked_action: 'Editar',
-    edit_confirm_title: '¿Editar una candidatura que ya está en marcha?',
-    edit_confirm_msg:
-      'Esta candidatura ha pasado de Postulado, así que su CV ya se ha enviado. Al editar se reabre la descripción y puedes volver a adaptarlo. ¿Continuar?',
-    edit_confirm_btn: 'Editar de todos modos',
     cross_job_confirm_title: '¿Abandonar tu candidatura sin terminar?',
     cross_job_confirm_msg:
       'Tienes una adaptación en curso para otro empleo. Empezar una aquí la cancela. También puedes volver y terminarla con el botón «Terminar la adaptación». Sin terminar:',

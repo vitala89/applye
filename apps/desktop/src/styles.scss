@@ -135,9 +135,32 @@
     display: none !important;
   }
 
-  // Hide everything, then reveal only the paginated sheet content.
+  // **Drop everything that is not the sheet from layout, not merely from view.**
+  //
+  // This used to be `visibility: hidden` on everything and `visible` on the
+  // sheet, and that reveals without reclaiming: `visibility` is defined to
+  // preserve layout, so every hidden sibling above the sheet kept its full
+  // height in the printed flow. It cost nothing while the sheet was pinned with
+  // `position: absolute`, because a pinned box is out of flow. The moment the
+  // flow was unclipped so `@page` margins could reach every page, that borrowed
+  // height became real, and the first page's top inset was the page margin
+  // **plus the height of the hidden editor column above it**.
+  //
+  // `.printing-path` is written onto the sheet's ancestors by `markPrintPath`
+  // in `wysiwyg-print.ts` and removed on `afterprint`. A class walked in code
+  // rather than `:has()`, because an engine that does not understand `:has()`
+  // drops the whole rule and prints the entire application - the wrong
+  // direction to fail in, and the same reasoning that chose the disclosure fix.
+  //
+  // The `visibility` pair stays underneath as the floor: if the marking ever
+  // fails to run, the page is hidden rather than printed, which is the old bug
+  // instead of a new and much louder one.
   body.printing-cv * {
     visibility: hidden;
+  }
+  body.printing-cv > *:not(.printing-path),
+  body.printing-cv .printing-path > *:not(.printing-path):not(lib-paginated-sheet) {
+    display: none !important;
   }
   body.printing-cv lib-paginated-sheet,
   body.printing-cv lib-paginated-sheet * {

@@ -16,6 +16,8 @@
  * hang the export rather than slow it. Every wait is capped for the same
  * reason.
  */
+import { markPrintPath } from './wysiwyg-print';
+
 export async function awaitPrintSettle(): Promise<void> {
   const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T | void> =>
     Promise.race([p, new Promise<void>((r) => setTimeout(r, ms))]);
@@ -26,6 +28,12 @@ export async function awaitPrintSettle(): Promise<void> {
   // Two settle ticks for the paginated sheet's ResizeObserver measure pass.
   await new Promise((r) => setTimeout(r, 250));
   await new Promise((r) => setTimeout(r, 250));
+  // Same marking as the editor's own export: the print stylesheet drops from
+  // layout everything that is not on the sheet's ancestor chain, and this
+  // window has a chain too. Nothing un-marks it, deliberately - the window is
+  // opened to be snapshotted and then closed, so there is no "after" to
+  // restore, and an un-mark racing the snapshot could blank the export.
+  markPrintPath();
   document.body.classList.add('printing-cv');
   await new Promise((r) => setTimeout(r, 50));
 }

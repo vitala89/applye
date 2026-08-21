@@ -216,7 +216,31 @@ is an ordinary block at the top of the document, the `@page` margins own the ins
 repeat on every page. The card goes back to `padding: 0`, which makes it shorter than the page area
 and unable to overflow.
 
-**Still owed a native pass**, and this time on **both** pages of a two-page CV.
+**The second attempt was also rejected, on 2026-08-21, and the symptom named the cause.** The
+maintainer reported that on page one **the top inset was larger than the Style card asks for**, and
+that page two still did not match. A top inset larger than the page margin is the signature of a flow
+that starts lower than the page area does.
+
+**`visibility: hidden` reveals without reclaiming.** The print stylesheet hid the whole app that way
+and made the sheet visible again - but the property is _defined_ to preserve layout, so every hidden
+sibling above the sheet kept its full height. While the sheet was pinned with `position: absolute`
+this cost nothing, because a pinned box is out of flow. Unclipping the flow so the page margins could
+reach every page is exactly what made that borrowed height real: the first page's inset became the
+page margin **plus the height of the hidden editor column above the sheet**.
+
+**`display: none` is what removes a box, and the sheet's ancestors have to be spared.** The CSS way to
+say that is `:has()`, and it fails in the wrong direction - an engine that does not understand it
+drops the whole rule and prints the entire application. So `markPrintPath` in `wysiwyg-print.ts`
+walks from the sheet up to `<body>` marking each ancestor, both print paths call it, and the
+stylesheet drops every child of a marked element that is not itself marked and is not the sheet. The
+`visibility` pair stays underneath as the floor: if the marking ever fails to run, the page is hidden
+rather than printed - the old bug rather than a much louder new one.
+
+Five tests cover the marking, including the two that matter: that no sibling of the path is marked,
+and that **nothing is marked when there is no sheet**, because blanking an export is worse than
+failing one.
+
+**Still owed a native pass**, and on **both** pages of a two-page CV.
 
 **B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
 On the exported page two, `EDUCATION` starts at the left margin with its rule running the full

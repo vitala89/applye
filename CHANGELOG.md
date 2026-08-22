@@ -12,6 +12,25 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **A score/rescore run in flight reset to "Score this job" if you left the page and came back**,
+  the same bug the Tailor wizard already had a fix for. `JobScoringService` is component-scoped, so
+  navigating away destroys its instance; `WizardActivityService` already carries a root-singleton
+  `'scoring'` activity slot for exactly this, and `JobScoringService` already called
+  `activity.begin/end(jobId, 'scoring')` around the run - but `jobs.component.ts`'s `scoring` signal
+  read `scoreSvc.running` directly instead of `activity.isRunning(jobId, 'scoring')`, so a returning
+  page saw a freshly-constructed service reporting `false` while the AI call was still in flight. Now
+  reads the activity service, mirroring `tailoring` right above it in the same file.
+
+- **The tailor wizard's Cancel button read as an instant stop it cannot actually be.** `AiService.run()`
+  is a single `tauriInvoke('ai_run')` with no request id and no cancellation path in either API mode
+  (`reqwest`) or CLI mode (a spawned `claude`/`codex` process) - `TailoringService.cancel()` already
+  says so in its own comment: the in-flight pass finishes, only the _next_ one is skipped. Grilled with
+  the maintainer: real mid-request cancellation needs new Rust-side plumbing (a cancel registry keyed
+  by request id, `kill()` for CLI, a dropped future for API, a new `ai_cancel` Tauri command) across
+  every `AiService` caller, which is out of scope here. Fixed the honest way instead - the "Cancelling…"
+  copy is now "Finishing this pass…" and the button carries a hint explaining it stops before the next
+  pass, not mid-request. All 6 locales.
+
 - **The Retailor badge still missed after #520, for the common case rather than an edge one: any job
   that had gone through Create Application (or CV generation) at all.** `CvDraftService.persist()`
   reuses this job's own CV row for its tailoring output (`ADR-0003`), so once a CV is linked,

@@ -78,6 +78,7 @@
       class="btn btn--ghost btn--sm"
       type="button"
       [disabled]="tailorCancelled()"
+      [title]="t()('jobs.wizard.tailor_cancel_hint')"
       (click)="cancelTailoring.emit()"
     >
       {{

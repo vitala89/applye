@@ -306,7 +306,17 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   readonly parsing = this.intake.parsing;
-  readonly scoring = this.scoreSvc.running;
+  /** Whether a score/rescore is in flight for the job now open.
+   *
+   * Reads `WizardActivityService`, not `scoreSvc.running` directly, for the
+   * same reason `tailoring` above does: `JobScoringService` is component-
+   * scoped, so its own signal is destroyed and recreated across a navigate
+   * away and back, and comes back `false` mid-run - the button un-disables
+   * and relabels to "Score this job" while the AI call is still in flight.
+   * `activity.begin/end(jobId, 'scoring')` already runs in
+   * `JobScoringService`; only this read was still pointed at the wrong
+   * signal. */
+  readonly scoring = computed(() => this.activity.isRunning(this.job()?.id ?? -1, 'scoring'));
 
   readonly parseStatus = this.intake.status;
   readonly parseError = this.intake.error;

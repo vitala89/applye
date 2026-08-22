@@ -1,5 +1,17 @@
 # Current Operational State
 
+- **Score/rescore in-flight state now survives leaving the job page**, and the Tailor wizard's Cancel
+  button no longer implies an instant stop it cannot do. Two fixes from the same maintainer pass:
+  (1) `jobs.component.ts`'s `scoring` signal read `scoreSvc.running` (component-scoped, destroyed on
+  navigate-away) instead of `activity.isRunning(jobId, 'scoring')` - `WizardActivityService` already
+  carried a `'scoring'` slot and `JobScoringService` already called `begin`/`end` on it, only the page's
+  read was wrong; now mirrors `tailoring` in the same file. (2) Grilled with the maintainer: real
+  mid-request AI cancellation needs new Rust plumbing (`AiService.run()` is one `tauriInvoke` with no
+  request id or cancel path in either API/`reqwest` or CLI/spawned-process mode) - out of scope for now,
+  recommended and chosen. Fixed the copy instead: "Cancelling…" is "Finishing this pass…", button
+  carries a hint, all 6 locales. Gates green: `desktop` 1170/1170, `i18n` 21/21, type-check, lint
+  (`desktop`, `i18n`, `application`), `nx build desktop`, file-size, attribution, format,
+  `git diff --check`. **Not yet committed.**
 - **The Retailor badge fix is redone properly - #520 closed the wrong-shaped gap.** Native re-test still
   showed "Tailor" instead of "Retailor" after a full Create Application. Root cause: `#520` made
   `restoreFromCache` hash against the right baseline, but once `CvDraftService.persist()` links its
@@ -15,7 +27,7 @@
   writes the identical `source: 'generated'` and links the identical `cvDocumentId`. Gates green:
   `application` 1685/1685, `core` 478/478, `desktop` 1170/1170, both type-checks, lint (`core`,
   `data`, `application`, `desktop`, `ui`), `nx build desktop`, `nx build web`, file-size, attribution,
-  format, `git diff --check`. **Not yet committed.**
+  format, `git diff --check`. **Merged as [`PR #522`](https://github.com/vitala89/applye/pull/522).**
 - **Retry button added for a tailoring pass that fails mid-wizard.** Merged as
   [`PR #521`](https://github.com/vitala89/applye/pull/521). Found by the maintainer testing the
   Retailor fix below: pass 2 returned invalid JSON, and the tailor step had no actionable button at

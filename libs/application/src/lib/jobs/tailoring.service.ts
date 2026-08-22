@@ -123,23 +123,21 @@ export class TailoringService {
    * Rebuilds the results from the cache without spending a token, so returning
    * to a job shows the tailoring already done for it.
    *
-   * Always hashes against the profile baseline, never a selected CV: this runs
-   * before the user has picked one for this visit.
+   * Hashes against the same baseline `runPass` wrote the cache under -
+   * `baselineFor(ctx)`, the chosen base CV when there is one, the profile
+   * otherwise. Hashing against the profile unconditionally missed every job
+   * tailored against a selected base CV, since `selectedBaseCvId` is already
+   * restored from the linked application by the time this runs.
    */
   async restoreFromCache(ctx: TailorContext): Promise<void> {
     const { job, profile, settings } = ctx;
-    if (!job?.id || !profile?.fullMd || !settings) return;
+    if (!job?.id || (!profile?.fullMd && !ctx.baseCvId) || !settings) return;
 
+    const baselineMd = baselineFor(ctx).md;
     const lang = settings.defaultDocLanguage ?? 'en';
     const restored: PassResult[] = [];
     for (const passNum of PASSES) {
-      const inputHash = await this.passInputHash(
-        profile.fullMd,
-        ctx.jdText,
-        passNum,
-        lang,
-        restored,
-      );
+      const inputHash = await this.passInputHash(baselineMd, ctx.jdText, passNum, lang, restored);
       const cached = await this.drafts.tailoringCacheGet(job.id, passNum, inputHash);
       // A miss means every later pass is keyed on a result we do not have.
       if (!cached) break;

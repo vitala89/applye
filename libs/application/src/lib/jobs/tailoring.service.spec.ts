@@ -319,7 +319,7 @@ describe('TailoringService', () => {
       expect(s.results()).toEqual([]);
     });
 
-    it('hashes against the profile, never a selected CV', async () => {
+    it('hashes against the selected base CV when one is set, matching run()', async () => {
       const s = make();
       await s.restoreFromCache(
         ctx({
@@ -335,8 +335,15 @@ describe('TailoringService', () => {
         }),
       );
 
+      expect(db.hashText.mock.calls[0][0]).toContain('chosen');
+      expect(db.hashText.mock.calls[0][0]).not.toContain('baseline profile');
+    });
+
+    it('falls back to the profile when no base CV is selected', async () => {
+      const s = make();
+      await s.restoreFromCache(ctx());
+
       expect(db.hashText.mock.calls[0][0]).toContain('baseline profile');
-      expect(db.hashText.mock.calls[0][0]).not.toContain('chosen');
     });
 
     it('is a no-op without a job, profile or settings', async () => {

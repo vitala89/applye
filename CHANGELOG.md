@@ -10,6 +10,18 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A job tailored against a chosen base CV (not the profile) showed "Tailor" instead of "Retailor"
+  after leaving and reopening it, even though the three passes were already cached.**
+  `TailoringService.restoreFromCache()` always hashed the cache lookup against `profile.fullMd`; the
+  live run (`runPass()`) hashes against `baselineFor(ctx)` - the selected base CV's content when one
+  is set, the profile otherwise. `selectedBaseCvId` is already restored from the linked application by
+  the time a reopened job calls `restoreFromCache`, so the two hash chains disagreed on every job
+  tailored against a base CV: the cache lookup missed on pass 1, `results` stayed empty, and the
+  Retailor CTA never appeared. `restoreFromCache` now hashes through the same `baselineFor(ctx)` call
+  `runPass` uses. Caught natively by the maintainer running the apply wizard end to end.
+
 ### Security
 
 - **The two document editors had one print protocol written twice, and each comment said so.** `cv-detail.component.ts` goes **499 to 464/400** and `cover-letter-detail.component.ts` 282 to 265/400, by moving two duplicated blocks out rather than by splitting either page further. **`wysiwyg-print.ts`** owns the print protocol - the `@page` rule carrying resolved millimetres, the reused `<style>` element, and `printing-cv` cleared on `afterprint` rather than synchronously, because native macOS print through Tauri returns before the page is rendered and clearing early strips the print styles before the snapshot. **`document-editor-return.ts`** owns where an editor goes back to: the two `returnTo` readings, the back-button label and the wizard's hand-back params, with each editor passing its own translation keys and `documentType` while the `router.navigate` calls stay on the pages. **What is deliberately not shared was checked rather than assumed**: the CV commits its inline draft and waits for a stable frame before printing, and clears its selection on `beforeprint`; the cover-letter preview has no inline editing at all, so it needs neither, and that asymmetry is now stated in the module header instead of looking like an omission. **A mutation survived and changed a test's whole approach.** Removing the `removeEventListener` call left every assertion green, because `clearPrinting` only removes a class - it is idempotent, so a leaked listener leaves no trace in the DOM at all. The property is that each attached handler detaches when it fires, and stating that means counting listeners rather than inspecting the page. **The CV page is still over budget at 464/400, and deliberately so:** what remains is screen state - the collapse set, the live-panel and selection signals, preview mode, the resolved sample style - which `ADR-0005` says belongs in a store, and moving it changes what `libs/application` owns. That is a decision for the maintainer, not a file-size edit, and it is recorded rather than taken.

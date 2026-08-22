@@ -1,4 +1,4 @@
-import { PRINT_PATH_CLASS, markPrintPath } from './wysiwyg-print';
+import { PRINT_PATH_CLASS, beginLivePrint, markPrintPath } from './wysiwyg-print';
 
 /**
  * What is left of the print protocol after both editors moved to the Rust
@@ -81,6 +81,38 @@ describe('wysiwyg print', () => {
       markPrintPath();
 
       expect(document.querySelectorAll(`.${PRINT_PATH_CLASS}`).length).toBe(0);
+    });
+  });
+
+  // A raw Cmd/Ctrl+P in a live editor window used to print the whole app
+  // shell, since none of the `body.printing-cv` print stylesheet ever applied
+  // outside the two hidden export routes. `beginLivePrint` reuses the same
+  // marking there.
+  describe('beginLivePrint', () => {
+    function build(): void {
+      document.body.innerHTML = `
+        <div class="shell">
+          <div class="sidebar"></div>
+          <div class="content"><lib-paginated-sheet></lib-paginated-sheet></div>
+        </div>`;
+    }
+
+    it('marks the print path and adds the printing-cv body class', () => {
+      build();
+
+      beginLivePrint();
+
+      expect(document.querySelector('.content')?.classList.contains(PRINT_PATH_CLASS)).toBe(true);
+      expect(document.body.classList.contains('printing-cv')).toBe(true);
+    });
+
+    it('undoes both the marking and the body class', () => {
+      build();
+
+      beginLivePrint()();
+
+      expect(document.querySelectorAll(`.${PRINT_PATH_CLASS}`).length).toBe(0);
+      expect(document.body.classList.contains('printing-cv')).toBe(false);
     });
   });
 });

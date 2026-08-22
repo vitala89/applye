@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArrowLeft, LucideAngularModule, Save, Check, Eye, Pencil, Sparkles } from 'lucide-angular';
@@ -33,6 +33,7 @@ import {
   myJobsReturnJobId,
   type BackLabelKeys,
 } from '../document-editor-return';
+import { beginLivePrint } from '../wysiwyg-print';
 
 /** This editor's half of the shared back-button vocabulary. */
 const COVER_LETTER_BACK_KEYS: BackLabelKeys = {
@@ -73,6 +74,7 @@ export class CoverLetterDetailComponent {
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -161,7 +163,27 @@ export class CoverLetterDetailComponent {
     }
   }
 
+  /** Raw OS/browser print (Cmd/Ctrl+P), bypassing Export - see
+   * `beginLivePrint`'s own comment for why this is needed at all. */
+  private undoLivePrint: (() => void) | null = null;
+
+  private readonly handleBeforePrint = (): void => {
+    this.undoLivePrint = beginLivePrint();
+  };
+
+  private readonly handleAfterPrint = (): void => {
+    this.undoLivePrint?.();
+    this.undoLivePrint = null;
+  };
+
   constructor() {
+    window.addEventListener('beforeprint', this.handleBeforePrint);
+    window.addEventListener('afterprint', this.handleAfterPrint);
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('beforeprint', this.handleBeforePrint);
+      window.removeEventListener('afterprint', this.handleAfterPrint);
+      this.undoLivePrint?.();
+    });
     void this.load();
   }
 

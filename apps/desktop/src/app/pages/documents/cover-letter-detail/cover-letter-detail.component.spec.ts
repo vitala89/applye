@@ -104,6 +104,18 @@ describe('CoverLetterDetailComponent preview atoms', () => {
     expect(document.body.classList.contains('printing-cv')).toBe(false);
     printSpy.mockRestore();
   });
+
+  // A raw Cmd/Ctrl+P used to print the whole app shell: none of the print
+  // stylesheet ever activated outside the two hidden export routes.
+  it('Direct OS/browser print hides the app shell on beforeprint and restores it on afterprint', () => {
+    window.dispatchEvent(new Event('beforeprint'));
+    fixture.detectChanges();
+    expect(document.body.classList.contains('printing-cv')).toBe(true);
+
+    window.dispatchEvent(new Event('afterprint'));
+    fixture.detectChanges();
+    expect(document.body.classList.contains('printing-cv')).toBe(false);
+  });
 });
 
 describe('CoverLetterDetailComponent back navigation', () => {

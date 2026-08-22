@@ -95,28 +95,14 @@ height, closing off the leftover space entirely.
    again" - the whole point of this fix is that it is not another margin change.
 3. Open a PR against `main`.
 
-## Second task: the pagination-timing redesign question, now genuinely open again
+## The pagination-timing redesign question is closed - do not reopen it
 
-Discussed at length in an earlier session, deliberately deferred pending a clean native result on this
-exact line of investigation (re-run `PaginatedSheetComponent`'s `pages()` computation _after_ print CSS
-activates, not before - today `awaitPrintSettle()` in
-[print-settle.util.ts](../../apps/desktop/src/app/pages/documents/print-settle.util.ts) adds the
-`printing-cv` class only after its own settle ticks, by which point pagination already locked in page
-breaks under normal screen CSS).
-
-**That clean result now exists.** The duplicate-paint bug is closed at its source - a card that fills
-its own page cannot fragment into the next one - not patched around with headroom. This is a strong
-signal the redesign is not needed for the failure mode that motivated it. But "not needed" is a
-recommendation, not a decision already made: **ask the maintainer explicitly** whether to close the
-redesign discussion or still pursue it for other reasons (a residual on-screen-vs-print divergence
-could still theoretically show up elsewhere; the redesign was never scoped to only this one bug). Do
-not silently drop it, and do not restart it without asking first - both are what "genuinely open again"
-means here.
-
-If it does proceed, the settled scope from the earlier grilling round still holds: only
-`cv-print.component.ts`, `cover-letter-print.component.ts`, `print-settle.util.ts`. Nothing outside
-`paginated-sheet.ts` consumes the `pages()` signal, so it cannot affect the interactive editor's own
-on-screen pagination, page count, or overflow warning.
+Discussed at length in an earlier session (re-run `PaginatedSheetComponent`'s `pages()` computation
+_after_ print CSS activates, not before), deliberately deferred pending a clean native result on the
+duplicate-paint investigation. That result landed this session, and **the maintainer decided directly:
+the redesign is not needed, since the bug it would have addressed is closed.** This is a settled
+decision, not a recommendation to re-evaluate - do not re-raise it without a new, specific reason (a
+distinct symptom the fragmentation fix does not cover), and do not restart the redesign speculatively.
 
 ## Do not re-open
 
@@ -202,6 +188,4 @@ fontdict, fontsize)` gives exact decoded text at its real position (remember the
 All of the above were run and green for the branch's diff already this session - see the `2026-08-22`
 `DUTY_WATCH.md` entry ("duplicate-heading print bug...") for the exact output.
 
-Run triage and the Plan Check from `AGENTS.md` before touching code, and invoke `aif-grilling` if the
-pagination-timing redesign starts - it changes `PaginatedSheetComponent`'s public timing contract,
-shared by both print routes.
+Run triage and the Plan Check from `AGENTS.md` before touching code.

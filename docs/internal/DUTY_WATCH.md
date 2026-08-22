@@ -44,6 +44,83 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-22, export-filename split unified into document-filename.ts
+
+- **Status:** complete, uncommitted (working tree not yet staged for commit as of this entry).
+- **Agent/tool:** Claude Code, model as configured for this session. Triage 8/10 (radius 2 ·
+  ambiguity 2 · risk 1 · verify 2 · unknowns 1) - `libs/application` public API surface, a genuine
+  two-reading naming decision, user-visible behaviour, the full gate set. `aif-grilling` ran one
+  round before any edit, per the ambiguity=2 rule and per `docs/internal/NEXT_SESSION_PROMPT.md`'s
+  explicit instruction not to guess the naming direction.
+- **Branch:** `main` (uncommitted at entry time).
+- **Commits:** none yet.
+- **Pull request:** none yet.
+- **Objective:** fix the bug diagnosed last session - three independent filename functions
+  (`export-filename.ts`, `cv-filename.ts`, `cover-letter-filename.ts`) suggested different names for
+  the same `document_library` row depending on which button exported it.
+- **Completed:** grilled the maintainer (one round, two questions asked via the dialog; maintainer
+  answered "как ты рекомендуешь" - authorization for the recommended options per the grilling
+  skill's step 6). Settled: (1) spread the DE `Nachname_Vorname_Lebenslauf` convention to every CV
+  export entry point rather than removing it; (2) do not build a new DE convention for cover letters
+  in this fix - no existing logic to reuse, out of scope; (3) consolidate the three files into one
+  `libs/application/src/lib/documents/document-filename.ts`. Implemented: new file exports
+  `documentFilenameBase`, `suggestCvFilename`, `suggestCoverLetterFilename`; deleted the three old
+  source + spec files, merged into one spec; `DocumentExportService.filename()` now delegates to
+  `suggestCvFilename`/`suggestCoverLetterFilename` keyed on `item.docType` instead of the old
+  region-blind `exportFileName`; fixed the fallback-shape regression the naive merge would have
+  caused (both suggest-functions' non-DE fallback now reuses the case-preserving
+  `documentFilenameBase`, replacing their old lowercase-underscore slug); updated two stale comments
+  referencing the deleted files (`cv-content.util.ts`, `document-export.service.spec.ts`); updated
+  `libs/application/src/index.ts` barrel (3 export lines → 1).
+- **Not completed:** no commit, no PR opened - awaiting the maintainer's go-ahead for that step.
+  Did not touch the separate open question from the prior session (whether the maintainer's original
+  two-filename repro also involved two different `document_library` rows via `jobDocLabel`) - out of
+  scope for this fix, which addresses the code-path divergence regardless.
+- **Files or packages changed:** `libs/application/src/lib/documents/document-filename.ts` (new),
+  `libs/application/src/lib/documents/document-filename.spec.ts` (new, merges three old spec files),
+  `libs/application/src/lib/documents/export-filename.ts` + `.spec.ts` (deleted),
+  `libs/application/src/lib/documents/cv-filename.ts` + `.spec.ts` (deleted),
+  `libs/application/src/lib/documents/cover-letter-filename.ts` + `.spec.ts` (deleted),
+  `libs/application/src/lib/documents/document-export.service.ts` (+ `.spec.ts` comment only),
+  `libs/application/src/index.ts`, `libs/core/src/lib/cv/cv-content.util.ts` (comment only).
+- **Validation:** `nx run application:test` (1683/1683 passed, run twice - once before and once
+  after a Prettier auto-format pass on the new spec file), `nx run desktop:type-check` (clean, one
+  pre-existing unrelated warning), `nx run-many --target=lint --projects=data,application,desktop,ui
+--skip-nx-cache` (clean, one pre-existing unrelated warning in
+  `cv-gap-dialog.component.spec.ts`), `nx test desktop --maxWorkers=2` (1169/1169 passed),
+  `npm run quality:file-size` (passed; `cv-content.util.ts` 304/350, unchanged - comment edit is
+  line-count-neutral), `npm run quality:attribution` (passed), `npm run format:check` (passed after
+  one auto-format), `git diff --check` (passed), `nx build desktop` (succeeded, same two
+  pre-existing unrelated warnings). `cargo check`/`src-tauri` not run - nothing under it changed.
+  `nx test core` / `nx build web` not run - `libs/core` change is comment-only.
+- **Privacy/security impact:** none. Filename suggestion logic only; no new data read, stored, or
+  transmitted.
+- **Decisions and assumptions:** the three settled decisions above are the maintainer's, not
+  assumed. One implementation detail decided without asking (in-scope per the grilling skill's
+  "facts are yours to find, decisions are the maintainer's" - this is closer to a bug-in-the-merge
+  fix than a new decision): the non-DE fallback shape change was flagged as a necessary correction to
+  avoid a regression, not asked as a separate fork, since leaving it unfixed would have silently
+  broken every non-German user's export name while claiming to unify the paths.
+- **Risks or compatibility impact:** user-visible filename change for every non-DE, non-generic-slug
+  CV/cover-letter export from the Documents list (previously `lowercase_underscore_slug.ext`, now
+  `Case Preserving Words.ext`) - intentional, part of the unification, covered by the updated spec.
+  DE CV naming and editor/wizard non-DE naming are unchanged in shape (already case-preserving)
+  though the editor/wizard path now goes through the DE-aware function instead of the region-blind
+  one, so a DE CV exported from the editor/wizard now gets the `Lebenslauf` name it previously did
+  not.
+- **Open issues or blockers:** none for this fix. Still open from prior sessions: `B9` (wizard footer
+  padding), `S1` (tailoring-run speed query, needs maintainer permission), `P1`/`P2`/`B12`
+  (disabled-Retailor state, locked editor mode) - all still need a native pass, untouched this
+  session.
+- **Next first action:** review the diff with the maintainer, then commit and open a PR (Conventional
+  Commit, e.g. `fix(documents): unify the three export-filename functions`) if approved. No native
+  verification is possible for this change from the repository alone (save-dialog filename suggestion
+  requires a real Tauri `save()` call) - the unit tests are the full verification surface here; a
+  native spot-check (export the same CV from both entry points, compare names) would be the honest
+  extra step if the maintainer wants it before merging.
+- **Evidence:** test run output above; `git diff --stat` shows 4 modified tracked files, 3 file pairs
+  deleted, 2 new files added.
+
 ### 2026-08-22, PR #515 merged; raw Cmd+P stopped printing the whole app
 
 - **Status:** complete for the code; native confirmation owed.

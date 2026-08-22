@@ -46,6 +46,22 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The PDF/DOCX save dialog now suggests the same filename for a CV or cover letter no matter which
+  button exported it.** Three independent functions used to decide it and disagreed:
+  `export-filename.ts` (editor and apply-wizard Export buttons, region-blind), `cv-filename.ts`
+  (Documents-list CV export, implemented the documented German `Nachname_Vorname_Lebenslauf`
+  convention from `ROADMAP §16.6`), `cover-letter-filename.ts` (Documents-list cover-letter export,
+  slug only). The same `document_library` row could suggest two different names depending on which
+  entry point exported it. Consolidated into `document-filename.ts`: `DocumentExportService.filename()`
+  now delegates to the same `suggestCvFilename`/`suggestCoverLetterFilename` the Documents list
+  already called, keyed on the document's type. Grilled with the maintainer first: the German
+  convention now applies everywhere a CV exports from, rather than being removed; cover letters stay
+  region-blind for now (no existing convention to extend). **A CV or cover letter exported for a
+  non-German region, or with no parseable name, now keeps its case and non-ASCII letters in the
+  suggested name** (`Senior Engineer US.docx`, not `senior_engineer_us.docx`) - the two Documents-list
+  functions' old lowercased, underscore-joined fallback is gone, fixing a regression the naive merge
+  would otherwise have introduced.
+
 - **A raw OS/browser print (Cmd/Ctrl+P) in either document editor no longer prints the whole app.**
   It bypassed the Export button and opened the print dialog on the full app shell - sidebar, topbar,
   everything - because the print stylesheet only ever activates under `body.printing-cv`, and nothing

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DocumentsGateway, SystemGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
-import { exportFileName } from './export-filename';
+import { suggestCoverLetterFilename, suggestCvFilename } from './document-filename';
 import { TranslateService } from '@applye/i18n';
 import { ReviewDocumentKind } from './document-gen.service';
 
@@ -133,8 +133,10 @@ export class DocumentExportService {
     void this.system.revealInFolder(path);
   }
 
-  /** Suggested save name - see `export-filename.ts` for the rule and why. */
+  /** Suggested save name - see `document-filename.ts` for the rule and why. */
   private filename(item: DocumentLibraryItem, format: ExportFormat): string {
-    return exportFileName(item.label ?? '', item.docType, format);
+    return item.docType === 'cv'
+      ? suggestCvFilename(item, format)
+      : suggestCoverLetterFilename(item.label, format);
   }
 }

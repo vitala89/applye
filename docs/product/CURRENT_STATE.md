@@ -1,5 +1,33 @@
 # Current Operational State
 
+- **The duplicate-heading print bug is closed, confirmed on a genuinely clean native export, and the
+  root cause was not the margin gap the last three sessions treated it as.** `PRINT_WIDTH_SAFETY_MARGIN_PX`
+  (4px) and a `PRINT_HEIGHT_SAFETY_MARGIN_PX` raise (16 to 24) shipped on the theory that "LANGUAGES"
+  printing twice was the same on-screen-vs-print sub-pixel gap the width fix closed for right-aligned
+  text, just on the height axis instead. Two native exports at 24px, read forensically with `pypdf`
+  (per-run text position measured against the font's own `/Widths` array, not eyeballed), disproved
+  that theory directly: the paginator had already, correctly, placed "LANGUAGES" on page 2 - its clip
+  there is exactly one heading plus one line tall - and page 1 nonetheless carried a **second** clip
+  region below the first page-card's own box (9 to 36pt tall across the two exports that showed it),
+  with that same heading, or in one case two more lines of the following bullet, painted into it a
+  second time. **The mechanism: WKWebView begins laying the next page-card out in whatever printable
+  space is left at the foot of the current page, paints its first line(s) into that leftover space,
+  and only then honours the forced page break.** Raising the height margin had been feeding this bug
+  rather than closing it, because more headroom in the paginator means _more_ unused space at the foot
+  of a page, not less. Swapping `break-before: page` for `break-after: page` on the wrap was tried next
+  and moved the exported geometry by less than a hundredth of a point - proof the break property itself
+  was never the lever. **The fix that measured clean:** every page-card but the last now receives the
+  full printed page height via a new `--pc-page-height` custom property, driven by `pageBoxHeightPx()`
+  in `paginated-sheet.ts`, so a card fills its page exactly and leaves no leftover space for the next
+  one to fragment into; the last card keeps `height: auto`, because giving it a full page too is what
+  produces a trailing blank page. The two margin constants stay - their headroom is now interior to
+  each card, below its last atom, where nothing can be painted into it. Re-exporting the same CV after
+  the CSS change showed the leftover clip region gone, "LANGUAGES" present only on page 2, and the page
+  count unchanged at 2. Automated gates run and green on the branch: lint (`data`/`application`/`desktop`/
+  `ui`, pre-existing warning only), `desktop:type-check`, `ui:type-check`, `nx test` on `data` (83),
+  `application` (1684), `ui` (37) and `desktop --maxWorkers=2` (1165), `nx build desktop`,
+  `quality:file-size --staged`, `quality:attribution`, `format:check`, `git diff --check`. `libs/core`
+  and `src-tauri` were untouched, so their gates did not need to run.
 - **`#512` was rebuilt and re-exported too, and the right-edge shearing is confirmed gone - but the
   same export surfaced a fourth, distinct print-pipeline defect: a section title printing twice.**
   `pypdf` text extraction showed "LANGUAGES" as the literal last line of page 1's content stream and

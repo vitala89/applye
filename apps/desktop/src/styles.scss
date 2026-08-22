@@ -220,11 +220,21 @@
     margin: 0;
     break-inside: avoid;
   }
-  // Break BEFORE each card after the first - never `break-after` on a card that
-  // already fills its page, which emits a trailing blank page. This starts cards
-  // 2..n on a fresh page and forces no break after the last one.
-  body.printing-cv .page-card-wrap + .page-card-wrap {
-    break-before: page;
+  // Break AFTER every card but the last. `break-before: page` on cards 2..n
+  // was what this rule did first, and it is what let the duplicate-paint bug
+  // in: WKWebView starts laying the next wrap out in whatever space is left at
+  // the foot of the current page, paints its first line into a fragment strip
+  // there, and only *then* honours the break - so that line prints twice, once
+  // clipped at the bottom of one page and once in full at the top of the next.
+  // Read off a native export with `pypdf`: page 0 carried card 0's box plus a
+  // second 11.5px clip strip below it holding a "LANGUAGES" heading that the
+  // paginator had already, correctly, assigned to card 1. The strip is the
+  // page's leftover space, so headroom in the paginator made it worse, not
+  // better. Ending the page at the card that owns it leaves no strip to
+  // fragment into. `:not(:last-child)` is what keeps `break-after` from
+  // emitting the trailing blank page that was the original objection to it.
+  body.printing-cv .page-card-wrap:not(:last-child) {
+    break-after: page;
   }
   body.printing-cv .page-card {
     @include paper.paper-light;
@@ -250,6 +260,23 @@
     width: var(--pc-content-width) !important;
     height: auto !important;
     padding: 0 !important;
+  }
+
+  // Every card but the last fills its page exactly. The duplicate-paint bug
+  // needs leftover space at the foot of a page to fragment the next card into,
+  // and a card sized to its content leaves plenty: an export measured page 0 as
+  // card 0's box (718.82pt) plus a 9.18pt strip beneath it, and that strip
+  // carried a "LANGUAGES" heading the paginator had already, correctly, put on
+  // card 1 - painted there clipped, and again in full on page 1. Swapping
+  // `break-before` for `break-after` did not move it by a hundredth of a point;
+  // deleting the strip is what removes the mechanism. The packing headroom in
+  // `PaginatedSheetComponent` still keeps content off the boundary, but that
+  // slack now sits inside the card, below its last atom, where nothing can be
+  // painted into it. The LAST card keeps `height: auto` - nothing follows it,
+  // so it needs no fill, and a full-height final box is exactly what rounds
+  // into a trailing blank page.
+  body.printing-cv .page-card-wrap:not(:last-child) .page-card {
+    height: var(--pc-page-height) !important;
   }
 
   // Keep an atom from splitting across the card's internal content box.

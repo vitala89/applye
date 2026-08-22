@@ -226,8 +226,8 @@ export function mergeRegeneratedSection(
   return { sections };
 }
 
-// `suggestCvFilename` moved to `@applye/application` (`cv-filename.ts`), next to
-// its cover-letter twin: the save dialog belongs to the page, but the name it
+// `suggestCvFilename` moved to `@applye/application` (`document-filename.ts`), next
+// to its cover-letter twin: the save dialog belongs to the page, but the name it
 // proposes is a document fact, and this file was 652 lines against a 400 budget.
 
 /** Converts a structured CV back into markdown so it can be passed to

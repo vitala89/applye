@@ -92,7 +92,7 @@ describe('DocumentExportService', () => {
     expect(db.coverLetterDocumentExport).toHaveBeenCalledWith(22, 'docx', '/tmp/out.pdf');
   });
 
-  // The naming rule itself lives in `export-filename.spec.ts`; these two only
+  // The naming rule itself lives in `document-filename.spec.ts`; these two only
   // check that the dialog is offered what that rule produced.
   it('suggests the label as a readable name, not a slug', async () => {
     const s = make();

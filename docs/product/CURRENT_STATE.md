@@ -7,14 +7,20 @@
   mechanism in the codebase that could produce a narrower, differently-computed box for a card landing
   after a forced page break, which is exactly `B5`'s described symptom - so it is read as a side
   effect of `#511`, not a mystery fix. `docs/internal/NATIVE_GATE_FINDINGS.md` updated to record it.
-  **A new, separate bug found the same session**: the PDF/DOCX save dialog suggests a different
-  filename for the same document depending on the entry point, because three independent functions
-  decide it - `export-filename.ts` (editor/wizard Export buttons, no region rule), `cv-filename.ts`
-  (Documents-list CV export, implements the documented German `Nachname_Vorname_Lebenslauf`
-  convention), `cover-letter-filename.ts` (Documents-list cover-letter export, slug only, no German
-  rule). Not yet fixed - `docs/internal/NEXT_SESSION_PROMPT.md` carries the full diagnosis and the
-  decision fork that needs grilling before a fix (which function wins, and whether cover letters
-  should get a region convention too).
+  **The export-filename split found the same session is now fixed.** The three independent
+  functions (`export-filename.ts`, `cv-filename.ts`, `cover-letter-filename.ts`) that used to
+  disagree on the same save dialog's suggested name are consolidated into
+  `libs/application/src/lib/documents/document-filename.ts`, exporting `suggestCvFilename` and
+  `suggestCoverLetterFilename`. `DocumentExportService.filename()` (used by the editor/wizard Export
+  buttons) now delegates to the same two functions the Documents-list row actions call, keyed on
+  `item.docType` - every entry point for a given `document_library` row now suggests the same name.
+  Grilled with the maintainer first (`aif-grilling`): the documented German
+  `Nachname_Vorname_Lebenslauf` convention (ROADMAP §16.6) spreads to every CV entry point rather
+  than being removed; cover letters stay region-blind for now (no existing convention to reuse -
+  future work, not bundled into this fix); the generic (non-DE) fallback for both CV and cover
+  letter also switched from a lowercased, underscore-joined slug to the case-preserving,
+  non-ASCII-safe base `exportFileName` used - fixing a hidden regression the naive merge would
+  otherwise have introduced for every non-German user.
 - **`PR #515` (the duplicate-heading fragmentation fix) merged to `main`.** A raw Cmd/Ctrl+P in either
   document editor was found separately to still print the whole app shell - the print stylesheet only
   ever activates under `body.printing-cv`, and nothing set that class outside the two hidden export

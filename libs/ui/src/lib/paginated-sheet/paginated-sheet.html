@@ -22,6 +22,7 @@
     [style.paddingBottom.px]="geometry().marginBottomPx"
     [style.paddingLeft.px]="geometry().marginLeftPx"
     [style.--pc-content-width.px]="contentWidthPx()"
+    [style.--pc-page-height.px]="pageBoxHeightPx()"
   >
     @for (idx of page; track atomAt(idx).id) {
     <div class="page-card__atom">

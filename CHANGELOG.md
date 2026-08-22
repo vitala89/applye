@@ -46,6 +46,28 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The duplicate-heading bug is fixed, natively confirmed, and margin was never the mechanism -
+  fragmentation into a page's own leftover space was.** `PRINT_WIDTH_SAFETY_MARGIN_PX` (4px, new) and
+  a `PRINT_HEIGHT_SAFETY_MARGIN_PX` raise (16 to 24) shipped first, on the theory that "LANGUAGES"
+  printing twice was the same on-screen-vs-print sub-pixel gap the width fix closed, just on the height
+  axis. Two native exports at 24px, read forensically (`pypdf`, per-run text position against the font's
+  own `/Widths`), disproved that: the paginator had already, correctly, placed "LANGUAGES" on page 2 -
+  its clip there is exactly one heading plus one line tall - yet page 1 carried a second, 9-36pt clip
+  strip below the first page-card's own box, with that same heading (or, in one export, two more lines
+  of the next bullet) painted into it a second time. The strip is WKWebView beginning to lay the next
+  page-card out in whatever printable space is left at the foot of the current page, painting its first
+  line(s) there, and only then honouring the forced page break - so raising the margin fed the bug
+  rather than closing it, by growing the leftover space. Swapping `break-before: page` for
+  `break-after: page` on the wrap was tried next and changed the exported geometry by less than a
+  hundredth of a point, confirming the break property was never the lever. The fix that measured clean:
+  every page-card but the last is now given the full printed page height via a new `--pc-page-height`
+  custom property (`pageBoxHeightPx()` in `paginated-sheet.ts`), so it fills its page exactly and leaves
+  no leftover space to fragment into; the last card keeps `height: auto`, since giving it a full page too
+  is what emits a trailing blank page. `PRINT_HEIGHT_SAFETY_MARGIN_PX` and `PRINT_WIDTH_SAFETY_MARGIN_PX`
+  both stay - the packing headroom is now interior to each card, below its last atom, where nothing can
+  be painted into it. Re-exporting the same CV after this change showed the leftover strip gone, the
+  heading on page 2 only, and the page count unchanged at 2.
+
 - **The right-edge fix held on rebuild, and the same export found a fourth print-pipeline defect: a
   section title printing twice.** `pypdf` text extraction showed "LANGUAGES" as the last line of page
   1's content stream and the first line of page 2's - genuinely painted twice, not a clipping illusion.

@@ -44,6 +44,15 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-22, PR #518 merged - export-filename split closed
+
+- **Status:** complete. Follow-up to the entry directly below: committed on `fix/export-filename-unify`
+  (`c6b39b46`), opened as [PR #518](https://github.com/vitala89/applye/pull/518), merged to `main` by
+  the maintainer at `90157723`. `main` is fast-forwarded locally and clean. The local and remote
+  `fix/export-filename-unify` branches still exist (not auto-deleted on merge) - harmless, optional
+  cleanup, not done this entry since it was not asked for.
+- **Next first action:** none of this fix's own - see the entry below for what stays open repo-wide.
+
 ### 2026-08-22, export-filename split unified into document-filename.ts
 
 - **Status:** complete, uncommitted (working tree not yet staged for commit as of this entry).

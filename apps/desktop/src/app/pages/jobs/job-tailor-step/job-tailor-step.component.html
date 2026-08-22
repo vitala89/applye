@@ -96,9 +96,21 @@
       {{ t()('jobs.wizard.retailor_btn') }}
     </button>
   </div>
+} @else if (tailorResults().length > 0) {
+  <!-- A pass failed after at least one landed: the picker and the from-scratch
+       Tailor button no longer apply, and without this branch there was no way
+       back in - retrying just re-emits startTailoring, which TailoringService
+       resumes from cache, so the passes already done are not re-spent. -->
+  <div class="row">
+    <span class="status status--error">{{ tailorStatus() }}</span>
+    <button class="btn btn--secondary btn--md" (click)="startTailoring.emit()">
+      <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
+      {{ t()('common.retry') }}
+    </button>
+  </div>
 }
 
-@if (tailorStatus() && tailorError()) {
+@if (tailorStatus() && tailorError() && tailorResults().length === 0) {
   <span class="status status--error">{{ tailorStatus() }}</span>
 }
 

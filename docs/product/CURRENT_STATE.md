@@ -1,5 +1,20 @@
 # Current Operational State
 
+- **`PR #516` (raw Cmd+P) is merged.** `B5` - `LANGUAGES` indented and narrowed on exported page two,
+  filed 2026-08-20 and deliberately excluded from every `B4`-family fix since - is **natively
+  confirmed fixed by the maintainer** on a real multi-page export. It was never touched directly:
+  `#511`'s width-pin (`width: var(--pc-content-width) !important` instead of `auto`) removed the only
+  mechanism in the codebase that could produce a narrower, differently-computed box for a card landing
+  after a forced page break, which is exactly `B5`'s described symptom - so it is read as a side
+  effect of `#511`, not a mystery fix. `docs/internal/NATIVE_GATE_FINDINGS.md` updated to record it.
+  **A new, separate bug found the same session**: the PDF/DOCX save dialog suggests a different
+  filename for the same document depending on the entry point, because three independent functions
+  decide it - `export-filename.ts` (editor/wizard Export buttons, no region rule), `cv-filename.ts`
+  (Documents-list CV export, implements the documented German `Nachname_Vorname_Lebenslauf`
+  convention), `cover-letter-filename.ts` (Documents-list cover-letter export, slug only, no German
+  rule). Not yet fixed - `docs/internal/NEXT_SESSION_PROMPT.md` carries the full diagnosis and the
+  decision fork that needs grilling before a fix (which function wins, and whether cover letters
+  should get a region convention too).
 - **`PR #515` (the duplicate-heading fragmentation fix) merged to `main`.** A raw Cmd/Ctrl+P in either
   document editor was found separately to still print the whole app shell - the print stylesheet only
   ever activates under `body.printing-cv`, and nothing set that class outside the two hidden export

@@ -33,8 +33,9 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
    query is in the `S1` entry below. `S3`, found while reading it, is separate.
 5. ~~**`B2`**~~ **fixed 2026-08-21** - and it is the one item in this file that **no check here can
    confirm**, so it is owed a native pass on station 4 before it counts. Then the print family
-   ~~**`B4`**~~ and ~~**`B6`**~~ **fixed 2026-08-21**, both unverifiable here and owed the same native
-   pass; **`B5` is deliberately not in that change** and says below what would diagnose it. Then ~~**`B10`**~~ **fixed 2026-08-21**; **`B9`** joins `B5` as a finding that cannot be isolated
+   ~~**`B4`**~~ and ~~**`B6`**~~ **fixed 2026-08-21**; ~~**`B5`**~~ **fixed as a side effect of `#511`,
+   natively confirmed 2026-08-22** - see its entry below for the reasoning, since it was never touched
+   directly. Then ~~**`B10`**~~ **fixed 2026-08-21**; **`B9`** is a finding that cannot be isolated
    from the repository and says below what would settle it.
 
 `P1` and `P2` are one change and `P2` is already half-built. `P3`, `P4` and `P5` are decisions rather
@@ -350,24 +351,22 @@ editor's Export button still opens the native macOS print sheet rather than the 
 Documents-list button uses - a UI difference from what this entry describes, though the exported
 geometry is exact from either path.
 
-**B5. `LANGUAGES` is indented and narrowed on the second page of the export.**
-On the exported page two, `EDUCATION` starts at the left margin with its rule running the full
-width, and `LANGUAGES` directly below it starts roughly a third of the way in, with a rule that stops
-early. The two sections use the same section-title treatment, so one of them is being laid out inside
-a container it should not be in - most likely the last section inherits a wrapper when it lands after
-a page break.
-
-Visible only in the export; the on-screen preview is correct, which is why no screen check caught it.
-
-**Deliberately not fixed with `B4` and `B6`, although the finding above suggests fixing all three
-together.** Nothing in this repository can see a laid-out exported page, so the wrapper this
-describes cannot be identified from here - only guessed at from the description. A guess that lands
-is indistinguishable from one that does not when three print changes ship in the same pass, which is
-the same objection that governs everything else in this file.
-
-**What would diagnose it**, in order of cost: the exported PDF's page two; or, cheaper, the DOM of
-the page-card that lands after the break - specifically whether the `LANGUAGES` section title sits
-inside a different wrapper from `EDUCATION`'s once the paginator has split the content.
+**B5. `LANGUAGES` is indented and narrowed on the second page of the export. FIXED, natively
+confirmed 2026-08-22 - fixed as a side effect of `#511`, not by a dedicated change.**
+On the exported page two, `EDUCATION` started at the left margin with its rule running the full
+width, and `LANGUAGES` directly below it started roughly a third of the way in, with a rule that
+stopped early. Filed 2026-08-20, months before `#511` ("page-card width in print reuses the measured
+column, not auto") shipped. `#511`'s own root cause was `.page-card` printing at `width: auto`,
+letting WKWebView re-derive the printable width itself - a second, independent computation that could
+disagree with `contentWidthPx()` by a sub-pixel amount and reflow a boundary line. That is exactly the
+class of defect this finding's symptom matches: a card landing right after a forced page break getting
+a narrower, differently-computed box than the cards before it. No code path today can reproduce the
+described mechanism - `.page-card`/`.page-card__atom` are uniform block-flow with no per-section or
+per-position width variance, and `#511` pinned every page-card's width identically via
+`width: var(--pc-content-width) !important`. The maintainer confirmed on a real multi-page export with
+LANGUAGES on page two that it now renders correctly, full width, matching `EDUCATION`. Never touched
+directly in the five `B4`-family sessions that preceded `#511` - each deliberately excluded it
+("`B5` is deliberately not in the change") for lack of a way to see a laid-out exported page.
 
 **B6. The tracker export produces a trailing blank page. FIXED 2026-08-21.**
 Export the Job Tracker report when the content fits on **one** page: the saved file has **two**, the

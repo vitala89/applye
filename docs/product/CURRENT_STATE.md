@@ -1,5 +1,19 @@
 # Current Operational State
 
+- **`PR #515` (the duplicate-heading fragmentation fix) merged to `main`.** A raw Cmd/Ctrl+P in either
+  document editor was found separately to still print the whole app shell - the print stylesheet only
+  ever activates under `body.printing-cv`, and nothing set that class outside the two hidden export
+  routes. New `beginLivePrint()` in `wysiwyg-print.ts` (`libs`-free, `apps/desktop` only) reuses the
+  existing `markPrintPath()`/`printing-cv` marking on `beforeprint`, undone on `afterprint`; the CV
+  editor's "do not silently persist a half-typed draft" rule is unchanged, and the cover-letter editor
+  - which had no `beforeprint` handling at all - gets the same treatment. Decision on the approach
+    (hide the shell, vs. redirect to Export, vs. block the shortcut) was grilled with the maintainer
+    first; "hide the shell" won because it does not conflict with the no-silent-persist rule and reuses
+    the mechanism the hidden export windows already have. `PR #516`, gates green (lint, both type-checks,
+    `nx test desktop` 1169/1169 with 4 new, `nx build desktop`, file-size, attribution, format,
+    `git diff --check`). **Not yet natively confirmed** - `NATIVE_GATE_BACKLOG.md` already records that
+    synthetic clicks never reach the Tauri webview and every IPC call rejects outside it, so this, like
+    the rest of the print pipeline, needs a `tauri dev` pass.
 - **The duplicate-heading print bug is closed, confirmed on a genuinely clean native export, and the
   root cause was not the margin gap the last three sessions treated it as.** `PRINT_WIDTH_SAFETY_MARGIN_PX`
   (4px) and a `PRINT_HEIGHT_SAFETY_MARGIN_PX` raise (16 to 24) shipped on the theory that "LANGUAGES"

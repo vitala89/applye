@@ -46,6 +46,16 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **A raw OS/browser print (Cmd/Ctrl+P) in either document editor no longer prints the whole app.**
+  It bypassed the Export button and opened the print dialog on the full app shell - sidebar, topbar,
+  everything - because the print stylesheet only ever activates under `body.printing-cv`, and nothing
+  set that class outside the two hidden export routes the Export button drives. New `beginLivePrint()`
+  in `wysiwyg-print.ts` reuses the same `markPrintPath()`/`printing-cv` marking those routes already
+  use, applied on `beforeprint` and undone on `afterprint`. The CV editor's existing rule that a raw
+  Cmd+P must not silently persist a half-typed draft is unchanged; the cover-letter editor gets the
+  same treatment, since it had no `beforeprint` handling at all before this. Not yet natively confirmed
+  - jsdom cannot see WKWebView-specific print rendering.
+
 - **The duplicate-heading bug is fixed, natively confirmed, and margin was never the mechanism -
   fragmentation into a page's own leftover space was.** `PRINT_WIDTH_SAFETY_MARGIN_PX` (4px, new) and
   a `PRINT_HEIGHT_SAFETY_MARGIN_PX` raise (16 to 24) shipped first, on the theory that "LANGUAGES"

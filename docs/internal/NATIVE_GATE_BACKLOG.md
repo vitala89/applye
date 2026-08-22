@@ -66,6 +66,10 @@ The rest, and why:
   widths, and Reduce motion.
 - **E** - **deferred to the `0.29.3` release**, because the `0.29.1` it named was deleted as
   superseded and the local copy is the broken build. See the station for the replacement.
+- **New, 2026-08-22, add to section C's next walk**: `#516` fixed a raw Cmd/Ctrl+P printing the whole
+  app shell instead of just the document (`beginLivePrint()` in `wysiwyg-print.ts`, applied on
+  `beforeprint`/`afterprint` in both editors). Not driven yet - press Cmd+P in each editor and confirm
+  only the document appears in the print preview, not the sidebar/topbar.
 
 **Nothing here is blocked on the app.** The unrun checks need either a system setting an agent may not
 change, a fresh profile, a data shape the seed does not produce, or a release that does not exist yet.

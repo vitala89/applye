@@ -1,5 +1,16 @@
 # Current Operational State
 
+- **Retailor CTA fixed for jobs tailored against a chosen base CV.** Caught natively by the maintainer:
+  after Create Application (CV tailored against a specific base CV, not the profile), the job detail
+  screen showed "Tailor" instead of "Retailor" even though tailoring was already done and cached. Root
+  cause: `TailoringService.restoreFromCache()` always hashed the cache lookup against `profile.fullMd`,
+  while the live run hashes against `baselineFor(ctx)` (the selected base CV when one is set). Fixed by
+  routing `restoreFromCache` through the same `baselineFor(ctx)` call. `libs/application` only, gates
+  green (`application` 1684/1684, `desktop` 1169/1169, type-check, lint, `nx build desktop`, file-size,
+  attribution, format, `git diff --check`). **Not yet committed** - awaiting the maintainer's go-ahead.
+  A second thing the maintainer flagged in the same pass - Create Application routing to the My Jobs
+  list rather than the job detail screen - was confirmed intentional (`jobs.component.ts`'s own comment
+  cites `ADR-0005`) and left as is on the maintainer's call.
 - **`PR #516` (raw Cmd+P) is merged.** `B5` - `LANGUAGES` indented and narrowed on exported page two,
   filed 2026-08-20 and deliberately excluded from every `B4`-family fix since - is **natively
   confirmed fixed by the maintainer** on a real multi-page export. It was never touched directly:

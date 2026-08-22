@@ -12,6 +12,23 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The Retailor badge still missed after #520, for the common case rather than an edge one: any job
+  that had gone through Create Application (or CV generation) at all.** `CvDraftService.persist()`
+  reuses this job's own CV row for its tailoring output (`ADR-0003`), so once a CV is linked,
+  `selectedBaseCvId` on reopen resolves to that _output_ rather than whatever baseline pass 1 was
+  actually hashed against - the cache lookup misses on every reopen once a CV exists, which #520's
+  fix could not close because the original baseline is not recorded anywhere once the linked CV moves
+  on. A "linked CV is AI-generated" heuristic was checked and rejected: `CvGenerateStore`, a one-shot
+  generator unrelated to the 3-pass pipeline, writes the same `source: 'generated'` and links the same
+  `cvDocumentId`, so the two are indistinguishable in the database. Fixed instead by tagging the
+  pipeline's own output `source: 'tailored'` - written only from `finalCvMd()`, which is empty until
+  pass 3 has a result, so it is exact rather than a heuristic - and reading `isTailored` as the live
+  in-session signal **or** that tag on the job's linked CV. Grilled with the maintainer first: scoped
+  to the badge/CTA only, not a full restore of the wizard step's phase cards, Changes and Gaps on
+  reopen (a separate, larger ask); mechanism is the new `source` value rather than a new `jobs`/
+  `applications` column, since `document_library.source` is unconstrained `TEXT` with no reader
+  matching on `'generated'` today - no migration, no `libs/data` gateway change.
+
 - **A tailoring pass that failed mid-wizard left the user with no way forward.** When pass 2 or 3
   threw (an AI reply that was not valid JSON, a dropped connection), the tailor step showed only the
   error text: not the from-scratch picker (results were non-empty), not the "AI thinking" row (nothing

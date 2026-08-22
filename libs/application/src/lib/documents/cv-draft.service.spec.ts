@@ -251,4 +251,14 @@ describe('CvDraftService', () => {
     expect(upserted[0]['id']).toBeUndefined();
     expect(result?.application.cvDocumentId).toBe(42);
   });
+
+  /// Distinct from CvGenerateStore's 'generated', which the two are otherwise
+  /// indistinguishable from in the database - `isTailored` on a reopened job
+  /// reads this tag directly, so a wrong value here silently breaks the
+  /// Retailor badge for every job with a linked CV, not just this test.
+  it('tags the row "tailored" rather than the generic "generated"', async () => {
+    await svc.create(context());
+
+    expect(upserted[0]['source']).toBe('tailored');
+  });
 });

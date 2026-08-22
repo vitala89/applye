@@ -240,9 +240,26 @@ export class JobsComponent implements OnInit, OnDestroy {
   // of it, scoped to the job currently shown.
   readonly postTailorScore = computed(() => this.tailorScore.resultFor(this.job()?.id ?? -1));
   readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.job()?.id ?? -1));
-  /** True once all 3 tailoring passes are done (in this session or restored
-   * from cache) - drives the immutable Tailored badge and the Retailor CTA. */
-  readonly isTailored = this.tailorSvc.isTailored;
+  /**
+   * True once all 3 tailoring passes are done - drives the Tailored badge and
+   * the Retailor CTA.
+   *
+   * Two sources, because one signal cannot cover both. `tailorSvc.isTailored`
+   * is the live, in-session state: true the moment pass 3 lands in this
+   * wizard run, before anything is persisted. `docs.cv()?.source ===
+   * 'tailored'` is what a **reopened** job has instead: cache-hash restore
+   * cannot be trusted here, because `CvDraftService.persist()` reuses this
+   * job's CV row for its own output (`ADR-0003`), so once a CV is linked,
+   * `selectedBaseCvId` resolves to the tailored *output* rather than
+   * whatever baseline pass 1 actually hashed against - the cache lookup
+   * misses on every reopen once a CV exists, not on some edge case. The
+   * `source` tag sidesteps that: it is written only from `finalCvMd()`,
+   * which is only non-empty once pass 3 has a result, so it is exact rather
+   * than a heuristic.
+   */
+  readonly isTailored = computed(
+    () => this.tailorSvc.isTailored() || this.docs.cv()?.source === 'tailored',
+  );
 
   // Cover Letter tailoring (Phase 1c). The library list stays here because the
   // choose-existing dropdown reads the same rows; the modal's own state lives

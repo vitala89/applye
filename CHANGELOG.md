@@ -12,6 +12,15 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **A tailoring pass that failed mid-wizard left the user with no way forward.** When pass 2 or 3
+  threw (an AI reply that was not valid JSON, a dropped connection), the tailor step showed only the
+  error text: not the from-scratch picker (results were non-empty), not the "AI thinking" row (nothing
+  was running), not the tailored badge (fewer than three passes). `job-tailor-step.component.html` now
+  adds a Retry button for exactly that state, wired to the same `startTailoring` output the initial run
+  uses - `TailoringService.run()` resets and replays all three passes, but the passes already cached
+  hit on the first check and cost nothing, so retrying only re-spends tokens on the one that actually
+  failed. Mirrors the retry button `job-update-score-step` already had for its own AI call.
+
 - **A job tailored against a chosen base CV (not the profile) showed "Tailor" instead of "Retailor"
   after leaving and reopening it, even though the three passes were already cached.**
   `TailoringService.restoreFromCache()` always hashed the cache lookup against `profile.fullMd`; the

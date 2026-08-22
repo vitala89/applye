@@ -1,5 +1,13 @@
 # Current Operational State
 
+- **Retry button added for a tailoring pass that fails mid-wizard.** Found by the maintainer testing
+  the Retailor fix below: pass 2 returned invalid JSON, and the tailor step had no actionable button at
+  all - not the picker, not the thinking row, not the tailored badge, just error text. Added a Retry
+  button in `job-tailor-step.component.html` (same `startTailoring` output the initial run already
+  uses; `TailoringService.run()` re-hits cache for the passes that already landed, so retrying only
+  re-spends tokens on the one that failed), mirroring the pattern `job-update-score-step` already had.
+  Gates green: `desktop` 1170/1170, type-check, lint, `nx build desktop`, file-size, attribution,
+  format, `git diff --check`. **Not yet committed.**
 - **Retailor CTA fixed for jobs tailored against a chosen base CV.** Caught natively by the maintainer:
   after Create Application (CV tailored against a specific base CV, not the profile), the job detail
   screen showed "Tailor" instead of "Retailor" even though tailoring was already done and cached. Root
@@ -7,7 +15,7 @@
   while the live run hashes against `baselineFor(ctx)` (the selected base CV when one is set). Fixed by
   routing `restoreFromCache` through the same `baselineFor(ctx)` call. `libs/application` only, gates
   green (`application` 1684/1684, `desktop` 1169/1169, type-check, lint, `nx build desktop`, file-size,
-  attribution, format, `git diff --check`). **Not yet committed** - awaiting the maintainer's go-ahead.
+  attribution, format, `git diff --check`). **Merged as [`PR #520`](https://github.com/vitala89/applye/pull/520).**
   A second thing the maintainer flagged in the same pass - Create Application routing to the My Jobs
   list rather than the job detail screen - was confirmed intentional (`jobs.component.ts`'s own comment
   cites `ADR-0005`) and left as is on the maintainer's call.

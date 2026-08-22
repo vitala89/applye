@@ -107,4 +107,28 @@ describe('JobTailorStepComponent', () => {
     expect(cmp.tailorPhases().map((p) => p.state)).toEqual(['done', 'done', 'ready']);
     expect(cmp.currentPhaseKey()).toBe('jobs.wizard.phase_build');
   });
+
+  /// A pass that fails after at least one landed used to leave the step with no
+  /// button at all: not the from-scratch picker (results are non-empty), not
+  /// the "AI thinking" row (not running), not the tailored badge (fewer than
+  /// three). The retry button is what closes that gap.
+  it('offers a retry that re-emits startTailoring when a later pass fails', () => {
+    const s = stubs();
+    s.tailor.results.set([{ pass: 1 }]);
+    s.tailor.error.set(true);
+    s.tailor.status.set('Pass 2 returned invalid JSON');
+    const fixture = setup(s);
+
+    const seen: void[] = [];
+    fixture.componentInstance.startTailoring.subscribe(() => seen.push(undefined));
+
+    const buttons: HTMLButtonElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    );
+    const retryBtn = buttons.find((b) => b.textContent?.includes('common.retry'));
+    expect(retryBtn).toBeTruthy();
+
+    retryBtn?.click();
+    expect(seen).toHaveLength(1);
+  });
 });

@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-22, B9 attempted, deferred - no repro captured
+
+- **Status:** partial - deferred, not a code change.
+- **Agent/tool:** Claude Code, continuation of the same session that merged `#518`. No re-triage
+  ceremony (unchanged-scope continuation).
+- **Objective:** the maintainer picked `B9` (apply wizard footer padding inconsistency) as the next
+  item after `#518` merged. Tried to capture what `NATIVE_GATE_FINDINGS.md` says would settle it -
+  which two steps differ, or a screenshot.
+- **Completed:** none - the maintainer described the symptom verbally (padding present, then missing
+  on the Cancel/Next row right after pressing Next/Continue) across two messages, but the transcript
+  did not converge on which step, and no screenshot was captured. The maintainer could not reproduce
+  it on demand in the moment and asked to defer, noting it may already be fixed by other layout
+  changes this week.
+- **Not completed:** `B9` root cause - unchanged from `NATIVE_GATE_FINDINGS.md`'s prior entry, still
+  not reproducible from the repository alone.
+- **Decisions and assumptions:** did not guess a step name or force a fix from an unclear
+  description - asked for a screenshot twice, then deferred when the maintainer said they could not
+  catch it right now, consistent with this file's own recorded rule ("guessing a padding onto the
+  footer was considered and rejected" in the original `B9` finding).
+- **Next first action:** `docs/internal/NEXT_SESSION_PROMPT.md` updated to reflect the deferral and
+  suggest not leading with `B9` again unless the maintainer has a screenshot in hand.
+- **Evidence:** this conversation's transcript.
+
 ### 2026-08-22, PR #518 merged - export-filename split closed
 
 - **Status:** complete. Follow-up to the entry directly below: committed on `fix/export-filename-unify`

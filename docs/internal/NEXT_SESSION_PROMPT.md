@@ -8,7 +8,10 @@ Copy everything below the line into a fresh session.
 merged to `main`.** There is no code left to write from what past sessions diagnosed - everything
 that remains open needs the maintainer to drive the app natively, which this repository-only
 environment cannot do. Read the state below, then **ask the maintainer which item to take** rather
-than guessing - that has gone faster than picking every time it came up this week.
+than guessing - that has gone faster than picking every time it came up this week. `B9` was tried on
+2026-08-22 and deferred - it did not reproduce on demand from a verbal description alone, so it is
+the weakest candidate to lead with again unless the maintainer has since caught it with a screenshot
+in hand.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
 `docs/product/CURRENT_STATE.md`, the `2026-08-22` entries in `docs/internal/DUTY_WATCH.md`, and
@@ -31,12 +34,18 @@ Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.
 Source: `docs/internal/NATIVE_GATE_FINDINGS.md` (verbatim status, re-checked 2026-08-22 - do not
 re-diagnose any of these from the repository, the mechanism is already found for all but `B9`):
 
-1. **`B9`** - the apply wizard's footer (Back/Cancel/Continue) has inconsistent bottom padding
-   between steps. **Confirmed NOT reproducible from the repository** - the footer is one element
-   with no bottom padding at all, so nothing here can even produce the symptom to look at. What would
-   settle it: which two steps differ, plus the computed `padding-bottom` of `.apply-wizard__footer`
-   and its scrolling ancestor on each - a screenshot of both steps at the same window height would do
-   as well. Needs the maintainer running `tauri dev` with real data.
+1. **`B9`** - the apply wizard's footer (Cancel/Next row) has inconsistent bottom padding between
+   steps. **Confirmed NOT reproducible from the repository** - the footer is one element with no
+   bottom padding at all, so nothing here can even produce the symptom to look at. **Tried to catch
+   it live on 2026-08-22**: the maintainer described it verbally (padding present, then missing on
+   the footer right after pressing Next/Continue to move to the next step) but could not reproduce it
+   on demand in that moment, and no screenshot was captured. **Possibly already fixed** - several
+   layout-affecting changes landed this week (`#511`-`#516`, the P1/P2/B12 native-lock UI). What
+   would settle it, if it recurs: which two steps differ, plus the computed `padding-bottom` of
+   `.apply-wizard__footer` and its scrolling ancestor on each, or two screenshots at the same window
+   height (one with the gap, one without, right after the Next click that triggered it). Needs the
+   maintainer running `tauri dev` with real data - ask them to grab it next time it happens rather
+   than trying to force a repro from a description alone, which did not converge this session.
 
 2. **`P1`/`P2`/`B12`** - fixed in code on 2026-08-21 (`JobActionsService.markApplied` split,
    `decideCoverLetterAction`'s `!linked` branch now `keep`, Retailor disabled once a job leaves

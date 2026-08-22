@@ -96,7 +96,12 @@
                         : t()('jobs.score_btn')
                   }}
                 </button>
-                @if (scoreStatus()) {
+                @if (scoring()) {
+                  <span class="ai-thinking">
+                    <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                    {{ t()('jobs.scoring') }}
+                  </span>
+                } @else if (scoreStatus()) {
                   <span class="status" [class.status--error]="scoreError()">{{
                     scoreStatus()
                   }}</span>
@@ -139,6 +144,11 @@
             >
               {{ scoring() ? t()('jobs.scoring') : t()('jobs.rescore') }}
             </button>
+            @if (scoring()) {
+              <span class="ai-thinking">
+                <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+              </span>
+            }
           </div>
         }
 

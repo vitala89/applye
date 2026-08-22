@@ -12,6 +12,15 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **Score/Rescore had no visible feedback while running - clicking it looked like nothing happened
+  until the result appeared.** The button already disabled and swapped its own label to "Scoring…"
+  (correctly, and now correctly surviving navigation per the fix above), but that alone read as
+  static text rather than an in-progress state. Added the same `ai-thinking` dots animation the
+  Tailor wizard and the apply-success redirect already use elsewhere on this page - no new styles,
+  it is a genuinely global class in `libs/ui`. Shown next to both the score/rescore button and the
+  stale-score rescore button whenever `scoring()` is true, so it now reads the same way in both
+  places tailoring already does.
+
 - **A score/rescore run in flight reset to "Score this job" if you left the page and came back**,
   the same bug the Tailor wizard already had a fix for. `JobScoringService` is component-scoped, so
   navigating away destroys its instance; `WizardActivityService` already carries a root-singleton

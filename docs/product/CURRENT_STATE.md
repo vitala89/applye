@@ -1,5 +1,13 @@
 # Current Operational State
 
+- **Score/Rescore now shows the same `ai-thinking` dots animation the Tailor wizard already uses**, next
+  to both the score/rescore button and the stale-score rescore button, whenever `scoring()` is true.
+  Before this, the button's own disabled+relabel was the only feedback while a score/rescore ran -
+  correct since the fix below, but easy to miss, especially right after "Saved to your jobs." where a
+  freshly-created job shows nothing else on screen. No new styles: `ai-thinking`/`ai-thinking__dots` is
+  a genuinely global class in `libs/ui`, already used elsewhere on this exact page. Gates green:
+  `desktop` 1170/1170, type-check, lint, `nx build desktop`, file-size, attribution, format,
+  `git diff --check`. **Not yet committed.**
 - **Score/rescore in-flight state now survives leaving the job page**, and the Tailor wizard's Cancel
   button no longer implies an instant stop it cannot do. Two fixes from the same maintainer pass:
   (1) `jobs.component.ts`'s `scoring` signal read `scoreSvc.running` (component-scoped, destroyed on
@@ -11,7 +19,7 @@
   recommended and chosen. Fixed the copy instead: "Cancelling…" is "Finishing this pass…", button
   carries a hint, all 6 locales. Gates green: `desktop` 1170/1170, `i18n` 21/21, type-check, lint
   (`desktop`, `i18n`, `application`), `nx build desktop`, file-size, attribution, format,
-  `git diff --check`. **Not yet committed.**
+  `git diff --check`. **Merged as [`PR #523`](https://github.com/vitala89/applye/pull/523).**
 - **The Retailor badge fix is redone properly - #520 closed the wrong-shaped gap.** Native re-test still
   showed "Tailor" instead of "Retailor" after a full Create Application. Root cause: `#520` made
   `restoreFromCache` hash against the right baseline, but once `CvDraftService.persist()` links its

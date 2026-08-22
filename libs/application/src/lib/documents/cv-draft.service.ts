@@ -194,7 +194,12 @@ export class CvDraftService {
       // mints a new row.
       id: app.cvDocumentId ?? undefined,
       docType: 'cv',
-      source: 'generated',
+      // Distinct from CvGenerateStore's one-shot 'generated': this document is
+      // always this job's finished 3-pass pipeline output (`parsed` above
+      // comes from `ctx` built around `finalCvMd()`, which is empty until
+      // pass 3 lands), so a reopened job can tell "tailored" from "just
+      // generated" by this alone, without replaying any cache hash.
+      source: 'tailored',
       label: ctx.label,
       language: ctx.language,
       regionTag: ctx.region,

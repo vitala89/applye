@@ -1,13 +1,28 @@
 # Current Operational State
 
-- **Retry button added for a tailoring pass that fails mid-wizard.** Found by the maintainer testing
-  the Retailor fix below: pass 2 returned invalid JSON, and the tailor step had no actionable button at
+- **The Retailor badge fix is redone properly - #520 closed the wrong-shaped gap.** Native re-test still
+  showed "Tailor" instead of "Retailor" after a full Create Application. Root cause: `#520` made
+  `restoreFromCache` hash against the right baseline, but once `CvDraftService.persist()` links its
+  tailored output as this job's CV (`ADR-0003` row reuse), `selectedBaseCvId` on reopen resolves to
+  that _output_, not to whatever pass 1 actually hashed against - so the cache miss `#520` was meant to
+  fix recurs for essentially every job that has an application, not an edge case. Grilled with the
+  maintainer: scope stays badge/CTA only (not a full phase-card/Changes/Gaps restore on reopen -
+  separate, larger ask); mechanism is a new `document_library.source` value, `'tailored'`, written only
+  from `finalCvMd()` (empty until pass 3 lands, so exact rather than heuristic) and read directly for
+  `isTailored`, rather than a new `jobs`/`applications` column - `source` is unconstrained `TEXT` with
+  no reader matching `'generated'` today, so no migration and no `libs/data` gateway change. Also ruled
+  out: "linked CV is AI-generated" as the signal, since `CvGenerateStore`'s unrelated one-shot generator
+  writes the identical `source: 'generated'` and links the identical `cvDocumentId`. Gates green:
+  `application` 1685/1685, `core` 478/478, `desktop` 1170/1170, both type-checks, lint (`core`,
+  `data`, `application`, `desktop`, `ui`), `nx build desktop`, `nx build web`, file-size, attribution,
+  format, `git diff --check`. **Not yet committed.**
+- **Retry button added for a tailoring pass that fails mid-wizard.** Merged as
+  [`PR #521`](https://github.com/vitala89/applye/pull/521). Found by the maintainer testing the
+  Retailor fix below: pass 2 returned invalid JSON, and the tailor step had no actionable button at
   all - not the picker, not the thinking row, not the tailored badge, just error text. Added a Retry
   button in `job-tailor-step.component.html` (same `startTailoring` output the initial run already
   uses; `TailoringService.run()` re-hits cache for the passes that already landed, so retrying only
   re-spends tokens on the one that failed), mirroring the pattern `job-update-score-step` already had.
-  Gates green: `desktop` 1170/1170, type-check, lint, `nx build desktop`, file-size, attribution,
-  format, `git diff --check`. **Not yet committed.**
 - **Retailor CTA fixed for jobs tailored against a chosen base CV.** Caught natively by the maintainer:
   after Create Application (CV tailored against a specific base CV, not the profile), the job detail
   screen showed "Tailor" instead of "Retailor" even though tailoring was already done and cached. Root

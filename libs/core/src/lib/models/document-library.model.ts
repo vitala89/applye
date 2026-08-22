@@ -13,7 +13,11 @@ import { CoverLetterContent } from './cover-letter-content.model';
  * `generated_docs` export-journal kinds like `pitch` / `interview_prep`. */
 export type LibraryDocType = 'cv' | 'cover_letter';
 
-export type DocumentSource = 'uploaded' | 'generated';
+/** `tailored` is the completed 3-pass pipeline's own output (`CvDraftService`)
+ * - distinct from `generated`, the one-shot generator's (`CvGenerateStore`),
+ * because the two are indistinguishable otherwise and `isTailored` on a
+ * reopened job depends on telling them apart. */
+export type DocumentSource = 'uploaded' | 'generated' | 'tailored';
 
 export type DocumentContent = CvContent | CoverLetterContent;
 

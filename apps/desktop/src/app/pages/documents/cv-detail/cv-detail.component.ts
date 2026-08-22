@@ -69,6 +69,7 @@ import {
   myJobsReturnJobId,
   type BackLabelKeys,
 } from '../document-editor-return';
+import { beginLivePrint } from '../wysiwyg-print';
 
 /** This editor's half of the shared back-button vocabulary. */
 const CV_BACK_KEYS: BackLabelKeys = {
@@ -293,18 +294,31 @@ export class CvDetailComponent {
    * control never reach the print snapshot. Unlike the Export action this does
    * NOT commit the draft (a raw Cmd+P should not silently persist a half-typed
    * edit). `tick()` performs the swap synchronously, before the browser captures
-   * the page (zoneless CD is otherwise async and would miss the snapshot). */
+   * the page (zoneless CD is otherwise async and would miss the snapshot).
+   * Also hides the app shell via `beginLivePrint` - see its own comment. */
+  private undoLivePrint: (() => void) | null = null;
+
   private readonly handleBeforePrint = (): void => {
-    if (!this.previewMode() || this.liveSelection() === null) return;
-    this.liveSelection.set(null);
-    this.appRef.tick();
+    if (this.previewMode() && this.liveSelection() !== null) {
+      this.liveSelection.set(null);
+      this.appRef.tick();
+    }
+    this.undoLivePrint = beginLivePrint();
+  };
+
+  private readonly handleAfterPrint = (): void => {
+    this.undoLivePrint?.();
+    this.undoLivePrint = null;
   };
 
   constructor() {
     window.addEventListener('beforeprint', this.handleBeforePrint);
-    this.destroyRef.onDestroy(() =>
-      window.removeEventListener('beforeprint', this.handleBeforePrint),
-    );
+    window.addEventListener('afterprint', this.handleAfterPrint);
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('beforeprint', this.handleBeforePrint);
+      window.removeEventListener('afterprint', this.handleAfterPrint);
+      this.undoLivePrint?.();
+    });
     void this.load();
   }
 

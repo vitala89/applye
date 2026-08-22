@@ -53,3 +53,20 @@ export function markPrintPath(doc: Document = document): () => void {
   }
   return () => marked.forEach((el) => el.classList.remove(PRINT_PATH_CLASS));
 }
+
+/**
+ * Same marking as the hidden export windows, applied to a raw OS/browser
+ * print (Cmd/Ctrl+P) in a live editor window. Without it the print stylesheet
+ * never activates outside the two print routes, so a raw Cmd+P prints the
+ * whole app shell instead of just the document. Returns the undo, which the
+ * caller runs on `afterprint` - unlike the hidden windows, a live window has
+ * an "after" to restore.
+ */
+export function beginLivePrint(doc: Document = document): () => void {
+  const undoMark = markPrintPath(doc);
+  doc.body.classList.add('printing-cv');
+  return () => {
+    doc.body.classList.remove('printing-cv');
+    undoMark();
+  };
+}

@@ -44,6 +44,95 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-22, PR #515 merged; raw Cmd+P stopped printing the whole app
+
+- **Status:** complete for the code; native confirmation owed.
+- **Agent/tool:** Claude Code, Sonnet 5. Triage 2/10 to open the PR for the already-committed
+  fragmentation fix (mechanical); re-triaged 4/10 (radius 1, ambiguity 2, risk 0, verify 0,
+  unknowns 2) to pick the next backlog item, since the maintainer's "продолжаем по плану" named no
+  specific item and the open backlog (`B9`, `B5`, `S1`, raw Cmd+P, `P1`/`P2`/`B12` native pass) splits
+  across different blockers - most need native observation or a DB query permission this session did
+  not have. Asked the maintainer directly rather than guess; "raw Cmd+P fix" was picked, since it is
+  the only item with no blocker (already diagnosed, pure code). `aif-grilling` ran one round before
+  editing, since the fix itself had three genuinely different readings (hide the shell / redirect to
+  Export / block the shortcut) and the second conflicts with an existing "no silent persist" rule; the
+  maintainer picked "hide the shell". One subagent (none requested; none used).
+- **Branch:** `fix/paginated-sheet-print-fragmentation` (opened as PR, unchanged this entry) then
+  `fix/raw-cmdp-hides-app-shell`, both cut from `main`. Working tree was on `main` again mid-session,
+  per this file's own recorded gotcha about branch state.
+- **Commits:** `6155fceb` - "fix(print): stop a raw Cmd/Ctrl+P from printing the whole app".
+- **Pull request:** `#515` (fragmentation fix) opened and found already merged to `main` mid-session -
+  no action taken beyond fast-forwarding local `main` before cutting the new branch. `#516` (raw
+  Cmd+P) opened against `main`.
+- **Objective:** (1) open the PR for the already-committed, already-green fragmentation fix, per its
+  own "next first action"; (2) pick and complete one item from the open backlog.
+- **Completed:**
+  - `#515` opened (later found auto/already merged by the time of push - `git branch --show-current`
+    read `main` again at the session's start, matching this file's own recorded gotcha about the
+    working tree resetting to `main` between sessions; the branch and its two commits were intact).
+  - **Root cause of the raw-Cmd+P bug confirmed by reading, not assumed**: `tauri.invoke.ts`'s
+    `isTauri()` guard and the print stylesheet in `apps/desktop/src/styles.scss` are both scoped to
+    `body.printing-cv`, which `print-settle.util.ts` only ever sets inside the two hidden export-route
+    windows (`markPrintPath()` + the class, both driven by `awaitPrintSettle()`). Neither `cv-detail`'s
+    existing `beforeprint` handler (which only clears the live inline-selection, per its own comment)
+    nor `cover-letter-detail` (which had no `beforeprint` handling at all) ever set it, so a raw
+    Cmd/Ctrl+P opened the browser print dialog with the print stylesheet dark - the whole shell prints.
+  - **Fact resolved before grilling, not asked**: `grep` across `src-tauri` found no native menu item
+    or accelerator bound to Print, confirming Cmd+P is WKWebView's own default shortcut reaching the
+    DOM as a normal `beforeprint`/`afterprint` pair - which is why "redirect to Export via keydown
+    interception" and "block via keydown" were both live options for the grilling round, not ruled out
+    on a technical guess.
+  - New `beginLivePrint()` in `wysiwyg-print.ts` wraps `markPrintPath()` + the `printing-cv` class add,
+    returning the undo. `cv-detail.component.ts`'s `handleBeforePrint` now always calls it (the
+    existing selection-clear logic is unchanged, still gated on `previewMode()`/`liveSelection()`), and
+    a new `handleAfterPrint` runs the undo, both registered/torn down alongside the existing listener.
+    `cover-letter-detail.component.ts` gets the same pair from scratch (plus a `DestroyRef` inject it
+    did not have before).
+  - Regression tests: two new cases in `wysiwyg-print.spec.ts` (`beginLivePrint` marks the path and adds
+    the class; the undo removes both), one new case in each of `cv-detail.component.spec.ts` and
+    `cover-letter-detail.component.spec.ts` asserting `beforeprint` adds `printing-cv` and `afterprint`
+    removes it.
+  - Attempted a browser-preview repro first (`desktop-web` on port 4201) before committing to unit
+    tests alone: confirmed `tauriInvoke()` throws outside a real Tauri context, so the preview has no
+    real job/document data and `/documents/cv/1` redirects to the dashboard rather than loading an
+    editor - native verification of this fix, like the rest of the print pipeline, is genuinely
+    maintainer-only, matching what `NATIVE_GATE_BACKLOG.md` already says about synthetic clicks and
+    IPC outside Tauri.
+  - Full gate set run and green on `fix/raw-cmdp-hides-app-shell`: `nx run desktop:type-check`,
+    `nx run-many --target=lint --projects=data,application,desktop,ui --skip-nx-cache` (pass, one
+    pre-existing unrelated warning in `cv-gap-dialog.component.spec.ts`), `nx test desktop --maxWorkers=2`
+    (1169/1169, 4 new), `nx build desktop`, `npm run quality:file-size -- --staged` (`cv-detail.component.ts`
+    340/350, its spec 471/580, both under budget), `npm run quality:attribution`, `npm run format:check`,
+    `git diff --check`. `data`/`application`/`ui`/`libs/core`/`src-tauri` untouched, so their remaining
+    gates (`nx test core`, `nx build web`, `cargo check`, `cargo test --lib`) did not need to run.
+- **Not completed:** `B9`, `B5`, `S1`, and the `P1`/`P2`/`B12` native pass remain open, untouched this
+  session - the maintainer explicitly deferred them when picking raw Cmd+P as the one unblocked item.
+  Native confirmation of this fix itself is owed (see above).
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/wysiwyg-print.ts` (+spec),
+  `apps/desktop/src/app/pages/documents/cv-detail/cv-detail.component.ts` (+spec),
+  `apps/desktop/src/app/pages/documents/cover-letter-detail/cover-letter-detail.component.ts` (+spec),
+  `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** see the gate list above, all observed directly. No native pass this session (see
+  Not completed).
+- **Privacy/security impact:** None. Print CSS/DOM-marking only; no new IPC, storage, or data flow.
+- **Decisions and assumptions:** The grilling round's three-way fork was resolved to "hide the shell"
+  by the maintainer directly - it reuses the hidden export windows' existing mechanism, does not touch
+  the CV editor's no-silent-persist rule, and accepts that a raw Cmd+P's margins come from the OS/dialog
+  defaults rather than the Rust/`NSPrintInfo` path Export uses (a known, accepted trade-off, not a bug).
+- **Risks or compatibility impact:** None beyond visible print behavior for the raw-Cmd+P path, which
+  was already broken (printed the whole app). No public API, schema, or IPC surface changed.
+- **Open issues or blockers:** Native pass owed for `#516` (raw Cmd+P now prints only the document, not
+  the shell) - add to `NATIVE_GATE_BACKLOG.md`'s existing print section rather than as a new item, since
+  it reuses that section's `tauri dev` setup. `B9`, `B5`, `S1`, `P1`/`P2`/`B12` unchanged and open.
+- **Next first action:** Merge or review `#516`. Then take the maintainer's pick from the remaining
+  backlog (`B9`/`B5` need a native screenshot or DOM read; `S1` needs permission for one SQL query
+  against `tailoring_cache`; `P1`/`P2`/`B12` needs a native pass) - ask again rather than guess, the
+  same way this session did, since each has a different blocker.
+- **Evidence:** gate output quoted above; `git log --all --oneline | grep fragment` and `git reflog`
+  output confirming the fragmentation branch and its commits were never lost, only checked out away
+  from; the browser-preview attempt and its `tauriInvoke` throw, read directly from
+  `libs/data/src/lib/tauri.invoke.ts`.
+
 ### 2026-08-22, duplicate-heading print bug: root cause was fragmentation, not a margin gap
 
 - **Status:** complete. Committed to the branch; PR not opened.

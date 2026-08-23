@@ -855,6 +855,7 @@ export const de: TranslationMap = {
       discard_keep: 'Weiterarbeiten',
       discard_confirm: 'Verwerfen',
       resume_scoring_title: 'Angepasster Lebenslauf wird bewertet…',
+      resume_bare_scoring_title: 'Job wird bewertet…',
       resume_scoring_hint: 'Ein Schritt läuft noch - zum Ansehen tippen',
       resume_reviewing_title: 'Deine Dokumente werden vorbereitet…',
       resume_reviewing_hint: 'Ein Schritt läuft noch - zum Ansehen tippen',

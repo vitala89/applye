@@ -12,6 +12,23 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **A baseline "Score this job" run showed no feedback at all - not the ai-thinking dots just added,
+  not the shell's corner badge - and the previous scoring-persistence fix did not actually cover it.**
+  Root cause: `JobScoringService.score()` (what "Score this job" calls) never registered with
+  `WizardActivityService`; only `rescoreAfterTailor()` (the wizard's post-tailor rescore step) did. The
+  earlier fix pointed `jobs.component.ts`'s `scoring` signal at `activity.isRunning(jobId, 'scoring')`
+  on the correct assumption that `JobScoringService` already wrote to it - true for one of its two
+  methods, not the one this button calls, so the signal now read `false` for the entire run instead of
+  the previous (also wrong, but at least visible-while-on-the-page) component-scoped flag. Fixed by
+  adding the same `activity.begin`/`end(jobId, 'scoring')` pair `rescoreAfterTailor` already has, to
+  `score()` too. Also extended the shell's corner badge (`shell-layout.component.ts`, the one Tailor
+  already shows from any page) to a baseline score in flight: it was gated only on
+  `WizardProgressService.progress()`, which a plain "Score this job" click before the apply wizard is
+  ever opened never sets, so the badge stayed silent outside the job's own page. Grilled with the
+  maintainer: added a second copy key (`resume_bare_scoring_title`, "Scoring this job…") rather than
+  reusing the wizard rescore's "Scoring your tailored CV…", which is wrong for a job nothing has
+  tailored yet. All 6 locales.
+
 - **Score/Rescore had no visible feedback while running - clicking it looked like nothing happened
   until the result appeared.** The button already disabled and swapped its own label to "Scoring…"
   (correctly, and now correctly surviving navigation per the fix above), but that alone read as

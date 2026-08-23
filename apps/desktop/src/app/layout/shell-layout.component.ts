@@ -126,6 +126,28 @@ export class ShellLayoutComponent implements OnInit {
     if (p) void this.router.navigate(['/jobs', p.jobId]);
   }
 
+  /**
+   * A baseline score/rescore in flight that never opened the apply wizard -
+   * "Score this job" on the pre-wizard My Jobs screen sets no
+   * `WizardProgress`, so `resumeProgress` above never fires for it, and the
+   * corner badge stayed silent on any page but that job's own. Reads
+   * `WizardActivityService` directly rather than by job id: it holds a
+   * single global slot, since only one tailor/score/review step runs
+   * app-wide at a time, so there is nothing to key this by in advance.
+   */
+  protected readonly bareScoringJobId = computed<number | null>(() => {
+    const a = this.activity.active();
+    if (!a || a.activity !== 'scoring') return null;
+    // Already the wizard-resume badge's job - do not show both.
+    if (this.wizardProgress.progress()?.jobId === a.jobId) return null;
+    return this.currentUrl().startsWith(`/jobs/${a.jobId}`) ? null : a.jobId;
+  });
+
+  protected resumeBareScoring(): void {
+    const jobId = this.bareScoringJobId();
+    if (jobId != null) void this.router.navigate(['/jobs', jobId]);
+  }
+
   // Maps a route's top-level path segment to its i18n nav label - reused
   // as the topbar title so it always names the page actually showing.
   private static readonly PAGE_TITLE_KEYS: Record<string, string> = {

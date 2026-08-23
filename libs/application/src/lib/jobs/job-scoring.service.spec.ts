@@ -148,6 +148,37 @@ describe('JobScoringService', () => {
       expect(ai.run).not.toHaveBeenCalled();
       expect(db.scoreCacheGet).not.toHaveBeenCalled();
     });
+
+    /// `running` is component-scoped through `JobScoringStore`'s injector, so
+    /// it resets to false whenever the job page is destroyed - navigating away
+    /// mid-run and back reads as "not scoring" even while the AI call is still
+    /// in flight. `WizardActivityService` is the root singleton that survives
+    /// that; without this, the shell's corner badge and a returning page both
+    /// have nothing correct to read.
+    it('registers with WizardActivityService for the run, and clears it after', async () => {
+      const s = make();
+      const activity = TestBed.inject(WizardActivityService);
+      let sawRunning = false;
+      ai.run.mockImplementationOnce(async () => {
+        sawRunning = activity.isRunning(7, 'scoring');
+        return { text: JSON.stringify(reply), tokensInput: 10, tokensOutput: 20 };
+      });
+
+      await s.score(ctx());
+
+      expect(sawRunning).toBe(true);
+      expect(activity.isRunning(7, 'scoring')).toBe(false);
+    });
+
+    it('clears WizardActivityService even when the AI call throws', async () => {
+      const s = make();
+      const activity = TestBed.inject(WizardActivityService);
+      ai.run.mockRejectedValueOnce(new Error('provider down'));
+
+      await s.score(ctx());
+
+      expect(activity.isRunning(7, 'scoring')).toBe(false);
+    });
   });
 
   describe('loadCached', () => {

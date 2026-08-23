@@ -864,6 +864,7 @@ export const es: TranslationMap = stub(en, {
       discard_keep: 'Seguir trabajando',
       discard_confirm: 'Descartar',
       resume_scoring_title: 'Puntuando tu CV adaptado…',
+      resume_bare_scoring_title: 'Puntuando esta oferta…',
       resume_scoring_hint: 'Un paso sigue en marcha: toca para verlo',
       resume_reviewing_title: 'Preparando tus documentos…',
       resume_reviewing_hint: 'Un paso sigue en marcha: toca para verlo',

@@ -183,6 +183,16 @@
       <span class="resume-tailor__hint">{{ t()(resumeHintKey()) }}</span>
     </span>
   </button>
+} @else if (bareScoringJobId()) {
+  <!-- A "Score this job" run in flight that never opened the apply wizard -
+       same corner badge, its own copy, and no wizard step to resume into. -->
+  <button type="button" class="resume-tailor resume-tailor--busy" (click)="resumeBareScoring()">
+    <lucide-icon [img]="icons.loader" [size]="16" class="resume-tailor__spin" aria-hidden="true" />
+    <span class="resume-tailor__text">
+      <strong>{{ t()('jobs.wizard.resume_bare_scoring_title') }}</strong>
+      <span class="resume-tailor__hint">{{ t()('jobs.wizard.resume_scoring_hint') }}</span>
+    </span>
+  </button>
 }
 
 <app-paste-job-modal />
@@ -191,4 +201,4 @@
 
 <!-- Identification runs after the parse and outlives the page, so it reports
      itself in the corner rather than by holding a button disabled. -->
-<app-job-identity-badge [stacked]="!!resumeProgress()" />
+<app-job-identity-badge [stacked]="!!resumeProgress() || !!bareScoringJobId()" />

@@ -12,6 +12,14 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The Score/Rescore spinner landed as a second pill next to the button instead of inside it**, so
+  clicking "Score this job" showed a disabled greyed-out "Scoring…" button _and_ a separate floating
+  "Scoring…" badge beside it - two things saying the same thing. `ai-thinking__dots` is designed to be
+  standalone for exactly this (`libs/ui/src/styles/global.scss`'s own comment: "so it also renders
+  inside buttons"), and the Documents step's Generate/Regenerate buttons already use it that way.
+  Moved the dots inside both the score/rescore button and the stale-score rescore button, matching that
+  existing pattern, instead of rendering a sibling `.ai-thinking` element.
+
 - **A baseline "Score this job" run showed no feedback at all - not the ai-thinking dots just added,
   not the shell's corner badge - and the previous scoring-persistence fix did not actually cover it.**
   Root cause: `JobScoringService.score()` (what "Score this job" calls) never registered with

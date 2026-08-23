@@ -88,20 +88,16 @@
                   [disabled]="scoring()"
                   (click)="scoreStore.scoreJob(false)"
                 >
-                  {{
-                    scoring()
-                      ? t()('jobs.scoring')
-                      : cache()
-                        ? t()('jobs.rescore')
-                        : t()('jobs.score_btn')
-                  }}
-                </button>
-                @if (scoring()) {
-                  <span class="ai-thinking">
-                    <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                  @if (scoring()) {
+                    <span class="ai-thinking__dots" aria-hidden="true">
+                      <span></span><span></span><span></span>
+                    </span>
                     {{ t()('jobs.scoring') }}
-                  </span>
-                } @else if (scoreStatus()) {
+                  } @else {
+                    {{ cache() ? t()('jobs.rescore') : t()('jobs.score_btn') }}
+                  }
+                </button>
+                @if (!scoring() && scoreStatus()) {
                   <span class="status" [class.status--error]="scoreError()">{{
                     scoreStatus()
                   }}</span>
@@ -142,13 +138,15 @@
               [disabled]="scoring()"
               (click)="scoreStore.scoreJob(true)"
             >
-              {{ scoring() ? t()('jobs.scoring') : t()('jobs.rescore') }}
+              @if (scoring()) {
+                <span class="ai-thinking__dots" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                </span>
+                {{ t()('jobs.scoring') }}
+              } @else {
+                {{ t()('jobs.rescore') }}
+              }
             </button>
-            @if (scoring()) {
-              <span class="ai-thinking">
-                <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-              </span>
-            }
           </div>
         }
 

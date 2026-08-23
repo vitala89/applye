@@ -1,5 +1,16 @@
 # Current Operational State
 
+- **The Score/Rescore spinner landed as a second pill beside the button rather than inside it.** Native
+  re-test: clicking "Score this job" showed a disabled greyed-out "Scoring…" button _and_ a separate
+  floating "Scoring…" badge next to it - the same word twice, in two different visual treatments.
+  `ai-thinking__dots` is designed to be standalone for exactly this
+  (`libs/ui/src/styles/global.scss`'s own comment: "so it also renders inside buttons"), and the
+  Documents step's Generate/Regenerate buttons already put it there. Moved the dots inside both the
+  score/rescore button and the stale-score rescore button, matching that existing pattern, instead of a
+  sibling `.ai-thinking` element. Gates green: `desktop` 1170/1170 (one pre-existing flaky
+  `cover-letter-print` failure, unrelated - confirmed by an isolated re-run and by Nx's own flaky-task
+  detection), type-check, lint, `nx build desktop`, file-size, attribution, format, `git diff --check`.
+  **Not yet committed.**
 - **The Score/Rescore feedback fix above didn't actually work for the button it was reported against,
   and the real bug was one level deeper.** Native re-test: clicking "Score this job" showed neither the
   new dots animation nor the shell's corner badge. Root cause: `JobScoringService.score()` (what that
@@ -16,8 +27,16 @@
   maintainer: new copy key `resume_bare_scoring_title` ("Scoring this job…") rather than reusing the
   wizard rescore's "Scoring your tailored CV…", wrong for a job nothing has tailored yet. All 6 locales.
   Gates green: `application` 1687/1687, `desktop` 1174/1174, `i18n` 21/21, type-check, lint (5
-  projects), `nx build desktop`, file-size, attribution, format, `git diff --check`. **Not yet
-  committed.**
+  projects), `nx build desktop`, file-size, attribution, format, `git diff --check`. **Merged as
+  [`PR #525`](https://github.com/vitala89/applye/pull/525).**
+- **Score/Rescore now shows the same `ai-thinking` dots animation the Tailor wizard already uses**, next
+  to both the score/rescore button and the stale-score rescore button, whenever `scoring()` is true.
+  Before this, the button's own disabled+relabel was the only feedback while a score/rescore ran -
+  correct since the fix below, but easy to miss, especially right after "Saved to your jobs." where a
+  freshly-created job shows nothing else on screen. No new styles: `ai-thinking`/`ai-thinking__dots` is
+  a genuinely global class in `libs/ui`, already used elsewhere on this exact page. Gates green:
+  `desktop` 1170/1170, type-check, lint, `nx build desktop`, file-size, attribution, format,
+  `git diff --check`. **Merged as [`PR #524`](https://github.com/vitala89/applye/pull/524).**
 - **Score/rescore in-flight state now survives leaving the job page**, and the Tailor wizard's Cancel
   button no longer implies an instant stop it cannot do. Two fixes from the same maintainer pass:
   (1) `jobs.component.ts`'s `scoring` signal read `scoreSvc.running` (component-scoped, destroyed on

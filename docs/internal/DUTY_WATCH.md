@@ -44,6 +44,36 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-23, PR #528 natively re-verified - all four lock-gap fixes confirmed in `tauri dev`
+
+- **Status:** complete - no code change, verification only.
+- **Agent/tool:** Claude Code, new session picking up from `NEXT_SESSION_PROMPT.md`.
+- **Branch:** `main` at `b903c858` (clean).
+- **Commits:** none.
+- **Pull request:** none - verifies [`#528`](https://github.com/vitala89/applye/pull/528), already
+  merged.
+- **Objective:** the maintainer's next action per the prior handoff - drive the app natively and
+  confirm the four `PR #528` fixes (Apply button, CV-preview lock, Score/Rescore lock, Name-it lock).
+- **Completed:** the maintainer reported all four hold - already exercised and confirmed correct.
+  `NATIVE_GATE_FINDINGS.md` updated: the P1/P2/B12 entry's "not yet natively re-verified" note now
+  reads "natively re-verified 2026-08-23", and the "still needs a native pass" checklist is marked
+  done.
+- **Not completed:** n/a.
+- **Files or packages changed:** `docs/internal/NATIVE_GATE_FINDINGS.md`.
+- **Validation:** `npm run format:check` (docs-only edit).
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** took the maintainer's confirmation as sufficient - no screenshot or
+  step-by-step transcript requested, since this was a re-run of a checklist already written out in
+  detail in the prior session's handoff.
+- **Risks or compatibility impact:** none.
+- **Open issues or blockers:** the filename loose end from `#518` is confirmed closed by the
+  maintainer - no mismatch seen, no code path left to check. `S1` (tailoring performance, needs a
+  read-only `tailoring_cache` query, ask before running) remains open and is the only item left from
+  the prior handoff.
+- **Next first action:** ask the maintainer for permission to run the read-only `tailoring_cache`
+  query from `NATIVE_GATE_FINDINGS.md`'s `S1` entry, then size the fix from the numbers it returns.
+- **Evidence:** this conversation's transcript.
+
 ### 2026-08-23, B9 closed; native re-test of P1/P2/B12 found and fixed three more lock gaps - PR #528 merged
 
 - **Status:** complete - code shipped and merged; open item is the native `tauri dev` re-verification

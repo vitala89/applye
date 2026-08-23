@@ -209,7 +209,7 @@
             [photoPlacement]="photoPlacement()"
             [includeBirthdate]="includeBirthdate()"
             [includeMaritalStatus]="includeMaritalStatus()"
-            [interactive]="true"
+            [interactive]="!locked()"
             [selection]="liveSelection()"
             (selectionChange)="liveSelection.set($event)"
             (sectionChange)="replaceSection($event)"

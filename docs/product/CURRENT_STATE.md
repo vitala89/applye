@@ -1,5 +1,30 @@
 # Current Operational State
 
+- **A third gap in the same lock: the job meta card's "Name it"/"Edit it" company+role button stayed
+  active after the job left `saved`.** It was deliberately built to never close off - correct while
+  editable, but the reasoning stops applying once locked, since the posted identity is what was
+  actually applied with. Added a `locked` input wired to `actions.jobLocked()` (same signal as
+  Retailor/Score/Rescore) and disabled the button on it. Added `job-meta-card.component.spec.ts` -
+  had no test file at all. Gates green: type-check, lint, `desktop` 1178/1178, file-size.
+  **Not yet committed.**
+- **Native re-test of P1/P2/B12 confirmed all three, but found two more gaps in the same lock.**
+  (1) The CV editor's toolbar correctly hides Edit/Save once locked, but `app-cv-preview` had
+  `[interactive]="true"` hardcoded, so the rendered CV still accepted clicks - the live style panel
+  still opened and inline text-editing still started on a locked document. Fixed by
+  `[interactive]="!locked()"`; the selection and edit-mode services were already gated on
+  `interactive`, so this one binding closes it. (2) Score/Rescore's two buttons only disabled on
+  `scoring()`, never on `actions.jobLocked()` - the same signal already disabling Retailor (P2).
+  Added `|| actions.jobLocked()` to both. Regression test added for the preview lock; Score/Rescore
+  has none, `jobs.component.ts` (1076 lines) has no spec file - same gap as the Apply-button fix
+  below. Gates green: type-check, lint, `desktop` 1176/1176. **Not yet committed.**
+- **Clicking "Apply" on a job's detail actions did nothing.** `job-detail-actions.component.ts` emits
+  `applyRequested`, but `jobs.component.html` listened for `(markAppliedRequested)` - an event the
+  component has never had. Angular does not error on an unknown output binding (silently falls back to
+  treating it as a native DOM event), so `type-check`/`build` never caught it, and every click silently
+  failed to reach `JobActionsStore.applyNow()`. Fixed by listening for `(applyRequested)`. Added a
+  regression test in `job-detail-actions.component.spec.ts` for the click emit; the parent-side wiring
+  stays untested since `jobs.component.ts` (1076 lines) has no spec file at all - left as a separate,
+  larger gap. Gates green: type-check, lint, `desktop` 1175/1175. **Not yet committed.**
 - **The Score/Rescore spinner landed as a second pill beside the button rather than inside it.** Native
   re-test: clicking "Score this job" showed a disabled greyed-out "Scoring…" button _and_ a separate
   floating "Scoring…" badge next to it - the same word twice, in two different visual treatments.

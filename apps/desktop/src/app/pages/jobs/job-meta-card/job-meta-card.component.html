@@ -20,7 +20,12 @@
     @if (identifying()) {
       <span class="job-meta__identifying">{{ t()('jobs.identity_identifying') }}</span>
     } @else {
-      <button class="btn btn--secondary btn--sm job-meta__name-it" type="button" (click)="nameIt()">
+      <button
+        class="btn btn--secondary btn--sm job-meta__name-it"
+        type="button"
+        [disabled]="locked()"
+        (click)="nameIt()"
+      >
         {{ nameItLabel() }}
       </button>
     }

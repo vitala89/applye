@@ -44,6 +44,10 @@ export class JobMetaCardComponent {
   readonly jdText = input('');
   readonly hasArchetypes = input(false);
   readonly archetypeMatch = input<boolean | null>(null);
+  /** Once the job has left `saved`, the posted identity is what was applied
+   * with - correcting it after the fact would misrepresent what actually went
+   * out, so naming/renaming is locked with everything else (P2/B12). */
+  readonly locked = input(false);
 
   /** The job as it stands after the user named it, for the page to adopt. */
   readonly identityChanged = output<Job>();
@@ -59,10 +63,13 @@ export class JobMetaCardComponent {
   );
 
   /**
-   * The button is always offered. Naming a job is never closed off, and the one
-   * case that most needs a way back is the one where both fields are filled -
-   * because the user typed a name and got it wrong, and nothing else on this
-   * page can correct it. Only the label changes.
+   * Offered while the job is still `saved`. Naming a job was never closed off
+   * before it left `saved`, and the one case that most needs a way back is the
+   * one where both fields are filled - because the user typed a name and got
+   * it wrong, and nothing else on this page can correct it. Only the label
+   * changes. Once `locked` (the job has left `saved`), renaming would
+   * misrepresent what was actually applied with, so it locks with everything
+   * else (P2/B12).
    */
   protected readonly nameItLabel = computed(() =>
     !this.job().company || !this.job().title || this.companyInferred() || this.titleInferred()

@@ -5,7 +5,9 @@ import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from
 import { TranslateService } from '@applye/i18n';
 import { ToastService, CvStyleStore } from '@applye/application';
 import { mergePersonalField } from '@applye/application';
+import { By } from '@angular/platform-browser';
 import { CvDetailComponent } from './cv-detail.component';
+import { CvPreviewComponent } from './cv-preview/cv-preview.component';
 
 describe('mergePersonalField', () => {
   it('ignores empty/whitespace, keeps current', () => {
@@ -575,6 +577,14 @@ describe('CvDetailComponent applied lock (P2)', () => {
     expect(fixture.componentInstance.previewMode()).toBe(true);
     const root = fixture.nativeElement as HTMLElement;
     expect(root.textContent).toContain(fixture.componentInstance['t']()('documents.locked_badge'));
+  });
+
+  it('makes the preview non-interactive once locked, so the live style panel cannot select or edit text', async () => {
+    const fixture = await setup({ status: 'applied' });
+
+    const preview = fixture.debugElement.query(By.directive(CvPreviewComponent))
+      .componentInstance as CvPreviewComponent;
+    expect(preview.interactive()).toBe(false);
   });
 
   it('stays editable when no application links this document at all', async () => {

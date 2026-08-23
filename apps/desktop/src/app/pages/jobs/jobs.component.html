@@ -46,7 +46,7 @@
         [canMarkApplied]="actions.canMarkApplied()"
         [isTailored]="isTailored()"
         (saveRequested)="actions.saveJob()"
-        (markAppliedRequested)="actions.applyNow()"
+        (applyRequested)="actions.applyNow()"
         (deleteRequested)="actions.openDeleteConfirm()"
         (cvRequested)="docs.openCv($event)"
         (coverLetterRequested)="docs.openCoverLetter($event)"
@@ -67,6 +67,7 @@
               [jdText]="jdText()"
               [hasArchetypes]="scoreStore.hasArchetypes()"
               [archetypeMatch]="archetypeMatch()"
+              [locked]="actions.jobLocked()"
               (identityChanged)="job.set($event)"
             />
             @if (!scoreStore.hasArchetypes()) {
@@ -85,7 +86,7 @@
               } @else {
                 <button
                   class="btn btn--secondary btn--md"
-                  [disabled]="scoring()"
+                  [disabled]="scoring() || actions.jobLocked()"
                   (click)="scoreStore.scoreJob(false)"
                 >
                   @if (scoring()) {
@@ -135,7 +136,7 @@
             <span class="score-stale__text">{{ t()('jobs.score_stale') }}</span>
             <button
               class="btn btn--secondary btn--sm"
-              [disabled]="scoring()"
+              [disabled]="scoring() || actions.jobLocked()"
               (click)="scoreStore.scoreJob(true)"
             >
               @if (scoring()) {

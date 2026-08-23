@@ -44,6 +44,122 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-23, seven tailoring/scoring bugs found and fixed via native testing (#520-#526)
+
+- **Status:** complete. All seven merged to `main`; `main` is at `0c5cbea1` (`#526`), clean, fast-forwarded
+  locally.
+- **Agent/tool:** Claude Code, model as configured for this session. Started from the prior session's
+  handoff (P1/P2/B12 native verification, per `NEXT_SESSION_PROMPT.md`'s item 2), but the maintainer
+  instead ran the apply wizard end to end and reported bugs live, one at a time, as they surfaced -
+  this entry covers the resulting chain rather than the originally planned item.
+- **Branch/PR chain:** `fix/retailor-cache-baseline` ([#520](https://github.com/vitala89/applye/pull/520)),
+  `fix/tailor-step-retry` ([#521](https://github.com/vitala89/applye/pull/521)),
+  `fix/retailor-badge-source-tag` ([#522](https://github.com/vitala89/applye/pull/522)),
+  `fix/scoring-persist-and-cancel-copy` ([#523](https://github.com/vitala89/applye/pull/523)),
+  `feat/score-button-spinner` ([#524](https://github.com/vitala89/applye/pull/524)),
+  `fix/baseline-score-activity-wiring` ([#525](https://github.com/vitala89/applye/pull/525)),
+  `fix/score-spinner-in-button` ([#526](https://github.com/vitala89/applye/pull/526)). All committed,
+  pushed, opened and merged by the maintainer within this session - no work left uncommitted.
+- **Objective:** the maintainer drove the apply wizard and My Jobs scoring natively in `tauri dev` and
+  reported what broke; each report was diagnosed from the repository, fixed, gated, and shipped before
+  moving to the next.
+- **Completed, in the order found:**
+  1. **`#520`** - `TailoringService.restoreFromCache()` always hashed the cache lookup against
+     `profile.fullMd`; the live run (`runPass()`) hashes against `baselineFor(ctx)` (the selected base
+     CV when one is set). A job tailored against a chosen base CV showed "Tailor" instead of "Retailor"
+     on reopen. Fixed by routing `restoreFromCache` through `baselineFor(ctx)` too.
+  2. **`#521`** - a tailoring pass that failed mid-wizard (e.g. invalid AI JSON on pass 2) left no way
+     forward: not the from-scratch picker, not the thinking row, not the tailored badge, just error
+     text. Added a Retry button re-emitting `startTailoring`, which resumes from cache for the passes
+     already done.
+  3. **`#522`** - `#520` was the wrong-shaped fix. `CvDraftService.persist()` relinks `cvDocumentId` to
+     its own tailored _output_ (`ADR-0003` row reuse), so `selectedBaseCvId` on reopen resolves to that
+     output, not to whatever pass 1 actually hashed against - the cache miss recurred for essentially
+     every job with an application. A "linked CV is AI-generated" heuristic was checked and rejected
+     (`CvGenerateStore`'s unrelated one-shot generator writes the identical `source: 'generated'`).
+     Grilled with the maintainer (`aif-grilling`, one round): fixed by tagging the pipeline's own output
+     `source: 'tailored'` (a new `DocumentSource` union member, no migration - `source` is
+     unconstrained `TEXT`) and reading `isTailored` from that tag as well as the live signal. Scope
+     stayed badge/CTA only, not a full phase-card/Changes/Gaps restore on reopen - flagged as a
+     separate, larger ask if ever wanted.
+  4. **`#523`** - two more native reports, grilled together: (a) a score/rescore run reset to
+     "Score this job" if the user left and returned to the page - `JobScoringService` is
+     component-scoped and `jobs.component.ts` read its `running` signal directly instead of
+     `WizardActivityService.isRunning`; fixed to mirror `tailoring`. (b) the Tailor wizard's Cancel
+     button implied an instant stop it cannot do (`AiService.run()` has no request id or cancellation
+     path in either API/`reqwest` or CLI/spawned-process mode). Grilled: real cancellation needs new
+     Rust plumbing, out of scope; recommended and chosen the honest-copy fix instead
+     ("Cancelling..." to "Finishing this pass...", a hint, all 6 locales).
+  5. **`#524`** - clicking "Score this job" gave no visible feedback until the result appeared. Added
+     the `ai-thinking` dots animation next to the button, matching the Tailor wizard's own pattern.
+  6. **`#525`** - **`#523`'s scoring-persistence fix was itself wrong for the button it targeted.**
+     `JobScoringService.score()` - what "Score this job" actually calls - never registered with
+     `WizardActivityService` at all; only `rescoreAfterTailor()` (the wizard's post-tailor step) did.
+     `#523` assumed both methods wrote to it, so the signal read `false` for the _entire_ `score()` run
+     - a regression from the old (also wrong, but at least page-local-visible) flag. Native re-test
+       confirmed: no animation, no disabled state. Fixed by adding the same `activity.begin`/`end` pair to
+       `score()`. Also extended the shell's corner badge (`shell-layout.component.ts`) to a bare
+       baseline score in flight - it was gated only on `WizardProgressService.progress()`, which a plain
+       "Score this job" click before the apply wizard opens never sets. Grilled: a second copy key
+       (`resume_bare_scoring_title`, "Scoring this job...") rather than reusing the wizard rescore's
+       "Scoring your tailored CV...", wrong for a job nothing has tailored yet.
+  7. **`#526`** - the `#524` dots landed as a second pill beside the button rather than inside it -
+     "Scoring..." (disabled button) plus a separate floating "Scoring..." badge, same word twice.
+     `ai-thinking__dots` is standalone by design for exactly this (`libs/ui/src/styles/global.scss`'s
+     own comment: "so it also renders inside buttons"), and the Documents step's Generate/Regenerate
+     buttons already use it that way. Moved the dots inside both buttons instead of a sibling element.
+  - **Merge-conflict handling:** `#526` was branched before `#525` merged and both touched the top of
+    `CHANGELOG.md`/`CURRENT_STATE.md`, so GitHub reported `#526` as `CONFLICTING` after `#525` landed.
+    Resolved by merging `origin/main` into the branch (not rebase, to avoid a force-push), keeping
+    both doc entries in chronological order, re-running the full gate set on the merged state, and
+    pushing the merge commit - `#526` went `MERGEABLE` and was merged clean.
+  - **One false alarm, resolved without a code change:** the maintainer reported the `#526` fix wasn't
+    visible (still saw a two-badge layout). `git log -1` in the running `tauri dev` process would have
+    settled it directly; instead the current `main` was read back to the maintainer to show the fix
+    was already correct, and the maintainer confirmed on their side it was a stale build (`tauri dev`
+    not restarted after `git pull`). No entry needed a fix for this; recorded so the next session
+    recognizes the pattern (this is the second time this exact stale-build confusion happened this
+    session, once for `#520`/`#522` too, before `#522`'s deeper fix was found).
+- **Not completed:** the originally planned item - P1/P2/B12 native verification from the prior
+  handoff - was not reached; the maintainer's live testing surfaced these seven instead. Still open,
+  unchanged from before this session (see `NEXT_SESSION_PROMPT.md`).
+- **Files or packages changed:** `libs/application/src/lib/jobs/tailoring.service.ts`,
+  `tailoring.service.spec.ts`, `apps/desktop/src/app/pages/jobs/job-tailor-step/*`,
+  `libs/core/src/lib/models/document-library.model.ts`,
+  `libs/application/src/lib/documents/cv-draft.service.ts` + spec,
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts` + `.html`,
+  `libs/application/src/lib/jobs/job-scoring.service.ts` + spec,
+  `apps/desktop/src/app/layout/shell-layout.component.ts` + `.html` + spec, all six
+  `libs/i18n/src/lib/translations/*.ts`, plus `CHANGELOG.md` and `docs/product/CURRENT_STATE.md` on
+  every PR.
+- **Validation:** run and observed on every PR before opening it: relevant `nx test` targets
+  (`application` reached 1687/1687, `desktop` reached 1174/1174, `i18n` 21/21 across the chain),
+  `nx run desktop:type-check`, `nx run-many --target=lint` across the touched projects (`core`, `data`,
+  `application`, `desktop`, `ui`, `i18n` - only pre-existing warnings, 0 new), `nx build desktop`,
+  `nx build web` when `libs/core` changed, `npm run quality:file-size`, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check`. One flaky `cover-letter-print` desktop-test failure was
+  investigated (`#526`'s run) and confirmed unrelated and non-reproducing - passed in isolation and Nx's
+  own flaky-task detector flagged it on retry.
+- **Privacy/security impact:** None across all seven. UI state, i18n copy, and one `DocumentSource`
+  union member (`'tailored'`) added to an already-unconstrained `TEXT` column - no schema migration,
+  no new stored user data, no network or IPC surface changed.
+- **Decisions and assumptions:** Two `aif-grilling` rounds this session (`#522`, `#523`+`#525`
+  combined), both one round, both maintainer chose the recommended option - recorded in each PR body
+  and above. `src-tauri`/`cargo` gates were not run on any of the seven since nothing under
+  `src-tauri` changed.
+- **Risks or compatibility impact:** None flagged beyond what each PR's own body states. The real
+  mid-request AI-cancellation gap (`#523`) remains open by deliberate scope decision, not oversight -
+  next session should not attempt it without a fresh grilling round, since the Rust-side plumbing
+  estimate (new `ai_cancel` command, per-request cancel registry, `kill()` for CLI /
+  dropped-future for API) has not changed.
+- **Open issues or blockers:** None of the seven. The four items already open before this session (see
+  `NEXT_SESSION_PROMPT.md`) are unchanged - not touched, not newly diagnosed, not newly blocked.
+- **Next first action:** `docs/internal/NEXT_SESSION_PROMPT.md` rewritten to drop the seven closed
+  items and keep the four still-open ones (`B9`, `P1`/`P2`/`B12`, `S1`, the filename loose end)
+  unchanged. Start there; ask the maintainer which of the four (or something new) to take.
+- **Evidence:** PR bodies and diffs for `#520`-`#526`; this conversation's transcript for the grilling
+  rounds and the stale-build false alarm.
+
 ### 2026-08-22, B9 attempted, deferred - no repro captured
 
 - **Status:** partial - deferred, not a code change.

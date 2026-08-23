@@ -122,6 +122,10 @@ export class JobScoringService {
     this.status.set('');
     this.error.set(false);
     this.fromCache.set(false);
+    // Mirrors rescoreAfterTailor below: this is the only signal that survives
+    // the page being destroyed mid-call (component-scoped `running` does
+    // not), and the shell's corner badge and the returning page both read it.
+    this.activity.begin(jobId, 'scoring');
     try {
       const lang = settings.defaultDocLanguage ?? 'en';
       const run = await this.runSkill(ctx, profile.scoringJson, settings, lang, '');
@@ -138,6 +142,7 @@ export class JobScoringService {
       this.error.set(true);
     } finally {
       this.running.set(false);
+      this.activity.end(jobId, 'scoring');
     }
   }
 

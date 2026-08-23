@@ -855,6 +855,7 @@ export const uk: TranslationMap = stub(en, {
       discard_keep: 'Продовжити роботу',
       discard_confirm: 'Скасувати',
       resume_scoring_title: 'Оцінюємо ваше доопрацьоване резюме…',
+      resume_bare_scoring_title: 'Оцінюємо вакансію…',
       resume_scoring_hint: 'Крок ще виконується - натисніть, щоб подивитися',
       resume_reviewing_title: 'Готуємо ваші документи…',
       resume_reviewing_hint: 'Крок ще виконується - натисніть, щоб подивитися',

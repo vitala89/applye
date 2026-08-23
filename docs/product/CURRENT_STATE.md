@@ -1,13 +1,23 @@
 # Current Operational State
 
-- **Score/Rescore now shows the same `ai-thinking` dots animation the Tailor wizard already uses**, next
-  to both the score/rescore button and the stale-score rescore button, whenever `scoring()` is true.
-  Before this, the button's own disabled+relabel was the only feedback while a score/rescore ran -
-  correct since the fix below, but easy to miss, especially right after "Saved to your jobs." where a
-  freshly-created job shows nothing else on screen. No new styles: `ai-thinking`/`ai-thinking__dots` is
-  a genuinely global class in `libs/ui`, already used elsewhere on this exact page. Gates green:
-  `desktop` 1170/1170, type-check, lint, `nx build desktop`, file-size, attribution, format,
-  `git diff --check`. **Not yet committed.**
+- **The Score/Rescore feedback fix above didn't actually work for the button it was reported against,
+  and the real bug was one level deeper.** Native re-test: clicking "Score this job" showed neither the
+  new dots animation nor the shell's corner badge. Root cause: `JobScoringService.score()` (what that
+  button calls) never registered with `WizardActivityService` - only `rescoreAfterTailor()` (the
+  wizard's post-tailor rescore step) did. The previous session's fix pointed `jobs.component.ts`'s
+  `scoring` signal at `activity.isRunning(jobId, 'scoring')` on the reasonable-looking but wrong
+  assumption that `JobScoringService` already wrote to it for both methods - so the signal read `false`
+  for the _entire_ run instead of the old (also wrong, but at least visible while on the page)
+  component-scoped flag: a regression, not just an incomplete fix. Fixed by adding
+  `activity.begin`/`end(jobId, 'scoring')` to `score()` too, mirroring `rescoreAfterTailor`. Also
+  extended the shell's corner badge (`shell-layout.component.ts`) - previously gated only on
+  `WizardProgressService.progress()`, which a plain "Score this job" click before the apply wizard is
+  ever opened never sets - to also show for a bare score in flight, from any page. Grilled with the
+  maintainer: new copy key `resume_bare_scoring_title` ("Scoring this job…") rather than reusing the
+  wizard rescore's "Scoring your tailored CV…", wrong for a job nothing has tailored yet. All 6 locales.
+  Gates green: `application` 1687/1687, `desktop` 1174/1174, `i18n` 21/21, type-check, lint (5
+  projects), `nx build desktop`, file-size, attribution, format, `git diff --check`. **Not yet
+  committed.**
 - **Score/rescore in-flight state now survives leaving the job page**, and the Tailor wizard's Cancel
   button no longer implies an instant stop it cannot do. Two fixes from the same maintainer pass:
   (1) `jobs.component.ts`'s `scoring` signal read `scoreSvc.running` (component-scoped, destroyed on

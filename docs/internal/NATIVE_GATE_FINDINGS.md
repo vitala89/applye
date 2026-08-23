@@ -472,7 +472,15 @@ real role.
 to correct one. Making a positional guess a weaker provenance that the AI may overwrite is a
 behaviour change of its own, and it needs its own decision rather than riding along here.
 
-**B9. The wizard's footer padding is inconsistent. NOT REPRODUCIBLE FROM THE REPOSITORY.**
+**B9. The wizard's footer padding is inconsistent. CLOSED, 2026-08-23 - not an issue at full screen.**
+Tried to catch it live on 2026-08-22: the maintainer described it verbally but could not reproduce it
+on demand, no screenshot captured. On 2026-08-23, running maximized/full screen, the maintainer
+confirmed the footer looks correct - no inconsistency observed. Consistent with this entry's own
+"possibly already fixed" note: several layout-affecting changes landed the same week
+(`#511`-`#516`, the P1/P2/B12 native-lock UI). Re-open only if it recurs, and only with a screenshot
+or the two differing step names - a description alone did not converge twice.
+
+**B9 (original, kept for the mechanism reasoning below). NOT REPRODUCIBLE FROM THE REPOSITORY.**
 The row holding **Back**, **Cancel** and **Continue** sometimes has bottom padding and sometimes has
 none - it varies between steps rather than between screens sizes. One step's layout is missing what
 its neighbours have.
@@ -593,8 +601,38 @@ on `cvDocumentId`/`coverLetterDocumentId`): once the linked application has left
 forces Preview and hides Edit/Save/Draft, regardless of how it was opened - Documents list, My Jobs, or
 the wizard. **Delete was not added to the editor** - it already works from the Documents list regardless
 of lock state, and building a second delete entry point was judged out of scope for this change; flagged
-if the maintainer wants it. **Not verified natively** - the read-only editor mode and the disabled
-Retailor need a native pass, same as everything else print/UI in this file.
+if the maintainer wants it.
+
+**Native re-test, 2026-08-23: P1/P2/B12 confirmed correct, and three more gaps in the same lock found
+and fixed - see [`PR #528`](https://github.com/vitala89/applye/pull/528), not yet natively
+re-verified.** The maintainer exercised the documented repro (CV-only generation, Create Application,
+confirm Retailor disabled and both editors read-only) and confirmed all three hold. Separately caught
+one unrelated bug and two more instances of the same lock gap while doing it:
+
+- **Not this lock at all - a wiring bug.** Pressing **Apply** on a job's detail actions did nothing.
+  `job-detail-actions.component.ts` emits `applyRequested`; `jobs.component.html` listened for
+  `(markAppliedRequested)`, an event the component never had. Angular does not raise a template-compile
+  error for an unknown output binding - it silently treats it as a native DOM event - so `type-check`
+  and `build` never caught it. Fixed by listening for `(applyRequested)`.
+- **The CV preview stayed interactive after the toolbar locked.** `cv-detail.component.html` hardcoded
+  `[interactive]="true"` on `app-cv-preview`, so a locked document's Edit/Save/preview-toggle correctly
+  disappeared, but clicking the rendered CV still opened the live style panel and could start inline
+  text editing - same as an unlocked document. Fixed by `[interactive]="!locked()"`; the selection and
+  edit-mode services were already gated on `interactive`, so the one binding closes both paths.
+- **Score/Rescore never read the lock at all.** Both buttons (the main Score/Rescore button and the
+  stale-score Rescore button) were disabled only by `scoring()`. Fixed by adding
+  `|| actions.jobLocked()` to both - the same signal already disabling Retailor.
+- **The job meta card's "Name it"/"Edit it" company+role button was deliberately built to never close
+  off**, per its own comment - correct while the job was still editable, wrong once it is locked, since
+  the posted identity is what was actually applied with. Added a `locked` input wired to
+  `actions.jobLocked()` and disabled the button on it.
+
+Regression tests added for the Apply wiring, the CV-preview lock, and the Name-it lock
+(`job-meta-card.component.spec.ts` did not exist at all before this). **Score/Rescore's lock has no
+test, and neither does the Apply-button wiring itself - `jobs.component.ts` (1076 lines) has no spec
+file**, a gap left for its own task rather than building a full harness for it here. **Still needs a
+native pass**: click Apply on a job and confirm the wizard opens/marks applied, then lock a job and
+confirm the CV live style panel, Score/Rescore, and Name it/Edit it are all inert.
 
 **P1. Creating an application must not mark it `applied` by itself.**
 Today the tailor flow's **Create application** step writes the status as `applied` immediately. That

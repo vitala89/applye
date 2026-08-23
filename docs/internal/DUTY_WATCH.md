@@ -44,6 +44,59 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-23, B9 closed; native re-test of P1/P2/B12 found and fixed three more lock gaps - PR #528 merged
+
+- **Status:** complete - code shipped and merged; open item is the native `tauri dev` re-verification
+  pass, which needs the maintainer.
+- **Agent/tool:** Claude Code, continuation of the session that opened `PR #527` (handoff docs).
+- **Branch:** `fix/lock-gaps-p1-p2-b12`.
+- **Commits:** `c4a1286a`.
+- **Pull request:** [`#528`](https://github.com/vitala89/applye/pull/528), **merged** to `main` at
+  `8f245a80`.
+- **Objective:** the maintainer picked `B9` first (weakest candidate per the prior handoff), then
+  `P1/P2/B12` native verification.
+- **Completed:**
+  - `B9`: confirmed by the maintainer as not reproducing at full screen - closed, not a code change.
+    `NATIVE_GATE_FINDINGS.md` updated.
+  - `P1/P2/B12`: the maintainer natively confirmed all three hold (cover letter stays skipped, Retailor
+    disabled, CV editor read-only).
+  - Found and fixed four bugs while verifying, none diagnosable from the repository alone until the
+    maintainer exercised the app: (1) Apply's button emitted `applyRequested`, the page listened for a
+    `markAppliedRequested` event that never existed - Angular does not error on an unknown output
+    binding, so it silently did nothing; (2) the CV preview's live style panel stayed interactive after
+    the editor toolbar locked (`[interactive]="true"` was hardcoded); (3) Score/Rescore's two buttons
+    were never gated on `actions.jobLocked()`, the same signal already disabling Retailor; (4) the job
+    meta card's Name it/Edit it button was deliberately built to never close off (documented in its own
+    comment) - a decision that stopped applying once the job is locked; grilled with the maintainer
+    before changing it, per the "changes an existing documented decision" trigger.
+  - Added `job-meta-card.component.spec.ts` from scratch (no test file existed) plus regression tests
+    in `job-detail-actions.component.spec.ts` and `cv-detail.component.spec.ts`.
+  - Merged by the maintainer within the same session - no work left uncommitted.
+- **Not completed:** native re-verification of the four fixes against the running app, same as the
+  P1/P2/B12 code they extend. Score/Rescore's lock and the Apply-button wiring have no test coverage
+  at all, because `jobs.component.ts` (1076 lines) has no spec file - flagged, not built here (would
+  need a large new test harness, out of scope for this fix).
+- **Files or packages changed:** `jobs.component.html`, `cv-detail.component.html`,
+  `cv-detail.component.spec.ts`, `job-detail-actions.component.spec.ts`,
+  `job-meta-card.component.{ts,html}`, `job-meta-card.component.spec.ts` (new), `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`.
+- **Validation:** `nx run desktop:type-check`, `nx run desktop:lint`, `nx test desktop` (1178/1178),
+  `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`,
+  `git diff --check` - all green before commit.
+- **Privacy/security impact:** none - UI lock-state wiring only, no data model or IPC change.
+- **Decisions and assumptions:** grilled the maintainer before overriding the Name-it button's
+  documented "never closed off" behaviour rather than silently changing it - confirmed to lock it.
+  Did not create a `jobs.component.ts` spec file to cover the Apply/Score/Rescore wiring gaps -
+  judged out of proportion for a lock-state fix; flagged as its own task instead.
+- **Risks or compatibility impact:** low - all four changes narrow existing behaviour (disable a
+  control once locked) rather than adding new surface.
+- **Open issues or blockers:** the merged fixes await native `tauri dev` verification; `S1` (tailoring
+  performance, needs a read-only `tailoring_cache` query, ask before running) and the filename loose
+  end (only relevant if the maintainer still sees a mismatch) remain open from the prior handoff.
+- **Next first action:** `docs/internal/NEXT_SESSION_PROMPT.md` rewritten to open with `PR #528`'s
+  native verification.
+- **Evidence:** this conversation's transcript; `PR #528` diff, merged as `8f245a80`.
+
 ### 2026-08-23, seven tailoring/scoring bugs found and fixed via native testing (#520-#526)
 
 - **Status:** complete. All seven merged to `main`; `main` is at `0c5cbea1` (`#526`), clean, fast-forwarded

@@ -12,6 +12,14 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The Score/Rescore spinner landed as a second pill next to the button instead of inside it**, so
+  clicking "Score this job" showed a disabled greyed-out "Scoring…" button _and_ a separate floating
+  "Scoring…" badge beside it - two things saying the same thing. `ai-thinking__dots` is designed to be
+  standalone for exactly this (`libs/ui/src/styles/global.scss`'s own comment: "so it also renders
+  inside buttons"), and the Documents step's Generate/Regenerate buttons already use it that way.
+  Moved the dots inside both the score/rescore button and the stale-score rescore button, matching that
+  existing pattern, instead of rendering a sibling `.ai-thinking` element.
+
 - **Score/Rescore had no visible feedback while running - clicking it looked like nothing happened
   until the result appeared.** The button already disabled and swapped its own label to "Scoring…"
   (correctly, and now correctly surviving navigation per the fix above), but that alone read as

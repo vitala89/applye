@@ -1,5 +1,16 @@
 # Current Operational State
 
+- **The Score/Rescore spinner landed as a second pill beside the button rather than inside it.** Native
+  re-test: clicking "Score this job" showed a disabled greyed-out "Scoring…" button _and_ a separate
+  floating "Scoring…" badge next to it - the same word twice, in two different visual treatments.
+  `ai-thinking__dots` is designed to be standalone for exactly this
+  (`libs/ui/src/styles/global.scss`'s own comment: "so it also renders inside buttons"), and the
+  Documents step's Generate/Regenerate buttons already put it there. Moved the dots inside both the
+  score/rescore button and the stale-score rescore button, matching that existing pattern, instead of a
+  sibling `.ai-thinking` element. Gates green: `desktop` 1170/1170 (one pre-existing flaky
+  `cover-letter-print` failure, unrelated - confirmed by an isolated re-run and by Nx's own flaky-task
+  detection), type-check, lint, `nx build desktop`, file-size, attribution, format, `git diff --check`.
+  **Not yet committed.**
 - **Score/Rescore now shows the same `ai-thinking` dots animation the Tailor wizard already uses**, next
   to both the score/rescore button and the stale-score rescore button, whenever `scoring()` is true.
   Before this, the button's own disabled+relabel was the only feedback while a score/rescore ran -
@@ -7,7 +18,7 @@
   freshly-created job shows nothing else on screen. No new styles: `ai-thinking`/`ai-thinking__dots` is
   a genuinely global class in `libs/ui`, already used elsewhere on this exact page. Gates green:
   `desktop` 1170/1170, type-check, lint, `nx build desktop`, file-size, attribution, format,
-  `git diff --check`. **Not yet committed.**
+  `git diff --check`. **Merged as [`PR #524`](https://github.com/vitala89/applye/pull/524).**
 - **Score/rescore in-flight state now survives leaving the job page**, and the Tailor wizard's Cancel
   button no longer implies an instant stop it cannot do. Two fixes from the same maintainer pass:
   (1) `jobs.component.ts`'s `scoring` signal read `scoreSvc.running` (component-scoped, destroyed on

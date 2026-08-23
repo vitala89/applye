@@ -838,6 +838,7 @@ export const en: TranslationMap = {
       discard_keep: 'Keep working',
       discard_confirm: 'Discard',
       resume_scoring_title: 'Scoring your tailored CV…',
+      resume_bare_scoring_title: 'Scoring this job…',
       resume_scoring_hint: 'A step is still running - tap to watch',
       resume_reviewing_title: 'Preparing your documents…',
       resume_reviewing_hint: 'A step is still running - tap to watch',

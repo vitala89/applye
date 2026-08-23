@@ -11,6 +11,24 @@
   `cover-letter-print` failure, unrelated - confirmed by an isolated re-run and by Nx's own flaky-task
   detection), type-check, lint, `nx build desktop`, file-size, attribution, format, `git diff --check`.
   **Not yet committed.**
+- **The Score/Rescore feedback fix above didn't actually work for the button it was reported against,
+  and the real bug was one level deeper.** Native re-test: clicking "Score this job" showed neither the
+  new dots animation nor the shell's corner badge. Root cause: `JobScoringService.score()` (what that
+  button calls) never registered with `WizardActivityService` - only `rescoreAfterTailor()` (the
+  wizard's post-tailor rescore step) did. The previous session's fix pointed `jobs.component.ts`'s
+  `scoring` signal at `activity.isRunning(jobId, 'scoring')` on the reasonable-looking but wrong
+  assumption that `JobScoringService` already wrote to it for both methods - so the signal read `false`
+  for the _entire_ run instead of the old (also wrong, but at least visible while on the page)
+  component-scoped flag: a regression, not just an incomplete fix. Fixed by adding
+  `activity.begin`/`end(jobId, 'scoring')` to `score()` too, mirroring `rescoreAfterTailor`. Also
+  extended the shell's corner badge (`shell-layout.component.ts`) - previously gated only on
+  `WizardProgressService.progress()`, which a plain "Score this job" click before the apply wizard is
+  ever opened never sets - to also show for a bare score in flight, from any page. Grilled with the
+  maintainer: new copy key `resume_bare_scoring_title` ("Scoring this job…") rather than reusing the
+  wizard rescore's "Scoring your tailored CV…", wrong for a job nothing has tailored yet. All 6 locales.
+  Gates green: `application` 1687/1687, `desktop` 1174/1174, `i18n` 21/21, type-check, lint (5
+  projects), `nx build desktop`, file-size, attribution, format, `git diff --check`. **Merged as
+  [`PR #525`](https://github.com/vitala89/applye/pull/525).**
 - **Score/Rescore now shows the same `ai-thinking` dots animation the Tailor wizard already uses**, next
   to both the score/rescore button and the stale-score rescore button, whenever `scoring()` is true.
   Before this, the button's own disabled+relabel was the only feedback while a score/rescore ran -

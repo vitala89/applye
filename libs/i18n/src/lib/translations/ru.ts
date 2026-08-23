@@ -858,6 +858,7 @@ export const ru: TranslationMap = stub(en, {
       discard_keep: 'Продолжить работу',
       discard_confirm: 'Отменить',
       resume_scoring_title: 'Оцениваем ваше доработанное резюме…',
+      resume_bare_scoring_title: 'Оцениваем вакансию…',
       resume_scoring_hint: 'Шаг ещё выполняется - нажмите, чтобы посмотреть',
       resume_reviewing_title: 'Готовим ваши документы…',
       resume_reviewing_hint: 'Шаг ещё выполняется - нажмите, чтобы посмотреть',

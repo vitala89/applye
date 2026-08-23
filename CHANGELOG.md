@@ -12,6 +12,39 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The "Name it"/"Edit it" company+role button on a job's meta card stayed active after the job left
+  `saved`, letting a locked application's identity be renamed post-apply.** It was deliberately built
+  to never close off (`job-meta-card.component.ts`'s own comment: "naming a job is never closed off"),
+  which was correct while the job could still be edited, but that reasoning stops applying once the
+  job is locked - the posted identity is what was actually applied with, and changing it afterward
+  would misrepresent that. Added a `locked` input, wired from `jobs.component.html` to
+  `actions.jobLocked()` (the same signal already locking Retailor and Score/Rescore), and disabled the
+  button on it. Added `job-meta-card.component.spec.ts` - the component had no test file at all.
+
+- **The CV editor's live style panel stayed interactive after B12's lock, and Score/Rescore ignored
+  the same lock P2 already applies to Retailor.** Native re-test of P1/P2/B12 found both true and two
+  more: (1) `cv-detail.component.html` hardcoded `[interactive]="true"` on `app-cv-preview`, so a
+  locked document's toolbar correctly hid Edit/Save/the preview toggle, but the rendered CV itself
+  still accepted clicks - opening the live style panel and letting inline text editing start, same as
+  an unlocked document. Fixed by binding `[interactive]="!locked()"`; `CvPreviewSelectionService` and
+  `CvPreviewEditModeService` already gate click-to-select and edit-start on `interactive`, so this one
+  binding closes both paths. (2) Score/Rescore's two buttons (the main Score/Rescore button and the
+  stale-score Rescore button) were disabled only by `scoring()`, never by `actions.jobLocked()` - the
+  same signal P2 already uses to disable Retailor once a job leaves `saved`. Fixed by adding
+  `|| actions.jobLocked()` to both. Added a regression test for the preview lock in
+  `cv-detail.component.spec.ts`; the Score/Rescore lock has no test because `jobs.component.ts` (1076
+  lines) has no spec file at all - same gap as the Apply-button fix below, left for its own task.
+
+- **Clicking "Apply" on a job's detail actions did nothing.** `job-detail-actions.component.ts` emits
+  an `applyRequested` output, but `jobs.component.html` listened for `(markAppliedRequested)` - an
+  event the component has never had. Angular does not raise a template-compile error for an unknown
+  output binding (it silently falls back to treating it as a native DOM event), so `type-check` and
+  `build` never caught the mismatch, and every click silently failed to reach
+  `JobActionsStore.applyNow()`. Fixed by listening for `(applyRequested)`. Added a regression test in
+  `job-detail-actions.component.spec.ts` asserting the click actually emits; the parent-side wiring
+  itself stays untested because `jobs.component.ts` (1076 lines) has no spec file at all - a separate,
+  larger gap left for its own task.
+
 - **The Score/Rescore spinner landed as a second pill next to the button instead of inside it**, so
   clicking "Score this job" showed a disabled greyed-out "Scoring…" button _and_ a separate floating
   "Scoring…" badge beside it - two things saying the same thing. `ai-thinking__dots` is designed to be

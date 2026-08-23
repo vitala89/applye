@@ -45,6 +45,22 @@ describe('JobDetailActionsComponent', () => {
     expect(emitted).toEqual(['save']);
   });
 
+  it('offers Mark Applied while it is available, and asks the page to do it', () => {
+    const s = stubs();
+    const fixture = setup(s);
+    fixture.componentRef.setInput('canMarkApplied', true);
+    fixture.detectChanges();
+    const emitted: string[] = [];
+    fixture.componentInstance.applyRequested.subscribe(() => emitted.push('apply'));
+
+    const apply = buttons(fixture).find((b) => b.textContent?.includes('jobs.mark_applied'));
+    apply?.click();
+
+    // Regression: jobs.component.html once listened for a non-existent
+    // `markAppliedRequested` output, so the click silently did nothing.
+    expect(emitted).toEqual(['apply']);
+  });
+
   it('shows the read-only status badge instead of Mark Applied once it is unavailable', () => {
     const s = stubs();
     const fixture = setup(s);

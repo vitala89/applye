@@ -34,6 +34,7 @@ describe('TailoringService', () => {
         aiMode: 'api',
         provider: 'claude',
         defaultModel: 'm',
+        economyModel: 'm-economy',
         defaultDocLanguage: 'en',
       } as never,
       jdText: 'a job',
@@ -163,6 +164,23 @@ describe('TailoringService', () => {
       expect.objectContaining({ jobId: JOB_ID, pass: 1, resultMd: 'md-1', modelUsed: 'm' }),
     );
     expect(s.status()).toBe('Pass 3 done - 10 in / 5 out');
+  });
+
+  it('runs pass 2 (the critique) on the economy model, not the quality tier', async () => {
+    const s = make();
+    await s.run(ctx());
+
+    expect(drafts.tailoringCacheSave).toHaveBeenCalledWith(
+      expect.objectContaining({ pass: 2, modelUsed: 'm-economy' }),
+    );
+    expect(ai.run).toHaveBeenCalledWith(expect.objectContaining({ model: 'm-economy' }));
+    // Passes 1 and 3 stay on the quality tier - only the critique moves.
+    expect(drafts.tailoringCacheSave).toHaveBeenCalledWith(
+      expect.objectContaining({ pass: 1, modelUsed: 'm' }),
+    );
+    expect(drafts.tailoringCacheSave).toHaveBeenCalledWith(
+      expect.objectContaining({ pass: 3, modelUsed: 'm' }),
+    );
   });
 
   it('tailors the selected base CV instead of the profile', async () => {

@@ -604,8 +604,8 @@ of lock state, and building a second delete entry point was judged out of scope 
 if the maintainer wants it.
 
 **Native re-test, 2026-08-23: P1/P2/B12 confirmed correct, and three more gaps in the same lock found
-and fixed - see [`PR #528`](https://github.com/vitala89/applye/pull/528), not yet natively
-re-verified.** The maintainer exercised the documented repro (CV-only generation, Create Application,
+and fixed - see [`PR #528`](https://github.com/vitala89/applye/pull/528), natively re-verified
+2026-08-23.** The maintainer exercised the documented repro (CV-only generation, Create Application,
 confirm Retailor disabled and both editors read-only) and confirmed all three hold. Separately caught
 one unrelated bug and two more instances of the same lock gap while doing it:
 
@@ -630,9 +630,10 @@ one unrelated bug and two more instances of the same lock gap while doing it:
 Regression tests added for the Apply wiring, the CV-preview lock, and the Name-it lock
 (`job-meta-card.component.spec.ts` did not exist at all before this). **Score/Rescore's lock has no
 test, and neither does the Apply-button wiring itself - `jobs.component.ts` (1076 lines) has no spec
-file**, a gap left for its own task rather than building a full harness for it here. **Still needs a
-native pass**: click Apply on a job and confirm the wizard opens/marks applied, then lock a job and
-confirm the CV live style panel, Score/Rescore, and Name it/Edit it are all inert.
+file**, a gap left for its own task rather than building a full harness for it here. **Native pass
+completed 2026-08-23**: the maintainer clicked Apply on a job and confirmed the wizard opens/marks
+applied, then locked a job and confirmed the CV live style panel, Score/Rescore, and Name it/Edit it
+are all inert. All four `PR #528` fixes hold.
 
 **P1. Creating an application must not mark it `applied` by itself.**
 Today the tailor flow's **Create application** step writes the status as `applied` immediately. That
@@ -789,6 +790,25 @@ SELECT pass, model_used, tokens_input, tokens_output
 If `tokens_input` is flat across the three passes and `tokens_output` for pass 2 is small, the time is
 going into reasoning rather than into text, and the lever is the model or the instruction - not the
 length. If `tokens_input` dominates, the lever is what pass 2 is given.
+
+**Queried 2026-08-23, read-only, against the most recent job in `tailoring_cache`:**
+
+| pass | model_used        | tokens_input | tokens_output |
+| ---- | ----------------- | ------------ | ------------- |
+| 1    | `deepseek-v4-pro` | 1852         | 3451          |
+| 2    | `deepseek-v4-pro` | 2141         | 2207          |
+| 3    | `deepseek-v4-pro` | 2641         | 4562          |
+
+**Neither hypothesis above matches.** `tokens_input` is not flat - it grows each pass (1852 → 2141 → 2641) - but stays modest, well short of dominating the wall clock on its own. The actual anomaly is on
+the output side: pass 2's own schema declares its output as **six to ten bullet points**
+(`{"pass":2,"result_md":"## Recruiter\n<3-5 points>\n\n## Hiring Manager\n<3-5 points>"}`), which
+should run to a few hundred tokens at most. It measured **2207 output tokens** - in the same range as
+pass 1 and pass 3, which both produce full documents. **The model is not honouring the compact format
+pass 2's own prompt asks for**, and that oversized, unconstrained output is the more likely source of
+the ~60s wall clock than input size or reasoning overhead. Sizing a fix (tightening the pass 2 prompt
+to enforce the declared shape, or capping its output tokens) is a prompt change to
+`libs/skills/src/resume-tailoring/resume-tailoring.md` and is left for its own task, since it changes
+AI-output behaviour and needs its own decision.
 
 **S3. The profile and the job description are re-sent, uncached, on all three passes.**
 Found while reading S1 and recorded separately because it is a token-cost defect rather than a

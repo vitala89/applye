@@ -1,5 +1,10 @@
 # Current Operational State
 
+- **`PR #528`'s four lock-gap fixes (Apply button, CV-preview lock, Score/Rescore lock, Name-it lock)
+  are merged to `main` (`8f245a80`) and natively re-verified by the maintainer, 2026-08-23.** All four
+  hold in `tauri dev`. Open work is `S1` (tailoring performance) or the filename loose end from
+  `#518` - maintainer's choice. See `docs/internal/NATIVE_GATE_FINDINGS.md`'s P1/P2/B12 entry and
+  `docs/internal/DUTY_WATCH.md`'s matching 2026-08-23 entry.
 - **A third gap in the same lock: the job meta card's "Name it"/"Edit it" company+role button stayed
   active after the job left `saved`.** It was deliberately built to never close off - correct while
   editable, but the reasoning stops applying once locked, since the posted identity is what was

@@ -810,6 +810,17 @@ to enforce the declared shape, or capping its output tokens) is a prompt change 
 `libs/skills/src/resume-tailoring/resume-tailoring.md` and is left for its own task, since it changes
 AI-output behaviour and needs its own decision.
 
+**A separate, smaller lever tried 2026-08-24 without touching the prompt: pass 2 now runs on the
+economy model tier rather than quality.** A broader AI-request audit found model selection is global
+per call site (`settings.defaultModel` / `settings.economyModel`), not per-pass, so all three tailoring
+passes shared the quality tier regardless of task. `TailoringService.runPass` now picks `economyModel`
+for pass 2 only - the other two levers the audit surfaced (wiring the dead `recommended_model`
+frontmatter, or threading `cache_control` through `AiRequest` so the stable `[USER]`-turn blocks cache
+everywhere, not just `[SYSTEM]`) are bigger changes and were not taken here; the latter touches a
+`libs/core` public contract and needs its own `aif-grilling` round. **Not yet natively measured** - the
+next `tauri dev` pass should re-run the `S1` wall-clock table above and confirm pass 2's time drops
+without a quality regression in the critique it produces.
+
 **S3. The profile and the job description are re-sent, uncached, on all three passes.**
 Found while reading S1 and recorded separately because it is a token-cost defect rather than a
 latency one, and closing it is an architecture decision.

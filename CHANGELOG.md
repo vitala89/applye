@@ -10,6 +10,16 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Changed
+
+- **Tailoring's pass 2 (the dual critique) now runs on the economy model tier instead of the quality
+  tier.** An AI-request performance audit found pass 2's declared output is six to ten bullet points
+  (`resume-tailoring.md`'s own schema), yet a measured run showed 2207 output tokens - far more than
+  the format calls for, and the more likely source of its ~60s wall clock than input size or reasoning
+  overhead (`S1` in `docs/internal/NATIVE_GATE_FINDINGS.md`). Passes 1 and 3, which build the full
+  tailored document, stay on the quality tier; only the critique pass moved.
+  `tailoring.service.spec.ts` covers the per-pass model split.
+
 ### Fixed
 
 - **The "Name it"/"Edit it" company+role button on a job's meta card stayed active after the job left

@@ -212,10 +212,15 @@ export class TailoringService {
       pass2_result: resultMdForPass(this.results(), 2),
     });
 
+    // Pass 2 is a critique against the pass-1 draft, not a document build - its
+    // declared output is six to ten bullet points, so it does not need the
+    // flagship tier passes 1 and 3 need for a full rewrite.
+    const model = passNum === 2 ? settings.economyModel : settings.defaultModel;
+
     const res = await this.ai.run({
       mode: settings.aiMode,
       provider: settings.provider,
-      model: settings.defaultModel,
+      model,
       systemPrompt: rendered.systemPrompt,
       userPrompt: rendered.userPrompt,
       language: lang,
@@ -230,7 +235,7 @@ export class TailoringService {
       resultMd: parsed.result_md,
       changesJson: JSON.stringify(parsed.changes),
       gapsJson: JSON.stringify(parsed.gaps),
-      modelUsed: settings.defaultModel,
+      modelUsed: model,
       tokensInput: res.tokensInput,
       tokensOutput: res.tokensOutput,
     });

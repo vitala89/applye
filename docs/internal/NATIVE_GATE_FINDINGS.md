@@ -817,9 +817,12 @@ passes shared the quality tier regardless of task. `TailoringService.runPass` no
 for pass 2 only - the other two levers the audit surfaced (wiring the dead `recommended_model`
 frontmatter, or threading `cache_control` through `AiRequest` so the stable `[USER]`-turn blocks cache
 everywhere, not just `[SYSTEM]`) are bigger changes and were not taken here; the latter touches a
-`libs/core` public contract and needs its own `aif-grilling` round. **Not yet natively measured** - the
-next `tauri dev` pass should re-run the `S1` wall-clock table above and confirm pass 2's time drops
-without a quality regression in the critique it produces.
+`libs/core` public contract and needs its own `aif-grilling` round. **Natively confirmed 2026-08-25,
+merged as [`PR #531`](https://github.com/vitala89/applye/pull/531)**: the maintainer reports pass 2
+runs a bit faster on the economy tier. Not re-measured against the `S1` wall-clock table with numbers -
+a qualitative "somewhat better," not a re-run of the timed table - and the maintainer's own read is that
+the remaining latency may be provider/model-dependent rather than something this repository controls
+further without the bigger levers below.
 
 **S3. The profile and the job description are re-sent, uncached, on all three passes.**
 Found while reading S1 and recorded separately because it is a token-cost defect rather than a

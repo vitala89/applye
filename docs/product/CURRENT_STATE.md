@@ -1,5 +1,16 @@
 # Current Operational State
 
+- **Apply-wizard step-gating audit, Этап 1 closed: the busy-race half.** `PR #534` (merged) fixed the
+  gap-dialog copy bug (F3). This pass closes F5/F6/F7: `jobs.component.html`'s wizard `busy` binding
+  now includes `actions.busy()`, and `job-export-apply-step`'s "Start over" button (previously
+  undisabled entirely) now disables on the same signal - both close the window where Create/Update
+  application was committing documents while Next/Back/Discard/Start over stayed clickable. Still open
+  from the same audit: Этап 2 (hard-gate "Create application" on a linked CV - decision made, not
+  built), Этап 3 (two explicit routes on step 2, tailor vs. existing, skipping step 3 for the existing
+  route - decision made, not built, and it changes `libs/application`'s public API so it needs
+  `aif-grilling` before code), F8 (Choose existing + tailor may overwrite the library CV - flagged,
+  not verified natively), F2 (gate cover letter on a linked CV - declined, left as is). Gates green:
+  type-check, lint, `desktop` 1181/1181, file-size, attribution, format. **Not yet committed.**
 - **The apply wizard's shared CV-gap dialog showed CV copy while generating a cover letter.** Native
   session, reported live with screenshots: "Generate cover letter" opened the gap dialog with
   "Checking your CV against this job...", "Add these to your CV?" and a "Generate CV" button, while

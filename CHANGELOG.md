@@ -35,6 +35,19 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The apply wizard's "Start over" stayed clickable while Create/Update application was still
+  committing documents, and Next/Back/Discard stayed live through the same window.** The wizard's
+  `busy` input only covered tailoring, rescoring and document generation
+  (`tailoring() || updatingScore() || drafts.anyPreparing()`); `JobActionsService.busy` - already set
+  for the whole Create/Update application call - was never read by it, and `JobExportApplyStepComponent`
+  never read it at all, so its own Start over button had no `[disabled]` binding of any kind. A user
+  who clicked Start over mid-commit reset the wizard's tailoring/score/export state out from under a
+  commit that was still generating and linking the CV or cover letter it produced. Added
+  `|| actions.busy()` to the wizard's `busy` binding and disabled Start over on the same signal
+  (exposed from `JobActionsService`, which the step already injects). Regression test added in
+  `job-export-apply-step.component.spec.ts`; the wizard-level race has none because `jobs.component.ts`
+  (1076+ lines) has no spec file at all - the same gap prior entries in this file already note.
+
 - **The apply wizard's shared CV-gap dialog showed CV copy while generating a cover letter.**
   `job-documents-step`'s "Generate cover letter" button had no gate and reused the same gap-fill pass
   as the CV flow (deliberately - both draw missing chronology from the profile), but the dialog's copy

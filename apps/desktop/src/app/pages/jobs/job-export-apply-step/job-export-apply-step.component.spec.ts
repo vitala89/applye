@@ -46,6 +46,7 @@ function stubs() {
     /** Signal-backed, because `tailoring` is a computed: a plain Set would
      * never invalidate it and the test would read a stale false. */
     running: signal<string[]>([]),
+    actionsBusy: signal(false),
   };
 }
 
@@ -56,7 +57,7 @@ function setup(s: ReturnType<typeof stubs>) {
       { provide: TranslateService, useValue: { t: () => (k: string) => k } },
       { provide: DocumentExportService, useValue: s.exportSvc },
       { provide: LinkedDocumentsService, useValue: s.linkedDocs },
-      { provide: JobActionsService, useValue: { message: signal('') } },
+      { provide: JobActionsService, useValue: { message: signal(''), busy: s.actionsBusy } },
       {
         provide: WizardActivityService,
         useValue: {
@@ -146,5 +147,22 @@ describe('JobExportApplyStepComponent', () => {
 
     expect(emitted).toBe(1);
     expect(s.exportSvc.status()).toBe('');
+  });
+
+  /**
+   * The reported bug: Start over stayed clickable while Create/Update
+   * application was committing documents in the background, so clicking it
+   * reset the wizard session out from under a commit that was still linking
+   * the CV/cover letter it generated.
+   */
+  it('disables start over while an application commit is in flight', () => {
+    const s = stubs();
+    s.actionsBusy.set(true);
+    const fixture = setup(s);
+
+    const button: HTMLButtonElement | null =
+      fixture.nativeElement.querySelector('.export-startover');
+
+    expect(button?.disabled).toBe(true);
   });
 });

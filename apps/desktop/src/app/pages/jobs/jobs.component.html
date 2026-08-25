@@ -184,7 +184,7 @@
           [postTailorScore]="postTailorScore()"
           [applicationStatus]="application()?.status ?? null"
           [initialStep]="wizardInitialStep()"
-          [busy]="tailoring() || updatingScore() || drafts.anyPreparing()"
+          [busy]="tailoring() || updatingScore() || drafts.anyPreparing() || actions.busy()"
           (closeWizard)="actions.closeWizard()"
           (discard)="actions.askDiscardTailoring()"
           (createApplication)="createApplication()"

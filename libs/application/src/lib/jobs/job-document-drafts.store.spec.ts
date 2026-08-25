@@ -112,7 +112,9 @@ describe('JobDocumentDraftsStore', () => {
             anyPreparing: () => Object.values(preparing).some(Boolean),
           },
         },
-        { provide: JobGapFillService, useValue: { hooks: () => ({}) } },
+        // Echoes the context back so a test can see which `kind` this store
+        // asked for, without a real JobGapFillService.
+        { provide: JobGapFillService, useValue: { hooks: (ctx: unknown) => ctx } },
       ],
     });
     store = TestBed.inject(JobDocumentDraftsStore);
@@ -154,6 +156,12 @@ describe('JobDocumentDraftsStore', () => {
       expect(marked).toBe(0);
       expect(successes).toEqual([]);
     });
+
+    it('tags its gap-fill pass as the CV, so a shared dialog shows CV copy', async () => {
+      await store.createCv('tailored markdown');
+
+      expect(cvInputs[0]['kind']).toBe('cv');
+    });
   });
 
   describe('createCoverLetter', () => {
@@ -162,6 +170,18 @@ describe('JobDocumentDraftsStore', () => {
 
       expect(coverLetterInputs[0]['skipGapFill']).toBe(false);
       expect(coverLetter()).toEqual(doc(22));
+    });
+
+    /**
+     * The reported bug: generating a cover letter raised the shared gap
+     * dialog with CV wording ("Checking your CV against this job...", "Add
+     * these to your CV?") because nothing told the dialog which document was
+     * actually being built.
+     */
+    it('tags its gap-fill pass as the cover letter, not the CV', async () => {
+      await store.createCoverLetter();
+
+      expect(coverLetterInputs[0]['kind']).toBe('cover_letter');
     });
 
     it('skips gap fill when a CV is already linked', async () => {

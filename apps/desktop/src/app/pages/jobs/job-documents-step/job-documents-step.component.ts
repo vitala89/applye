@@ -85,6 +85,7 @@ export class JobDocumentsStepComponent {
   protected readonly gapAnalyzing = this.gapSvc.analyzing;
   protected readonly gapDialogOpen = this.gapSvc.open;
   protected readonly gapQuestions = this.gapSvc.questions;
+  protected readonly gapKind = this.gapSvc.kind;
 
   /** Country name for a CV region tag ("Germany", not "DE") - the picker names
    * the market the CV is written for, and a bare code does not read as one. */

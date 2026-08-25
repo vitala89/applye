@@ -1,5 +1,20 @@
 # Current Operational State
 
+- **The apply wizard's shared CV-gap dialog showed CV copy while generating a cover letter.** Native
+  session, reported live with screenshots: "Generate cover letter" opened the gap dialog with
+  "Checking your CV against this job...", "Add these to your CV?" and a "Generate CV" button, while
+  the CV card next to it stayed disabled and no CV was being built. The shared gap-fill pass itself is
+  correct by design (`skipGapFill` comment in `job-document-drafts.store.ts`: both flows draw missing
+  chronology from the profile), only the dialog's copy was hardcoded to the CV. Fixed by threading
+  `kind: 'cv' | 'cover_letter'` from `JobDocumentDraftsStore.gapFillHooks()` through
+  `JobGapFillService.hooks()` to `CvGapDialogService.ask()`; `CvGapDialog` now keys its copy off it.
+  Three new i18n keys (`analyzing_cover_letter`, `review_title_cover_letter`,
+  `generate_cover_letter`) added to all six locales with real translations, not stubs. A broader audit
+  of the same wizard's step gating - skippable tailoring with no route logic (F1), an ungated
+  "Create application" that can save an application with no CV or cover letter (F4), a "Start over"
+  reachable mid-commit (F5/F6) - was written up in the same session; the maintainer picked two routes
+  for step 2 and a hard gate on step 5, not yet implemented. Gates green: type-check, lint, `application`
+  1692/1692, `desktop` 1180/1180, `i18n` 21/21, file-size, attribution, format. **Not yet committed.**
 - **`PR #528`'s four lock-gap fixes (Apply button, CV-preview lock, Score/Rescore lock, Name-it lock)
   are merged to `main` (`8f245a80`) and natively re-verified by the maintainer, 2026-08-23.** All four
   hold in `tauri dev`. Open work is `S1` (tailoring performance) or the filename loose end from

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Job, Profile, Settings, SupportedLanguage } from '@applye/core';
 import { ProfileSettingsGateway } from '@applye/data';
 import { CvGapDialogService } from './cv-gap-dialog.service';
+import type { ReviewDocumentKind } from './document-gen.service';
 import { GapFillHooks } from './gap-fill';
 
 /**
@@ -22,6 +23,9 @@ export interface JobGapFillContext {
   profile: Profile | null;
   /** Receives the profile as saved, so the page holds what the database holds. */
   applyProfile: (profile: Profile) => void;
+  /** Which document this gap pass is for - picks the dialog's copy ("Add these
+   * to your CV?" vs "...your cover letter?"). Defaults to 'cv'. */
+  kind?: ReviewDocumentKind;
 }
 
 /**
@@ -71,7 +75,7 @@ export class JobGapFillService {
       // `ok: false`, so a bad analysis never blocks generation - and never
       // passes for "no gaps found" either.
       analyzeGaps: (text) => this.gapSvc.analyze(text, ctx.job, ctx.settings, ctx.language),
-      askGaps: (questions) => this.gapSvc.ask(questions),
+      askGaps: (questions) => this.gapSvc.ask(questions, ctx.kind ?? 'cv'),
       saveToProfile: (block) => this.appendToProfile(ctx.profile, block, ctx.applyProfile),
     };
   }

@@ -136,5 +136,29 @@ describe('JobGapFillService', () => {
 
       expect(upserted[0]['fullMd']).toBe('PROFILE\n\nFROM THE DIALOG');
     });
+
+    /**
+     * The reported bug: the cover-letter flow raised the gap dialog with CV
+     * copy ("Checking your CV against this job...", "Add these to your CV?")
+     * even though it was generating a cover letter. `askGaps` is the one seam
+     * both flows share, so the kind has to travel through it to the dialog.
+     */
+    it("tags the dialog with the caller's document kind, defaulting to cv", () => {
+      const gapSvc = TestBed.inject(CvGapDialogService);
+      const baseCtx = {
+        job: { id: 7 } as never,
+        settings: { defaultModel: 'quality' } as never,
+        language: 'en' as const,
+        profile: PROFILE as never,
+        applyProfile: () => undefined,
+      };
+
+      void svc.hooks(baseCtx).askGaps([]);
+      expect(gapSvc.kind()).toBe('cv');
+      gapSvc.cancel();
+
+      void svc.hooks({ ...baseCtx, kind: 'cover_letter' }).askGaps([]);
+      expect(gapSvc.kind()).toBe('cover_letter');
+    });
   });
 });

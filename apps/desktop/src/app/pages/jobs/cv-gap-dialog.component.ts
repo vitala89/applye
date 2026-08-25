@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateService } from '@applye/i18n';
+import type { ReviewDocumentKind } from '@applye/application';
 
 import type { CvGapAnswer, CvGapQuestion } from '@applye/core';
 
@@ -25,11 +26,11 @@ import type { CvGapAnswer, CvGapQuestion } from '@applye/core';
             <span class="ai-thinking__dots" aria-hidden="true"
               ><span></span><span></span><span></span
             ></span>
-            <p>{{ t()('jobs.gap.analyzing') }}</p>
+            <p>{{ t()(analyzingKey()) }}</p>
           </div>
         } @else if (atReview()) {
           <div class="gap-dialog__review">
-            <h4>{{ t()('jobs.gap.review_title') }}</h4>
+            <h4>{{ t()(reviewTitleKey()) }}</h4>
             <label class="gap-dialog__save">
               <input
                 type="checkbox"
@@ -43,7 +44,7 @@ import type { CvGapAnswer, CvGapQuestion } from '@applye/core';
                 {{ t()('actions.cancel') }}
               </button>
               <button class="btn btn--primary btn--md" type="button" (click)="doSubmit()">
-                {{ t()('jobs.gap.generate') }}
+                {{ t()(generateKey()) }}
               </button>
             </div>
           </div>
@@ -130,6 +131,8 @@ export class CvGapDialog {
 
   readonly questions = input.required<CvGapQuestion[]>();
   readonly analyzing = input<boolean>(false);
+  /** Which document this pass is filling gaps for - picks the copy below. */
+  readonly kind = input<ReviewDocumentKind>('cv');
 
   // eslint-disable-next-line @angular-eslint/no-output-native -- interface required by task spec
   readonly submit = output<{ answers: CvGapAnswer[]; saveToProfile: boolean }>();
@@ -143,6 +146,16 @@ export class CvGapDialog {
 
   protected readonly atReview = computed(() => this.index() >= this.questions().length);
   protected readonly current = computed(() => this.questions()[this.index()] ?? null);
+
+  protected readonly analyzingKey = computed(() =>
+    this.kind() === 'cover_letter' ? 'jobs.gap.analyzing_cover_letter' : 'jobs.gap.analyzing',
+  );
+  protected readonly reviewTitleKey = computed(() =>
+    this.kind() === 'cover_letter' ? 'jobs.gap.review_title_cover_letter' : 'jobs.gap.review_title',
+  );
+  protected readonly generateKey = computed(() =>
+    this.kind() === 'cover_letter' ? 'jobs.gap.generate_cover_letter' : 'jobs.gap.generate',
+  );
 
   /** Test seam: set the current draft answer. */
   setAnswer(text: string): void {

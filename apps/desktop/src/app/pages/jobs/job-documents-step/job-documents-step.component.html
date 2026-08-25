@@ -49,6 +49,7 @@
   <app-cv-gap-dialog
     [questions]="gapQuestions()"
     [analyzing]="gapAnalyzing()"
+    [kind]="gapKind()"
     (submit)="gapSubmit.emit($event)"
     (cancel)="gapCancel.emit()"
   />

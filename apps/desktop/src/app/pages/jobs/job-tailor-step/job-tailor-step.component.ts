@@ -61,6 +61,10 @@ export class JobTailorStepComponent {
   readonly baseCvChange = output<number | null>();
   readonly startTailoring = output<void>();
   readonly cancelTailoring = output<void>();
+  /** "Use an existing resume instead" - jumps straight to Review documents so
+   * the user can attach a library CV without tailoring at all. The page owns
+   * the jump; this step only knows it was asked for. */
+  readonly useExisting = output<void>();
   /** "Tailor again" on a finished run: the page resets the wizard, because the
    * rescore and the export state go stale with it. */
   readonly retailor = output<void>();

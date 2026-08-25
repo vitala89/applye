@@ -947,6 +947,7 @@ export const de: TranslationMap = {
       export_title: 'Verknüpfte Dokumente speichern',
       export_skipped:
         'Lebenslauf nicht angepasst - gehe zurück zu Lebenslauf anpassen, um einen zu exportieren, oder bewirb dich unten mit deinem bestehenden Lebenslauf.',
+      tailor_use_existing: 'Stattdessen einen vorhandenen Lebenslauf verwenden',
       tailor_skip_hint:
         'Du kannst die Anpassung auch überspringen und dich mit deinem bestehenden Lebenslauf bewerben - Weiter funktioniert immer.',
       apply_title: 'Bereit zur Bewerbung',
@@ -957,6 +958,8 @@ export const de: TranslationMap = {
       continue_label: 'Weiter',
       next_label: 'Weiter',
       create_application: 'Bewerbung erstellen',
+      create_application_needs_cv: 'Zuerst einen Lebenslauf verknüpfen oder erstellen.',
+      create_application_needs_cv_link: 'Dokumente prüfen öffnen',
       update_application: 'Bewerbung aktualisieren',
       applying: 'Wird gespeichert…',
       update_success_title: 'Bewerbung aktualisiert',

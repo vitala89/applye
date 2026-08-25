@@ -957,6 +957,7 @@ export const fr: TranslationMap = stub(en, {
       export_title: 'Enregistrer les documents liés',
       export_skipped:
         'CV non adapté - revenez à Adapter le CV pour en exporter un, ou postulez ci-dessous avec votre CV actuel.',
+      tailor_use_existing: 'Utiliser un CV existant à la place',
       tailor_skip_hint:
         "Vous pouvez aussi passer l'adaptation et postuler avec votre CV actuel - Continuer fonctionne toujours.",
       apply_title: 'Prêt à postuler',
@@ -967,6 +968,8 @@ export const fr: TranslationMap = stub(en, {
       continue_label: 'Continuer',
       next_label: 'Suivant',
       create_application: 'Créer la candidature',
+      create_application_needs_cv: "Liez ou créez d'abord un CV.",
+      create_application_needs_cv_link: 'Aller à la relecture des documents',
       update_application: 'Mettre à jour la candidature',
       applying: 'Traitement…',
       update_success_title: 'Candidature mise à jour',

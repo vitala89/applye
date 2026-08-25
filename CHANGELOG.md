@@ -35,6 +35,26 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **Skipping the apply wizard's tailoring step led to a dead end: a disabled "Generate CV" with no way
+  out, a "Choose existing" CV picker collapsed behind a toggle nothing pointed at, and a "Create
+  application" that quietly saved with no CV and no cover letter attached.** Grilled with the
+  maintainer into a scoped fix rather than a persisted route-state machine, once native testing showed
+  the Updated-score step already degrades gracefully when tailoring was skipped and the CV picker
+  already existed - it was only ever the wrong default. Three changes: (1) `job-tailor-step` gained a
+  "Use an existing resume instead" action, shown only when the library actually has a CV to fall back
+  on, that jumps straight to Review documents via the existing `goToStep`. (2) `job-document-cards`'
+  CV chooser now opens itself once there is no linked CV and nothing tailored to build one from,
+  instead of waiting for an explicit toggle click - closing the dead end for the "just keep clicking
+  Next" path too, not only the new button's. (3) `ApplyWizard`'s Create Application button is disabled
+  without a linked CV, with an inline reason and a jump back to Review documents; deliberately UI-only
+  (no change to `JobActionsStore.createApplication()`) and deliberately not applied to "Update
+  application" - a job can reach `applied` with no document at all through the separate Apply
+  self-report (`P1`), and gating that path would block a legitimate retailor. Regression tests added in
+  `job-tailor-step.component.spec.ts` and `job-document-cards.component.spec.ts`; `ApplyWizard` has none
+  because it has no spec file at all - the same gap prior entries in this file already note. New i18n
+  keys (`tailor_use_existing`, `create_application_needs_cv`, `create_application_needs_cv_link`) across
+  all six locales.
+
 - **The apply wizard's "Start over" stayed clickable while Create/Update application was still
   committing documents, and Next/Back/Discard stayed live through the same window.** The wizard's
   `busy` input only covered tailoring, rescoring and document generation

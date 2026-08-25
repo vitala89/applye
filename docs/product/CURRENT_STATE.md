@@ -1,5 +1,22 @@
 # Current Operational State
 
+- **Apply-wizard step-gating audit, Этап 2+3 closed.** `#534` closed F3, `#535` closed F5/F6/F7. This
+  pass closes F1/F4 with a scoped fix, grilled with the maintainer rather than the originally-sketched
+  persisted route-state machine (`aif-grilling`: A1 UI-only gate, A3 reason+jump, A4 don't gate Update
+  application, B1 point fix over a full route machine - native reading found the Updated-score step
+  already degrades gracefully when tailoring is skipped, and the CV picker already existed, just
+  defaulted closed). Shipped: a "Use an existing resume" action on the tailor step (only when the
+  library has one to offer), the CV chooser on Review documents opening itself once there is nothing
+  else to offer instead of waiting on the toggle, and a hard UI-only gate on Create Application when no
+  CV is linked (inline reason + jump back). Update Application is deliberately NOT gated the same way -
+  a job can reach `applied` with zero documents via the separate Apply self-report (P1), and gating
+  would block a legitimate retailor of that job. Still open from the audit: F8 (Choose existing +
+  tailor may overwrite a library CV - flagged, not verified natively), F2 (gate cover letter on a
+  linked CV - declined). No `libs/application` public API changed - the whole fix is presentational.
+  Gates green: type-check, lint, `application` 1692/1692, `desktop` 1187/1187, file-size, attribution,
+  format. Compiled and rendered clean in `desktop-web` (no DB backend there, so the flow itself is
+  unverified natively - needs a `tauri dev` pass). **Not yet committed.**
+
 - **Apply-wizard step-gating audit, Этап 1 closed: the busy-race half.** `PR #534` (merged) fixed the
   gap-dialog copy bug (F3). This pass closes F5/F6/F7: `jobs.component.html`'s wizard `busy` binding
   now includes `actions.busy()`, and `job-export-apply-step`'s "Start over" button (previously

@@ -950,6 +950,7 @@ export const ru: TranslationMap = stub(en, {
       export_title: 'Сохранить связанные документы',
       export_skipped:
         'Резюме не дорабатывалось - вернитесь к шагу доработки, чтобы экспортировать его, или откликнитесь с текущим резюме ниже.',
+      tailor_use_existing: 'Использовать существующее резюме',
       tailor_skip_hint:
         'Доработку можно и пропустить, откликнувшись с текущим резюме - кнопка «Продолжить» работает всегда.',
       apply_title: 'Готово к отклику',
@@ -960,6 +961,8 @@ export const ru: TranslationMap = stub(en, {
       continue_label: 'Продолжить',
       next_label: 'Далее',
       create_application: 'Создать отклик',
+      create_application_needs_cv: 'Сначала свяжите или создайте резюме.',
+      create_application_needs_cv_link: 'Перейти к проверке документов',
       update_application: 'Обновить отклик',
       applying: 'Работаем…',
       update_success_title: 'Отклик обновлён',

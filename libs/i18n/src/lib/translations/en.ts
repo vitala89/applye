@@ -925,6 +925,7 @@ export const en: TranslationMap = {
       export_title: 'Save linked documents',
       export_skipped:
         'CV not tailored - go back to Tailor CV to export one, or apply with your existing resume below.',
+      tailor_use_existing: 'Use an existing resume instead',
       tailor_skip_hint:
         'You can also skip tailoring and apply with your existing resume - Continue always works.',
       apply_title: 'Ready to apply',
@@ -935,6 +936,8 @@ export const en: TranslationMap = {
       continue_label: 'Continue',
       next_label: 'Next',
       create_application: 'Create application',
+      create_application_needs_cv: 'Link or create a CV first.',
+      create_application_needs_cv_link: 'Go to Review documents',
       update_application: 'Update application',
       applying: 'Working…',
       update_success_title: 'Application updated',

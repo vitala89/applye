@@ -69,7 +69,7 @@
         {{ t()('jobs.wizard.document_choose_existing') }}
       </button>
     </div>
-    @if (chooseCvOpen()) {
+    @if (showCvChooser()) {
       <select
         class="document-review-card__select"
         [ngModel]="application()?.cvDocumentId ?? null"

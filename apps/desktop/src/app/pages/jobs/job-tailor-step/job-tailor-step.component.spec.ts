@@ -25,7 +25,7 @@ function stubs() {
   };
 }
 
-function setup(s: ReturnType<typeof stubs>) {
+function setup(s: ReturnType<typeof stubs>, matchingCvs: { id: number }[] = []) {
   TestBed.configureTestingModule({
     imports: [JobTailorStepComponent],
     providers: [
@@ -41,7 +41,7 @@ function setup(s: ReturnType<typeof stubs>) {
   });
   const fixture = TestBed.createComponent(JobTailorStepComponent);
   fixture.componentRef.setInput('job', JOB);
-  fixture.componentRef.setInput('matchingCvs', []);
+  fixture.componentRef.setInput('matchingCvs', matchingCvs);
   fixture.componentRef.setInput('hasProfileText', true);
   fixture.componentRef.setInput('selectedBaseCvId', null);
   fixture.detectChanges();
@@ -130,5 +130,44 @@ describe('JobTailorStepComponent', () => {
 
     retryBtn?.click();
     expect(seen).toHaveLength(1);
+  });
+
+  /**
+   * The reported dead end (F1): a user with no explicit way to skip tailoring
+   * landed at Review documents with Generate CV disabled and no linked CV.
+   * "Use an existing resume" is the step-2 half of the fix - only offered
+   * when there is a library CV to jump toward.
+   */
+  describe('use an existing resume', () => {
+    it('offers it once the library has a CV to fall back on', () => {
+      const s = stubs();
+      const fixture = setup(s, [{ id: 11 }]);
+
+      const buttons: HTMLButtonElement[] = Array.from(
+        fixture.nativeElement.querySelectorAll('button'),
+      );
+      const useExistingBtn = buttons.find((b) =>
+        b.textContent?.includes('jobs.wizard.tailor_use_existing'),
+      );
+      expect(useExistingBtn).toBeTruthy();
+
+      const seen: void[] = [];
+      fixture.componentInstance.useExisting.subscribe(() => seen.push(undefined));
+      useExistingBtn?.click();
+
+      expect(seen).toHaveLength(1);
+    });
+
+    it('stays hidden with no library CV to jump toward', () => {
+      const s = stubs();
+      const fixture = setup(s, []);
+
+      const buttons: HTMLButtonElement[] = Array.from(
+        fixture.nativeElement.querySelectorAll('button'),
+      );
+      expect(buttons.some((b) => b.textContent?.includes('jobs.wizard.tailor_use_existing'))).toBe(
+        false,
+      );
+    });
   });
 });

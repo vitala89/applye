@@ -29,7 +29,11 @@ function stubs() {
   };
 }
 
-function setup(s: ReturnType<typeof stubs>, application: Application | null = null) {
+function setup(
+  s: ReturnType<typeof stubs>,
+  application: Application | null = null,
+  finalTailoredCvMd = '# CV',
+) {
   TestBed.configureTestingModule({
     imports: [JobDocumentCardsComponent],
     providers: [
@@ -51,7 +55,7 @@ function setup(s: ReturnType<typeof stubs>, application: Application | null = nu
   fixture.componentRef.setInput('application', application);
   fixture.componentRef.setInput('matchingCvs', [CV]);
   fixture.componentRef.setInput('coverLetters', [LETTER]);
-  fixture.componentRef.setInput('finalTailoredCvMd', '# CV');
+  fixture.componentRef.setInput('finalTailoredCvMd', finalTailoredCvMd);
   fixture.detectChanges();
   return fixture;
 }
@@ -117,6 +121,45 @@ describe('JobDocumentCardsComponent', () => {
     fixture.detectChanges();
 
     expect(emitted).toEqual({ kind: 'cv', id: CV.id });
+  });
+
+  /**
+   * The reported dead end (F1): a user who skipped tailoring landed here with
+   * Generate CV disabled (nothing tailored to build from) and the
+   * choose-existing select collapsed behind a toggle nothing pointed at. The
+   * chooser now shows itself once there is nothing else this card can offer.
+   */
+  describe('showCvChooser', () => {
+    it('opens on its own once there is no CV and nothing tailored to build one from', () => {
+      const s = stubs();
+      const fixture = setup(s, null, '');
+
+      expect(fixture.nativeElement.querySelector('.document-review-card__select')).not.toBeNull();
+    });
+
+    it('stays collapsed while a tailored source exists to generate from', () => {
+      const s = stubs();
+      const fixture = setup(s, null, '# CV');
+
+      expect(fixture.nativeElement.querySelector('.document-review-card__select')).toBeNull();
+    });
+
+    it('stays collapsed once a CV is linked, even with nothing tailored', () => {
+      const s = stubs();
+      s.linked.cv.set(CV);
+      const fixture = setup(s, null, '');
+
+      expect(fixture.nativeElement.querySelector('.document-review-card__select')).toBeNull();
+    });
+
+    it('does not auto-open onto an empty list when the library has no CV to offer', () => {
+      const s = stubs();
+      const fixture = setup(s, null, '');
+      fixture.componentRef.setInput('matchingCvs', []);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.document-review-card__select')).toBeNull();
+    });
   });
 
   /// The page owns every one of these flows; the cards only ask for them.

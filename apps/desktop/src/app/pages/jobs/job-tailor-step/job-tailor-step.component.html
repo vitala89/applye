@@ -63,6 +63,11 @@
       <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
       {{ t()('jobs.tailor_btn') }}
     </button>
+    @if (matchingCvs().length > 0) {
+      <button class="btn btn--secondary btn--md" type="button" (click)="useExisting.emit()">
+        {{ t()('jobs.wizard.tailor_use_existing') }}
+      </button>
+    }
     @if (!selectedBaseCvId() && !hasProfileText()) {
       <span class="status status--error">{{ t()('jobs.profile_needed_full') }}</span>
     }

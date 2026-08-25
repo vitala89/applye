@@ -71,6 +71,20 @@ export class JobDocumentCardsComponent {
   protected readonly linkedCoverLetter = this.linkedDocs.coverLetter;
   protected readonly chooseCvOpen = this.reviewStatus.chooseCvOpen;
   protected readonly chooseCoverLetterOpen = this.reviewStatus.chooseCoverLetterOpen;
+
+  /**
+   * Whether the CV chooser should actually be visible. The toggle alone left
+   * a user who skipped tailoring at a dead end: no CV linked, nothing to
+   * generate from (`finalTailoredCvMd` empty), and the one way out collapsed
+   * behind a button nothing pointed at. Shown automatically once there is
+   * nothing else this card can offer, on top of the toggle - so an explicit
+   * click still works once a CV or a tailored source exists.
+   */
+  protected readonly showCvChooser = computed(
+    () =>
+      this.chooseCvOpen() ||
+      (!this.linkedCv() && !this.finalTailoredCvMd() && this.matchingCvs().length > 0),
+  );
   protected readonly documentReviewStatus = this.reviewStatus.status;
   protected readonly documentReviewError = this.reviewStatus.error;
 

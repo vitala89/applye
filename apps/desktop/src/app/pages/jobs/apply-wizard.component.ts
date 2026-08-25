@@ -136,10 +136,18 @@ import {
         <span class="apply-wizard__spacer"></span>
         @if (activeStep() === lastStep) {
           @if (canMarkApplied()) {
+            @if (!busy() && !hasLinkedCv()) {
+              <span class="apply-wizard__create-hint">
+                {{ t()('jobs.wizard.create_application_needs_cv') }}
+                <button class="btn btn--ghost btn--sm" type="button" (click)="goToDocuments()">
+                  {{ t()('jobs.wizard.create_application_needs_cv_link') }}
+                </button>
+              </span>
+            }
             <button
               class="btn btn--primary btn--md"
               type="button"
-              [disabled]="busy()"
+              [disabled]="busy() || !hasLinkedCv()"
               (click)="createApplication.emit()"
             >
               <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
@@ -187,6 +195,7 @@ export class ApplyWizard {
   /** 5 steps: Review score (0) → Tailor CV (1) → Updated score (2) →
    * Review documents (3) → Export & apply (4). */
   protected readonly lastStep = 4;
+  private readonly documentsStep = 3;
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
@@ -199,6 +208,9 @@ export class ApplyWizard {
   readonly jobTitle = input<string>('');
   readonly company = input<string>('');
   readonly applicationStatus = input<ApplicationStatus | null>(null);
+  /** Whether a CV is linked to this application - Create Application needs
+   * one to commit; without it there is nothing to attach. */
+  readonly hasLinkedCv = input<boolean>(false);
   readonly initialStep = input<number>(0);
   /** True while a step's async work is in flight (tailoring, rescoring,
    * document generation). Blocks Next/Continue so the user cannot advance
@@ -266,5 +278,13 @@ export class ApplyWizard {
     const next = Math.min(this.lastStep, this.activeStep() + 1);
     this.activeStep.set(next);
     this.stepChange.emit(next);
+  }
+
+  /** The "link or create a CV" hint's own jump - back to Review documents,
+   * from the last step, without walking the Next/Back chain. */
+  protected goToDocuments(): void {
+    if (this.busy()) return;
+    this.activeStep.set(this.documentsStep);
+    this.stepChange.emit(this.documentsStep);
   }
 }

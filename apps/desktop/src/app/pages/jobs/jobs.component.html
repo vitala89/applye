@@ -183,6 +183,7 @@
           [icons]="icons"
           [postTailorScore]="postTailorScore()"
           [applicationStatus]="application()?.status ?? null"
+          [hasLinkedCv]="!!docs.cv()"
           [initialStep]="wizardInitialStep()"
           [busy]="tailoring() || updatingScore() || drafts.anyPreparing() || actions.busy()"
           (closeWizard)="actions.closeWizard()"
@@ -202,6 +203,7 @@
             (startTailoring)="tailorStore.start()"
             (cancelTailoring)="tailorStore.cancel()"
             (retailor)="tailorStore.resetWizard()"
+            (useExisting)="tailorStore.goToStep(3)"
           />
 
           <!-- Step 3: Updated score - auto-rescores the tailored resume -->

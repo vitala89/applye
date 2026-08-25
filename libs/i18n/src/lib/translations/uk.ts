@@ -947,6 +947,7 @@ export const uk: TranslationMap = stub(en, {
       export_title: "Зберегти пов'язані документи",
       export_skipped:
         'Резюме не доопрацьовувалося - поверніться до кроку доопрацювання, щоб експортувати його, або відгукніться з поточним резюме нижче.',
+      tailor_use_existing: 'Використати наявне резюме',
       tailor_skip_hint:
         'Доопрацювання можна й пропустити, відгукнувшись з поточним резюме - кнопка «Продовжити» працює завжди.',
       apply_title: 'Готово до відгуку',
@@ -957,6 +958,8 @@ export const uk: TranslationMap = stub(en, {
       continue_label: 'Продовжити',
       next_label: 'Далі',
       create_application: 'Створити відгук',
+      create_application_needs_cv: "Спершу пов'яжіть або створіть резюме.",
+      create_application_needs_cv_link: 'Перейти до перевірки документів',
       update_application: 'Оновити відгук',
       applying: 'Працюємо…',
       update_success_title: 'Відгук оновлено',

@@ -29,6 +29,13 @@ pub struct AiRequest {
     pub model: String,
     pub system_prompt: String,
     pub user_prompt: String,
+    /// The leading, per-job-stable part of the user turn - `resume-tailoring`'s
+    /// `RenderedSkill.user_prompt_cacheable`, forwarded verbatim. `anthropic_run`
+    /// marks it as an ephemeral `cache_control` breakpoint so repeated calls for
+    /// the same job (the three tailoring passes) do not re-bill it. `None` for
+    /// every call site that has nothing to share across repeats.
+    #[serde(default)]
+    pub cacheable_prefix: Option<String>,
     #[serde(default)]
     pub language: Option<String>,
     #[serde(default)]

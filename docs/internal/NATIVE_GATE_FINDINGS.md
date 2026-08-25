@@ -839,6 +839,36 @@ Fixing it means deciding where a skill puts its per-job block, which changes the
 rider on S1 - and it should be sized against the `tokens_input` numbers above, which say exactly what
 the repetition costs.
 
+**Partially closed 2026-08-25, scoped to `resume-tailoring` only, after a grilling round.** The
+maintainer chose the narrow option: cache the block within one tailoring run's own three passes, not
+across every skill that repeats profile/job-description text - that broader standardisation stays
+open, since it needs every skill's `[USER]` template to embed the same text byte-for-byte for the
+cache to hit across skills, which is a real risk if any skill's wording drifts.
+
+The skill file format gained a `[CACHE_END]` marker: everything in `[USER]` before it is treated as
+stable across repeated calls, everything after as dynamic. `resume-tailoring.md`'s `[USER]` section
+was reordered so `profile_md`, `job_description` and `scoring_json` - identical across all three passes
+of one run - come first and are marked; `pass`, `pass1_result` and `pass2_result`, which do vary per
+call, come after. `skills.rs::render` now returns this split as `RenderedSkill.user_prompt_cacheable`
+(`None` for every skill with no marker - existing behaviour is unchanged for all of them).
+`AiRequest.cacheable_prefix` carries it through to `anthropic_run`, which sends it as its own
+`{"type":"text","cache_control":{"type":"ephemeral"}}` content block ahead of the dynamic remainder -
+a second breakpoint alongside the existing one on `system`. `openai_compatible_run` (DeepSeek) has no
+`cache_control` concept, so it simply rejoins prefix and remainder into the same text a skill with no
+marker would have produced; the reordering may still help its own positional/automatic caching for
+free, at no extra plumbing cost.
+
+**One deliberate non-guard**: Anthropic requires a cached block to clear roughly 1024 tokens on
+Sonnet/Opus/Haiku or it is silently not cached (no error, no extra cost) - a short profile or job
+description may fall under that bar sometimes. No size check was added in code, since the failure mode
+is a silent no-op, not a wrong answer or a wasted call.
+
+**Not yet natively measured.** The next `tauri dev` pass should re-run a tailoring job twice in the
+same session and check `cachedTokens` on passes 2 and 3's `AiResponse` (already surfaced from
+Anthropic's `cache_read_input_tokens`) - a non-zero value on those two passes, and zero on pass 1
+(nothing to hit yet), is what confirms the breakpoint is actually being read back rather than only
+being sent.
+
 ### AI output quality
 
 **Q1. The generated CV flattens Skills into one line.**

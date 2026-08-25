@@ -70,7 +70,11 @@ describe('TailoringService', () => {
     toast = { warning: jest.fn() };
     let call = 0;
     ai = {
-      renderSkill: jest.fn(async () => ({ systemPrompt: 'sys', userPrompt: 'usr' })),
+      renderSkill: jest.fn(async () => ({
+        systemPrompt: 'sys',
+        userPrompt: 'usr',
+        userPromptCacheable: 'shared-profile-and-jd',
+      })),
       run: jest.fn(async () => passResponse(++call)),
     };
 
@@ -164,6 +168,18 @@ describe('TailoringService', () => {
       expect.objectContaining({ jobId: JOB_ID, pass: 1, resultMd: 'md-1', modelUsed: 'm' }),
     );
     expect(s.status()).toBe('Pass 3 done - 10 in / 5 out');
+  });
+
+  it("forwards the skill's cacheable prefix to every pass's AI call", async () => {
+    const s = make();
+    await s.run(ctx());
+
+    expect(ai.run).toHaveBeenCalledTimes(3);
+    for (const call of ai.run.mock.calls) {
+      expect(call[0]).toEqual(
+        expect.objectContaining({ cacheablePrefix: 'shared-profile-and-jd' }),
+      );
+    }
   });
 
   it('runs pass 2 (the critique) on the economy model, not the quality tier', async () => {

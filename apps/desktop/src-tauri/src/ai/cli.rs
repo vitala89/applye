@@ -467,6 +467,7 @@ mod tests {
             model: model.to_string(),
             system_prompt: "SYSTEM".to_string(),
             user_prompt: "USER".to_string(),
+            cacheable_prefix: None,
             language: None,
             max_tokens: None,
         }

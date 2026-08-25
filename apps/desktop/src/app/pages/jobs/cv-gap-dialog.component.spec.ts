@@ -4,7 +4,8 @@ import { TranslateService } from '@applye/i18n';
 
 import type { CvGapQuestion } from '@applye/core';
 
-function setup(questions: CvGapQuestion[], analyzing = false) {
+function setup(questions: CvGapQuestion[], analyzing = false, kind: 'cv' | 'cover_letter' = 'cv') {
+  TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [CvGapDialog],
     providers: [{ provide: TranslateService, useValue: { t: () => (k: string) => k } }],
@@ -12,6 +13,7 @@ function setup(questions: CvGapQuestion[], analyzing = false) {
   const fixture = TestBed.createComponent(CvGapDialog);
   fixture.componentRef.setInput('questions', questions);
   fixture.componentRef.setInput('analyzing', analyzing);
+  fixture.componentRef.setInput('kind', kind);
   fixture.detectChanges();
   return fixture;
 }
@@ -69,5 +71,41 @@ describe('CvGapDialog', () => {
       { id: 'q1', question: 'Kubernetes?', answer: '' },
       { id: 'q2', question: 'German level?', answer: 'B2' },
     ]);
+  });
+
+  /**
+   * The reported bug: the CV and cover-letter flows share this one dialog,
+   * and its copy stayed hardcoded to the CV ("Checking your CV against this
+   * job...", "Add these to your CV?", "Generate CV") even while it was
+   * filling gaps for a cover letter. `kind` is what the copy keys off now.
+   */
+  describe('kind-specific copy', () => {
+    it('shows CV keys by default, while analyzing and at review', () => {
+      const analyzingFixture = setup(QS, true);
+      expect(analyzingFixture.nativeElement.textContent).toContain('jobs.gap.analyzing');
+      expect(analyzingFixture.nativeElement.textContent).not.toContain(
+        'jobs.gap.analyzing_cover_letter',
+      );
+
+      const reviewFixture = setup([], false);
+      expect(reviewFixture.nativeElement.textContent).toContain('jobs.gap.review_title');
+      expect(reviewFixture.nativeElement.textContent).toContain('jobs.gap.generate');
+      expect(reviewFixture.nativeElement.textContent).not.toContain(
+        'jobs.gap.review_title_cover_letter',
+      );
+    });
+
+    it('switches to cover-letter keys when kind is cover_letter', () => {
+      const analyzingFixture = setup(QS, true, 'cover_letter');
+      expect(analyzingFixture.nativeElement.textContent).toContain(
+        'jobs.gap.analyzing_cover_letter',
+      );
+
+      const reviewFixture = setup([], false, 'cover_letter');
+      expect(reviewFixture.nativeElement.textContent).toContain(
+        'jobs.gap.review_title_cover_letter',
+      );
+      expect(reviewFixture.nativeElement.textContent).toContain('jobs.gap.generate_cover_letter');
+    });
   });
 });

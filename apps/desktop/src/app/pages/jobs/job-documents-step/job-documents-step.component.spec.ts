@@ -31,6 +31,7 @@ function stubs() {
       analyzing: signal(false),
       open: signal(false),
       questions: signal<{ id: string; prompt: string }[]>([]),
+      kind: signal<'cv' | 'cover_letter'>('cv'),
     },
     photoPrompt: {
       onRegionChosen: (region: DocumentRegionTag) => regionsChosen.push(region),

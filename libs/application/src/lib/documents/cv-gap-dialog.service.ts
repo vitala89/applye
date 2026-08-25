@@ -12,6 +12,7 @@ import {
 import { ToastService } from '../shell/toast.service';
 import { TranslateService } from '@applye/i18n';
 import type { GapAnalysis } from './gap-fill';
+import type { ReviewDocumentKind } from './document-gen.service';
 
 export interface CvGapResult {
   answers: CvGapAnswer[];
@@ -43,6 +44,11 @@ export class CvGapDialogService {
   readonly analyzing = signal(false);
   readonly open = signal(false);
   readonly questions = signal<CvGapQuestion[]>([]);
+  /** Which document the current dialog is filling gaps for - the CV and the
+   * cover letter draft share this one dialog, and its copy ("Add these to
+   * your CV?"/"...your cover letter?") has to match whichever is actually
+   * generating. Set by `ask()`, so it is always current caller's kind. */
+  readonly kind = signal<ReviewDocumentKind>('cv');
 
   /**
    * Why the last analysis produced no questions, when the reason was a failure
@@ -115,8 +121,9 @@ export class CvGapDialogService {
    * First caller wins; a second is answered `null` without disturbing the first.
    * A caller arriving after `dispose` is answered `null` too - see `disposed`.
    */
-  ask(questions: CvGapQuestion[]): Promise<CvGapResult | null> {
+  ask(questions: CvGapQuestion[], kind: ReviewDocumentKind = 'cv'): Promise<CvGapResult | null> {
     if (this.disposed || this.resolver) return Promise.resolve(null);
+    this.kind.set(kind);
     this.questions.set(questions);
     this.open.set(true);
     return new Promise((resolve) => {

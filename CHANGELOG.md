@@ -35,6 +35,20 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The apply wizard's shared CV-gap dialog showed CV copy while generating a cover letter.**
+  `job-documents-step`'s "Generate cover letter" button had no gate and reused the same gap-fill pass
+  as the CV flow (deliberately - both draw missing chronology from the profile), but the dialog's copy
+  was hardcoded to the CV: "Checking your CV against this job...", "Add these to your CV?", a
+  "Generate CV" button - all while the CV card next to it stayed disabled and no CV was being built. A
+  `kind: 'cv' | 'cover_letter'` now travels from `JobDocumentDraftsStore.gapFillHooks()` through
+  `JobGapFillService.hooks()` to `CvGapDialogService.ask()`, and `CvGapDialog` picks its copy off it -
+  three new i18n keys (`analyzing_cover_letter`, `review_title_cover_letter`,
+  `generate_cover_letter`) across all six locales. Covered by new tests in
+  `job-gap-fill.service.spec.ts`, `job-document-drafts.store.spec.ts`, and
+  `cv-gap-dialog.component.spec.ts`. A fuller audit of the apply wizard's step gating (skippable
+  tailoring with no route logic, an ungated "Create application" that can save an empty application, a
+  "Start over" reachable mid-commit) was done in the same session and is tracked for its own task.
+
 - **The "Name it"/"Edit it" company+role button on a job's meta card stayed active after the job left
   `saved`, letting a locked application's identity be renamed post-apply.** It was deliberately built
   to never close off (`job-meta-card.component.ts`'s own comment: "naming a job is never closed off"),

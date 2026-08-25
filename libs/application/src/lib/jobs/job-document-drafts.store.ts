@@ -77,7 +77,7 @@ export class JobDocumentDraftsStore {
         region: this.targets.region(),
         label: jobDocLabel(job, 'Tailored CV'),
         ensureApplication: () => this.ensureApplication(),
-        ...this.gapFillHooks(job),
+        ...this.gapFillHooks(job, 'cv'),
       });
       if (!result) return;
       this.link(result.application, 'cv', result.document);
@@ -109,7 +109,7 @@ export class JobDocumentDraftsStore {
         // analysis and raise a second dialog for the same questions.
         skipGapFill: !!this.linkedDocs.cv() || this.preparingCv(),
         ensureApplication: () => this.ensureApplication(),
-        ...this.gapFillHooks(job),
+        ...this.gapFillHooks(job, 'cover_letter'),
       });
       if (!result) return;
       this.link(result.application, 'cover_letter', result.document);
@@ -145,14 +145,17 @@ export class JobDocumentDraftsStore {
     return this.detail.ensureApplicationOrThrow(this.targets.language());
   }
 
-  /** The gap-fill callbacks both document flows hand to their draft service. */
-  private gapFillHooks(job: Job): GapFillHooks {
+  /** The gap-fill callbacks both document flows hand to their draft service.
+   * `kind` picks the dialog's copy - the CV and cover letter flows share the
+   * one dialog, and it has to say which document it is filling gaps for. */
+  private gapFillHooks(job: Job, kind: ReviewDocumentKind): GapFillHooks {
     return this.gapFill.hooks({
       job,
       settings: this.detail.settings(),
       language: this.targets.language(),
       profile: this.detail.profile(),
       applyProfile: (profile) => this.detail.profile.set(profile),
+      kind,
     });
   }
 

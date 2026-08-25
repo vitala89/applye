@@ -65,7 +65,12 @@
       </button>
     </div>
   }
-  <button class="btn btn--ghost btn--sm export-startover" (click)="startOver.emit()">
+  <button
+    class="btn btn--ghost btn--sm export-startover"
+    type="button"
+    [disabled]="actionsBusy()"
+    (click)="startOver.emit()"
+  >
     {{ t()('jobs.start_over') }}
   </button>
 }

@@ -55,6 +55,9 @@ export class JobExportApplyStepComponent {
   protected readonly linkedCv = this.linkedDocs.cv;
   protected readonly linkedCoverLetter = this.linkedDocs.coverLetter;
   protected readonly actionMsg = this.jobActions.message;
+  /** Blocks Start over while Create/Update application is committing
+   * documents - the whole point of the button is to throw that work away. */
+  protected readonly actionsBusy = this.jobActions.busy;
 
   /** A tailoring run in flight hides the export half: the documents it is
    * rewriting are the ones the buttons would write out. */

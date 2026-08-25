@@ -67,6 +67,21 @@ pub async fn run(req: &AiRequest, api_key: &str) -> Result<AiResponse, String> {
     }
 }
 
+/// The Anthropic `messages[0].content` value. A plain string when there is
+/// nothing to cache in the user turn (unchanged from before this existed); an
+/// array of two text blocks, the first carrying an ephemeral `cache_control`
+/// breakpoint, when the caller supplied a `cacheable_prefix` - a repeated call
+/// with the same prefix bytes then skips billing for it.
+fn anthropic_user_content(user_prompt: &str, cacheable_prefix: Option<&str>) -> Value {
+    match cacheable_prefix {
+        Some(prefix) if !prefix.is_empty() => json!([
+            { "type": "text", "text": prefix, "cache_control": { "type": "ephemeral" } },
+            { "type": "text", "text": user_prompt },
+        ]),
+        _ => json!(user_prompt),
+    }
+}
+
 async fn anthropic_run(req: &AiRequest, api_key: &str) -> Result<AiResponse, String> {
     // Stable prefix in `system` (cacheable); dynamic input in the user turn.
     let body = json!({
@@ -77,7 +92,10 @@ async fn anthropic_run(req: &AiRequest, api_key: &str) -> Result<AiResponse, Str
             "text": req.system_prompt,
             "cache_control": { "type": "ephemeral" }
         }],
-        "messages": [{ "role": "user", "content": req.user_prompt }],
+        "messages": [{
+            "role": "user",
+            "content": anthropic_user_content(&req.user_prompt, req.cacheable_prefix.as_deref()),
+        }],
     });
 
     let resp = http_client()?
@@ -127,6 +145,20 @@ async fn anthropic_run(req: &AiRequest, api_key: &str) -> Result<AiResponse, Str
     })
 }
 
+/// The OpenAI-compatible `messages[1].content` value. This API has no
+/// `cache_control` field - DeepSeek's own prompt cache is positional and
+/// automatic - so `cacheable_prefix`, when present, is simply joined back onto
+/// `user_prompt` in the order the skill declared it, reproducing exactly the
+/// text a skill with no cache marker would have sent. That costs nothing and
+/// may still help DeepSeek's own cache hit rate, since the stable block still
+/// lands first.
+fn openai_user_content(user_prompt: &str, cacheable_prefix: Option<&str>) -> String {
+    match cacheable_prefix {
+        Some(prefix) if !prefix.is_empty() => format!("{prefix}\n{user_prompt}"),
+        _ => user_prompt.to_string(),
+    }
+}
+
 /// OpenAI-compatible Chat Completions. DeepSeek returns prompt cache hit/miss
 /// token counts in `usage`; we surface the hit count for the cost counter.
 async fn openai_compatible_run(
@@ -140,7 +172,10 @@ async fn openai_compatible_run(
         "max_tokens": resolve_max_tokens(req),
         "messages": [
             { "role": "system", "content": req.system_prompt },
-            { "role": "user", "content": req.user_prompt },
+            {
+                "role": "user",
+                "content": openai_user_content(&req.user_prompt, req.cacheable_prefix.as_deref()),
+            },
         ],
     });
 
@@ -235,9 +270,45 @@ mod tests {
             model: "m".into(),
             system_prompt: "s".into(),
             user_prompt: "u".into(),
+            cacheable_prefix: None,
             language: None,
             max_tokens: max,
         }
+    }
+
+    #[test]
+    fn anthropic_content_is_a_plain_string_with_no_cacheable_prefix() {
+        assert_eq!(anthropic_user_content("u", None), json!("u"));
+        assert_eq!(anthropic_user_content("u", Some("")), json!("u"));
+    }
+
+    #[test]
+    fn anthropic_content_splits_into_two_blocks_with_a_cacheable_prefix() {
+        let content = anthropic_user_content("dynamic", Some("stable"));
+        assert_eq!(
+            content,
+            json!([
+                { "type": "text", "text": "stable", "cache_control": { "type": "ephemeral" } },
+                { "type": "text", "text": "dynamic" },
+            ])
+        );
+    }
+
+    #[test]
+    fn openai_content_is_unchanged_with_no_cacheable_prefix() {
+        assert_eq!(openai_user_content("u", None), "u");
+        assert_eq!(openai_user_content("u", Some("")), "u");
+    }
+
+    /// DeepSeek has no `cache_control` field, so the prefix is folded back in -
+    /// reproducing the same text a skill with no `[CACHE_END]` marker would
+    /// have produced, just assembled from two pieces instead of one.
+    #[test]
+    fn openai_content_joins_the_cacheable_prefix_back_onto_the_dynamic_part() {
+        assert_eq!(
+            openai_user_content("dynamic", Some("stable")),
+            "stable\ndynamic"
+        );
     }
 
     #[test]

@@ -9,6 +9,12 @@ export interface AiRequest {
   model: string;
   systemPrompt: string;
   userPrompt: string;
+  /** The leading, per-job-stable part of the user turn - a skill's own
+   * `RenderedSkill.userPromptCacheable`, forwarded verbatim. Anthropic marks it
+   * as a `cache_control` breakpoint so repeated calls sharing it are not
+   * re-billed for it; providers with no such concept simply see it folded back
+   * into the same text a skill with nothing to share would have sent. */
+  cacheablePrefix?: string;
   language?: string;
   maxTokens?: number;
 }
@@ -35,6 +41,10 @@ export interface RenderedSkill {
   recommendedModel?: string;
   systemPrompt: string;
   userPrompt: string;
+  /** The leading part of `userPrompt` a skill marked `[CACHE_END]`-stable
+   * across repeated calls (e.g. resume-tailoring's three passes). Absent for
+   * every skill with no such marker. */
+  userPromptCacheable?: string;
 }
 
 /** Outcome of an assisted `npm install -g` of one of the CLIs. */

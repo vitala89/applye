@@ -20,6 +20,19 @@ is the single source of truth; this file tracks what changed at each tag.
   tailored document, stay on the quality tier; only the critique pass moved.
   `tailoring.service.spec.ts` covers the per-pass model split.
 
+- **`resume-tailoring`'s three passes now share an Anthropic prompt-cache breakpoint for the profile,
+  job description and scoring context they all reuse.** An AI-request audit found `S3`
+  (`docs/internal/NATIVE_GATE_FINDINGS.md`): these blocks were re-sent, uncached, on all three passes,
+  even though they are identical across a single tailoring run. Skill files can now mark a
+  `[CACHE_END]`-terminated prefix inside `[USER]` as stable; `resume-tailoring.md` reorders its
+  template so the pass-invariant blocks come first and marks them. `AiRequest`/`RenderedSkill` carry
+  the split (`cacheablePrefix`/`userPromptCacheable`) through to `anthropic_run`, which sends it as its
+  own `cache_control: ephemeral` content block; `openai_compatible_run` (DeepSeek) has no cache-control
+  concept, so it simply rejoins the same text in the same order. Scoped to `resume-tailoring` only -
+  standardising the same block across every skill that repeats profile/job-description text is a larger
+  change and was deliberately left for its own decision. Covered by new tests in `skills.rs`, `api.rs`
+  and `tailoring.service.spec.ts`.
+
 ### Fixed
 
 - **The "Name it"/"Edit it" company+role button on a job's meta card stayed active after the job left

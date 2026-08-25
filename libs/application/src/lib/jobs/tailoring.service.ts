@@ -223,6 +223,7 @@ export class TailoringService {
       model,
       systemPrompt: rendered.systemPrompt,
       userPrompt: rendered.userPrompt,
+      cacheablePrefix: rendered.userPromptCacheable,
       language: lang,
     });
 

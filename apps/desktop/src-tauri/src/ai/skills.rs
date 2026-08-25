@@ -77,6 +77,12 @@ pub struct RenderedSkill {
     pub recommended_model: Option<String>,
     pub system_prompt: String,
     pub user_prompt: String,
+    /// The leading part of `user_prompt` that is identical across repeated
+    /// calls for the same job (e.g. profile and job description across a
+    /// multi-pass skill) - present only when the skill's `[USER]` section
+    /// marks one with `[CACHE_END]`. `None` for every skill that has no such
+    /// marker, which is every skill but `resume-tailoring` today.
+    pub user_prompt_cacheable: Option<String>,
 }
 
 pub fn render(name: &str, context: &HashMap<String, String>) -> Result<RenderedSkill, String> {
@@ -85,11 +91,13 @@ pub fn render(name: &str, context: &HashMap<String, String>) -> Result<RenderedS
     let meta = parse_frontmatter(front);
 
     let (system, user) = split_sections(body)?;
+    let (cacheable, rest) = split_cacheable(user);
     Ok(RenderedSkill {
         version: meta.get("version").cloned().unwrap_or_else(|| "0".into()),
         recommended_model: meta.get("recommended_model").cloned(),
         system_prompt: interpolate(system.trim(), context),
-        user_prompt: interpolate(user.trim(), context),
+        user_prompt: interpolate(rest.trim(), context),
+        user_prompt_cacheable: cacheable.map(|c| interpolate(c.trim(), context)),
     })
 }
 
@@ -130,6 +138,25 @@ fn split_sections(body: &str) -> Result<(&str, &str), String> {
     let system = &body[sys_idx + "[SYSTEM]".len()..user_idx];
     let user = &body[user_idx + "[USER]".len()..];
     Ok((system, user))
+}
+
+/// Splits `[USER]`'s body at an optional `[CACHE_END]` marker: everything
+/// before it is the part stable across repeated calls (an Anthropic
+/// `cache_control` breakpoint can key on), everything after is dynamic.
+///
+/// `None` when no marker is present - the whole body is treated as dynamic,
+/// exactly as it was before this split existed. The marker line itself is
+/// consumed; concatenating the two halves with a single `\n` reproduces the
+/// original text, which is what a provider with no cache concept needs.
+fn split_cacheable(user: &str) -> (Option<&str>, &str) {
+    match user.find("[CACHE_END]") {
+        Some(idx) => {
+            let prefix = &user[..idx];
+            let after = &user[idx + "[CACHE_END]".len()..];
+            (Some(prefix), after.strip_prefix('\n').unwrap_or(after))
+        }
+        None => (None, user),
+    }
 }
 
 fn interpolate(template: &str, context: &HashMap<String, String>) -> String {
@@ -359,6 +386,61 @@ AI-Native Software Developer based in Germany. Jobgether matches you to it.";
     #[test]
     fn unknown_skill_is_an_error_not_a_panic() {
         assert!(render("nope", &HashMap::new()).is_err());
+    }
+
+    /// `resume-tailoring` marks its profile/JD/scoring block cacheable because
+    /// all three passes of one run share it; the pass number and prior passes'
+    /// results, which do vary per pass, must land in `user_prompt` instead.
+    #[test]
+    fn resume_tailoring_splits_a_cacheable_prefix_from_the_per_pass_body() {
+        let r = render(
+            "resume-tailoring",
+            &ctx(&[
+                ("profile_md", "PROFILE-MARKER"),
+                ("job_description", "JD-MARKER"),
+                ("scoring_json", "{}"),
+                ("pass", "2"),
+                ("language", "en"),
+                ("pass1_result", "PASS1-MARKER"),
+                ("pass2_result", ""),
+            ]),
+        )
+        .unwrap();
+
+        let cacheable = r
+            .user_prompt_cacheable
+            .as_deref()
+            .expect("resume-tailoring must mark a cacheable prefix");
+        assert!(cacheable.contains("PROFILE-MARKER"));
+        assert!(cacheable.contains("JD-MARKER"));
+        assert!(
+            !cacheable.contains("PASS1-MARKER"),
+            "pass 1's own result varies per pass and must not be cached: {cacheable}"
+        );
+        assert!(
+            !cacheable.contains("Current pass"),
+            "the pass number varies per call and must not be cached: {cacheable}"
+        );
+
+        assert!(r.user_prompt.contains("PASS1-MARKER"));
+        assert!(
+            r.user_prompt.contains('2'),
+            "the pass number must still reach user_prompt"
+        );
+        assert!(
+            !r.user_prompt.contains("PROFILE-MARKER"),
+            "the cacheable part must not be duplicated in user_prompt: {}",
+            r.user_prompt
+        );
+    }
+
+    /// Every skill without a `[CACHE_END]` marker keeps today's behaviour:
+    /// nothing is split out, so an unrelated skill cannot silently start
+    /// caching a block nobody asked it to.
+    #[test]
+    fn a_skill_with_no_cache_marker_has_no_cacheable_prefix() {
+        let r = render("cv-import", &ctx(&[("cv_text", "x"), ("language", "en")])).unwrap();
+        assert!(r.user_prompt_cacheable.is_none());
     }
 
     /// Prompts that ship in `libs/skills` and deliberately have no arm above.

@@ -1,5 +1,5 @@
 ---
-version: '0.2.0'
+version: '0.3.0'
 description: >
   Three-pass CV tailoring: XYZ rewrite → dual critique → build.
   Rewrites experience bullets for the specific JD. Never invents experience.
@@ -41,8 +41,6 @@ ABSOLUTE RULES - violations invalidate the output:
 5. List every JD requirement the profile cannot address in the "gaps" field - do not hide gaps
 
 [USER]
-Current pass: {{pass}}
-
 --- PROFILE ---
 {{profile_md}}
 
@@ -51,6 +49,8 @@ Current pass: {{pass}}
 
 --- SCORING CONTEXT ---
 {{scoring_json}}
+[CACHE_END]
+Current pass: {{pass}}
 
 --- PASS 1 OUTPUT (filled for passes 2 and 3) ---
 {{pass1_result}}

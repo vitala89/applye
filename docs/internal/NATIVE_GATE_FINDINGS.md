@@ -28,9 +28,11 @@ that does not exist. `NATIVE_GATE_BACKLOG.md` carries the per-section breakdown.
 3. ~~**`B8`** - the job title is a fragment of the description.~~ **Fixed** in the deterministic
    extractor, see the entry below. Still owed a native re-parse of a hard-wrapped posting.
 4. **`S1`** - two and a half minutes to a first document, half of it in the dual critique.
-   **Blocked on one measurement, not on a decision**: reading the prompt disproved the hypothesis
-   this file was carrying, and the numbers that replace it are already in `tailoring_cache`. The
-   query is in the `S1` entry below. `S3`, found while reading it, is separate.
+   **Partially addressed**: pass 2 moved to the economy model tier, natively confirmed 2026-08-25,
+   merged as [`PR #531`](https://github.com/vitala89/applye/pull/531) - a bit faster, not re-measured
+   against the wall-clock table. The actual root cause (pass 2 emits ~2200 output tokens against a
+   declared six-to-ten-bullet schema) is still open, left for its own prompt-tightening task. `S3`,
+   found while reading it, is separate and partially closed the same day - see its own entry below.
 5. ~~**`B2`**~~ **fixed 2026-08-21** - and it is the one item in this file that **no check here can
    confirm**, so it is owed a native pass on station 4 before it counts. Then the print family
    ~~**`B4`**~~ and ~~**`B6`**~~ **fixed 2026-08-21**; ~~**`B5`**~~ **fixed as a side effect of `#511`,

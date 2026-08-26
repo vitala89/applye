@@ -4,130 +4,107 @@ Copy everything below the line into a fresh session.
 
 ---
 
-**Seven bugs found and fixed via native testing (`#520`-`#526`) are closed and merged, `B9` is closed,
-and `PR #528` is merged but still needs a native `tauri dev` pass before its four fixes count as
-done.** The maintainer ran the apply wizard and My Jobs scoring end to end in `tauri dev` earlier this
-week and reported what broke, one at a time; two chained mistakes are worth reading before touching
-that area again - `#520`'s fix was the wrong shape and needed `#522` on top of it, and `#523`'s
-scoring-persistence fix targeted the wrong method and needed `#525` on top of it. Full chain in
-`docs/internal/DUTY_WATCH.md`'s 2026-08-23 entries. Read the state below, then **lead with `PR #528`'s
-native check** unless the maintainer says otherwise - it is the one item with concrete, cheap steps
-already written out, not a guess.
+**The apply-wizard step-gating audit opened this week is closed.** The maintainer walked the apply
+wizard (Review score → Tailor CV → Updated score → Review documents → Export & apply) in `tauri dev`
+and reported it broken at several points, with screenshots. Eight findings (F1-F8) were named; six
+are fixed and merged, one was natively verified clear, one was declined. `S1` (tailoring latency) and
+`S3` (repeated uncached profile/JD text) got partial fixes the same week. Full chain in
+`docs/internal/DUTY_WATCH.md`'s 2026-08-25 and 2026-08-26 entries.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
-`docs/product/CURRENT_STATE.md`, the `2026-08-23` entries in `docs/internal/DUTY_WATCH.md`, and
+`docs/product/CURRENT_STATE.md`, the `2026-08-26` entry in `docs/internal/DUTY_WATCH.md`, and
 `docs/governance/CODE_QUALITY.md` / `docs/governance/VALIDATION_MATRIX.md`.
 
 ## Where things actually stand
 
-- `git branch --show-current` should read `main`, clean, at `8f245a80` (`#528`) or later - **verify
+- `git branch --show-current` should read `main`, clean, at `cf185442` (`#536`) or later - **verify
   this before trusting anything else below**, this repository's working tree has repeatedly reset
   between sessions.
-- `#511`-`#516` (print pipeline), `B5`, the export-filename split (`#518`), and `#520`-`#526`
-  (tailoring/scoring bugs) are **all merged and done**. Do not re-open them.
-- `#526` briefly showed as `CONFLICTING` on GitHub because it branched before `#525` merged and both
-  touched the top of `CHANGELOG.md`/`CURRENT_STATE.md`. Resolved with a merge commit, already merged -
-  nothing left to do about it.
-- `B9` (wizard footer padding) is **closed, 2026-08-23** - the maintainer confirmed it looks correct
-  at full screen. Re-open only if it recurs, and only with a screenshot or the two differing step
-  names; a verbal description alone did not converge twice already.
-- **`PR #528` is merged** (`8f245a80`), but its four fixes have not been exercised in the running app
-  yet - they were shipped on the strength of the maintainer's P1/P2/B12 walk plus local gates, not a
-  native re-test of the fixes themselves.
-- A stale `tauri dev` build caused two false-alarm bug reports earlier this week (the maintainer
-  testing code that predated the fix they thought they were testing). **If a fix looks like it "didn't
-  work," check `git log -1 --oneline` in the terminal running `tauri dev` and confirm it matches
-  `main` before re-diagnosing the code.**
+- **[`PR #537`](https://github.com/vitala89/applye/pull/537) may still be open** - a docs-only entry
+  recording the apply-wizard audit's close-out and the native F8 confirmation. Merge it first if so;
+  nothing in it touches code.
+- `#529`-`#536` are **all merged and done**: `S1` (pass 2 moved to the economy model tier, `#531`),
+  `S3` (a shared prompt-cache breakpoint for `resume-tailoring`'s three passes, `#533`), and the
+  apply-wizard fixes (`#534`, `#535`, `#536`). Do not re-open any of them - see "Do not re-open" below
+  for the specific decisions each one settled.
+- **`S1` is not closed, only mitigated.** The root cause - pass 2 emits ~2200 output tokens against a
+  declared six-to-ten-bullet schema - is still open and was deliberately left for its own
+  prompt-tightening task (`libs/skills/src/resume-tailoring/resume-tailoring.md`). `S3`'s cache
+  breakpoint has not been natively measured either: the next `tauri dev` pass should re-run a
+  tailoring job twice in one session and check `cachedTokens` on passes 2 and 3.
 
 ## What's open
 
-1. **`PR #528`'s four fixes - need a native `tauri dev` pass.** Not a new bug hunt: exactly what to
-   click is already known.
-   - Apply's button did nothing (event-name mismatch, `jobs.component.html` listened for an event the
-     component never emits) - **click Apply on a job, confirm the wizard opens / the job moves off
-     `saved`.**
-   - The CV editor's live style panel stayed interactive after a locked document's toolbar correctly
-     locked - **open a CV linked to a locked (non-`saved`) application, confirm clicking the rendered
-     text does nothing.**
-   - Score/Rescore's two buttons ignored the same lock Retailor already respects - **on a locked job,
-     confirm both Score/Rescore buttons are disabled.**
-   - The job meta card's Name it/Edit it button was deliberately built to never close off; the
-     maintainer confirmed on 2026-08-23 it should now lock too - **on a locked job, confirm Name
-     it/Edit it is disabled.**
+Nothing is mid-flight. These are candidates, not a queue - **ask the maintainer which one before
+starting**, same rule as always.
 
-   If all four hold, done - update `docs/internal/NATIVE_GATE_FINDINGS.md`'s `P1/P2/B12` entry to say
-   so and move on. If any one doesn't, say which - the diagnosis for all four is already in that same
-   entry, so a repro report (which button, what happened instead) is enough to fix it without
-   re-diagnosing from scratch.
-
-2. **`S1`** - tailoring run takes ~2.5 minutes, half of it the dual-critique pass. Root cause is
-   already measured; the next step is one **read-only** query against `tailoring_cache`'s
-   `tokens_input`/`tokens_output` to size the fix. **Ask the maintainer before running it** - standing
-   rule against touching the live database without asking, even read-only.
-
-3. **A loose end from the filename fix (`#518`)**: the maintainer's original repro (two different
-   filenames for "the same CV") may have involved two different `document_library` rows rather than
-   only the code-path divergence `#518` fixed. Moot if the maintainer confirms the fix resolved what
-   they saw; worth one native check only if they still see a mismatch - open both Documents-list
-   entries side by side and compare IDs/labels.
-
-**If `PR #528`'s native pass is already done by the time this session starts**, ask the maintainer
-which of `S1` / the filename loose end / something else to take - do not pick one and start without
-asking, same rule as always.
-
-## A pattern worth watching for
-
-Every bug found this week except `B9` and the Apply-button wiring was the **same lock gap in a new
-place**: something that correctly disabled at the top level (a toolbar, a page) but left a
-sub-component underneath still fully interactive. If the native pass on `PR #528` turns up a fifth
-instance somewhere else in the locked-application surface, that is the pattern to check for first,
-not a fresh diagnosis.
+1. **`docs/internal/NATIVE_GATE_BACKLOG.md`** - 36 of 83 checks from the 2026-08-20 walk are still
+   unticked, spread across Discover, the CV live-style panel, the CV editor's sections, print, the
+   tracker, Analytics, the welcome screen, the Pipeline quick view, the dashboard, and one release
+   item (whether an installed `0.29.1` actually offers the `0.29.2` update). No agent can drive any of
+   this - it needs the maintainer's own hands in `tauri dev`.
+2. **The German pack, P0 in `docs/product/IDEAS.md`** - German Discover sources (the built-in set is
+   Remotive/WWR/Himalayas only, none German) and the DIN 5008 Anschreiben fields every DE posting
+   asks for. Named the most-requested-by-users items in that file, not yet scoped.
+3. **`S1`'s actual root cause** (tighten or cap pass 2's output) and **`S3`'s native cache-hit
+   measurement** - both described above, both small and already diagnosed.
+4. **`docs/product/FEATURE_INDEX.md`** has not been reconciled against everything shipped since
+   `v0.22.0` - only the one demonstrably wrong row (Interview Prep, fixed 2026-08-26) was corrected
+   this pass. A full pass would need one read through `CHANGELOG.md`'s shipped history against the
+   table, which was not done here - flagged, not fixed.
 
 ## Do not re-open
 
-- **The print pipeline, `B5`, the export-filename unification, and `#520`-`#526` are done.** Do not
-  re-litigate any settled decision, including: the DE filename convention spreads to every CV entry
-  point (`#518`); `isTailored` reads a `source: 'tailored'` tag on the linked CV rather than replaying
-  a cache-hash chain, and does **not** attempt a full phase-card/Changes/Gaps restore on reopen - that
-  was explicitly scoped out in `#522`'s grilling round and stays a separate, larger ask if the
-  maintainer wants it later; real mid-request AI cancellation needs new Rust plumbing and was
-  explicitly deferred in `#523`'s grilling round in favor of honest button copy - do not build the
-  Rust cancellation registry without a fresh grilling round confirming the maintainer still wants it
-  now. If new information changes any of these premises, say so explicitly and re-triage rather than
-  quietly re-deciding.
-- **`B9` is closed** unless it recurs with a screenshot or named steps.
+- **The apply-wizard grilling decisions (`#536`)**: the Create-application CV gate is UI-only, no
+  `JobActionsStore` change; it shows an inline reason plus a jump back to Review documents, not a bare
+  disabled button; `Update application` is deliberately **not** gated the same way, since a job can
+  reach `applied` with zero documents through the separate Apply self-report (`P1`); the fix for
+  skipped tailoring is the scoped one shipped (a "use existing" action plus an auto-opening CV
+  chooser), not a persisted route-state machine. **F2** (gate cover-letter generation on a linked CV)
+  was proposed and declined - a cover letter is built from the profile and job description, not the
+  CV. **F8** (Choose existing + tailor possibly overwriting a library CV) was walked natively and
+  found clear - do not re-flag it as an open risk.
+- **`S3`'s cache scope was deliberately narrowed** to `resume-tailoring`'s own three passes, not
+  standardised across every skill that repeats profile/job-description text - that broader change
+  needs every skill's `[USER]` template to match byte-for-byte and was left for its own `aif-grilling`
+  round.
+- **Everything the previous prompt closed stays closed**: the print pipeline, `B5`, the
+  export-filename unification, `#520`-`#526`'s tailoring/scoring bugs, `B9` (wizard footer padding),
+  and `PR #528`'s four lock-gap fixes (all four confirmed natively 2026-08-23). If new information
+  changes any of these premises, say so explicitly and re-triage rather than quietly re-deciding.
 - **A screenshot/rasterized PDF export is not the fix for anything print-related.** Rejected earlier;
-  ATS parsers need real, selectable text.
-- **Third-party PDF libraries** were raised out of frustration in an earlier session and should not be
-  adopted reflexively - see the reasoning already on file if this comes up again.
+  ATS parsers need real, selectable text. **Third-party PDF libraries** were raised out of frustration
+  once and should not be adopted reflexively.
 
 ## Workflow notes worth keeping
 
 - **`desktop-web` (`nx serve desktop --port=4201`) has no real Tauri IPC** - `tauriInvoke()` throws
   outside a real Tauri context, so every gateway call fails and the app renders empty states only.
-  Useful for pure DOM/CSS bugs reachable without data; useless for anything needing a real job, CV, or
-  application - those need a native `tauri dev` pass, which only the maintainer can drive.
+  Useful for pure DOM/CSS/template-compile checks reachable without data; useless for anything needing
+  a real job, CV, or application - those need a native `tauri dev` pass, which only the maintainer can
+  drive.
 - **When the maintainer reports a fix "isn't working," check for a stale build before re-diagnosing
-  the code.** `git log -1 --oneline` in the `tauri dev` terminal, compared against the commit that
-  actually shipped the fix, settles it in one step - two separate reports this week turned out to be
-  this, not a code problem.
-- **But a stale build is not the only explanation - check the fix's target second.** `#520`→`#522` and
-  `#523`→`#525` were both cases where the first fix was real and well-tested but addressed the wrong
-  instance of the underlying pattern (a sibling method, a different code path). The giveaway both
-  times was the maintainer reproducing the _exact_ reported symptom again after the fix merged. Take
-  that seriously rather than assuming a stale build first.
-- **Cut every branch from `main`, and check `git branch --show-current` before assuming otherwise.**
-- **When several open items have different blockers, ask which one rather than guessing** - true every
-  time it came up this week.
-- **Voice input on this channel drops or garbles words** - "Set Company enroll" turned out to be "Set
-  Company and Role"/Name it button, and it cost a full round trip to catch. If a described UI element
-  does not match anything in the code, say so and ask for the exact label rather than guessing.
-- **`jobs.component.ts` (1076 lines) has no spec file at all**, and neither did `job-meta-card` before
-  2026-08-23. Bugs in either surface still have to be verified natively - flag the coverage gap rather
-  than silently building a large test harness mid-fix, unless asked.
-- **`main` can move between messages in the same session** - `PR #528` merged mid-session while this
-  handoff was being written, and a stale local `main` produced a stash-pop merge conflict in these two
-  files. `git pull --ff-only` before trusting a diff against `main`.
+  the code**, and check the fix's _target_ second - a real, well-tested fix can still address the
+  wrong instance of a pattern (a sibling method, a different code path). Both have happened before;
+  take a reproduced _exact_ symptom seriously rather than assuming a stale build.
+- **Cut every branch from `main`**, and check `git branch --show-current` first. After a PR merges,
+  `git checkout main && git pull --ff-only`, then delete the local feature branch - do not leave
+  `main` sitting ahead of `origin/main` with an uncommitted or committed-but-unpushed fix on it.
+- **When several open items have different blockers, ask which one rather than guessing.**
+- **Grill before committing to a redesign.** The apply-wizard fix looked, from the report alone, like
+  it needed a persisted route-state machine; reading the actual code first (the Updated-score step
+  already degrades gracefully when tailoring is skipped, the CV picker already existed) turned it into
+  a much smaller, scoped fix. Resolve facts by reading before asking the maintainer to decide anything
+  the repository can already answer.
+- **`jobs.component.ts` (419 lines, shrunk from 1076+ across the ADR-0005 extraction series) has no
+  spec file at all**, and neither do several of its extracted step components (`apply-wizard.component.ts`
+  among them). Bugs in any of these surfaces still have to be verified natively or by adding a spec
+  alongside the fix - flag the coverage gap rather than silently building a large test harness mid-fix,
+  unless asked.
+- **Voice input on this channel drops or garbles words.** If a described UI element does not match
+  anything in the code, say so and ask for the exact label rather than guessing.
+- **`main` can move between messages in the same session.** `git pull --ff-only` before trusting a
+  diff against `main`.
 
 ## Gates before commit
 

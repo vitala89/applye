@@ -1,15 +1,42 @@
 # Current Operational State
 
-- **Version bumped to `0.29.3` (package.json / package-lock.json / tauri.conf.json / Cargo.toml /
-  Cargo.lock, verified identical, plus the badge in all six READMEs) - not yet tagged.** Patch release:
-  everything queued in `CHANGELOG.md`'s `[Unreleased]` since `0.29.2` (2026-08-02) is a fix or a
-  performance change, no new capability, per this file's own semver rule. Once this bump is merged to
-  `main`, the remaining step is `git tag -a v0.29.3 -m "Applye 0.29.3" && git push origin v0.29.3` -
-  held for the maintainer's explicit go-ahead, since it triggers the CI build matrix and opens a public
-  draft release (`docs/RELEASE.md`). After a draft exists: smoke-test per platform per that doc's
-  checklist, then specifically exercise the auto-updater - install `0.29.2` (or whatever is currently
-  installed) and let it offer `0.29.3`, since `docs/RELEASE.md` is explicit that this is the one thing
-  "`latest.json` and the `.sig` files being present" does not by itself prove.
+- **Version bumped to `0.29.4` (package.json / package-lock.json / tauri.conf.json / Cargo.toml /
+  Cargo.lock, verified identical, plus the badge in all six READMEs) - not yet tagged.** Patch release
+  carrying the startup-abort fix below on its own, at the maintainer's call. Once merged, the remaining
+  step is `git tag -a v0.29.4 -m "Applye 0.29.4" && git push origin v0.29.4`, held for an explicit
+  go-ahead since it triggers the CI build matrix and opens a draft release (`docs/RELEASE.md`). Note
+  that `v0.29.3`'s draft is still unpublished, so `0.29.4` will be the second unpublished draft unless
+  `0.29.3` is published or dropped first.
+- **`Windows check` CI workflow added** (`.github/workflows/windows-check.yml`): `ci.yml` runs the Rust
+  gate on `ubuntu-latest` only, so `#[cfg(target_os = "windows")]` code first compiled at tag time in
+  `release.yml` - a broken Windows build would already be a broken release. The new workflow runs
+  clippy plus the Rust tests on `windows-latest`, scoped to pull requests that touch
+  `apps/desktop/src-tauri/**`, plus `workflow_dispatch`. macOS is not in the matrix (it is the
+  maintainer's own dev platform); Linux stays covered by `ci.yml`. Cross-checking Windows from a
+  developer Mac was tried and does not work: `ring`'s build script needs the Windows C headers.
+- **A failed launch no longer aborts silently - and the specific 0.29.2 failure
+  is still unidentified.** The maintainer installed the released macOS DMG and hit macOS' "unexpectedly
+  quit while reopening windows" prompt. The installer is not at fault: the binary in `/Applications`
+  hashes identically to the one in the DMG. The app aborted in `setup`, and it aborts rather than
+  reporting because Tauri v2 runs `setup` inside `applicationDidFinishLaunching`, where a panic cannot
+  unwind (`tauri-2.11.5/src/app.rs:1424`); macOS then retries the launch as a window restore and aborts
+  again, which is the loop the maintainer saw. Four crash reports from 26 August and one from 20 August
+  (0.29.0) carry the identical stack. Narrowed to the setup closure at or before the first SQLite
+  connection - no `sqlx-sqlite-worker-*` thread exists in any report - but the exact error string is
+  gone: release builds registered no logger, and Rust panics go to a stderr that a Finder-launched app
+  discards. Fixed structurally rather than by guessing a line: `startup::fail` replaces the three hard
+  failures in `lib.rs` with a logged reason, a native dialog and `exit(1)`; `tauri-plugin-log` now runs
+  in release builds; a panic hook appends every panic to `startup-crash.log`. Deliberately **not**
+  addressed: ad-hoc signing (`no CMS blob`, `Unable to get teamId` in the system log) - Developer ID
+  signing and notarisation stay open. Shipping as `0.29.4` on its own.
+- **`0.29.3` is tagged and its GitHub release is built but still a draft.** `v0.29.3` exists on
+  `origin`, and the draft carries all 17 assets (both macOS DMGs, Windows `.exe`/`.msi`, Linux
+  `.deb`/`.rpm`/`.AppImage`, the `.app.tar.gz` updater bundles, every `.sig`, and `latest.json`).
+  Because the release is still a draft, `.../releases/latest/download/...` - both the updater endpoint
+  in `tauri.conf.json` and the README download links - still resolves to `0.29.2`; that is why a fresh
+  download during this watch produced 0.29.2 DMGs. Remaining: smoke-test per platform per
+  `docs/RELEASE.md`, then specifically exercise the auto-updater from an installed `0.29.2`, which the
+  presence of `latest.json` and the `.sig` files does not by itself prove, and publish the draft.
 - **Apply-wizard step-gating audit closed - F1/F3/F4/F5/F6/F7 fixed and merged, F8 natively cleared,
   F2 declined.** The maintainer's native walkthrough that opened this audit reported the wizard broken
   at several points, with screenshots. Three PRs fixed what code could fix:

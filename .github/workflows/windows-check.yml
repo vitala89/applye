@@ -1,0 +1,63 @@
+name: Windows check
+
+# ci.yml runs the Rust gate on ubuntu-latest only, so `#[cfg(target_os = ...)]`
+# code that is inactive on Linux is never type-checked until release.yml builds
+# the tag - by which point a broken Windows build is already a broken release.
+# `startup.rs` has exactly that shape, and cross-checking from a developer Mac
+# does not work either (`ring` needs the Windows C headers).
+#
+# So this workflow compiles the Rust side on Windows. It is deliberately narrow:
+# only when the Tauri crate changes, plus on demand. macOS is not in the matrix -
+# it is what the maintainer develops on, so it is covered by every local build.
+#
+# Not a required status check: the paths filter means it does not run on most
+# pull requests, and a required check that never runs blocks the merge.
+
+on:
+  pull_request:
+    paths:
+      - 'apps/desktop/src-tauri/**'
+      - '.github/workflows/windows-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Clippy + tests (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Rust (cargo) build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - run: npm ci
+
+      # `tauri::generate_context!` embeds the built frontend, so the Rust crate
+      # does not compile without it - same order as ci.yml.
+      - name: Build desktop frontend
+        run: npx nx build desktop
+
+      - name: Clippy (Rust)
+        run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets
+
+      - name: Cargo test (Rust)
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml

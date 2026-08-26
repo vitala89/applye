@@ -95,6 +95,24 @@ Before a watch can be marked complete:
     the code compiles and its tests pass there; it does not prove the packaged installer launches.
     Doing that headlessly (`xvfb-run` the AppImage on Linux, silent-install the `.msi` and check the
     process survives on Windows) is a further piece of work and was not started.
+- **The Windows job failed on its first run, and what it found was not the new code.** Three
+  pre-existing test failures, one cause: the repository had no `text eol` rule in `.gitattributes`, so
+  a Windows checkout produced CRLF. `ai/skills.rs`'s `split_frontmatter` matches the literal `---\n`
+  (`skills.rs:107`), so with CRLF it silently returns no frontmatter at all - `job-identify` resolved to
+  `None` instead of `claude-haiku-4-5`, `cv-import` lost its description. Skills are embedded with
+  `include_str!`, so this is not a test artefact: **every Windows release built so far ships with
+  skill frontmatter dropped.** The third failure, `applied_migrations_are_never_edited`, is the same
+  cause seen through `sqlx::migrate!`, which hashes migration bytes at compile time.
+  Fixed at the checkout level: `.gitattributes` now sets `* text=auto eol=lf` with explicit `-text` for
+  binary formats. `git add --renormalize .` produced no content changes, so nothing in the working tree
+  was rewritten - the repository was already LF everywhere. The maintainer chose this over leaving
+  migrations alone, accepting the cost below.
+  **Recorded cost:** a Windows install made before this change recorded CRLF checksums in
+  `_sqlx_migrations` and will refuse to migrate against the corrected LF ones. That is a reinstall.
+  It now surfaces as the named error dialog added in this same watch rather than as a silent abort.
+  **Deliberately not done:** making `split_frontmatter` itself CRLF-tolerant. With `eol=lf` no checkout
+  can hand it CRLF, and a second mechanism for the same guarantee is a second thing to keep true. The
+  line is noted here so the next reader knows it is strict on purpose.
 - **Also in this watch:** cut as `0.29.4` (version bumped in package.json, package-lock.json,
   tauri.conf.json, Cargo.toml, Cargo.lock and the badge in all six READMEs; `CHANGELOG.md` section and
   compare link added), and added `.github/workflows/windows-check.yml` because `ci.yml` gates on

@@ -44,6 +44,75 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-26, apply-wizard step-gating audit closed - F1/F3/F4/F5/F6/F7 fixed, F8 natively cleared
+
+- **Status:** complete.
+- **Agent/tool:** Claude Code.
+- **Branch:** `main` at `cf185442` (clean). Verifies [`#534`](https://github.com/vitala89/applye/pull/534),
+  [`#535`](https://github.com/vitala89/applye/pull/535), [`#536`](https://github.com/vitala89/applye/pull/536),
+  all merged.
+- **Commits:** `c880a7e1`, `3ecd303e`, `cf185442` (one per PR above; see each for its own message).
+- **Pull request:** the three above; none open at the end of this watch.
+- **Objective:** the maintainer walked the apply wizard (Review score → Tailor CV → Updated score →
+  Review documents → Export & apply) natively and reported it broken at several points, with
+  screenshots: `Generate CV` disabled with no way out after skipping tailoring, the shared CV-gap
+  dialog showing CV copy while generating a cover letter, `Create application` saving with no CV and no
+  cover letter attached, and `Start over` reachable while a commit was still in flight. Audited the
+  whole flow, named eight findings (F1-F8), and fixed what a code change could fix.
+  `docs/product/CURRENT_STATE.md`'s entries for `#534`/`#535`/`#536` carry each fix's own detail; this
+  entry is the session close-out.
+- **Completed:**
+  - **F3** (`#534`): the CV/cover-letter drafts share one gap-fill dialog by design, but its copy was
+    hardcoded to the CV. Threaded a `kind: 'cv' | 'cover_letter'` from `JobDocumentDraftsStore` through
+    `JobGapFillService` to `CvGapDialogService.ask()`; three new i18n keys, all six locales.
+  - **F5/F6/F7** (`#535`): the wizard's `busy` input never covered `JobActionsService.busy`, and
+    `job-export-apply-step`'s `Start over` had no `[disabled]` at all - both let Next/Back/Discard/Start
+    over stay live while Create/Update application was still committing documents. Wired `actions.busy()`
+    into both.
+  - **F1/F4** (`#536`): skipping tailoring left `Generate CV` disabled with no way out, the
+    choose-existing CV picker collapsed behind an unpointed-to toggle, and `Create application` saved
+    silently with no CV or cover letter. Grilled with the maintainer (`aif-grilling`) into a scoped
+    fix instead of a persisted route-state machine, once reading the code showed the Updated-score
+    step already degrades gracefully when tailoring is skipped and the CV picker already existed -
+    only ever defaulted closed. Added a "Use an existing resume instead" action on the tailor step
+    (shown only when the library has a CV), made the CV chooser open itself once there is nothing else
+    to offer, and disabled `Create application` without a linked CV with an inline reason and a jump
+    back - deliberately UI-only, and deliberately not applied to `Update application` (a job can reach
+    `applied` with zero documents through the separate Apply self-report, `P1`). No `libs/application`
+    public API changed.
+  - **F8, natively cleared:** the audit flagged a risk that tailoring a CV and then choosing a
+    _different_ library CV via Choose existing on Review documents, then running Create application,
+    could have `CvDraftService.persist()`'s reuse-by-`app.cvDocumentId` overwrite the chosen library
+    document with the tailored output. The maintainer walked exactly that sequence natively and
+    reported no overwrite - the chosen CV survived. No code change; recorded as verified rather than
+    left an open risk.
+- **Not completed:** **F2**, declined by the maintainer during grilling: gating `Generate cover letter`
+  on a linked CV was proposed and rejected, since a cover letter is built from the profile and the job
+  description, not the CV, and gating it would block a legitimate cover-letter-only path.
+- **Files or packages changed:** see each PR's own diff; summary in `CHANGELOG.md`'s `[Unreleased]`
+  section (three `### Fixed` entries) and `docs/product/CURRENT_STATE.md` (one entry per PR, all
+  superseded now that all three merged clean).
+- **Validation:** each PR's own gate run is recorded in its `CURRENT_STATE.md` entry and PR body -
+  `application`, `desktop` and `i18n` test suites, type-check, lint, file-size, attribution, format,
+  `git diff --check`, all green at merge time. This entry adds the native F8 walkthrough, run by the
+  maintainer in `tauri dev` (Claude Code has no access to the Tauri/SQLite backend to run it itself).
+- **Privacy/security impact:** none. No user data, storage, network, IPC surface, or AI provider
+  behavior changed - `#534`/`#535`/`#536` are UI logic and copy; F8's confirmation is a native
+  observation, not a code change.
+- **Decisions and assumptions:** recorded at the `aif-grilling` round for `#536` - A1 (UI-only gate,
+  no `JobActionsStore` change), A3 (inline reason + jump, not a bare disabled button), A4 (don't gate
+  `Update application` the same way), B1 (scoped fix over a persisted route-state machine). All four
+  taken as the maintainer's recommended option.
+- **Risks or compatibility impact:** none identified. The one risk this watch tracked (F8) was walked
+  and cleared rather than assumed safe.
+- **Open issues or blockers:** none. The apply-wizard step-gating audit opened with this session is
+  closed - F1-F7 fixed, F8 verified clear, F2 explicitly declined.
+- **Next first action:** none owed by this audit. Start the next session's first action from whatever
+  the maintainer raises next; `docs/product/CURRENT_STATE.md`'s top entry is this one until a new watch
+  supersedes it.
+- **Evidence:** `#534`, `#535`, `#536` diffs and CI runs; the maintainer's native F8 walkthrough report
+  in this session's chat transcript.
+
 ### 2026-08-23, PR #528 natively re-verified - all four lock-gap fixes confirmed in `tauri dev`
 
 - **Status:** complete - no code change, verification only.

@@ -1,3 +1,43 @@
+# Line endings. Every text file is checked out with LF on every platform,
+# Windows included. This is not a style preference - two things in this
+# repository are compiled from file *bytes*, so a CRLF checkout changes what
+# ships:
+#
+#   - `libs/skills/**/*.md` are embedded with `include_str!` (`ai/skills.rs`).
+#     `split_frontmatter` looks for the literal `---\n`, so with CRLF the whole
+#     frontmatter block is silently dropped: `job-identify` loses its model
+#     tier, `cv-import` loses its description. Every Windows build shipped so
+#     far carries that bug.
+#   - `apps/desktop/src-tauri/migrations/*.sql` are hashed by `sqlx::migrate!`
+#     at compile time, so CRLF produces different checksums than macOS or
+#     Linux, and `db.rs`'s pinned-checksum test fails there.
+#
+# Both were invisible until the `Windows check` workflow first compiled the
+# crate on Windows. Consequence of fixing it, recorded on purpose: a Windows
+# install made before this change recorded CRLF checksums in `_sqlx_migrations`
+# and will refuse to migrate against the LF ones. That is a reinstall, and it is
+# cheap now in a way it will not be later.
+* text=auto eol=lf
+
+# Belt and braces for the formats git's content detection could get wrong, and
+# for the media that is deliberately not in LFS.
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.gif -text
+*.ico -text
+*.icns -text
+*.webp -text
+*.mp4 -text
+*.zip -text
+*.ttf -text
+*.otf -text
+*.woff -text
+*.woff2 -text
+*.pdf -text
+*.docx -text
+*.xlsx -text
+
 # Git LFS. The guide's screenshots and screen recordings are binary and get
 # retaken, so every version git stores is a whole extra copy that can only be
 # removed by rewriting history. Pointers keep the history light; the bytes live

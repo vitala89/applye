@@ -14,6 +14,14 @@
   `apps/desktop/src-tauri/**`, plus `workflow_dispatch`. macOS is not in the matrix (it is the
   maintainer's own dev platform); Linux stays covered by `ci.yml`. Cross-checking Windows from a
   developer Mac was tried and does not work: `ring`'s build script needs the Windows C headers.
+  **It failed on its first run and found a shipped bug.** No `text eol` rule existed in
+  `.gitattributes`, so Windows checkouts were CRLF; `split_frontmatter` matches the literal `---\n`,
+  and skills are embedded with `include_str!` - so every Windows release built so far ships with its
+  AI skill frontmatter silently dropped (`job-identify` without its model tier, `cv-import` without its
+  description). `sqlx::migrate!` hashed the same CRLF bytes, giving Windows different migration
+  checksums than the other platforms. Fixed with `* text=auto eol=lf`; `git add --renormalize .` changed
+  no file contents, the repository was already LF. **Cost, accepted deliberately:** Windows installs
+  from 0.29.2 or earlier recorded CRLF checksums and must be reinstalled.
 - **A failed launch no longer aborts silently - and the specific 0.29.2 failure
   is still unidentified.** The maintainer installed the released macOS DMG and hit macOS' "unexpectedly
   quit while reopening windows" prompt. The installer is not at fault: the binary in `/Applications`

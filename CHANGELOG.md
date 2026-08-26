@@ -27,6 +27,20 @@ is the single source of truth; this file tracks what changed at each tag.
   database open) now end the launch through `startup::fail` instead: the reason is logged, a native
   error dialog names it, and the process exits with code 1 rather than aborting.
 
+- **Windows builds shipped with their AI skill files silently broken.** `libs/skills/**/*.md` are
+  embedded with `include_str!` at compile time, and `split_frontmatter` matches the literal `---\n`.
+  The repository had no `text eol` rule, so a Windows checkout produced CRLF, the prefix never matched,
+  and every skill's frontmatter was dropped whole - `job-identify` lost its model tier, `cv-import` lost
+  its description. Every Windows release so far carries this. `.gitattributes` now checks out all text
+  as LF on every platform. The same rule fixes `sqlx::migrate!`, which hashes migration bytes at compile
+  time and therefore produced different checksums on Windows than on macOS and Linux.
+  **Windows users upgrading from 0.29.2 or earlier must reinstall from scratch:** the old build recorded
+  CRLF checksums in `_sqlx_migrations`, and the corrected LF ones will not match, so migrations refuse
+  to run. Thanks to the fix above this now appears as a named error dialog rather than a silent abort.
+  macOS and Linux are unaffected - they were always LF.
+  Found by the new `Windows check` CI job on its first run; nothing had ever compiled this crate on
+  Windows outside a release tag.
+
 - **Release builds now write a log.** `tauri-plugin-log` was registered only under
   `cfg!(debug_assertions)`, so a shipped build produced no diagnostic output of any kind - which is why
   the crash above could not be traced to a specific line even with the crash reports in hand. It is now

@@ -17,6 +17,13 @@ on:
   pull_request:
     paths:
       - 'apps/desktop/src-tauri/**'
+      # Skill files are embedded into the crate with `include_str!` and their
+      # tests run in this job, so a change to one can break Windows without
+      # touching src-tauri at all.
+      - 'libs/skills/**'
+      # Line endings decide what `include_str!` and `sqlx::migrate!` see, which
+      # is the one thing this job exists to catch.
+      - '.gitattributes'
       - '.github/workflows/windows-check.yml'
   workflow_dispatch:
 

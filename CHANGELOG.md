@@ -10,6 +10,29 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.29.4] - 2026-08-26
+
+### Fixed
+
+- **A failed launch no longer aborts the app silently, and no longer traps macOS in the "reopen its
+  windows" loop.** An installed 0.29.2 build crashed four times in a row on a real machine (and 0.29.0
+  did the same on 20 August): `SIGABRT`, `abort() called`, stack
+  `tao::app_delegate::did_finish_launching` -> `panic_cannot_unwind`. The cause is structural, not
+  incidental: Tauri v2 runs `Builder::setup` from inside `RuntimeRunEvent::Ready`, which on macOS is
+  dispatched from `applicationDidFinishLaunching`, an `extern "C"` callback. A panic there cannot
+  unwind, so any failure in `setup` becomes an immediate `abort` - no window, no dialog, and a panic
+  message written to a stderr that a Finder-launched app discards. macOS then treats each following
+  launch as a crashed window restore and offers to reopen, which crashes again.
+  The three hard failures in `lib.rs` (updater-plugin registration, app-data-directory resolution,
+  database open) now end the launch through `startup::fail` instead: the reason is logged, a native
+  error dialog names it, and the process exits with code 1 rather than aborting.
+
+- **Release builds now write a log.** `tauri-plugin-log` was registered only under
+  `cfg!(debug_assertions)`, so a shipped build produced no diagnostic output of any kind - which is why
+  the crash above could not be traced to a specific line even with the crash reports in hand. It is now
+  registered in every build, with an explicit log-directory target, and a panic hook installed before
+  the Tauri builder appends every panic (message, location) to `startup-crash.log` in the same folder.
+
 ## [0.29.3] - 2026-08-26
 
 ### Changed
@@ -1938,7 +1961,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.29.3...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.29.4...HEAD
+[0.29.4]: https://github.com/vitala89/applye/compare/v0.29.3...v0.29.4
 [0.29.3]: https://github.com/vitala89/applye/compare/v0.29.2...v0.29.3
 [0.29.2]: https://github.com/vitala89/applye/compare/v0.29.1...v0.29.2
 [0.29.1]: https://github.com/vitala89/applye/compare/v0.29.0...v0.29.1

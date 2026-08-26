@@ -44,6 +44,96 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-26, installed build aborted at launch - root cause named, silent abort replaced
+
+- **Status:** complete for the code change; the exact 0.29.2 failure string is unrecoverable and is
+  recorded as such below.
+- **Agent/tool:** Claude Code.
+- **Branch:** `chore/release-0.29.4`, off `main` at `16eaf5f7`. Cut as its own patch release at the
+  maintainer's call.
+- **Commits:** see the branch.
+- **Pull request:** opened from the branch above.
+- **Objective:** the maintainer installed the released macOS DMG, and the app showed macOS' "Applye
+  unexpectedly quit while reopening windows" prompt on launch; dismissing it let the app start. Asked
+  to find the cause and fix the installer.
+- **Completed:**
+  - **The installer was cleared as the cause, on evidence.** The binary in `/Applications/Applye.app`
+    hashes identically to the one inside `Applye_0.29.2_aarch64.dmg`
+    (`8bd948a4...c1ac415f`), so the copy is intact. What crashed is the app itself.
+  - **Root cause of the crash class named from the four crash reports** (`16:10:42`, `16:10:50`,
+    `16:12:31` under Rosetta, `16:13:32`, plus the same signature on 0.29.0 on 20 August): all are
+    `EXC_CRASH`/`SIGABRT` with `abort() called`, stack
+    `tao::platform_impl::platform::app_delegate::did_finish_launching` -> `panic_cannot_unwind`. Tauri
+    v2 calls `Builder::setup` from `RuntimeRunEvent::Ready` (`tauri-2.11.5/src/app.rs:1424`), which on
+    macOS is dispatched from `applicationDidFinishLaunching` - an `extern "C"` callback. A panic in
+    `setup` therefore cannot unwind and aborts the process. macOS then reads each following launch as a
+    crashed window restore and offers to reopen, which aborts again; the system log for the 16:10:42
+    launch shows `_reopenWindowsAsNecessaryIncludingRestorableState: hasPersistentStateToRestore=1`.
+  - **Failure narrowed inside `setup`.** The unified log shows the webview was fully created
+    (`WebPageProxy::loadRequestWithNavigationShared` at `42.953`) 13 ms before the abort at `42.966`,
+    so window creation succeeded. No `sqlx-sqlite-worker-*` thread exists in any of the four crash
+    reports (sqlx names its per-connection threads, `sqlx-sqlite-0.9.0/src/options/mod.rs:212`), so no
+    SQLite connection was ever opened: the panic is in the setup closure, at or before
+    `SqlitePoolOptions::connect_with`.
+  - **The three hard failures in `lib.rs` now end the launch gracefully** through the new
+    `startup::fail`: reason logged, native error dialog, `exit(1)`. No abort, so no reopen loop.
+  - **`tauri-plugin-log` is registered in release builds too**, with an explicit log-directory target,
+    and a panic hook installed before the builder appends every panic to `startup-crash.log`.
+- **Not completed:**
+  - **The exact error string of the maintainer's 0.29.2 crashes is not recoverable** and no fix is
+    claimed for a specific line. Rust writes panics to stderr; a Finder-launched app discards stderr,
+    and the release build registered no logger at all. The app has started cleanly on every attempt
+    since, so it could not be reproduced either. The change above is what makes the next occurrence
+    self-diagnosing.
+  - The error dialog was exercised in a bare-binary run (the task ran, the message was logged) but not
+    confirmed visible in a signed bundle: re-signing a copied bundle ad hoc got it `SIGKILL`ed by code
+    signing, and a full release build was out of scope for this watch.
+  - Ad-hoc signing itself is untouched. The system log shows `no CMS blob`, `Unable to get teamId`,
+    `Signature=adhoc`; Developer ID signing and notarisation remain open and were explicitly deferred
+    by the maintainer in this session.
+  - **No runtime smoke test of the Windows or Linux images.** The new `Windows check` workflow proves
+    the code compiles and its tests pass there; it does not prove the packaged installer launches.
+    Doing that headlessly (`xvfb-run` the AppImage on Linux, silent-install the `.msi` and check the
+    process survives on Windows) is a further piece of work and was not started.
+- **Also in this watch:** cut as `0.29.4` (version bumped in package.json, package-lock.json,
+  tauri.conf.json, Cargo.toml, Cargo.lock and the badge in all six READMEs; `CHANGELOG.md` section and
+  compare link added), and added `.github/workflows/windows-check.yml` because `ci.yml` gates on
+  `ubuntu-latest` alone, which left the new `#[cfg(target_os = "windows")]` branch in `startup.rs`
+  uncompiled until tag time. Cross-checking that target from macOS was attempted first and fails:
+  `cargo check --target x86_64-pc-windows-msvc` dies in `ring`'s build script on a missing `assert.h`.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/startup.rs` (new, 125 lines),
+  `apps/desktop/src-tauri/src/lib.rs` (141 -> 185 lines, budget 400),
+  `.github/workflows/windows-check.yml` (new), `CHANGELOG.md`, `package.json`, `package-lock.json`,
+  `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/Cargo.toml`,
+  `apps/desktop/src-tauri/Cargo.lock`, all six `README*.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** `cargo check`, `cargo clippy --all-targets` (clean), `cargo fmt`, `cargo test`
+  (384 passed, 1 ignored, 0 failed), `npm run quality:file-size` (passed),
+  `npm run quality:attribution` (passed), `npm run format:check` (passed), `git diff --check` (clean).
+  Behaviour verified by running the built binary against a deliberately unusable app-data path: it
+  logged `startup failed at opening the local database: create app data dir: File exists (os error 17)`
+  to `startup-crash.log` and to stderr, and exited without producing a crash report - previously this
+  class of failure produced `SIGABRT`.
+- **Privacy/security impact:** the new log file records panic messages and startup error strings, which
+  can contain local filesystem paths (and therefore the OS user name). It is written to the same
+  per-user log directory `tauri-plugin-log` already uses, never transmitted. No new capability, no new
+  dependency, no schema change.
+- **Decisions and assumptions:** the maintainer chose "diagnostics + soft failure" over first
+  attempting to reproduce with an instrumented build. The failing window is left on screen on purpose:
+  closing it exits the app before the dialog appears, and hiding it hands the app to AppKit automatic
+  termination, which quits silently with status 0 - both were measured during this watch. An unmanaged
+  `State<T>` returns an `InvokeError` rather than panicking (`tauri-2.11.5/src/state.rs:60`), so
+  leaving the frontend up for the second before exit is safe.
+- **Risks or compatibility impact:** release builds now write a log file where they previously wrote
+  nothing; log growth is bounded by `tauri-plugin-log`'s own rotation, and `startup-crash.log` only
+  grows on a panic.
+- **Open issues or blockers:** if the maintainer hits the crash again, `startup-crash.log` and
+  `Applye.log` will name the line; until then the specific trigger stays unknown.
+- **Next first action:** merge the `0.29.4` PR once `Windows check` and `CI` are green, then
+  `git tag -a v0.29.4 -m "Applye 0.29.4" && git push origin v0.29.4` on the maintainer's go-ahead -
+  and decide what happens to `v0.29.3`, whose draft release is still unpublished.
+- **Evidence:** `~/Library/Logs/DiagnosticReports/applye-desktop-2026-08-26-16*.ips`;
+  `log show --start "2026-08-26 16:10:42" --end "2026-08-26 16:10:43"`.
+
 ### 2026-08-26, apply-wizard step-gating audit closed - F1/F3/F4/F5/F6/F7 fixed, F8 natively cleared
 
 - **Status:** complete.

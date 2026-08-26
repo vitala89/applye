@@ -2,6 +2,7 @@ mod ai;
 mod commands;
 mod db;
 mod keys;
+mod startup;
 
 use tauri::Manager;
 
@@ -9,31 +10,74 @@ use crate::db::Db;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Before the builder: Tauri runs `setup` inside macOS'
+    // `applicationDidFinishLaunching`, where a panic aborts the process with no
+    // message anywhere. See startup.rs for the full reasoning.
+    startup::install_panic_hook();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
+            // Logging is registered first and in release builds too: without it
+            // a failed launch leaves nothing on disk to read, which is how the
+            // 0.29.x startup aborts stayed undiagnosable. Failing to register it
+            // is not itself fatal - the panic hook still writes to its own file.
+            if let Err(e) = app.handle().plugin(
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir {
+                            file_name: Some("Applye".into()),
+                        },
+                    ))
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::Stdout,
+                    ))
+                    .build(),
+            ) {
+                eprintln!("could not register the log plugin: {e}");
+            }
+
             // Auto-updater is desktop-only; the JS side drives the
             // check/prompt/download/install flow (see updater.service.ts).
             #[cfg(desktop)]
-            app.handle()
-                .plugin(tauri_plugin_updater::Builder::new().build())?;
-
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
+            if let Err(e) = app
+                .handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())
+            {
+                startup::fail(
+                    app.handle(),
+                    "registering the updater plugin",
+                    &e.to_string(),
+                );
+                return Ok(());
             }
 
             // Open the local SQLite DB in the OS app-data directory and run
-            // migrations before any command can be invoked.
-            let app_data_dir = app.path().app_data_dir().expect("resolve app data dir");
-            let db = tauri::async_runtime::block_on(Db::init(&app_data_dir))
-                .expect("initialize database");
+            // migrations before any command can be invoked. Every failure below
+            // ends the launch through startup::fail - never through a panic,
+            // which macOS would turn into an abort and a reopen-windows loop.
+            let app_data_dir = match app.path().app_data_dir() {
+                Ok(dir) => dir,
+                Err(e) => {
+                    startup::fail(
+                        app.handle(),
+                        "resolving the application data directory",
+                        &e.to_string(),
+                    );
+                    return Ok(());
+                }
+            };
+            let db = match tauri::async_runtime::block_on(Db::init(&app_data_dir)) {
+                Ok(db) => db,
+                Err(e) => {
+                    startup::fail(app.handle(), "opening the local database", &e);
+                    return Ok(());
+                }
+            };
             app.manage(db);
             // Handshake channels for the silent WYSIWYG print windows.
             app.manage(commands::print::PrintReady::default());

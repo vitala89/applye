@@ -1,5 +1,20 @@
 # Current Operational State
 
+- **Apply-wizard step-gating audit closed - F1/F3/F4/F5/F6/F7 fixed and merged, F8 natively cleared,
+  F2 declined.** The maintainer's native walkthrough that opened this audit reported the wizard broken
+  at several points, with screenshots. Three PRs fixed what code could fix:
+  [`#534`](https://github.com/vitala89/applye/pull/534) (F3, the shared CV-gap dialog's CV-only copy),
+  [`#535`](https://github.com/vitala89/applye/pull/535) (F5/F6/F7, the busy-race letting Start
+  over/Next/Back/Discard run during a commit), [`#536`](https://github.com/vitala89/applye/pull/536)
+  (F1/F4, skipped tailoring's dead end - no way to attach an existing CV, `Create application` saving
+  with none). All three merged clean, gates green throughout. F8 (Choose existing + tailor possibly
+  overwriting a library CV via `CvDraftService.persist()`'s `app.cvDocumentId` reuse) was flagged as a
+  risk, not a confirmed bug; the maintainer walked that exact sequence natively in `tauri dev` and
+  reported no overwrite. F2 (gate cover letter generation on a linked CV) was proposed during grilling
+  and declined - a cover letter is built from the profile and job description, not the CV. See
+  `docs/internal/DUTY_WATCH.md`'s 2026-08-26 entry for the full session record. Nothing open from this
+  audit.
+
 - **Apply-wizard step-gating audit, Этап 2+3 closed.** `#534` closed F3, `#535` closed F5/F6/F7. This
   pass closes F1/F4 with a scoped fix, grilled with the maintainer rather than the originally-sketched
   persisted route-state machine (`aif-grilling`: A1 UI-only gate, A3 reason+jump, A4 don't gate Update
@@ -14,8 +29,9 @@
   tailor may overwrite a library CV - flagged, not verified natively), F2 (gate cover letter on a
   linked CV - declined). No `libs/application` public API changed - the whole fix is presentational.
   Gates green: type-check, lint, `application` 1692/1692, `desktop` 1187/1187, file-size, attribution,
-  format. Compiled and rendered clean in `desktop-web` (no DB backend there, so the flow itself is
-  unverified natively - needs a `tauri dev` pass). **Not yet committed.**
+  format. Compiled and rendered clean in `desktop-web` (no DB backend there, so the flow itself was
+  unverified natively at the time). **Merged as `#536` (`cf185442`); F8 natively confirmed clear -
+  see the entry above.**
 
 - **Apply-wizard step-gating audit, Этап 1 closed: the busy-race half.** `PR #534` (merged) fixed the
   gap-dialog copy bug (F3). This pass closes F5/F6/F7: `jobs.component.html`'s wizard `busy` binding

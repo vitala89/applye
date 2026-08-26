@@ -10,6 +10,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.29.3] - 2026-08-26
+
 ### Changed
 
 - **Tailoring's pass 2 (the dual critique) now runs on the economy model tier instead of the quality
@@ -1936,7 +1938,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.29.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.29.3...HEAD
+[0.29.3]: https://github.com/vitala89/applye/compare/v0.29.2...v0.29.3
 [0.29.2]: https://github.com/vitala89/applye/compare/v0.29.1...v0.29.2
 [0.29.1]: https://github.com/vitala89/applye/compare/v0.29.0...v0.29.1
 [0.29.0]: https://github.com/vitala89/applye/compare/v0.28.0...v0.29.0

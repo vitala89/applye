@@ -1,5 +1,15 @@
 # Current Operational State
 
+- **Version bumped to `0.29.3` (package.json / package-lock.json / tauri.conf.json / Cargo.toml /
+  Cargo.lock, verified identical, plus the badge in all six READMEs) - not yet tagged.** Patch release:
+  everything queued in `CHANGELOG.md`'s `[Unreleased]` since `0.29.2` (2026-08-02) is a fix or a
+  performance change, no new capability, per this file's own semver rule. Once this bump is merged to
+  `main`, the remaining step is `git tag -a v0.29.3 -m "Applye 0.29.3" && git push origin v0.29.3` -
+  held for the maintainer's explicit go-ahead, since it triggers the CI build matrix and opens a public
+  draft release (`docs/RELEASE.md`). After a draft exists: smoke-test per platform per that doc's
+  checklist, then specifically exercise the auto-updater - install `0.29.2` (or whatever is currently
+  installed) and let it offer `0.29.3`, since `docs/RELEASE.md` is explicit that this is the one thing
+  "`latest.json` and the `.sig` files being present" does not by itself prove.
 - **Apply-wizard step-gating audit closed - F1/F3/F4/F5/F6/F7 fixed and merged, F8 natively cleared,
   F2 declined.** The maintainer's native walkthrough that opened this audit reported the wizard broken
   at several points, with screenshots. Three PRs fixed what code could fix:

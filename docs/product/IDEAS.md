@@ -44,14 +44,22 @@ re-narrowing - every item below is a Germany depth layer on a market-agnostic fe
 
 Already shipped, for reference: `DE-traditional` / `DE-ATS-modern` CV templates, Anschreiben
 generation in formal _Sie_, the Eigenbemuehungen tracker report with locale-correct printing,
-the profile photo plus the German photo prompt in the tailor wizard.
+the profile photo plus the German photo prompt in the tailor wizard, Bundesagentur fuer Arbeit
+and service.bund.de as built-in Discover sources (`migrations/0021`, `migrations/0030`), and
+Personio as a DE-dominant `ats_*` adapter.
 
 - **German Discover sources (P0)** - the built-in set (Remotive, WWR, Himalayas) is
   remote-first and English, so a Germany geo scope scanned three feeds that carry almost no
-  German posting. Bundesagentur fuer Arbeit (official public REST API, largest DE index),
-  EURES, Interamt/bund.de for oeffentlicher Dienst, plus `ats_*` adapters for the DE-dominant
-  stacks (Personio public job feed, join.com, softgarden). Explicitly **not** StepStone /
-  Indeed / Xing: ToS-hostile, Tier 3 - offer "open in browser" instead.
+  German posting. Bundesagentur fuer Arbeit and service.bund.de now cover the general and
+  public-sector labor markets (see above). Still open, each blocked on something concrete rather
+  than unresearched - see `docs/product/local-markets-analysis.md`'s 2026-08-27 follow-up for the
+  live-probe findings: **EURES** (works, but its only known endpoint is an undocumented internal
+  API, not a published one - a legality-tier call, not a technical one), **Interamt** (no live
+  feed found yet), **`ats_join`** (its job list needs a numeric company id with no slug lookup,
+  which only an HTML scrape could resolve - conflicts with this project's no-scraping rule),
+  **`ats_softgarden`** (its API requires a per-client token, unlike the other four keyless ATS
+  types). Explicitly **not** StepStone / Indeed / Xing: ToS-hostile, Tier 3 - offer "open in
+  browser" instead.
 - **Anschreiben: DIN 5008 + the two fields every DE posting asks for (P0)** - German ads
   routinely require _fruehestmoeglicher Eintrittstermin_ and _Gehaltsvorstellung_; letters
   without them get filtered. New wizard/skill inputs `earliest_start`, `salary_expectation`,

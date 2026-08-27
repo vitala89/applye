@@ -1,5 +1,13 @@
 # Current Operational State
 
+- **`v0.29.4` is released** (this contradicts several bullets below, which predate the release and
+  are kept for their reasoning rather than their status - see `docs/internal/DUTY_WATCH.md`'s
+  `2026-08-27` entries for the current state).
+- **service.bund.de added as a built-in Discover source for Germany** (Germany pack P0,
+  `migrations/0030_de_bund_source.sql`), shipped disabled by default. Uncommitted as of this entry.
+  Four other candidate German sources from the same roadmap item (EURES, Interamt, `ats_join`,
+  `ats_softgarden`) were live-probed and found not ready - see
+  `docs/product/local-markets-analysis.md`'s `2026-08-27` section.
 - **Version bumped to `0.29.4` (package.json / package-lock.json / tauri.conf.json / Cargo.toml /
   Cargo.lock, verified identical, plus the badge in all six READMEs) - not yet tagged.** Patch release
   carrying the startup-abort fix below on its own, at the maintainer's call. Once merged, the remaining

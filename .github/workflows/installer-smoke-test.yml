@@ -1,0 +1,118 @@
+name: Installer smoke test
+
+# Phase 1 of the headless installer smoke test (docs/internal/DUTY_WATCH.md,
+# 2026-08-27). `release.yml` only ever runs on a real version-tag push, so a
+# bug in smoke-test logic added there could not be caught until the next
+# actual release - exactly the risk `windows-check.yml` exists to avoid for
+# the build itself. This workflow exists to prove the mechanics work first,
+# against installers that are already published, before that logic moves
+# into `release.yml` as a blocking step per platform.
+#
+# Manual only: downloads a chosen release's Linux and Windows installers,
+# launches each headlessly, and asserts the process stayed up and wrote no
+# `startup-crash.log` (apps/desktop/src-tauri/src/startup.rs). Does not touch
+# the release pipeline itself and cannot block a release.
+#
+# macOS is deliberately not covered here: it is the maintainer's own dev
+# platform and is smoke-tested by hand on every release (docs/RELEASE.md,
+# "Step 0"), unlike Linux and Windows.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to test, without the v prefix (e.g. 0.29.4)'
+        required: true
+        default: '0.29.4'
+
+jobs:
+  linux-appimage:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install xvfb and the AppImage's FUSE runtime
+        run: sudo apt-get update && sudo apt-get install -y xvfb libfuse2t64
+
+      - name: Download the AppImage from the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "v${{ inputs.version }}" \
+            --repo "${{ github.repository }}" \
+            --pattern '*.AppImage'
+          chmod +x Applye_*.AppImage
+
+      - name: Launch headlessly and assert it stays up
+        run: |
+          rm -f ~/.local/share/dev.applye.app/logs/startup-crash.log
+
+          xvfb-run --auto-servernum ./Applye_*.AppImage &
+          pid=$!
+
+          sleep 10
+
+          if ! kill -0 "$pid" 2>/dev/null; then
+            echo "Applye exited within 10s of launch (pid $pid is gone)."
+            exit 1
+          fi
+
+          if [ -f ~/.local/share/dev.applye.app/logs/startup-crash.log ]; then
+            echo "startup-crash.log was written despite the process staying up:"
+            cat ~/.local/share/dev.applye.app/logs/startup-crash.log
+            kill "$pid" 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Applye is running (pid $pid) with no startup-crash.log."
+          kill "$pid" 2>/dev/null || true
+
+  windows-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Download the MSI from the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          gh release download "v${{ inputs.version }}" `
+            --repo "${{ github.repository }}" `
+            --pattern '*_en-US.msi'
+
+      - name: Install silently
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Filter '*.msi' | Select-Object -First 1
+          $log = Join-Path $env:RUNNER_TEMP 'install.log'
+          $proc = Start-Process msiexec.exe -ArgumentList "/i `"$($msi.FullName)`" /quiet /qn /norestart /l*v `"$log`"" -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            Get-Content $log -Tail 60
+            throw "msiexec exited with code $($proc.ExitCode)"
+          }
+
+      - name: Launch headlessly and assert it stays up
+        shell: pwsh
+        run: |
+          $crashLog = Join-Path $env:LOCALAPPDATA 'dev.applye.app\logs\startup-crash.log'
+          Remove-Item $crashLog -ErrorAction SilentlyContinue
+
+          $exe = Join-Path ${env:ProgramFiles} 'Applye\Applye.exe'
+          if (-not (Test-Path $exe)) {
+            throw "Installed binary not found at $exe"
+          }
+
+          $proc = Start-Process $exe -PassThru
+          Start-Sleep -Seconds 10
+
+          $alive = Get-Process -Id $proc.Id -ErrorAction SilentlyContinue
+          if (-not $alive) {
+            throw "Applye exited within 10s of launch (pid $($proc.Id) is gone)."
+          }
+
+          if (Test-Path $crashLog) {
+            Write-Host "startup-crash.log was written despite the process staying up:"
+            Get-Content $crashLog
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            throw "startup-crash.log present"
+          }
+
+          Write-Host "Applye is running (pid $($proc.Id)) with no startup-crash.log."
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue

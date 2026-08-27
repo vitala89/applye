@@ -32,8 +32,10 @@ jobs:
   linux-appimage:
     runs-on: ubuntu-22.04
     steps:
-      - name: Install xvfb and the AppImage's FUSE runtime
-        run: sudo apt-get update && sudo apt-get install -y xvfb libfuse2t64
+      - name: Install xvfb, the AppImage's FUSE runtime, and the GL stack WebKitGTK needs
+        # A bare ubuntu-22.04 runner has no desktop GL stack, so the AppImage's
+        # WebKitGTK dependency fails to load libEGL.so.1 even under xvfb-run.
+        run: sudo apt-get update && sudo apt-get install -y xvfb libfuse2 libegl1 libgl1-mesa-dri libgles2
 
       - name: Download the AppImage from the release
         env:
@@ -97,9 +99,14 @@ jobs:
           $crashLog = Join-Path $env:LOCALAPPDATA 'dev.applye.app\logs\startup-crash.log'
           Remove-Item $crashLog -ErrorAction SilentlyContinue
 
-          $exe = Join-Path ${env:ProgramFiles} 'Applye\Applye.exe'
-          if (-not (Test-Path $exe)) {
-            throw "Installed binary not found at $exe"
+          # The installed binary is named after the Cargo package
+          # (`applye-desktop`), not the product name shown in the UI - there is
+          # no `mainBinaryName` override in tauri.conf.json. Search rather than
+          # assume the install directory, since WiX's default location is not
+          # documented as stable.
+          $exe = Get-ChildItem -Path $env:ProgramFiles -Recurse -Filter 'applye-desktop.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $exe) {
+            throw "applye-desktop.exe not found under $env:ProgramFiles"
           }
 
           $proc = Start-Process $exe -PassThru

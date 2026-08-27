@@ -25,6 +25,9 @@ on:
         required: true
         default: '0.29.4'
 
+permissions:
+  contents: read
+
 jobs:
   linux-appimage:
     runs-on: ubuntu-22.04

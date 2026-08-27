@@ -10,6 +10,15 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **service.bund.de as a built-in Discover source for Germany.** Part of the Germany pack's
+  German Discover sources item (`docs/product/IDEAS.md`): the built-in set was remote-first and
+  English, so a Germany geo scope missed public-sector postings entirely. Adds the official
+  service.bund.de RSS feed, shipped disabled like every other built-in source. Four other
+  candidate sources from the same item (EURES, Interamt, `ats_join`, `ats_softgarden`) were
+  live-probed and found not ready to ship yet - see `docs/product/local-markets-analysis.md`.
+
 ## [0.29.4] - 2026-08-26
 
 ### Fixed

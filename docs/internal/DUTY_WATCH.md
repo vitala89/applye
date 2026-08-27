@@ -44,6 +44,79 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-27, Germany pack P0 - service.bund.de shipped, four candidate sources live-probed and scoped out
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** none yet - uncommitted working-tree changes on `main`
+- **Commits:** none yet
+- **Pull request:** none yet
+- **Objective:** Ship the German Discover sources item of `docs/product/IDEAS.md`'s Germany pack P0.
+  Grilled scope with the maintainer first (ambiguity: P0-only vs P1, which of five candidate
+  sources to build, whether DIN 5008 fields needed more work) - settled on P0-only, DIN 5008
+  fields already done (`earliestStart`/`salaryExpectation`/`noticePeriod`/`attachments` already
+  flow end-to-end), and initially "all five" new sources. Every candidate was then probed live
+  (this project's own convention - see `local-markets-analysis.md`), which found two of the five
+  do not fit the existing architecture and one has no working endpoint. Reported that back and
+  re-scoped to what was actually verified, rather than shipping broken or scraper-based sources.
+- **Completed:**
+  - **service.bund.de built-in source** (`migrations/0030_de_bund_source.sql`): RSS 2.0 feed of
+    public-sector postings (Bund/Laender/Kommunen), verified live (200, `text/xml`, real items).
+    Lands on the existing `rss` source type - zero new Rust parser code, same shape as DOU.ua in
+    migration 0025. Location is read via the existing `labelled_location`'s `"ort:"` label, which
+    already matches the feed's `"Ort: <city>"` text.
+  - **Migration checksum pin.** Added `(30, "b8d2fb1ac9881c...")` to `PINNED_CHECKSUMS` in
+    `src/db.rs`, required by the existing `applied_migrations_are_never_edited` test.
+  - **Findings documented** in `docs/product/local-markets-analysis.md` (new "Germany pack
+    follow-up" section) and `docs/product/IDEAS.md` (Germany pack bullet updated, bund.de moved to
+    "already shipped"), so the next session does not re-run this research:
+    - **EURES** - live and working (`POST europa.eu/eures/api/jv-searchengine/public/jv-search/search`
+      returns real JSON), but the endpoint is undocumented by its operator - a third-party
+      reverse-engineered wrapper of the EU portal's own internal search backend, not a published
+      integration surface like Bundesagentur's key. Technically buildable; left as a legality-tier
+      call for whoever ships it.
+    - **Interamt** - no live RSS or JSON endpoint found after probing every plausible URL
+      (`?rss=1`, `/rss`, `/feed` variants); needs its own research pass.
+    - **`ats_join`** - the job-list endpoint needs a numeric company id that the public URL slug
+      does not resolve to, and there is no lookup endpoint; only an HTML scrape of the company page
+      could resolve it, which conflicts with `discover_fetch.rs`'s explicit no-HTML-scraping rule.
+    - **`ats_softgarden`** - its JobBoard API requires a per-client token for every read, unlike the
+      other four keyless ATS types; does not fit the existing "type a slug" flow.
+- **Not completed:** EURES, Interamt, `ats_join`, `ats_softgarden` - all deliberately deferred, per
+  the findings above, not forgotten. P1 (Bewerbungsmappe, `DE-tabular`, Arbeitszeugnis decoder,
+  Eigenbemuehungen quota) was out of scope for this session by the maintainer's own choice.
+- **Files or packages changed:** `apps/desktop/src-tauri/migrations/0030_de_bund_source.sql` (new),
+  `apps/desktop/src-tauri/src/db.rs`, `docs/product/IDEAS.md`, `docs/product/local-markets-analysis.md`.
+- **Validation:** `cargo test --lib` (384 passed, 1 ignored, in `apps/desktop/src-tauri`),
+  `cargo clippy --lib -- -D warnings` (clean), `cargo check` (clean), `npm run quality:file-size`
+  (pass), `npm run quality:attribution` (pass), `npm run format:check` (pass), `git diff --check`
+  (clean). No TypeScript changed, so `type-check`/`lint`/`nx test` for the TS projects were not
+  run - nothing in `libs/`, `apps/desktop/src` changed. **Not run:** the native gate
+  (`npm run desktop:dev`) - a real scan against the live feed, and confirming the source appears
+  disabled-by-default in the Sources drawer, both need the maintainer's own hands.
+- **Privacy/security impact:** New external source, shipped disabled like every other built-in
+  (`is_enabled=0`) - no request reaches service.bund.de until the user turns it on. HTTPS-only
+  (enforced by `discover_fetch.rs`'s `require_https`, unchanged). No secrets, no key needed.
+- **Decisions and assumptions:** (1) Company-name extraction from the feed's "Arbeitgeber:" label
+  was deliberately not added - the generic `rss` branch already leaves `company` blank for
+  single-title feeds without a label reader, and adding one would be new parser code the "lands on
+  the existing branch" argument was chosen specifically to avoid. (2) The feed's description is
+  short structured metadata, not a full job description - accepted as the same class of limitation
+  Arbeitsagentur's placeholder JD already has, not a new problem.
+- **Risks or compatibility impact:** None to existing sources or schema. Additive migration row
+  only; `sources.type` stays a free-form string, no `SourceType`/`AtsBoardType` union touched.
+- **Open issues or blockers:** Uncommitted - no branch, commit, or PR yet; ask the maintainer
+  before creating one. Native gate (real scan, Sources-drawer render) unverified.
+- **Next first action:** Get the maintainer's go-ahead to branch and commit, then run the native
+  gate: enable service.bund.de in the Sources drawer under a Germany-scoped install and confirm a
+  real scan returns jobs with a populated location. If picking up EURES/Interamt/`ats_join`/
+  `ats_softgarden` next, start from `local-markets-analysis.md`'s 2026-08-27 section rather than
+  re-probing from scratch.
+- **Evidence:** Live probe transcript in this session (bund.de 200/`text/xml`, EURES 200/JSON with
+  `numberRecords`, join.com company-page `companyId` vs. list-endpoint numeric-id requirement,
+  softgarden docs' "accessible with the sent token" line, Interamt's 404/redirect responses); test
+  and gate output quoted above.
+
 ### 2026-08-26, installed build aborted at launch - root cause named, silent abort replaced
 
 - **Status:** complete for the code change; the exact 0.29.2 failure string is unrecoverable and is

@@ -103,3 +103,48 @@ therefore lead with "add your target companies' boards" rather than promising a 
 - Arbeitnow, No Fluff Jobs: one parser each plus tests, in the shape of the existing
   `parse_arbeitsagentur`.
 - Tier B markets: one branch each, gated on the research above.
+
+## Germany pack follow-up - 2026-08-27
+
+`docs/product/IDEAS.md`'s Germany pack P0 named five candidate German Discover sources beyond
+Bundesagentur: EURES, Interamt, bund.de, `ats_join`, `ats_softgarden`. Each was probed live before
+committing, the same rule as above.
+
+**Shipped** (migration `0030_de_bund_source.sql`): **service.bund.de** - `GET
+https://www.service.bund.de/Content/Globals/Functions/RSSFeed/RSSGenerator_Stellen.xml`, verified
+200 / `text/xml`, standard RSS 2.0 with `<title>`/`<link>`/`<description>` (the description carries
+"Arbeitgeber: X" / "Ort: Y" as labelled text, which the existing `labelled_location` reader already
+picks up via its `"ort:"` label). Lands on the existing `rss` source type - no new parser, same as
+DOU.ua.
+
+**Verified live but not shipped - EURES**: `POST https://europa.eu/eures/api/jv-searchengine/public/jv-search/search`
+returns real JSON (confirmed against `locationCodes: ["DE"]`, `numberRecords` in the hundreds of
+thousands). Unlike Bundesagentur, this is **not documented by its operator** - it is the EU's own
+portal's internal search backend, reverse-engineered by a third party
+(`rorar/EURES-API-Documentation` on GitHub) rather than a published integration surface. Technically
+buildable (new `api_eures` source type, new parser, and a new POST branch in `fetch_source_jobs`,
+which today only issues GET requests) - the open question is whether an undocumented backend
+clears this project's Tier-2 "published for machine reading" bar the way Bundesagentur's own
+published key does, and that is a call for whoever ships it, not a technical blocker.
+
+**Blocked - Interamt**: no live RSS or JSON endpoint found. `interamt.de/koop/app/stellensuche` and
+every `?rss=1` / `/rss` / `/feed` variant tried returned a redirect or 404, and the page itself
+carried no discoverable feed link. Secondary sources claim an RSS feed exists; the real URL is still
+unknown. Needs its own research pass, the same status as GOV.UK / Just Join IT above.
+
+**Blocked - `ats_join`**: the job-list endpoint
+(`GET https://join.com/api/public/companies/{numericId}/jobs?page=N&pageSize<=5`) takes a **numeric**
+company id, not the slug in a company's public URL (`join.com/companies/join` is id `54`, not
+`"join"`). No slug-to-id lookup endpoint exists; the id is only visible embedded in the company
+page's own HTML (`__NEXT_DATA__`). Resolving it would mean scraping an HTML page for a JSON blob,
+which is exactly what `discover_fetch.rs`'s own module doc rules out ("never to an HTML scraper") -
+an architecture conflict, not a research gap. (Per-job detail at `GET
+https://join.com/api/public/jobs/{id}` works and is rich - `description`, `tasks`, `requirements`,
+`company.domain` - it is only the slug-scoped list that is unreachable.)
+
+**Blocked - `ats_softgarden`**: `dev.softgarden.de`'s own JobBoard API docs describe
+`GET /jobboards/{channelID}` as "accessible with the sent token" - i.e. every read, including a job
+search, needs a per-client API token. That does not fit the zero-config "type a company's slug"
+flow the other four ATS types use (Greenhouse, Lever, Ashby, Personio all resolve from a public,
+keyless, slug-scoped endpoint). Shipping it would mean a per-user token entry flow that does not
+exist anywhere else in Discover today.

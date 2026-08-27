@@ -3,11 +3,18 @@
 - **`v0.29.4` is released** (this contradicts several bullets below, which predate the release and
   are kept for their reasoning rather than their status - see `docs/internal/DUTY_WATCH.md`'s
   `2026-08-27` entries for the current state).
-- **service.bund.de added as a built-in Discover source for Germany** (Germany pack P0,
-  `migrations/0030_de_bund_source.sql`), shipped disabled by default. Uncommitted as of this entry.
+- **service.bund.de shipped as a built-in Discover source for Germany** (Germany pack P0,
+  `migrations/0030_de_bund_source.sql`, merged in `#543`), disabled by default like every built-in.
   Four other candidate German sources from the same roadmap item (EURES, Interamt, `ats_join`,
   `ats_softgarden`) were live-probed and found not ready - see
   `docs/product/local-markets-analysis.md`'s `2026-08-27` section.
+- **`.github/workflows/installer-smoke-test.yml` added** (`#544`, fixed in `#545`): a
+  `workflow_dispatch`-only headless smoke test that downloads a chosen release's Linux AppImage and
+  Windows MSI, launches each, and asserts the process stays up with no `startup-crash.log`. A real
+  dispatch run against `v0.29.4` found and fixed three mechanical bugs on first contact (wrong Ubuntu
+  FUSE package name for 22.04, a missing GL stack for WebKitGTK under `xvfb-run`, and the installed
+  Windows binary being named `applye-desktop.exe` rather than `Applye.exe`) - see
+  `docs/internal/DUTY_WATCH.md`'s `2026-08-27` entry. Not yet wired into `release.yml`.
 - **Version bumped to `0.29.4` (package.json / package-lock.json / tauri.conf.json / Cargo.toml /
   Cargo.lock, verified identical, plus the badge in all six READMEs) - not yet tagged.** Patch release
   carrying the startup-abort fix below on its own, at the maintainer's call. Once merged, the remaining

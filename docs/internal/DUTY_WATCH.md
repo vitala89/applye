@@ -44,6 +44,81 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-27, headless installer smoke test (phase 1) - built, dispatched for real, three bugs found and fixed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `ci/installer-smoke-test` (merged as `#544`), `ci/installer-smoke-test-fixes` (open as
+  `#545` at the time of this entry)
+- **Commits:** `9cb3efb8` (workflow, on `#544`), `5233ddcb` (permissions fix, on `#544`), `9ea39dae`
+  (bug fixes, on `#545`)
+- **Pull request:** [#544](https://github.com/vitala89/applye/pull/544) merged,
+  [#545](https://github.com/vitala89/applye/pull/545) open
+- **Objective:** Item 2 of the previous `NEXT_SESSION_PROMPT.md` candidate list - a headless smoke
+  test proving a packaged installer actually launches, the same class of gap that let the
+  `2026-08-26` macOS crash-loop ship for months undetected. Grilled first: `release.yml` only ever
+  runs on a real version-tag push, so smoke-test logic added there directly could not be validated
+  until the next actual release - a materially higher-stakes blind spot than `windows-check.yml`'s
+  own (which only risked a PR gate, not the release pipeline). Settled on a two-phase plan: a
+  standalone `workflow_dispatch` workflow first, proven against already-published `v0.29.4` assets;
+  wiring into `release.yml` as a blocking step is phase 2, not started.
+- **Completed:**
+  - **`.github/workflows/installer-smoke-test.yml`** (phase 1): `workflow_dispatch` with a `version`
+    input, two jobs. `linux-appimage` downloads the AppImage via `gh release download`, runs it under
+    `xvfb-run`, waits 10s, asserts the process is alive and `~/.local/share/dev.applye.app/logs/
+startup-crash.log` is absent. `windows-msi` downloads the MSI, installs it silently
+    (`msiexec /quiet /qn`), launches the installed binary, and asserts the same two things against
+    `%LOCALAPPDATA%\dev.applye.app\logs\startup-crash.log`. macOS is deliberately not covered - it is
+    the maintainer's own dev platform and is already smoke-tested by hand every release
+    (`docs/RELEASE.md` Step 0).
+  - **A real dispatch was actually run** (not just written and left untested) against `v0.29.4`,
+    twice: once right after `#544` merged, which failed both jobs, and again after each fix, which
+    both now pass. Three real, mechanical bugs were found and fixed on `#545`, each the kind that
+    cannot be caught by `actionlint` or local review:
+    1. `libfuse2t64` was installed for AppImage FUSE support - that package name is Ubuntu 24.04's;
+       `ubuntu-22.04` (the runner used) needs `libfuse2`.
+    2. A bare `ubuntu-22.04` runner has no desktop GL stack, so the AppImage's WebKitGTK dependency
+       failed to load `libEGL.so.1`, then (once that was added) `libGLESv2.so.2`, even under
+       `xvfb-run`. Fixed with `libegl1`, `libgl1-mesa-dri` and `libgles2`.
+    3. The script assumed the installed Windows binary was `Applye.exe` at a fixed `Program Files`
+       path. It is actually `applye-desktop.exe` - Tauri names the binary after the Cargo package
+       (`applye-desktop`), and there is no `mainBinaryName` override in `tauri.conf.json`. Fixed by
+       searching for it with `Get-ChildItem -Recurse` rather than assuming a path.
+  - **`#544`'s own CI failure was diagnosed and fixed in-session**: the maintainer clicked GitHub's
+    "Commit suggestion" on a CodeQL finding ("Workflow does not contain permissions"), which pushed a
+    commit carrying a `Co-authored-by: Copilot Autofix powered by AI` trailer directly to the PR
+    branch. `quality:attribution` correctly failed on it. The underlying fix (`permissions:
+contents: read`) was kept; the commit was amended to drop the trailer and force-pushed to the
+    same (unmerged, single-author) branch.
+- **Not completed:** Phase 2 - wiring this logic into `release.yml` as a blocking step per platform
+  (Linux and Windows; macOS excluded), gated on the maintainer's go-ahead per the original grilling
+  round. `#545` is open, not yet merged.
+- **Files or packages changed:** `.github/workflows/installer-smoke-test.yml` (new, then fixed),
+  `docs/product/CURRENT_STATE.md`, `docs/internal/DUTY_WATCH.md`.
+- **Validation:** `actionlint` clean on every revision. No unit-test suite applies to a GitHub Actions
+  workflow; the real verification was the two live `workflow_dispatch` runs against `v0.29.4`
+  (linked above), which is the only way to prove headless-launch CI mechanics actually work. Local
+  `format:check`, `quality:attribution` and pre-commit hooks all passed on both PRs.
+- **Privacy/security impact:** None. Downloads only already-public release assets; no user data
+  involved. `permissions: contents: read` is now explicit (was previously implicit/default), which is
+  a tightening, not a loosening.
+- **Decisions and assumptions:** (1) Phase 1 deliberately does not touch `release.yml` at all, so it
+  cannot affect a real release even if broken. (2) The 10-second wait after launch is a guess, not
+  measured against a slow CI runner's actual webview-init time; if this becomes flaky once wired into
+  `release.yml`, raise it before adding retries. (3) The Windows job does not uninstall afterward -
+  the runner is destroyed after the job, so cleanup was judged unnecessary.
+- **Risks or compatibility impact:** None to the release pipeline - phase 1 is fully inert until
+  manually dispatched. The main risk is the untested 10s timing assumption once real CI variance
+  (phase 2) is in play.
+- **Open issues or blockers:** `#545` awaiting review/merge. Phase 2 (wiring into `release.yml`) not
+  proposed yet - needs the maintainer's go-ahead per the original grilling decision, same as always.
+- **Next first action:** Once `#545` merges, propose phase 2: add the same launch-and-assert logic as
+  additional steps in `release.yml`'s existing Linux and Windows matrix legs (operating on the
+  freshly-built local bundle, no download needed), as a blocking step - `fail-fast: false` already
+  isolates a failure to that one platform's leg.
+- **Evidence:** Live run links in the pull request bodies above; this entry's bug list is transcribed
+  directly from the failing job logs, not summarized from memory.
+
 ### 2026-08-27, Germany pack P0 - service.bund.de shipped, four candidate sources live-probed and scoped out
 
 - **Status:** complete

@@ -6,18 +6,20 @@ Before any non-trivial task, read these files in order:
 
 1. `AGENTS.md`
 2. `PROJECT_CONTEXT.md`
-3. `docs/product/CURRENT_STATE.md`
-4. `DUTY_WATCH.md`, starting with the latest entry
-5. `docs/governance/CODE_QUALITY.md`, including the section "Layers, and which one owns what"
-6. `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`
-7. `docs/governance/VALIDATION_MATRIX.md`
-8. The smallest relevant roadmap, plan, ADR, design-system, specification, stack skill, and code files
+3. `docs/domain-architecture.md`, including the ubiquitous language and pragmatic DDD policy
+4. `docs/product/CURRENT_STATE.md`
+5. `DUTY_WATCH.md`, starting with the latest entry
+6. `docs/governance/CODE_QUALITY.md`, including the section "Layers, and which one owns what"
+7. `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`
+8. `docs/governance/VALIDATION_MATRIX.md`
+9. The smallest relevant roadmap, plan, ADR, design-system, specification, stack skill, and code files
 
 Do not begin implementation from the user request alone. First verify the current branch, recent commits, open pull requests, repository state, and whether the requested work is already complete.
 
 ## Canonical roles
 
 - `PROJECT_CONTEXT.md` contains durable product and architecture context.
+- `docs/domain-architecture.md` is the canonical domain-language and pragmatic DDD contract. It defines the ubiquitous language, logical bounded contexts, layer ownership, and when tactical DDD patterns are justified. New business concepts, workflows, gateways, commands, and durable APIs must use it rather than inventing parallel vocabulary or speculative DDD scaffolding.
 - `docs/product/CURRENT_STATE.md` is the canonical operational state: current focus, blockers, completed work, and next action.
 - `DUTY_WATCH.md` is the chronological handoff log between sessions and agents.
 - `docs/governance/CODE_QUALITY.md` is the mandatory maintainability, decomposition, file-size, test, MCP, and attribution contract.
@@ -44,6 +46,7 @@ Before editing, state briefly:
 - whether `CURRENT_STATE.md` agrees with Git and the code;
 - what validation is required for the affected layers;
 - whether the task affects privacy, security, data migration, Tauri IPC, AI providers, or external tools;
+- **which domain owns the work and which terms it introduces or changes.** Reuse the ubiquitous language in `docs/domain-architecture.md`; do not create Aggregates, Entities, Value Objects, Repositories, Domain Events, or physical bounded-context libraries merely to satisfy a DDD pattern;
 - **where the work sits in the layering, and what owns its state.** A page component renders and
   delegates; screen state belongs in a signal store in `libs/application`, budget 250, and a page
   does not inject a data gateway (`ADR-0005`). The rule binds new code now; an existing page migrates

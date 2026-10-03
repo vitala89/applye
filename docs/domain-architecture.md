@@ -24,6 +24,9 @@ These are the preferred business terms for the current product. The vocabulary i
 | **Job Identity** | The company/title identity resolved for a job. | metadata blob |
 | **Job Score** | The evaluation of a job against the candidate profile. | result when the specific score is meant |
 | **Candidate Profile / Profile** | The user's reusable career profile and preferences. | user data, candidate record |
+| **Career Evidence** | A user-confirmed or explicitly sourced fact supporting a skill, achievement, project or career claim. | AI guess, generated claim |
+| **Career Story** | A reusable evidence-backed story for interviews and professional positioning. | STAR blob |
+| **Communication Profile** | User-controlled preferences and observed speaking/writing patterns used to personalise delivery without changing facts. | personality profile |
 | **Application** | The user's tracked application to a job. | submission when no submission occurred |
 | **Pipeline** | The tracked progression of applications through job-search stages. | board when the domain concept, rather than the UI, is meant |
 | **Pipeline Stage** | A business stage in the application pipeline. | column when the domain concept is meant |
@@ -34,7 +37,16 @@ These are the preferred business terms for the current product. The vocabulary i
 | **Draft** | A not-yet-final document or generated proposal that remains under user control. | temp record |
 | **Tailoring** | Adapting a CV or cover letter to a particular job. | processing, transformation |
 | **Scoring** | Evaluating job/profile fit. | processing, analysis when the specific workflow is meant |
+| **Company** | An employer/organisation that may have many jobs, applications, people, interviews and reports. | company string on an application |
+| **Job Opportunity** | A role/posting at a Company; it may exist without an Application. | application |
+| **Contact** | A person the user has intentionally added to their professional network. | every discovered person |
+| **Interaction** | A recorded touchpoint with a Contact, such as LinkedIn, email, call, interview or referral. | message when the broader touchpoint is meant |
 | **Interview Preparation** | Preparation material and workflow for an interview. | prep data |
+| **Preparation Plan** | A structured, adaptive curriculum for a company/role/stage. | generated chat |
+| **Interview Experience** | User-reviewed record of what happened in a real interview stage. | raw transcript |
+| **Community Contribution** | An explicit, reviewed payload a user chooses to share beyond private data. | automatic upload |
+| **Claim** | A statement derived from a source or inference that carries provenance and verification state. | fact without source |
+| **Freshness** | How current a claim is, independently of confidence. | confidence |
 | **AI Proposal** | AI-produced output presented for user review or acceptance. | decision, action |
 
 `Application` is not synonymous with `Job`. A job may exist without an application. Likewise, generating or tailoring documents does not mean an application has been submitted. Names and state transitions must preserve those distinctions.
@@ -47,9 +59,13 @@ Applye currently has the following **logical** domain areas:
 
 - **Job Discovery**: job sources, intake, identity, discovery, deduplication, scoring inputs.
 - **Application Tracking**: applications, pipeline stages, status history, follow-ups.
-- **Candidate Profile**: profile, experience, skills, preferences, reusable candidate information.
+- **Career Intelligence**: Candidate Profile, Career Evidence, Experience, Projects, Skills, Achievements, Career Stories, Education, Career Goals and Communication Profile.
 - **Documents**: CVs, cover letters, drafts, export, tailoring and document lifecycle.
-- **Interview Preparation**: interviews and preparation workflows.
+- **Company Intelligence**: companies, job opportunities, business/technology claims, reviews, people discovery, company preparation and relationship history.
+- **Network Intelligence**: contacts, relationships, interactions, outreach, follow-ups, referrals and provider-neutral communication channels.
+- **Interview Intelligence**: interviews, stages, research, Preparation Plans, learning/practice, mock interviews, debriefs, Interview Experiences and personal question banks.
+- **Community Intelligence**: explicit reviewed contributions, moderation, published interview reports, company interview patterns and public question intelligence.
+- **Evidence & Provenance**: sources, observations, claims, verification, confidence and freshness used across company, network and interview intelligence.
 - **AI Assistance**: opt-in proposals that assist another domain workflow without owning the user's decision.
 - **System and Settings**: application configuration and cross-cutting local system concerns. This is supporting infrastructure, not a place to dump business concepts that lack an owner.
 

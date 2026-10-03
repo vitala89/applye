@@ -1,9 +1,10 @@
 # Applye — Project Roadmap
 
-**applye.dev** · A free, open-source, local-first desktop application for an AI-powered
-job search. Built with Tauri 2 + Angular. All data stays on the user's machine. The user
-brings their own AI (CLI subscription or API key). No business model — a portfolio project
-and a genuinely useful personal tool.
+**applye.dev** · A Career Intelligence platform for serious job search, with two product surfaces:
+(1) a privacy-first, local-first Tauri desktop application and (2) an evolving web platform for
+account-backed workflows, public/company intelligence, learning and optional community knowledge.
+The desktop keeps its local SQLite/BYOK trust model; the web may use authenticated server-side
+storage and managed integrations where the user explicitly chooses cloud workflows.
 
 > Inspired by the methodology of career-ops.org (CLI-based), but with a graphical
 > interface for people who don't live in the terminal, plus a deeper interview-prep
@@ -37,7 +38,8 @@ This is the lens through which every other principle is read — not a slogan, a
 ## 1. Vision & Principles
 
 - **Augmentation, not automation.** (See §0 — the lead principle.) AI advises; the human decides.
-- **Local-first.** Everything lives in a local SQLite database on the user's machine. No cloud, no telemetry, no account.
+- **Desktop local-first.** Desktop data lives in local SQLite by default; cloud is never required for the desktop workflow.
+- **Web is account-backed.** The web product may persist user data server-side and host public/community intelligence. Cloud storage is explicit, scoped, and governed separately from desktop-local data.
 - **Bring your own AI.** Two modes: CLI-bridge (Claude Code / Codex / Gemini CLI by subscription, zero API tokens) or Direct API (user pastes their own key).
 - **Free forever.** MIT-licensed. No paid tier. A portfolio piece and a personal tool.
 - **Token-economical by design.** AI is only called where genuine judgement is needed. Everything else is plain code (0 tokens). Results are cached.
@@ -47,13 +49,55 @@ This is the lens through which every other principle is read — not a slogan, a
 ### Decision filter (every architectural choice must pass)
 1. Does it improve the job search?
 2. Does it respect user privacy?
-3. Does it work locally?
+3. For desktop work: does it preserve local-first operation? For web work: is the cloud boundary explicit and justified?
 4. Does it save tokens?
 5. Can it extend via Skills / Plugins / MCP?
-6. Does it fit Local-First?
+6. Does it respect the correct product boundary: desktop-local, web-cloud, or explicit opt-in sharing?
 7. **Does it strengthen the human rather than replace them?**
 
 If the answer is "no", it does not belong in Applye.
+
+---
+
+## 1b. Product Surfaces and Long-Term Direction
+
+The original roadmap was written for the desktop-first phase. That constraint remains correct for
+`apps/desktop`, but it is **not** a permanent restriction on the whole Applye product.
+
+### Desktop
+
+- Tauri + Angular.
+- Local SQLite as the private source of truth.
+- BYOK / CLI AI modes.
+- Rich personal workflows: profile, documents, applications, companies, networking, interview prep,
+  private notes and personal analytics.
+- Must remain useful without an Applye web account.
+
+### Web
+
+The web evolves beyond a static landing/docs surface into a real product layer.
+
+Planned capabilities include:
+
+- authenticated user accounts and server-side persistence;
+- Company Intelligence and target-company research;
+- Network/contacts and job-search CRM workflows;
+- Interview Intelligence, courses, practice and simulations;
+- public/community interview reports and question intelligence;
+- company/job/community discovery pages.
+
+The web does **not** imply automatic upload of desktop-local data. Desktop↔web sync is a separate
+future decision requiring its own ADR for identity, encryption, deletion and conflict semantics.
+
+### Shared architecture
+
+Desktop and web should share domain language, pure rules and use cases through Nx libraries where
+that improves cohesion, while keeping infrastructure adapters separate.
+
+See:
+- `docs/product/decisions/ADR-0006-career-company-network-interview-intelligence.md`
+- `docs/product/feature-briefs/career-company-network-interview-intelligence.md`
+- `docs/domain-architecture.md`
 
 ---
 

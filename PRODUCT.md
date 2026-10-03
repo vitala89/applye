@@ -1,7 +1,8 @@
 # PRODUCT.md - Applye
 
-Strategic design context for the Applye desktop app. Every impeccable command
-reads this before doing design work.
+Strategic design context for Applye. The product is desktop-first historically, but now has two
+planned surfaces: a local-first desktop application and an evolving web platform. Every impeccable
+command reads this before doing design work.
 
 ## Register
 
@@ -11,9 +12,11 @@ earned familiarity beats novelty.
 
 ## Platform
 
-**web** - Tauri 2 desktop app rendering an Angular frontend in a webview. No
-iOS/Android native targets (HIG/Material 3 do not apply). Responsive behavior is
-about window resizing on desktop, not mobile breakpoints.
+**desktop** - Tauri 2 rendering an Angular frontend in a webview. Desktop remains local-first.
+
+**web** - `apps/web` evolves from marketing/docs into a full web product for account-backed
+workflows, public/company intelligence, learning and optional community knowledge. Web UX may have
+responsive/browser concerns that do not apply to the Tauri shell.
 
 ## Users
 
@@ -25,17 +28,20 @@ literacy; the app must stay legible to a non-developer while rewarding fluency.
 
 ## Purpose
 
-Help a job seeker run their whole search from one private, offline-first place:
-capture and vet jobs, tailor a CV + cover letter per role, track the pipeline
-through to offer, and prep for interviews. AI features are opt-in and
-token-frugal; core workflows run offline. The user's resumes, notes, contacts
-and history stay on their machine.
+Help a job seeker understand and present their real career evidence, research companies and
+opportunities, build professional relationships, track applications, prepare for interviews, learn
+from real interview outcomes, and improve the next attempt.
+
+Desktop keeps private/local workflows offline-first. Web may store account-backed data server-side
+for web-only workflows and public/community intelligence. Any private-to-community sharing is
+explicit and reviewable.
 
 ## Positioning
 
-The privacy-first, local-first alternative to cloud job-search SaaS and ATS
-portals. Open-source. Your data never leaves the device without explicit intent.
-Calm and precise where competitors are noisy and engagement-hungry.
+A Career Intelligence OS that combines private local desktop workflows with an optional web and
+community layer. The differentiator is not autonomous applying; it is evidence-based career
+understanding, company/network intelligence, interview preparation and learning from real outcomes.
+Desktop data never leaves the device without explicit intent.
 
 ## Brand personality
 

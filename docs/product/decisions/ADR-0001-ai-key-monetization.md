@@ -18,8 +18,8 @@ This excludes two user segments:
    without managing keys or billing with a third party.
 
 We want to monetize the app without breaking its free/open/privacy-first
-positioning. The proposed model: keep BYOK free forever; add a paid **managed**
-tier where AI requests are proxied through Applye-operated infrastructure under
+positioning. The proposed model: keep the BYOK path available without an Applye subscription;
+add a paid **managed** tier where AI requests are proxied through Applye-operated infrastructure under
 our API accounts, gated by a subscription token.
 
 ### Current architecture (the seam)

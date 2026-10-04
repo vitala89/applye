@@ -187,7 +187,7 @@ export const en: Messages = {
       },
       {
         q: 'Is it really free?',
-        a: 'Yes. Applye is MIT-licensed and free: there is no paid tier and no subscription. The only thing you might pay for is your own AI usage, and that is billed by your provider, not by us.',
+        a: 'The Applye desktop core is MIT-licensed and free, and it works without an Applye subscription. Optional web or hosted services may have separate paid plans as they are introduced; the local desktop workflow remains usable without them.',
       },
       {
         q: 'What AI do I need?',

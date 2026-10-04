@@ -186,7 +186,7 @@ export const es: Messages = {
       },
       {
         q: '¿De verdad es gratis?',
-        a: 'Sí. Applye tiene licencia MIT y es gratuito: no hay plan de pago ni suscripción. Lo único que podrías pagar es tu propio uso de IA, y eso lo factura tu proveedor, no nosotros.',
+        a: 'El núcleo de escritorio de Applye tiene licencia MIT y es gratuito, y funciona sin una suscripción de Applye. Los servicios web o alojados opcionales podrán tener planes de pago independientes; el flujo local de escritorio seguirá siendo utilizable sin ellos.',
       },
       {
         q: '¿Qué IA necesito?',

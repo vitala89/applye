@@ -302,9 +302,10 @@ and tracks the whole pipeline on your own machine. It runs on Windows, macOS and
 never applies to a job on your behalf.
 
 **Is Applye free? Do I need an account?**
-Yes, free and MIT-licensed, and there is no account. There is no sign-up, no server, and no
-subscription - you download the app and it works. The only thing you may pay for is the AI you
-choose to connect, and you pay your AI provider directly, never Applye.
+The desktop app is free and MIT-licensed and works without an Applye account or subscription. You
+can keep using your own AI provider directly. Optional hosted/web services may have separate paid
+plans as they are introduced; they do not make the local desktop workflow dependent on a paid
+account.
 
 **Does Applye apply to jobs for me?**
 No, and it never will. Applye scores, drafts and suggests; you review, edit and submit. There is

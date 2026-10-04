@@ -5,12 +5,15 @@ A short map of how Applye is put together. For the _why_ behind any given choice
 
 ## Shape
 
-Applye is a [Tauri 2](https://v2.tauri.app/) desktop app: an **Angular** frontend talking to a
-**Rust** backend over Tauri's IPC. State and documents live in a local **SQLite** database - there
-is no server and no cloud component.
+Applye has a local-first desktop surface and an evolving web surface. The desktop app is
+[Tauri 2](https://v2.tauri.app/): an **Angular** frontend talking to a **Rust** backend over Tauri's
+IPC. Desktop state and documents live in a local **SQLite** database; the desktop workflow has no
+server or cloud dependency.
 
-It's an [Nx](https://nx.dev) monorepo so the desktop app, a landing site, and shared libraries can
-live together without duplicating contracts.
+It's an [Nx](https://nx.dev) monorepo so the desktop app, the web surface, and shared libraries can
+live together without duplicating domain contracts. The web surface is currently deployed as static
+Angular assets; its planned account-backed backend is defined in
+[ADR-0007](product/decisions/ADR-0007-web-backend-platform.md).
 
 ```
 applye/
@@ -18,7 +21,7 @@ applye/
 │   ├── desktop/          Tauri 2 + Angular - the primary app
 │   │   ├── src/          Angular frontend (UI, routes, components)
 │   │   └── src-tauri/    Rust backend (commands, SQLite, AI bridge, file I/O)
-│   └── web/              Angular landing site (applye.dev)
+│   └── web/              Angular web surface (currently static at applye.dev)
 └── libs/
     ├── core/             domain models, types, IPC contracts (framework-agnostic)
     ├── data/             Tauri invoke wrappers, DB/AI service abstractions
@@ -86,7 +89,7 @@ Imports go through the published entry point (`@applye/core`, never
 - Design is driven by CSS custom-property **tokens** in `libs/ui`, not ad-hoc styles. Both apps
   `@use` the same `libs/ui/src/styles/global`, so there is one token source, not one per app.
 
-## Backend (Rust / Tauri)
+## Desktop backend (Rust / Tauri)
 
 - Commands are exposed via Tauri IPC and consumed through typed wrappers in `libs/data`.
 - **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
@@ -96,6 +99,40 @@ Imports go through the published entry point (`@applye/core`, never
   as a second supported format.
 - Tauri v2 conventions: runtime check via `window.__TAURI_INTERNALS__`; events via `emit` + the
   `Emitter` trait; window actions need a capability entry under `src-tauri/capabilities/`.
+
+## Planned web backend
+
+The web backend is a **separate infrastructure adapter**, not a hosted copy of the Tauri/Rust
+backend. Per [ADR-0007](product/decisions/ADR-0007-web-backend-platform.md), the planned runtime is
+Cloudflare Workers with **TypeScript + Hono**.
+
+The intended direction is:
+
+```text
+apps/web (Angular)
+        |
+      /api/*
+        |
+Cloudflare Worker (TypeScript + Hono)
+        |
+application/domain contracts
+        |
+   +----+---------+----------------+
+   |              |                |
+  D1             R2          Queues/Workflows
+structured     objects        when justified
+  data
+```
+
+The desktop keeps Rust/Tauri/SQLite. Web and desktop may share framework-agnostic domain language,
+pure rules, and selected use cases, but they do not share persistence or runtime assumptions.
+
+The current static Cloudflare Pages deployment remains valid until the first account-backed backend
+milestone. At that point the preferred migration is to Cloudflare Workers with Static Assets, rather
+than adding an unrelated long-running server solely to host the API.
+
+Do not create an empty `apps/api` shell before implementation work begins. ADR-0007 records the
+decision now; the physical project is created with the first backend slice.
 
 ### The window's content-security policy
 

@@ -186,7 +186,7 @@ export const de: Messages = {
       },
       {
         q: 'Ist es wirklich kostenlos?',
-        a: 'Ja. Applye ist MIT-lizenziert und kostenlos: keine Bezahlstufe, kein Abo. Bezahlen könntest du höchstens deine eigene KI-Nutzung, und die rechnet dein Anbieter ab, nicht wir.',
+        a: 'Der Desktop-Kern von Applye ist MIT-lizenziert und kostenlos und funktioniert ohne Applye-Abo. Optionale Web- oder Hosting-Dienste können später eigene kostenpflichtige Tarife haben; der lokale Desktop-Workflow bleibt auch ohne sie nutzbar.',
       },
       {
         q: 'Welche KI brauche ich?',

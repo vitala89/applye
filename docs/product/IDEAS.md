@@ -124,8 +124,8 @@ Personio as a DE-dominant `ats_*` adapter.
 ## Later / Parking Lot
 
 - _Good ideas that are outside the immediate roadmap horizon._
-- **Managed AI tier (BYOK / Bridge / Managed proxy)** - monetization: app stays
-  free/MIT; paid tier proxies AI through Applye accounts under a subscription,
+- **Managed AI tier (BYOK / Bridge / Managed proxy)** - monetization: the desktop local core stays
+  free/MIT; an optional paid service proxies AI through Applye accounts under a subscription,
   for users with no key / no AI account. **Important - deferred, revisit later.**
   Already analyzed (not raw): decision + options in
   [ADR-0001](decisions/ADR-0001-ai-key-monetization.md); provider ToS checked

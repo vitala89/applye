@@ -186,7 +186,7 @@ export const pl: Messages = {
       },
       {
         q: 'Czy to naprawdę za darmo?',
-        a: 'Tak. Applye jest na licencji MIT i bezpłatne: nie ma planu płatnego ani subskrypcji. Zapłacić możesz najwyżej za własne użycie AI, a rozlicza je twój dostawca, nie my.',
+        a: 'Desktopowy rdzeń Applye jest bezpłatny i objęty licencją MIT oraz działa bez subskrypcji Applye. Opcjonalne usługi webowe lub hostowane mogą mieć osobne płatne plany; lokalny workflow desktopowy pozostanie użyteczny bez nich.',
       },
       {
         q: 'Jakiego AI potrzebuję?',

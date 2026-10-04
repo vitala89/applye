@@ -20,8 +20,8 @@ export class Press {
       value: 'Open-source, local-first desktop app for an AI-powered job search',
     },
     { label: 'Platforms', value: 'Windows, macOS, Linux (Tauri 2)' },
-    { label: 'License', value: 'MIT, free, no paid tier' },
-    { label: 'Privacy', value: 'No account, no telemetry, no cloud; data in local SQLite' },
+    { label: 'License', value: 'Desktop core: MIT-licensed and free; optional hosted services may be paid' },
+    { label: 'Privacy', value: 'Desktop: local SQLite, no account required; web/hosted data uses an explicit separate boundary' },
     {
       label: 'AI model',
       value:

@@ -33,9 +33,9 @@
       <h2>3. Your data is yours</h2>
       <p>
         The job search is intimate data: where you applied, what you earn, what you were rejected
-        from. It lives in a local database on your machine - not on our servers, because we do not
-        have servers. No account, no telemetry, no sync. Nothing leaves the device unless you
-        trigger it.
+        from. In Applye Desktop it lives in a local database on your machine. A web account, hosted
+        processing, or future sync is a separate product boundary and must be explicit rather than
+        silently turning local data into cloud data.
       </p>
     </section>
 
@@ -52,17 +52,18 @@
       <h2>5. Pay for judgement, not busywork</h2>
       <p>
         AI is a scarce, paid resource. Everything that can be deterministic code is deterministic
-        code, runs offline, and costs zero tokens. Models are called only where judgement is
-        genuinely needed, only when you click, and always with your own keys. A real job search
-        should cost cents, not a subscription.
+        code, runs locally where practical, and costs zero tokens. In desktop BYOK/CLI mode, model
+        calls use the AI access you choose. Optional managed AI may exist as a hosted service, but it
+        must not make ordinary deterministic work depend on an expensive model call.
       </p>
     </section>
 
     <section>
-      <h2>6. Open source, forever</h2>
+      <h2>6. Open desktop core</h2>
       <p>
-        MIT-licensed, developed in the open, free with no paid tier. Trust in a tool that reads your
-        CV should not be a promise; it should be verifiable in the code.
+        The local desktop core is MIT-licensed and developed in the open. Optional hosted services
+        may have paid plans, but the trust boundary of the local tool remains inspectable in code and
+        the desktop workflow does not become dependent on a paid Applye account.
       </p>
     </section>
   </div>

@@ -113,6 +113,11 @@ Potential web value includes:
 Desktop-local data must never silently become web data. Any sync or sharing boundary is explicit and
 requires its own architecture/privacy decision.
 
+The accepted web-backend platform decision is documented in
+`docs/product/decisions/ADR-0007-web-backend-platform.md`: Cloudflare Workers + TypeScript + Hono,
+with D1 as the initial relational store and R2 for object storage. This is infrastructure, not a
+reason to couple domain rules to Cloudflare.
+
 ---
 
 ## 4. Target user
@@ -738,6 +743,7 @@ A capability moves from this strategy into the actual roadmap only after answeri
 This document is a **candidate web product strategy**.
 
 - `ROADMAP.md` remains the canonical source for committed strategic direction and sequencing.
+- `ADR-0007-web-backend-platform.md` is authoritative for the planned web runtime/backend choice.
 - `PRODUCT.md` remains the shared high-level product/design context.
 - Accepted individual web capabilities should receive feature briefs before implementation.
 - Architectural choices with durable consequences require ADRs.

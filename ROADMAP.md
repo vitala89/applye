@@ -26,7 +26,7 @@ This is the lens through which every other principle is read — not a slogan, a
   honest assessment; the person judges and acts.
 - This is why the app **never auto-submits**, why the HR check is a blunt honest mirror rather than a
   gatekeeper, why prep produces study-cards the user *learns from* (not "AI does the interview for you"),
-  and why everything is local and bring-your-own-AI: the user's career is never handed to a black box.
+  and why desktop workflows remain local/BYOK while every web or hosted data boundary is explicit: the user's career is never silently handed to a black box.
 - Deliberately anti-hype. The AI is an excellent assistant and a poor judge of someone's life.
   Applye is honest about that line — which is exactly why engineers can trust it.
 
@@ -97,6 +97,7 @@ that improves cohesion, while keeping infrastructure adapters separate.
 See:
 - `docs/product/WEB_PRODUCT_STRATEGY.md` — candidate web product and monetization strategy; not committed scope by itself.
 - `docs/product/decisions/ADR-0006-career-company-network-interview-intelligence.md`
+- `docs/product/decisions/ADR-0007-web-backend-platform.md`
 - `docs/product/feature-briefs/career-company-network-interview-intelligence.md`
 - `docs/domain-architecture.md`
 
@@ -106,11 +107,13 @@ See:
 
 | Layer | Choice | Why |
 |---|---|---|
-| Shell | **Tauri 2** | Tiny binary, Rust backend, secure, web frontend |
-| Frontend | **Angular + TypeScript** | Core strength; clean senior-frontend showcase |
+| Desktop shell | **Tauri 2** | Tiny binary, secure native shell |
+| Frontend | **Angular + TypeScript** | Shared frontend stack across desktop and web |
 | State | **SignalStore (NgRx)** | Existing stack |
-| Backend | **Rust (Tauri commands)** | Keys, AI dispatch, files, DB access |
-| Database | **SQLite** (via `rusqlite`/`sqlx` in Rust) | One file, zero-config, local-first |
+| Desktop backend | **Rust (Tauri commands)** | Keys, AI dispatch, files, local DB access |
+| Desktop database | **SQLite** (via `rusqlite`/`sqlx` in Rust) | One file, zero-config, local-first |
+| Web backend (planned) | **Cloudflare Workers + TypeScript + Hono** | Edge-native HTTP/API layer with first-class TypeScript support |
+| Web data (planned) | **D1 initially + R2 for objects** | Low-ops Cloudflare-native persistence; repository boundaries keep PostgreSQL via Hyperdrive available later |
 | Drag & drop | **Angular CDK Drag and Drop** | Official, no extra deps, canonical kanban pattern |
 | Key storage | **OS keychain** (`keyring` crate) | Keys never in plaintext, never logged |
 | Documents | DOCX-first → PDF (existing pipeline) | ATS reliability |
@@ -564,17 +567,26 @@ When deciding the next feature, score candidates against:
 `.dev` is on the HSTS preload list — browsers force HTTPS automatically. Good security signal out of the box.
 
 ### Distribution model (important)
-Applye is a **desktop app** — downloaded and run on the user's machine. It is **not** a hosted
-web service. No VPS/app hosting is needed. Infrastructure is intentionally minimal and near-free:
+Applye has two deliberately different deployment models.
 
-| Need | Solution | Cost |
+- **Desktop** is downloaded and runs on the user's machine. Its core workflow does not require
+  Applye-hosted infrastructure.
+- **Web** is currently a static Angular site on Cloudflare Pages and may evolve into an
+  account-backed hosted product. Per ADR-0007, the preferred backend is Cloudflare Workers +
+  TypeScript + Hono, with D1/R2 as the initial data/storage layer.
+
+| Need | Solution | Cost model |
 |---|---|---|
 | Domain | Cloudflare Registrar (applye.dev) | at-cost |
-| Landing page + docs site | Cloudflare Pages (static) | free |
-| App binaries (Win/Mac/Linux) | GitHub Releases | free |
-| CI builds | GitHub Actions (Tauri action) | free |
+| Current static web | Cloudflare Pages | near-free |
+| Future web API | Cloudflare Workers | usage-based |
+| Future relational web data | Cloudflare D1 initially | usage-based |
+| Future object/file storage | Cloudflare R2 | usage-based |
+| Desktop binaries (Win/Mac/Linux) | GitHub Releases | free |
+| CI builds | GitHub Actions (Tauri action) | plan/usage-dependent |
 
-All under the Cloudflare ecosystem + GitHub — no server to maintain.
+The desktop trust model does not depend on the hosted web stack. Hosted infrastructure is introduced
+only for web capabilities that need accounts, persistence, managed services, or shared intelligence.
 
 ### GitHub setup
 - Private now; **public after the job change**.

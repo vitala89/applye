@@ -18,6 +18,7 @@ These documents reside at the repository root and act as the high-level canonica
 
 These documents reside here and are updated frequently by developers and AI agents during execution:
 
+- **[WEB_PRODUCT_STRATEGY.md](WEB_PRODUCT_STRATEGY.md)**: Candidate strategy for the account-backed web product, including product pillars, free/paid boundaries, privacy constraints, domain direction, rollout gates, and monetization hypotheses. It is a planning option, not committed roadmap scope by itself.
 - **[PLANNING.md](PLANNING.md)**: The lightweight planning model based on Personal Kanban, feature briefs, and rough estimation metrics (Priority, Effort, Risk, Impact).
 - **[CURRENT_STATE.md](CURRENT_STATE.md)**: Daily operational status, current branch focus, recently completed items, active feature briefs, and open questions.
 - **[FEATURE_INDEX.md](FEATURE_INDEX.md)**: Feature tracking list mapping features to their status, roadmap, and step-by-step plan sections.

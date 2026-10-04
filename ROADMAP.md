@@ -41,7 +41,7 @@ This is the lens through which every other principle is read — not a slogan, a
 - **Desktop local-first.** Desktop data lives in local SQLite by default; cloud is never required for the desktop workflow.
 - **Web is account-backed.** The web product may persist user data server-side and host public/community intelligence. Cloud storage is explicit, scoped, and governed separately from desktop-local data.
 - **Bring your own AI.** Two modes: CLI-bridge (Claude Code / Codex / Gemini CLI by subscription, zero API tokens) or Direct API (user pastes their own key).
-- **Free forever.** MIT-licensed. No paid tier. A portfolio piece and a personal tool.
+- **Desktop core stays free and MIT-licensed.** Local-first desktop workflows do not require a paid Applye account. Optional web, managed AI, hosted intelligence, sync, community, and other server-backed services may use paid plans when their ongoing infrastructure or network value justifies it.
 - **Token-economical by design.** AI is only called where genuine judgement is needed. Everything else is plain code (0 tokens). Results are cached.
 - **Honesty over inflation.** Never invent or exaggerate experience. The user always submits manually — the app never clicks "apply" for them.
 - **Privacy & legality first.** Especially relevant for German / EU context (GDPR, visa situation). No scraping of closed job boards.
@@ -95,6 +95,7 @@ Desktop and web should share domain language, pure rules and use cases through N
 that improves cohesion, while keeping infrastructure adapters separate.
 
 See:
+- `docs/product/WEB_PRODUCT_STRATEGY.md` — candidate web product and monetization strategy; not committed scope by itself.
 - `docs/product/decisions/ADR-0006-career-company-network-interview-intelligence.md`
 - `docs/product/feature-briefs/career-company-network-interview-intelligence.md`
 - `docs/domain-architecture.md`

@@ -41,7 +41,7 @@ This is the lens through which every other principle is read — not a slogan, a
 - **Desktop local-first.** Desktop data lives in local SQLite by default; cloud is never required for the desktop workflow.
 - **Web is account-backed.** The web product may persist user data server-side and host public/community intelligence. Cloud storage is explicit, scoped, and governed separately from desktop-local data.
 - **Bring your own AI.** Two modes: CLI-bridge (Claude Code / Codex / Gemini CLI by subscription, zero API tokens) or Direct API (user pastes their own key).
-- **Free forever.** MIT-licensed. No paid tier. A portfolio piece and a personal tool.
+- **Desktop core stays free and MIT-licensed.** Local-first desktop workflows do not require a paid Applye account. Optional web, managed AI, hosted intelligence, sync, community, and other server-backed services may use paid plans when their ongoing infrastructure or network value justifies it.
 - **Token-economical by design.** AI is only called where genuine judgement is needed. Everything else is plain code (0 tokens). Results are cached.
 - **Honesty over inflation.** Never invent or exaggerate experience. The user always submits manually — the app never clicks "apply" for them.
 - **Privacy & legality first.** Especially relevant for German / EU context (GDPR, visa situation). No scraping of closed job boards.
@@ -96,6 +96,7 @@ that improves cohesion, while keeping infrastructure adapters separate.
 
 See:
 - `docs/product/decisions/ADR-0006-career-company-network-interview-intelligence.md`
+- `docs/product/decisions/ADR-0007-web-backend-platform.md`
 - `docs/product/feature-briefs/career-company-network-interview-intelligence.md`
 - `docs/domain-architecture.md`
 
@@ -105,11 +106,13 @@ See:
 
 | Layer | Choice | Why |
 |---|---|---|
-| Shell | **Tauri 2** | Tiny binary, Rust backend, secure, web frontend |
-| Frontend | **Angular + TypeScript** | Core strength; clean senior-frontend showcase |
+| Desktop shell | **Tauri 2** | Tiny binary, secure native shell |
+| Frontend | **Angular + TypeScript** | Shared frontend stack across desktop and web |
 | State | **SignalStore (NgRx)** | Existing stack |
-| Backend | **Rust (Tauri commands)** | Keys, AI dispatch, files, DB access |
-| Database | **SQLite** (via `rusqlite`/`sqlx` in Rust) | One file, zero-config, local-first |
+| Desktop backend | **Rust (Tauri commands)** | Keys, AI dispatch, files, local DB access |
+| Desktop database | **SQLite** (via `rusqlite`/`sqlx` in Rust) | One file, zero-config, local-first |
+| Web backend (planned) | **Cloudflare Workers + TypeScript + Hono** | Edge-native HTTP/API layer with first-class TypeScript support |
+| Web data (planned) | **D1 initially + R2 for objects** | Low-ops Cloudflare-native persistence; keep a repository boundary so PostgreSQL via Hyperdrive remains a future option |
 | Drag & drop | **Angular CDK Drag and Drop** | Official, no extra deps, canonical kanban pattern |
 | Key storage | **OS keychain** (`keyring` crate) | Keys never in plaintext, never logged |
 | Documents | DOCX-first → PDF (existing pipeline) | ATS reliability |

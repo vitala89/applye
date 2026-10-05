@@ -25,8 +25,9 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
           applying across a border.
         </li>
         <li>
-          <strong>GDPR-aligned by architecture.</strong> Your data never leaves the machine, which
-          satisfies the strictest regime without a compliance setting to configure.
+          <strong>Desktop data stays local.</strong> Applye Desktop keeps career data on your
+          machine. It leaves only when you explicitly call an AI provider you configured. A future
+          web product is separate, and it is not available yet.
         </li>
       </ul>
     </section>

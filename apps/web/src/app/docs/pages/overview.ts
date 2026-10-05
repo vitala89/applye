@@ -17,12 +17,13 @@ const CAREER_OPS = 'https://career-ops.org';
     <section class="docs__section">
       <h2 id="what" class="docs__h2">What Applye is</h2>
       <p>
-        Applye is a free, open-source, local-first desktop app for an AI-powered job search in 2026.
-        It is inspired by the methodology of
+        Applye Desktop is a free, open-source, local-first app for an AI-powered job search. It is
+        inspired by the methodology of
         <a href="${CAREER_OPS}" target="_blank" rel="noopener">career-ops.org</a> (a CLI), rebuilt
         as a graphical desktop app so the same pipeline is usable without a terminal. You paste a
         job, it gives a blunt recruiter and ATS check, drafts a tailored CV you review, and tracks
-        the role across a kanban. The AI advises; you decide and submit.
+        the role across a kanban. The AI advises; you decide and submit. A Career Intelligence web
+        platform is in development and is not part of the app these docs describe.
       </p>
     </section>
     <section class="docs__section">

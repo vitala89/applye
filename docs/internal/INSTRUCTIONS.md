@@ -10,9 +10,12 @@ This file is the working agreement for building Applye. It tells any developer o
 
 1. **Augmentation, not automation.** AI advises; the human decides. Never auto-submit, never
    decide for the user. If a feature makes the user more dependent rather than more capable, reject it.
-2. **Local-first.** All user data lives in local SQLite on the user's machine. No cloud, no telemetry,
-   no account, ever.
-3. **Privacy by design.** Collect nothing. No analytics, no usage history, no documents leave the device.
+2. **Desktop local-first.** Desktop data lives in local SQLite. The desktop workflow does not require
+   an Applye account, cloud sync, or desktop telemetry. Desktop career data stays local unless the
+   user explicitly calls an external provider or a future explicit cloud action.
+3. **Desktop privacy by design.** The desktop app collects no telemetry and no usage history. A future
+   web product may store its own data on a server. It is not shipped. A web account does not upload
+   desktop data by itself. See ADR-0006 and ADR-0007.
 4. **Bring your own AI.** Two modes only: Direct API (user's key) and CLI-bridge (user's local CLI).
    Applye never sells or bundles AI.
 5. **Token economy.** Never call AI where plain code suffices. Cache by hash. Regenerate only when
@@ -141,11 +144,11 @@ desktop, web, and (later) mobile - write once, reuse everywhere.
   choice = ATS-parsing risk; colour = readability/print risk (colour barely affects text parsing -
   do not claim otherwise). Notes are non-blocking and only appear when the user leaves the safe
   default.
-- **Cloud AI is bring-your-own only (restates Principles 2 & 4).** Applye never proxies, resells, or
-  bundles AI access, and never adds an account or backend for AI. A hosted/managed offering for
-  non-technical users would be a SEPARATE product ("Applye Cloud") with its own principles - not a
-  toggle inside this app. Baseline privacy disclosure is shown for ANY Direct-API cloud provider;
-  DeepSeek keeps its extra China/adequacy line.
+- **Desktop AI is bring-your-own only (restates Principles 2 & 4).** Applye Desktop does not proxy,
+  resell, or bundle AI access, and the desktop workflow does not require an Applye account. A future
+  web product may add explicit hosted capabilities, including managed AI, under ADR-0007. That is not
+  a silent upload of desktop data, and it is not built yet. Baseline privacy disclosure is shown for
+  ANY Direct-API cloud provider; DeepSeek keeps its extra China/adequacy line.
 - **Privacy in git:** `profile.example.md` only; `.gitignore` personal data + the `.sqlite` file.
 - **Verify-don't-assume:** Tauri/Nx/plugin APIs from current docs at build time.
 - **Live-verify before advancing:** before moving to the next phase, run the key scenario live

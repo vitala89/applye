@@ -1,8 +1,91 @@
 # Current Operational State
 
+**As of 2026-10-05.** Verify `git rev-parse --short HEAD` before trusting a hash. This header was
+written against `main` at `f0c65da4` (`docs: define web backend and hosted-service boundary`, `#569`).
+
+## Active product direction
+
+Applye is entering phased implementation of Career Intelligence, Company Intelligence, Network
+Intelligence, Interview Intelligence, and Community Intelligence. The accepted decisions are
+[ADR-0006](decisions/ADR-0006-career-company-network-interview-intelligence.md),
+[ADR-0007](decisions/ADR-0007-web-backend-platform.md),
+[the web product strategy](WEB_PRODUCT_STRATEGY.md), and
+[the domain architecture](../domain-architecture.md). Do not reopen them unless current `main`
+contradicts them.
+
+The product people can use today is **Applye Desktop**: local-first, local SQLite, no Applye account
+required, MIT-licensed desktop core, BYOK / supported CLI AI, user-controlled AI calls. Desktop career
+data stays local unless the user explicitly invokes an external provider or a future explicit cloud
+action.
+
+**Applye Web is in development and is not shipped.** Do not describe account-backed workflows, Company
+Hub, Network CRM, Interview Intelligence, or community features as available. Do not create `apps/api`,
+Hono, D1, authentication, Cloudflare Workers resources, sync, or empty backend scaffolding. ADR-0007
+says the backend is created with the first real backend slice.
+
+`#567`, `#568`, and `#569` are merged. `#545` is merged. It is not an open pull request.
+
+## Implementation sequence
+
+Dependency order, not dates. This positioning cleanup is step 0. The next product-development slice
+is **Career Evidence domain foundation**.
+
+```text
+0. Project-state / positioning cleanup
+1. Career Evidence domain foundation
+2. Career Evidence desktop persistence
+3. Career Profile / Evidence UI
+4. AI Career Discovery
+5. Career Stories / Ownership
+6. Role Discovery
+7. Company foundation
+8. Company Hub
+9. Evidence & Freshness
+10. Company Research
+11. Network CRM
+12+. Interview Intelligence
+13+. Community Intelligence
+```
+
+Step 1 is pure domain rules for user-confirmed Career Evidence, with tests. It does not include a
+desktop migration, a profile UI, or a web backend.
+
+## Maintenance backlog
+
+Checked against `main` on 2026-10-05. None of these is the next product feature.
+
+- **Installer smoke-test phase 2.** `installer-smoke-test.yml` is still `workflow_dispatch`-only.
+  `release.yml` has no smoke step. Wiring it in still needs an explicit go-ahead.
+- **German pack follow-ups** remain in `docs/product/IDEAS.md` (Bewerbungsmappe, `DE-tabular`
+  Lebenslauf, Arbeitszeugnis decoder, Eigenbemühungen quota). EURES, Interamt, `ats_join`, and
+  `ats_softgarden` stay blocked on `docs/product/local-markets-analysis.md`. `service.bund.de` itself
+  shipped in `#543`.
+- **Native manual gate.** `docs/internal/NATIVE_GATE_BACKLOG.md` still has 36 unchecked items,
+  including a native check of `service.bund.de`. No agent can drive them.
+- **Tailoring performance.** `S1` and `S3` are still recorded open in the August handoff. This
+  cleanup did not re-measure them.
+- **Developer ID signing and notarisation** stay deferred. The blocker is the Apple Developer Program
+  fee, already decided. Do not re-propose it as a missed technical task.
+- **Missing tests.** `apps/desktop/src/app/pages/jobs/jobs.component.ts` is 419 lines and has no spec.
+- **Dependency and security maintenance.** Open Dependabot pull requests exist. They are not the
+  product queue. The August note of a single `glib` alert was not re-audited here.
+- **Feature-index reconciliation.** Historical rows in `docs/product/FEATURE_INDEX.md` are not fully
+  reconciled against everything shipped since `v0.22.0`. That reconciliation is maintenance. The
+  product pointer is the Career Evidence row.
+
+`v0.29.4` remains the current published tag (`6d1a1f9e`). That commit is not an ancestor of `main`.
+Leave the tag. The Career Intelligence documents have not been released.
+
+## Historical log (through 2026-08-27)
+
+The bullets below are the operational log from the `v0.29.4` work. Where they disagree with the
+sections above — including any statement that `#545` is still open, or that `0.29.4` is not yet
+tagged — the sections above win. The bullets stay because the maintenance backlog still depends on
+their reasoning.
+
 - **`v0.29.4` is released** (this contradicts several bullets below, which predate the release and
   are kept for their reasoning rather than their status - see `docs/internal/DUTY_WATCH.md`'s
-  `2026-08-27` entries for the current state).
+  `2026-08-27` entries for the state of that release work).
 - **service.bund.de shipped as a built-in Discover source for Germany** (Germany pack P0,
   `migrations/0030_de_bund_source.sql`, merged in `#543`), disabled by default like every built-in.
   Four other candidate German sources from the same roadmap item (EURES, Interamt, `ats_join`,

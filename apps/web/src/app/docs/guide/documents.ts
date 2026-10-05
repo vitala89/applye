@@ -161,8 +161,8 @@ import { RouterLink } from '@angular/router';
       </p>
       <p>
         It goes through the native save dialog, so the file lands where you chose and nowhere else.
-        Deleting a document removes it from the library and cannot be undone - there is no server
-        copy to recover.
+        Deleting a document removes it from the desktop library and cannot be undone. Applye Desktop
+        keeps no server copy to recover.
       </p>
     </section>
   `,

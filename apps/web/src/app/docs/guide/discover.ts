@@ -19,8 +19,9 @@ import { RouterLink } from '@angular/router';
   template: `
     <h1 class="docs__h1" id="discover">Discover: let jobs come to you</h1>
     <p class="docs__lede">
-      Discover scans legal, machine-readable sources with plain code - public APIs and feeds only, 0
-      tokens, nothing leaves your machine except HTTPS requests to the feeds themselves.
+      In Applye Desktop, Discover scans legal, machine-readable sources with plain code - public
+      APIs and feeds only, 0 tokens. Nothing leaves your machine except HTTPS requests to the feeds
+      themselves.
     </p>
 
     <figure class="docs__media">

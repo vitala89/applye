@@ -5,7 +5,7 @@ export const en: Messages = {
   meta: {
     title: 'Applye: Drafting is automated. Submitting is not.',
     description:
-      'A free, open-source desktop app for an AI-powered job search, running entirely on your own machine. Blunt recruiter checks, tailored CVs, a pipeline kanban.',
+      'Applye Desktop is a free, local-first job-search app. A Career Intelligence web platform is in development, not available yet.',
   },
 
   nav: {
@@ -41,7 +41,7 @@ export const en: Messages = {
   },
 
   consent: {
-    body: 'A cookieless counter already tallies visits without storing anything or identifying anyone. Google Analytics would additionally show what gets read and clicked, and it loads only if you allow it. No cookies either way, and the app itself never sends anything at all.',
+    body: 'A cookieless counter already tallies visits without storing anything or identifying anyone. Google Analytics would additionally show what gets read and clicked, and it loads only if you allow it. No cookies either way. Applye Desktop sends no telemetry of its own.',
     learnMore: 'What is collected',
     decline: 'Decline',
     allow: 'Allow analytics',
@@ -54,7 +54,7 @@ export const en: Messages = {
     eyebrow: 'The augmentation principle',
     titleTop: 'Drafting is automated.',
     titleAccent: 'Submitting is not.',
-    sub: 'An open-source, local-first desktop app for an AI-powered job search. Your data, your machine, your AI. It scores roles, tailors your CV, and tracks the pipeline, then hands every decision back to you.',
+    sub: 'Applye Desktop is an open-source, local-first app for an AI-powered job search. Your data stays on your machine, you bring your own AI, and every decision stays yours.',
     readDocs: 'Read the docs',
     download: 'Download',
     downloadSoon: 'Download: coming soon',
@@ -62,7 +62,7 @@ export const en: Messages = {
       'Signed installers ship with the first public release. Until then the app is built from source - the docs walk you through it.',
     viewSource: 'View source on GitHub',
     sourceSoon: 'Source: coming soon',
-    meta: 'Free · MIT licensed · No account · No telemetry',
+    meta: 'Free desktop core · MIT licensed · No Applye account · No desktop telemetry',
   },
 
   gap: {
@@ -82,7 +82,7 @@ export const en: Messages = {
 
   what: {
     eyebrow: 'What is Applye?',
-    body: 'Applye is a desktop app that runs the whole job-search loop end to end, on your machine. You paste a job description; it gives you a blunt HR and ATS check; it drafts a tailored CV you review and export; you move the role across a pipeline kanban as it progresses; and it helps you prepare for the interview. It is local-first, you bring your own AI (a direct API key or the CLI subscription you already pay for) and it is MIT-licensed and free.',
+    body: 'Applye Desktop runs the job-search loop on your machine. You paste a job description; it gives you a blunt HR and ATS check; it drafts a tailored CV you review and export; you move the role across a pipeline kanban; and it helps you prepare for the interview. It is local-first, you bring your own AI, and the desktop core is MIT-licensed and free. A Career Intelligence web platform is in development and is not available yet.',
   },
 
   features: {
@@ -117,8 +117,8 @@ export const en: Messages = {
       {
         title: 'Local-first & private',
         example:
-          'Everything lives in one SQLite file on your disk. No account to create, no cloud to sync to, no telemetry phoning home. Delete the file and it is gone.',
-        note: 'No cloud, no account, no tracking. Ever.',
+          'Everything in Applye Desktop lives in one SQLite file on your disk. No Applye account, no cloud sync, no telemetry. Delete the file and it is gone.',
+        note: 'Desktop: no cloud sync, no Applye account, no tracking.',
       },
     ],
   },
@@ -132,7 +132,7 @@ export const en: Messages = {
       'Documents in your language: CVs, cover letters, and interview prep in any of six languages, matched to what the role expects.',
       'Local conventions respected: photo or no photo, date and layout norms, and the ATS quirks that differ by market.',
       'Visa and work-permit awareness, including the EU Blue Card, for anyone applying across a border.',
-      'GDPR-aligned by architecture: your data never leaves your machine, which satisfies the strictest regime by default.',
+      'Applye Desktop keeps career data on your machine. It leaves only when you explicitly call an AI provider you configured. A future web product is separate, and it is not available yet.',
       'Germany, in depth: generate the Agentur für Arbeit Eigenbemühungen report straight from your tracked applications.',
     ],
   },
@@ -147,17 +147,17 @@ export const en: Messages = {
   },
 
   principles: [
-    { label: 'Local-first', line: 'One SQLite file on your machine.' },
-    { label: 'Privacy by design', line: 'Nothing is collected. No telemetry.' },
-    { label: 'Free / MIT', line: 'Open source, free.' },
+    { label: 'Local-first', line: 'Desktop: one SQLite file on your machine.' },
+    { label: 'Privacy by design', line: 'Desktop collects no telemetry.' },
+    { label: 'Free / MIT', line: 'The desktop core is open source and free.' },
     { label: 'Bring your own AI', line: 'Your key or your CLI subscription.' },
     { label: 'Augment, not automate', line: 'AI drafts. You decide and submit.' },
   ],
 
   trust: {
     eyebrow: 'Open source & honest',
-    title: 'Your data never leaves your machine.',
-    body: 'Applye is MIT-licensed and developed in the open. Read the code, read the data guarantee, run it yourself.',
+    title: 'Applye Desktop keeps your data on your machine.',
+    body: 'The desktop app is MIT-licensed and developed in the open. Read the code, read the data guarantee, run it yourself. A Career Intelligence web platform is in development; it is not available today, and a web account would not upload desktop data by itself.',
     repo: 'GitHub repository',
     repoSoon: 'Repository: coming soon',
     guarantee: 'Data sovereignty guarantee',
@@ -172,7 +172,8 @@ export const en: Messages = {
     notPoints: [
       'Not an auto-apply bot. It never submits for you.',
       'Not a scraper of closed boards. Discover reads public APIs and feeds; the rest you paste.',
-      'Not a cloud service: no account, no server, no sync.',
+      'Not a cloud service for Applye Desktop: no Applye account, no server copy, no sync.',
+      'Not a shipped web app. That platform is in development and will be account-backed.',
       'Not a way to fake experience. Honesty over inflation.',
     ],
   },
@@ -195,7 +196,7 @@ export const en: Messages = {
       },
       {
         q: 'Is my data private?',
-        a: 'Completely. Your profile, jobs, and documents live in a local SQLite database on your machine. There is no cloud, no account, and no analytics. Discover fetches openings straight from public APIs and feeds to your machine - nobody is told what you searched for - and everything else you paste in yourself.',
+        a: 'Applye Desktop is private by default. Your profile, jobs, and documents live in a local SQLite database, with no Applye account and no automatic cloud sync. Data leaves the machine only when you explicitly call an AI provider you configured. A future web product will store its own data on a server. It is not available today, and a web account would not upload desktop data by itself. Discover still fetches public feeds to your machine.',
       },
       {
         q: 'Does it auto-apply for me?',

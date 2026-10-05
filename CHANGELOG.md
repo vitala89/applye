@@ -10,6 +10,13 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Changed
+
+- **applye.dev now distinguishes Applye Desktop from a future web product.** The site still
+  describes the desktop app as local-first, with no Applye account and no automatic cloud sync.
+  It no longer says the whole product will never have an account, a server, or a sync. The Career
+  Intelligence web platform is described as in development, not as something you can use today.
+
 ### Added
 
 - **service.bund.de as a built-in Discover source for Germany.** Part of the Germany pack's

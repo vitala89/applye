@@ -60,12 +60,12 @@ export class Compare {
 
   /** What Applye is good at, and the one thing it is not. */
   readonly strengths: readonly string[] = [
-    'Data never leaves your machine',
+    'Desktop data stays on your machine',
     'Free, MIT, your own AI keys',
     'Local paperwork, first-class',
   ];
 
-  readonly limitation = 'Desktop only, no phone app';
+  readonly limitation = 'No phone app. The web platform is not available yet';
 
   readonly rows: CompareRow[] = [
     {
@@ -77,7 +77,7 @@ export class Compare {
     },
     {
       label: 'Where your data lives',
-      applye: 'Local SQLite on your machine',
+      applye: 'Desktop: local SQLite on your machine',
       saas: 'Their cloud',
       cli: 'Local files',
       sheet: 'Cloud (usually)',

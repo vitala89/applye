@@ -4,7 +4,7 @@ export const de: Messages = {
   meta: {
     title: 'Applye: Der Entwurf ist automatisiert. Das Absenden nicht.',
     description:
-      'Kostenlose, quelloffene Desktop-App für die KI-gestützte Jobsuche, ganz auf deinem Rechner. Ehrliche Recruiter-Checks, angepasste Lebensläufe, Pipeline-Kanban.',
+      'Applye Desktop ist eine kostenlose, lokale Jobsuche. Eine Career-Intelligence-Webplattform ist in Entwicklung und noch nicht verfügbar.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ export const de: Messages = {
   },
 
   consent: {
-    body: 'Ein cookiefreier Zähler erfasst Besuche bereits, ohne etwas zu speichern oder jemanden zu identifizieren. Google Analytics würde zusätzlich zeigen, was gelesen und geklickt wird, und lädt nur mit deiner Zustimmung. In beiden Fällen keine Cookies - und die App selbst sendet ohnehin nie etwas.',
+    body: 'Ein cookiefreier Zähler erfasst Besuche bereits, ohne etwas zu speichern oder jemanden zu identifizieren. Google Analytics würde zusätzlich zeigen, was gelesen und geklickt wird, und lädt nur mit deiner Zustimmung. In beiden Fällen keine Cookies. Applye Desktop sendet selbst keine Telemetrie.',
     learnMore: 'Was erfasst wird',
     decline: 'Ablehnen',
     allow: 'Analyse erlauben',
@@ -53,7 +53,7 @@ export const de: Messages = {
     eyebrow: 'Das Prinzip der Augmentation',
     titleTop: 'Der Entwurf ist automatisiert.',
     titleAccent: 'Das Absenden nicht.',
-    sub: 'Eine quelloffene, lokal arbeitende Desktop-App für die KI-gestützte Jobsuche. Deine Daten, dein Rechner, deine KI. Sie bewertet Stellen, passt deinen Lebenslauf an und verfolgt die Pipeline - jede Entscheidung bleibt bei dir.',
+    sub: 'Applye Desktop ist eine quelloffene, lokal arbeitende App für die KI-gestützte Jobsuche. Deine Daten bleiben auf deinem Rechner, du bringst deine eigene KI mit, und jede Entscheidung bleibt bei dir.',
     readDocs: 'Dokumentation lesen',
     download: 'Herunterladen',
     downloadSoon: 'Download: bald verfügbar',
@@ -61,7 +61,7 @@ export const de: Messages = {
       'Signierte Installer erscheinen mit dem ersten öffentlichen Release. Bis dahin wird die App aus dem Quellcode gebaut - die Dokumentation führt dich Schritt für Schritt durch.',
     viewSource: 'Quellcode auf GitHub ansehen',
     sourceSoon: 'Quellcode: bald verfügbar',
-    meta: 'Kostenlos · MIT-lizenziert · Kein Konto · Keine Telemetrie',
+    meta: 'Kostenloser Desktop-Kern · MIT · Kein Applye-Konto · Keine Desktop-Telemetrie',
   },
 
   gap: {
@@ -81,7 +81,7 @@ export const de: Messages = {
 
   what: {
     eyebrow: 'Was ist Applye?',
-    body: 'Applye ist eine Desktop-App, die den gesamten Bewerbungsablauf auf deinem Rechner abbildet. Du fügst eine Stellenanzeige ein; du bekommst einen ehrlichen HR- und ATS-Check; die App entwirft einen angepassten Lebenslauf, den du prüfst und exportierst; du schiebst die Stelle über ein Pipeline-Kanban; und sie hilft dir bei der Interviewvorbereitung. Alles lokal, mit deiner eigenen KI (eigener API-Schlüssel oder das CLI-Abo, das du ohnehin bezahlst) - MIT-lizenziert und kostenlos.',
+    body: 'Applye Desktop bildet den Bewerbungsablauf auf deinem Rechner ab. Du fügst eine Stellenanzeige ein; du bekommst einen ehrlichen HR- und ATS-Check; die App entwirft einen angepassten Lebenslauf, den du prüfst und exportierst; du schiebst die Stelle über ein Pipeline-Kanban; und sie hilft dir bei der Interviewvorbereitung. Alles lokal, mit deiner eigenen KI, der Desktop-Kern MIT-lizenziert und kostenlos. Eine Career-Intelligence-Webplattform ist in Entwicklung und noch nicht verfügbar.',
   },
 
   features: {
@@ -116,8 +116,8 @@ export const de: Messages = {
       {
         title: 'Lokal und privat',
         example:
-          'Alles liegt in einer einzigen SQLite-Datei auf deiner Festplatte. Kein Konto, keine Cloud-Synchronisierung, keine Telemetrie. Datei löschen - und es ist weg.',
-        note: 'Keine Cloud, kein Konto, kein Tracking. Nie.',
+          'In Applye Desktop liegt alles in einer einzigen SQLite-Datei auf deiner Festplatte. Kein Applye-Konto, keine Cloud-Synchronisierung, keine Telemetrie. Datei löschen - und es ist weg.',
+        note: 'Desktop: keine Cloud-Synchronisierung, kein Applye-Konto, kein Tracking.',
       },
     ],
   },
@@ -131,7 +131,7 @@ export const de: Messages = {
       'Unterlagen in deiner Sprache: Lebenslauf, Anschreiben und Vorbereitung in sechs Sprachen, passend zu dem, was die Stelle erwartet.',
       'Lokale Konventionen: Foto oder kein Foto, Datums- und Layout-Normen und die ATS-Eigenheiten, die sich je Markt unterscheiden.',
       'Visum und Arbeitserlaubnis mitgedacht, inklusive Blauer Karte EU, für alle, die sich über eine Grenze hinweg bewerben.',
-      'DSGVO-konform durch Architektur: deine Daten verlassen den Rechner gar nicht erst - damit ist auch die strengste Regelung erfüllt.',
+      'Applye Desktop behält Bewerbungsdaten auf deinem Rechner. Sie verlassen ihn nur, wenn du ausdrücklich einen KI-Anbieter aufrufst, den du selbst eingerichtet hast. Ein künftiges Webprodukt ist davon getrennt und noch nicht verfügbar.',
       'Deutschland im Detail: den Eigenbemühungen-Nachweis für die Agentur für Arbeit direkt aus deinen erfassten Bewerbungen erzeugen.',
     ],
   },
@@ -146,17 +146,17 @@ export const de: Messages = {
   },
 
   principles: [
-    { label: 'Lokal zuerst', line: 'Eine SQLite-Datei auf deinem Rechner.' },
-    { label: 'Datenschutz by Design', line: 'Es wird nichts erhoben. Keine Telemetrie.' },
-    { label: 'Kostenlos / MIT', line: 'Quelloffen und kostenlos.' },
+    { label: 'Lokal zuerst', line: 'Desktop: eine SQLite-Datei auf deinem Rechner.' },
+    { label: 'Datenschutz by Design', line: 'Der Desktop erhebt keine Telemetrie.' },
+    { label: 'Kostenlos / MIT', line: 'Der Desktop-Kern ist quelloffen und kostenlos.' },
     { label: 'Eigene KI', line: 'Dein Schlüssel oder dein CLI-Abo.' },
     { label: 'Unterstützen statt automatisieren', line: 'Die KI entwirft. Du entscheidest.' },
   ],
 
   trust: {
     eyebrow: 'Quelloffen und ehrlich',
-    title: 'Deine Daten verlassen deinen Rechner nicht.',
-    body: 'Applye ist MIT-lizenziert und wird offen entwickelt. Lies den Code, lies die Datengarantie, betreibe es selbst.',
+    title: 'Applye Desktop behält deine Daten auf deinem Rechner.',
+    body: 'Die Desktop-App ist MIT-lizenziert und wird offen entwickelt. Lies den Code, lies die Datengarantie, betreibe sie selbst. Eine Career-Intelligence-Webplattform ist in Entwicklung; sie ist heute nicht verfügbar, und ein Webkonto würde Desktop-Daten nicht von selbst hochladen.',
     repo: 'GitHub-Repository',
     repoSoon: 'Repository: bald verfügbar',
     guarantee: 'Garantie zur Datenhoheit',
@@ -171,7 +171,8 @@ export const de: Messages = {
     notPoints: [
       'Kein Auto-Bewerbungs-Bot. Es sendet nie für dich.',
       'Kein Scraper für geschlossene Jobbörsen. Discover liest öffentliche APIs und Feeds; den Rest fügst du selbst ein.',
-      'Kein Cloud-Dienst: kein Konto, kein Server, keine Synchronisierung.',
+      'Kein Cloud-Dienst für Applye Desktop: kein Applye-Konto, keine Serverkopie, keine Synchronisierung.',
+      'Keine fertige Web-App. Diese Plattform ist in Entwicklung und wird kontogestützt sein.',
       'Kein Weg, Erfahrung vorzutäuschen. Ehrlichkeit statt Aufblähen.',
     ],
   },
@@ -194,7 +195,7 @@ export const de: Messages = {
       },
       {
         q: 'Sind meine Daten privat?',
-        a: 'Vollständig. Profil, Stellen und Dokumente liegen in einer lokalen SQLite-Datenbank auf deinem Rechner. Keine Cloud, kein Konto, keine Analyse. Discover holt Stellen direkt aus öffentlichen APIs und Feeds auf deinen Rechner - niemand erfährt, wonach du gesucht hast - und alles Übrige fügst du selbst ein.',
+        a: 'Applye Desktop ist standardmäßig privat. Profil, Stellen und Dokumente liegen in einer lokalen SQLite-Datenbank, ohne Applye-Konto und ohne automatische Cloud-Synchronisierung. Daten verlassen den Rechner nur, wenn du ausdrücklich einen KI-Anbieter aufrufst, den du eingerichtet hast. Ein künftiges Webprodukt speichert seine eigenen Daten auf einem Server. Es ist heute nicht verfügbar, und ein Webkonto würde Desktop-Daten nicht von selbst hochladen. Discover holt öffentliche Feeds weiter auf deinen Rechner.',
       },
       {
         q: 'Bewirbt es sich automatisch für mich?',

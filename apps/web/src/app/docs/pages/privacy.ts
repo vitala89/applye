@@ -5,13 +5,15 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   template: `
     <h1 class="docs__h1" id="privacy">Privacy &amp; transparency</h1>
     <p class="docs__lede">
-      Nothing is collected. The design is GDPR-aligned because your data never leaves the device.
+      Applye Desktop collects no telemetry. Career data stays on the device unless you explicitly
+      call an AI provider you configured.
     </p>
     <section class="docs__section">
       <h2 id="data" class="docs__h2">Your data</h2>
       <p>
-        Everything lives in a local SQLite database on your machine. No cloud, no account, no
-        telemetry, no usage history. Delete the file and it is gone.
+        Applye Desktop keeps everything in a local SQLite database on your machine. No Applye
+        account, no cloud sync, no telemetry, no usage history. Delete the file and that desktop
+        copy is gone. A future web product is separate and is not available yet.
       </p>
     </section>
     <section class="docs__section">

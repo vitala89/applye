@@ -76,8 +76,8 @@ import { RouterLink } from '@angular/router';
         </li>
         <li>
           <strong>Delete all data</strong> - the factory reset. A two-step confirm wipes the local
-          database and removes keys from the keychain. Deleting your data is deleting a file; there
-          is no server copy to chase.
+          database and removes keys from the keychain. Deleting your desktop data is deleting a
+          file; Applye Desktop keeps no server copy to chase.
         </li>
       </ul>
     </section>

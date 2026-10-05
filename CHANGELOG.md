@@ -12,6 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Open dependency updates are applied together.** Angular is on 21.2.25, Nx stays on the 23.1 line, and the desktop shell's Tauri crates match the versions the open Dependabot pull requests requested, including Tauri 2.12. Those pull requests all edit the same lockfiles, so they land as one update. `rustls` is 0.23.45.
 - **applye.dev now distinguishes Applye Desktop from a future web product.** The site still
   describes the desktop app as local-first, with no Applye account and no automatic cloud sync.
   It no longer says the whole product will never have an account, a server, or a sync. The Career

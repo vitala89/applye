@@ -17,7 +17,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
           subscription you already have (Claude Code or Codex). Optional until you ask for an AI
           action.
         </li>
-        <li>No account. No terminal. No cloud service to sign up for.</li>
+        <li>No Applye account, no terminal, and no cloud signup to run Applye Desktop.</li>
       </ul>
     </section>
   `,

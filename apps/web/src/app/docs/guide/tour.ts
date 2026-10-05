@@ -19,8 +19,8 @@ import { RouterLink } from '@angular/router';
   template: `
     <h1 class="docs__h1" id="tour">First run &amp; quick tour</h1>
     <p class="docs__lede">
-      What happens the first time you open Applye, and what every item in the sidebar does. Three
-      minutes, no account, nothing leaves your machine.
+      What happens the first time you open Applye Desktop, and what every item in the sidebar does.
+      Three minutes, no Applye account, and this first-run data stays on your machine.
     </p>
 
     <figure class="docs__media">

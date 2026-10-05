@@ -17,11 +17,19 @@ export class Press {
     { label: 'Name', value: 'Applye' },
     {
       label: 'What it is',
-      value: 'Open-source, local-first desktop app for an AI-powered job search',
+      value:
+        'Applye Desktop today: open-source, local-first job search. A Career Intelligence web platform is in development and not available yet',
     },
     { label: 'Platforms', value: 'Windows, macOS, Linux (Tauri 2)' },
-    { label: 'License', value: 'Desktop core: MIT-licensed and free; optional hosted services may be paid' },
-    { label: 'Privacy', value: 'Desktop: local SQLite, no account required; web/hosted data uses an explicit separate boundary' },
+    {
+      label: 'License',
+      value: 'Desktop core: MIT-licensed and free; optional hosted services may be paid',
+    },
+    {
+      label: 'Privacy',
+      value:
+        'Desktop: local SQLite, no account required; web/hosted data uses an explicit separate boundary',
+    },
     {
       label: 'AI model',
       value:

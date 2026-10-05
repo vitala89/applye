@@ -44,7 +44,7 @@ export const appRoutes: Route[] = [
     data: {
       locale: 'en',
       description:
-        'A free, open-source desktop app for an AI-powered job search, running entirely on your own machine. Blunt recruiter checks, tailored CVs, a pipeline kanban.',
+        'Applye Desktop is a free, local-first job-search app. A Career Intelligence web platform is in development, not available yet.',
     },
   },
   ...localeLandingRoutes,
@@ -99,7 +99,7 @@ export const appRoutes: Route[] = [
     title: 'Privacy · Applye',
     data: {
       description:
-        'Applye keeps your job search in one local SQLite file. No account, no cloud, no telemetry. What that means in practice, and how to verify it.',
+        'Applye Desktop keeps career data in local SQLite. This site is separate. A future web product is not available yet.',
     },
   },
   {
@@ -229,7 +229,7 @@ export const appRoutes: Route[] = [
         title: 'Requirements · Applye Docs',
         data: {
           description:
-            'What you need to run Applye: a desktop OS and, optionally, one AI source. No account, no terminal, no cloud service to sign up for.',
+            'What you need to run Applye Desktop: a desktop OS and, optionally, one AI source. No Applye account and no cloud signup.',
         },
       },
       {

@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-05, align operational state and desktop/web positioning
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `chore/align-product-state-and-web-positioning`
+- **Commits:** recorded in the pull request
+- **Pull request:** opened from this branch
+- **Objective:** Refresh the operational state that still described August 2026, and stop the public site from stating desktop privacy rules as a permanent whole-product promise. Do not start Career Evidence.
+- **Completed:**
+  - `docs/product/CURRENT_STATE.md` now leads with the accepted Career Intelligence sequence. The August log stays underneath and is marked historical. `#545` is recorded as merged. The next product slice is Career Evidence domain foundation.
+  - `docs/internal/NEXT_SESSION_PROMPT.md` and `docs/product/FEATURE_INDEX.md` separate the maintenance backlog from that sequence.
+  - `docs/internal/INSTRUCTIONS.md` principles 2 and 3, and the desktop-AI bullet, now match ADR-0006 and ADR-0007 instead of "no account, ever."
+  - Public applye.dev copy in all six landing locales, privacy, docs, compare, press, blog, SEO defaults, and the press-kit README now distinguish current Applye Desktop from a future account-backed web product. Future web features are not described as available. Desktop local-first wording stays explicit.
+- **Not completed:** Career Evidence was not started. No `apps/api`, auth, sync, or domain model. `README.md` still opens with a whole-product "No cloud, no account, no telemetry" sentence; this pass scoped the public site, not the GitHub README translations. The August `glib` Dependabot alert was not re-audited. `S1`/`S3` were not re-measured.
+- **Files or packages changed:** operational docs (`CURRENT_STATE.md`, `NEXT_SESSION_PROMPT.md`, `FEATURE_INDEX.md`, `INSTRUCTIONS.md`, `DUTY_WATCH.md`, `CHANGELOG.md`) and `apps/web` copy, i18n, SEO, press kit.
+- **Validation:** `nx run web:lint --skip-nx-cache` passed. `nx run web:type-check --skip-nx-cache` passed. `nx test web --skip-nx-cache` passed, 6 suites, 80 tests, including locale key parity and the 160-character landing descriptions. `npm run web:build` succeeded and prerendered 39 routes. Initial bundle 510.63 kB, a warning against the 500 kB warning budget and under the 1 MB error budget. `npm run quality:file-size` passed; `apps/web/src/app/app.routes.ts` is 341/350 non-empty lines, same as base. `npm run quality:attribution` passed. `npm run format:check` passed. `git diff --check` passed. A generated `sitemap.xml` lastmod bump was reverted and is not part of the change.
+- **Privacy/security impact:** Public wording only. Desktop remains local-first, with no Applye account and no automatic sync. The site no longer says the whole product has no server. No new legal guarantee was added. No storage, auth, or network path changed.
+- **Decisions and assumptions:** ADR-0006, ADR-0007, and the web product strategy stay accepted. The implementation list in the state file is dependency order, not dates. Maintenance items were kept only where `main` still showed them: smoke-test phase 2 absent from `release.yml`, German-pack follow-ups still in `IDEAS.md`, 36 unchecked native-gate items, `jobs.component.ts` at 419 lines with no spec, Developer ID still deferred.
+- **Risks or compatibility impact:** Readers of older August bullets can still find "not yet tagged" and "PR #545 open" if they skip the new header. The header says those bullets lose when they conflict.
+- **Open issues or blockers:** none for this cleanup.
+- **Next first action:** After this PR merges, branch from `main` and implement Career Evidence domain foundation: pure domain rules and tests in `libs/core` for user-confirmed Career Evidence. No desktop migration, no UI, and no web backend in that slice.
+- **Evidence:** `main` was fast-forwarded to `f0c65da4` (`#569`) before the branch. A local skip-worktree flag on `ROADMAP.md` was hiding a July copy and blocking the fast-forward; the flag was cleared and the tracked file restored. That file is not part of this diff.
+
 ### 2026-08-27, headless installer smoke test (phase 1) - built, dispatched for real, three bugs found and fixed
 
 - **Status:** complete

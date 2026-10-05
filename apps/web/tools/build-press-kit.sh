@@ -45,11 +45,13 @@ cat > "$KIT/README.txt" <<'TXT'
 Applye press kit
 ================
 
-Applye is an open-source, local-first desktop app for an AI-powered job search.
+Applye Desktop is an open-source, local-first app for an AI-powered job search.
 It scores roles against your profile, tailors your CV per posting, drafts cover
-letters and follow-ups, preps you for interviews, and tracks the pipeline - all
-on your machine. No cloud, no account, no telemetry. You bring the AI you
-already pay for, and every submission stays a human decision.
+letters and follow-ups, preps you for interviews, and tracks the pipeline on
+your machine. The desktop app requires no Applye account and sends no telemetry.
+You bring the AI you already pay for, and every submission stays a human
+decision. A Career Intelligence web platform is in development and is not
+available yet. A web account would not upload desktop data by itself.
 
   Website   https://applye.dev
   Source    https://github.com/vitala89/applye

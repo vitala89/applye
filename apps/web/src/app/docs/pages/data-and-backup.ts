@@ -7,7 +7,7 @@ import { RouterLink } from '@angular/router';
   template: `
     <h1 class="docs__h1" id="data">Your data: where it lives and how to move it</h1>
     <p class="docs__lede">
-      Local-first is only a real promise if you can find, copy, and destroy your data yourself. Here
+      Applye Desktop is local-first only if you can find, copy, and destroy that data yourself. Here
       is exactly where it is.
     </p>
 
@@ -62,9 +62,9 @@ import { RouterLink } from '@angular/router';
       <h2 id="delete" class="docs__h2">Deleting everything</h2>
       <p>
         Settings has a two-step <strong>Delete all data</strong> action: it wipes the local database
-        and removes your keys from the keychain. Deleting your data here is deleting a file - there
-        is no server copy to request, chase, or wait 30 days for. If you prefer, delete the app-data
-        folder by hand; the result is identical.
+        and removes your keys from the keychain. Deleting your desktop data here is deleting a file.
+        Applye Desktop keeps no server copy to request, chase, or wait 30 days for. If you prefer,
+        delete the app-data folder by hand; the result is identical.
       </p>
       <p>
         What Applye cannot delete is data your AI provider retained on their side. That is governed

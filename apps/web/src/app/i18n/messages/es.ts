@@ -4,7 +4,7 @@ export const es: Messages = {
   meta: {
     title: 'Applye: redactar está automatizado. Enviar, no.',
     description:
-      'Aplicación de escritorio gratuita y de código abierto para buscar trabajo con IA, todo en tu equipo. Evaluación honesta, CV adaptado, kanban de candidaturas.',
+      'Applye Desktop es una app local y gratuita para buscar trabajo. La web de Career Intelligence está en desarrollo y aún no existe.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ export const es: Messages = {
   },
 
   consent: {
-    body: 'Un contador sin cookies ya registra las visitas sin almacenar nada ni identificar a nadie. Google Analytics mostraría además qué se lee y qué se pulsa, y solo se carga si tú lo permites. Sin cookies en ningún caso, y la aplicación en sí nunca envía nada.',
+    body: 'Un contador sin cookies ya registra las visitas sin almacenar nada ni identificar a nadie. Google Analytics mostraría además qué se lee y qué se pulsa, y solo se carga si tú lo permites. Sin cookies en ningún caso. Applye Desktop no envía telemetría propia.',
     learnMore: 'Qué se recoge',
     decline: 'Rechazar',
     allow: 'Permitir analítica',
@@ -53,7 +53,7 @@ export const es: Messages = {
     eyebrow: 'El principio de aumentar, no sustituir',
     titleTop: 'Redactar está automatizado.',
     titleAccent: 'Enviar, no.',
-    sub: 'Una aplicación de escritorio de código abierto y local para buscar trabajo con IA. Tus datos, tu equipo, tu IA. Puntúa vacantes, adapta tu CV y sigue tus candidaturas, y te devuelve cada decisión.',
+    sub: 'Applye Desktop es una aplicación de código abierto y local para buscar trabajo con IA. Tus datos se quedan en tu equipo, traes tu propia IA y cada decisión sigue siendo tuya.',
     readDocs: 'Leer la documentación',
     download: 'Descargar',
     downloadSoon: 'Descarga: muy pronto',
@@ -61,7 +61,7 @@ export const es: Messages = {
       'Los instaladores firmados llegan con la primera versión pública. Hasta entonces la app se compila desde el código fuente, y la documentación te guía paso a paso.',
     viewSource: 'Ver el código en GitHub',
     sourceSoon: 'Código: muy pronto',
-    meta: 'Gratis · Licencia MIT · Sin cuenta · Sin telemetría',
+    meta: 'Núcleo de escritorio gratis · MIT · Sin cuenta Applye · Sin telemetría de escritorio',
   },
 
   gap: {
@@ -81,7 +81,7 @@ export const es: Messages = {
 
   what: {
     eyebrow: '¿Qué es Applye?',
-    body: 'Applye es una aplicación de escritorio que ejecuta todo el ciclo de búsqueda de empleo en tu equipo. Pegas una oferta; obtienes una revisión franca de RR. HH. y ATS; la aplicación redacta un CV adaptado que tú revisas y exportas; mueves la vacante por un kanban de candidaturas; y te ayuda a preparar la entrevista. Todo local, con tu propia IA (tu clave de API o la suscripción de CLI que ya pagas), con licencia MIT y gratis.',
+    body: 'Applye Desktop ejecuta el ciclo de búsqueda de empleo en tu equipo. Pegas una oferta; obtienes una revisión franca de RR. HH. y ATS; la aplicación redacta un CV adaptado que tú revisas y exportas; mueves la vacante por un kanban; y te ayuda a preparar la entrevista. Todo local, con tu propia IA, y el núcleo de escritorio tiene licencia MIT y es gratis. Una plataforma web de Career Intelligence está en desarrollo y aún no está disponible.',
   },
 
   features: {
@@ -116,8 +116,8 @@ export const es: Messages = {
       {
         title: 'Local y privado',
         example:
-          'Todo vive en un único archivo SQLite en tu disco. Ninguna cuenta que crear, ninguna nube que sincronizar, ninguna telemetría. Borra el archivo y desaparece.',
-        note: 'Sin nube, sin cuenta, sin seguimiento. Nunca.',
+          'En Applye Desktop todo vive en un único archivo SQLite en tu disco. Sin cuenta de Applye, sin sincronización en la nube, sin telemetría. Borra el archivo y desaparece.',
+        note: 'Escritorio: sin sincronización en la nube, sin cuenta de Applye, sin seguimiento.',
       },
     ],
   },
@@ -131,7 +131,7 @@ export const es: Messages = {
       'Documentos en tu idioma: CV, cartas de presentación y preparación en cualquiera de los seis idiomas, según lo que pida la vacante.',
       'Convenciones locales: con foto o sin foto, formatos de fecha y maquetación, y las manías de los ATS que cambian según el mercado.',
       'Visado y permiso de trabajo, incluida la Tarjeta Azul de la UE, para quien se presenta desde otro país.',
-      'Alineado con el RGPD por arquitectura: tus datos no salen de tu equipo, lo que satisface incluso al régimen más estricto.',
+      'Applye Desktop guarda los datos de tu búsqueda en tu equipo. Solo salen cuando llamas expresamente a un proveedor de IA que tú configuraste. Un futuro producto web es aparte y aún no está disponible.',
       'Alemania, en profundidad: genera el informe Eigenbemühungen para la Agentur für Arbeit directamente desde tus candidaturas registradas.',
     ],
   },
@@ -146,17 +146,17 @@ export const es: Messages = {
   },
 
   principles: [
-    { label: 'Local primero', line: 'Un archivo SQLite en tu equipo.' },
-    { label: 'Privacidad por diseño', line: 'No se recoge nada. Sin telemetría.' },
-    { label: 'Gratis / MIT', line: 'Código abierto y gratuito.' },
+    { label: 'Local primero', line: 'Escritorio: un archivo SQLite en tu equipo.' },
+    { label: 'Privacidad por diseño', line: 'El escritorio no recoge telemetría.' },
+    { label: 'Gratis / MIT', line: 'El núcleo de escritorio es abierto y gratuito.' },
     { label: 'Tu propia IA', line: 'Tu clave o tu suscripción de CLI.' },
     { label: 'Aumentar, no automatizar', line: 'La IA redacta. Tú decides y envías.' },
   ],
 
   trust: {
     eyebrow: 'Abierto y honesto',
-    title: 'Tus datos nunca salen de tu equipo.',
-    body: 'Applye tiene licencia MIT y se desarrolla en abierto. Lee el código, lee la garantía sobre los datos, ejecútalo tú mismo.',
+    title: 'Applye Desktop guarda tus datos en tu equipo.',
+    body: 'La aplicación de escritorio tiene licencia MIT y se desarrolla en abierto. Lee el código, lee la garantía sobre los datos, ejecútala tú mismo. Una plataforma web de Career Intelligence está en desarrollo; hoy no está disponible, y una cuenta web no subiría por sí sola los datos del escritorio.',
     repo: 'Repositorio en GitHub',
     repoSoon: 'Repositorio: muy pronto',
     guarantee: 'Garantía de soberanía de los datos',
@@ -171,7 +171,8 @@ export const es: Messages = {
     notPoints: [
       'No es un bot que se inscribe solo. Nunca envía por ti.',
       'No rastrea portales cerrados. Discover lee APIs y feeds públicos; el resto lo pegas tú.',
-      'No es un servicio en la nube: sin cuenta, sin servidor, sin sincronización.',
+      'No es un servicio en la nube para Applye Desktop: sin cuenta de Applye, sin copia en servidor, sin sincronización.',
+      'No es una web ya publicada. Esa plataforma está en desarrollo y tendrá cuentas.',
       'No sirve para inventar experiencia. Honestidad antes que inflar.',
     ],
   },
@@ -194,7 +195,7 @@ export const es: Messages = {
       },
       {
         q: '¿Mis datos son privados?',
-        a: 'Del todo. Tu perfil, tus vacantes y tus documentos están en una base de datos SQLite local en tu equipo. No hay nube, ni cuenta, ni analítica. Discover trae las ofertas directamente desde APIs y feeds públicos a tu equipo - nadie se entera de lo que buscaste - y el resto lo pegas tú.',
+        a: 'Applye Desktop es privado por defecto. Tu perfil, tus vacantes y tus documentos están en una base de datos SQLite local, sin cuenta de Applye y sin sincronización automática en la nube. Los datos salen del equipo solo cuando llamas expresamente a un proveedor de IA que configuraste. Un futuro producto web guardará sus propios datos en un servidor. Hoy no está disponible, y una cuenta web no subiría por sí sola los datos del escritorio. Discover sigue trayendo feeds públicos a tu equipo.',
       },
       {
         q: '¿Se inscribe por mí?',

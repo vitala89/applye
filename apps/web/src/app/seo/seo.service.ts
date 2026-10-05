@@ -18,7 +18,7 @@ export interface SeoRouteData {
 }
 
 const DEFAULT_DESCRIPTION =
-  'A free, open-source desktop app for an AI-powered job search, running entirely on your own machine. Blunt recruiter checks, tailored CVs, a pipeline kanban.';
+  'Applye Desktop is a free, local-first job-search app. A Career Intelligence web platform is in development, not available yet.';
 
 const DEFAULT_IMAGE = '/og/applye-og.png';
 

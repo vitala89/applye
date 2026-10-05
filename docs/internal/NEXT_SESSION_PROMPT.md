@@ -4,8 +4,9 @@ Copy everything below the line into a fresh session.
 
 ---
 
-**The strategic direction is accepted and merged. The next product-development slice is Career
-Evidence domain foundation. Do not start it in a positioning or cleanup branch.**
+**The strategic direction is accepted and merged. Local database backup and restore is in review
+on `feat/database-backup-restore`. Do not start Career Evidence until that pull request is merged.
+After it merges, the next product-development slice is Career Evidence domain foundation.**
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
 `docs/product/CURRENT_STATE.md`, the newest entry in `docs/internal/DUTY_WATCH.md`, and

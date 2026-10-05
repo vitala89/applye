@@ -509,5 +509,41 @@ Both were named as the next action on 2026-08-14 and neither has been run.
       exercised once end to end. Everything else about the release is verified; the signature chain
       and the manifest were checked mechanically, but no update has been _taken_.
 
+## F. Database backup and restore
+
+No agent can drive this. Synthetic clicks do not reach the Tauri webview, and the path needs a real
+database, the native save and open dialogs, a process relaunch, and the OS keychain. Record the
+result in `docs/internal/DUTY_WATCH.md` when it has been walked. Until then it is pending.
+
+### Backup
+
+- [ ] Open a real working Applye database.
+- [ ] Confirm recognizable profile, job, and application data exists.
+- [ ] Settings → Data → Back up database.
+- [ ] Save the backup to a chosen local folder. The suggested name looks like
+      `applye-backup-YYYY-MM-DD-HHmm.sqlite`.
+- [ ] Confirm the file exists and cancelling the save dialog shows no error toast.
+
+### Destructive test
+
+- [ ] Change or delete recognizable data in Applye after the backup.
+
+### Restore
+
+- [ ] Settings → Data → Restore database.
+- [ ] Pick the saved backup. Cancelling the picker shows no error toast.
+- [ ] Confirm restore. The confirm copy says the current database will be replaced, Applye will
+      restart, and operating-system keychain API keys are not restored or changed.
+- [ ] Confirm Applye relaunches. A page reload is not enough.
+- [ ] Confirm the original backed-up data is back.
+- [ ] Confirm changes made after the backup are gone.
+- [ ] Confirm normal navigation and queries still work.
+- [ ] Confirm existing OS-keychain API credentials were not overwritten.
+
+### Invalid file
+
+- [ ] Try restoring an arbitrary or corrupt `.sqlite` file.
+- [ ] Confirm Applye refuses it and the current database is unchanged.
+
 Not listed, because it is done: the packaged macOS window has been seen rendering styled from the
 `0.29.2` dmg.

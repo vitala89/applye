@@ -20,6 +20,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Added
 
+- **Local database backup and restore in Settings.** Save a WAL-consistent copy of the Applye
+  SQLite database, then restore it later. The restore checks the file before anything is replaced,
+  restarts the app, and runs pending migrations after an older backup. API keys in the operating
+  system keychain are not part of the backup and are not changed by a restore.
 - **service.bund.de as a built-in Discover source for Germany.** Part of the Germany pack's
   German Discover sources item (`docs/product/IDEAS.md`): the built-in set was remote-first and
   English, so a Germany geo scope missed public-sector postings entirely. Adds the official

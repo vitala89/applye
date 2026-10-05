@@ -21,7 +21,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-angular';
-import { ShellStore } from '@applye/application';
+import { DatabaseBackupStore, ShellStore, ToastService } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { UnsavedJobPromptComponent } from '../shared/unsaved-job-prompt/unsaved-job-prompt.component';
@@ -198,6 +198,8 @@ export class ShellLayoutComponent implements OnInit {
   };
 
   private readonly themeService = inject(ThemeService);
+  private readonly backup = inject(DatabaseBackupStore);
+  private readonly toast = inject(ToastService);
   readonly theme = this.themeService.theme;
 
   // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) - the native
@@ -217,6 +219,9 @@ export class ShellLayoutComponent implements OnInit {
     await this.shell.load();
     const locale = this.shell.uiLanguage();
     if (locale) this.i18n.setLocale(locale);
+    const notice = await this.backup.consumeNotice();
+    if (notice === 'settings.restored') this.toast.success(notice);
+    else if (notice) this.toast.error(notice);
   }
 
   toggleTheme(): void {

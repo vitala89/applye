@@ -1076,6 +1076,42 @@ export const fr: TranslationMap = stub(en, {
     saved: 'Paramètres enregistrés.',
     key_stored: "Clé d'API enregistrée dans le trousseau de votre système.",
     key_removed: "Clé d'API retirée du trousseau.",
+    data_section: 'Données',
+    backup_title: 'Sauvegarde de la base',
+    backup_hint:
+      "Enregistre une copie de la base locale d'Applye. Fais-le avant un essai ou un changement important.",
+    backup_scope:
+      "Inclut : les données de la base locale d'Applye. N'inclut pas : les clés d'API du trousseau du système, les fichiers déjà exportés, ni les autres fichiers de l'ordinateur.",
+    backup_filter: 'Base SQLite',
+    backup_action: 'Sauvegarder la base',
+    backup_working: 'Sauvegarde…',
+    backup_created: 'La sauvegarde a été créée.',
+    backup_failed: "La sauvegarde n'a pas pu être créée. La base actuelle n'a pas changé.",
+    restore_title: 'Restaurer la base',
+    restore_hint: "Remplace la base actuelle d'Applye par une sauvegarde créée plus tôt.",
+    restore_action: 'Restaurer la base',
+    restore_working: 'Préparation de la restauration…',
+    restore_confirm_title: 'Restaurer cette sauvegarde ?',
+    restore_confirm_body:
+      "La base actuelle d'Applye sera remplacée par la sauvegarde choisie. Applye redémarrera ensuite.",
+    restore_confirm_keys:
+      "Les clés d'API du trousseau du système ne sont ni restaurées ni modifiées.",
+    restore_confirm_action: 'Restaurer et redémarrer',
+    restore_cancel: 'Annuler',
+    restore_invalid:
+      "Ce fichier n'est pas une base SQLite lisible. La base actuelle n'a pas changé.",
+    restore_corrupt:
+      "Cette sauvegarde n'a pas passé le contrôle d'intégrité. La base actuelle n'a pas changé.",
+    restore_not_applye: "Ce fichier n'est pas une base Applye. La base actuelle n'a pas changé.",
+    restore_newer:
+      "Cette sauvegarde provient d'une version plus récente de la base Applye. Mets Applye à jour avant de la restaurer.",
+    restore_incompatible:
+      "Cette sauvegarde ne correspond pas à cette version d'Applye et ne peut pas être restaurée. La base actuelle n'a pas changé.",
+    restore_failed: "La sauvegarde n'a pas pu être restaurée. La base actuelle n'a pas changé.",
+    restore_restart_failed:
+      "La sauvegarde est prête, mais Applye n'a pas pu redémarrer. Quitte Applye et rouvre-le pour terminer la restauration.",
+    restored: 'Base restaurée.',
+    danger_section: 'Zone dangereuse',
   },
   dashboard: {
     title: 'Tableau de bord',

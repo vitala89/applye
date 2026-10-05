@@ -1,7 +1,7 @@
 # Current Operational State
 
-**As of 2026-10-05.** Verify `git rev-parse --short HEAD` before trusting a hash. This header was
-written against `main` at `f0c65da4` (`docs: define web backend and hosted-service boundary`, `#569`).
+**As of 2026-10-06.** Verify `git rev-parse --short HEAD` before trusting a hash. This header was
+written on `feat/database-backup-restore`, branched from `main` at `5fa2337b`.
 
 ## Active product direction
 
@@ -27,8 +27,10 @@ says the backend is created with the first real backend slice.
 
 ## Implementation sequence
 
-Dependency order, not dates. This positioning cleanup is step 0. The next product-development slice
-is **Career Evidence domain foundation**.
+Dependency order, not dates. This positioning cleanup is step 0. A local database backup and
+restore slice is in review first, because the desktop app is in active use and needs a snapshot
+before destructive testing. It is not a Career Intelligence step. After that pull request merges,
+the next product-development slice is **Career Evidence domain foundation**.
 
 ```text
 0. Project-state / positioning cleanup
@@ -60,8 +62,8 @@ Checked against `main` on 2026-10-05. None of these is the next product feature.
   Lebenslauf, Arbeitszeugnis decoder, Eigenbemühungen quota). EURES, Interamt, `ats_join`, and
   `ats_softgarden` stay blocked on `docs/product/local-markets-analysis.md`. `service.bund.de` itself
   shipped in `#543`.
-- **Native manual gate.** `docs/internal/NATIVE_GATE_BACKLOG.md` still has 36 unchecked items,
-  including a native check of `service.bund.de`. No agent can drive them.
+- **Native manual gate.** `docs/internal/NATIVE_GATE_BACKLOG.md` still has the earlier unchecked
+  items, plus section F for database backup and restore. No agent can drive them.
 - **Tailoring performance.** `S1` and `S3` are still recorded open in the August handoff. This
   cleanup did not re-measure them.
 - **Developer ID signing and notarisation** stay deferred. The blocker is the Apple Developer Program

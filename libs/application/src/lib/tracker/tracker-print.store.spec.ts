@@ -53,9 +53,11 @@ describe('TrackerPrintStore', () => {
     // summary computed from the unnarrowed list pass, and the sheet would then
     // print in-period rows under an all-time total.
     it('narrows both the rows and the summary to the period it is given', async () => {
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
       const { store } = createStore([
         row({ id: 1, status: 'offer', appliedAt: '2020-01-01' }),
-        row({ id: 2, status: 'applied', appliedAt: '2026-08-01' }),
+        row({ id: 2, status: 'applied', appliedAt: thisMonth }),
       ]);
 
       await store.load('all');

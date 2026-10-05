@@ -33,21 +33,33 @@ function app(partial: Partial<AnalyticsApplication> = {}): AnalyticsApplication 
   };
 }
 
+/** UTC calendar day, `days` before today. The page's default window is a rolling
+ * 90 days, so a frozen July date falls out of it as the year moves on. */
+function daysAgo(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Enough applied rows, spread over distinct days, to clear the low-data floor
- * and populate every card the page can render. */
+ * and populate every card the page can render. Seven sit inside the last 30
+ * days and five sit further back inside the 90-day window, so switching to 30
+ * days changes the headline count. */
 function loadedFacts(): AnalyticsFacts {
-  const applications = Array.from({ length: 12 }, (_, i) =>
-    app({
-      appliedAt: `2026-07-${String((i % 27) + 1).padStart(2, '0')}`,
-      statusChangedAt: `2026-07-${String((i % 27) + 1).padStart(2, '0')}`,
+  const applications = Array.from({ length: 12 }, (_, i) => {
+    const day = daysAgo(i < 7 ? i + 1 : 40 + (i - 7));
+    return app({
+      appliedAt: day,
+      savedAt: day,
+      statusChangedAt: day,
       score: 40 + i * 5,
       location: i % 2 === 0 ? 'Berlin' : 'Munich',
       reachedInterview: i < 4,
       reachedOffer: i < 2,
-      firstResponseAt: i < 4 ? `2026-07-${String((i % 27) + 4).padStart(2, '0')}` : null,
-    }),
-  );
-  return { applications, followups: [{ createdAt: '2026-07-05' }] };
+      firstResponseAt: i < 4 ? day : null,
+    });
+  });
+  return { applications, followups: [{ createdAt: daysAgo(2) }] };
 }
 
 describe('AnalyticsComponent', () => {

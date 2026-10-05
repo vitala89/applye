@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-06, roll up open Dependabot updates
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `chore/merge-dependabot-updates`
+- **Commits:** recorded in the pull request
+- **Pull request:** opened from this branch
+- **Objective:** Merge the open Dependabot pull requests into `main`. Their lockfiles conflict with each other, so apply the newest requested versions once, then close the individual pull requests.
+- **Completed:**
+  - npm: Angular packages on the 21.2 line are `~21.2.24` and resolve to 21.2.25. `@angular/cdk` stays `~21.2.0` because 21.2.24 does not exist for it; the installed copy is 21.2.14. Nx direct dependencies are `~23.1.2` and resolve to 23.1.3, so they do not float to 23.2. Dev-tooling, Hono, and the lock-only bumps (undici 6.29.0, js-yaml 4.3.2, ip-address 10.7.3, browserslist, baseline-browser-mapping, fast-uri) are in the lockfile. `svgo` is no longer in the tree.
+  - Rust: `log` 0.4.34, `tauri` 2.12.0, `tauri-build` 2.7.1, the listed Tauri plugins, `pdf-extract` 0.12.1, and `base64` 0.23.1. `rustls` is 0.23.45, which clears RUSTSEC-2026-0285 that was already present on `main`.
+  - Tracker print and analytics specs no longer freeze July or August 2026 dates. Those dates had fallen out of the calendar month and the rolling 90-day window, which is why the Dependabot CI runs were red.
+- **Not completed:** Career Evidence was not started. The 35 GitHub vulnerability alerts were not audited one by one. `CURRENT_STATE.md` still names Career Evidence as the next product slice; this watch does not change that.
+- **Files or packages changed:** `package.json`, `package-lock.json`, `apps/desktop/src-tauri/Cargo.lock`, two date-sensitive specs, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** `npm audit --omit=dev` reported 0 vulnerabilities. `cargo audit` exited 0, with the five warnings already allowed in `.cargo/audit.toml`. `cargo test` passed, 384 tests, 1 ignored. `nx test application --skip-nx-cache` passed, 130 suites, 1692 tests. `nx test desktop --skip-nx-cache` passed, 123 suites, 1187 tests. The earlier affected lint/test/build run passed every target except those two suites, and both pass after the date fix. `npm run quality:file-size`, `quality:attribution`, `format:check`, and `git diff --check` passed.
+- **Privacy/security impact:** No new network path, account, or storage. Production npm audit is clean. The Rust TLS crate moves from the vulnerable 0.23.42 to 0.23.45.
+- **Decisions and assumptions:** One rollup branch instead of seventeen sequential lockfile merges. Angular is aligned to the newest 21.2 patch rather than mixing 21.2.20, 21.2.22, 21.2.23, and 21.2.24. Nx is held on 23.1 so the open pull request's minor is what lands, not 23.2.
+- **Risks or compatibility impact:** Tauri 2.12 and the plugin bumps are minor updates inside the existing `Cargo.toml` ranges. A fresh `npm install` stays on Angular 21.2 and Nx 23.1 because the ranges are tilde, not caret.
+- **Open issues or blockers:** none for this rollup.
+- **Next first action:** Branch from `main` and implement Career Evidence domain foundation: pure domain rules and tests in `libs/core` for user-confirmed Career Evidence. No desktop migration, no UI, and no web backend in that slice.
+- **Evidence:** Local `main` was `16528d11` (`#571`) before this branch. The individual Dependabot pull requests were still open and each had a failing CI run on a stale base.
+
 ### 2026-10-05, align operational state and desktop/web positioning
 
 - **Status:** complete

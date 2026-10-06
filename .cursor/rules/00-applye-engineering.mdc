@@ -5,13 +5,18 @@ alwaysApply: true
 
 Start every non-trivial task at `docs/internal/AGENT_START_HERE.md` and follow `AGENTS.md`.
 
-Before editing code:
+Before designing, editing, refactoring, or reviewing code:
 
-1. Read `docs/governance/CODE_QUALITY.md` and the relevant Angular or Rust skill.
-2. Check the responsibility and current non-empty line count of every file you plan to grow.
-3. Existing oversized files may not grow. Extract a cohesive responsibility first.
-4. Identify the test seam before implementation. Bug fixes require regression tests.
-5. Use the configured documentation MCP tools only for minimal versioned API questions. Never send source code, secrets, personal data, CV/job content, credentials, or private prompts.
+1. Read `docs/domain-architecture.md` for DDD policy, bounded contexts, ubiquitous language, and canonical business naming.
+2. Read `docs/architecture.md` and the applicable ADRs for system, frontend, backend/Tauri, dependency, and state-ownership decisions.
+3. Read `docs/governance/CODE_QUALITY.md` for code style, maintainability rules, layer ownership, and the authoritative file-size budgets, plus the relevant Angular or Rust skill.
+4. Read `docs/governance/VALIDATION_MATRIX.md` before deciding how the change will be verified.
+5. Check the responsibility and current non-empty line count of every file you plan to grow. Existing oversized files may not grow. Extract a cohesive responsibility first.
+6. Identify the test seam before implementation. Bug fixes require regression tests.
+7. Do not invent a new business term, architecture pattern, folder convention, layer boundary, or size limit when the repository already defines one. If canon and code disagree, report the conflict and resolve it deliberately rather than inventing a third convention.
+8. Use the configured documentation MCP tools only for minimal versioned API questions. Never send source code, secrets, personal data, CV/job content, credentials, or private prompts.
+
+The canonical mapping and complete reading order live in `docs/internal/AGENT_START_HERE.md`. Do not create parallel `DDD_ARCHITECTURE.md`, `UBIQUITOUS_LANGUAGE.md`, `ARCHITECTURE_GUIDELINES.md`, `BACKEND_ARCHITECTURE.md`, `FRONTEND_ARCHITECTURE.md`, `CODE_STYLE.md`, or `AGENT_DEVELOPMENT_RULES.md` files unless a future architecture decision explicitly replaces the current single-source canon.
 
 Before handoff, run the relevant validation matrix checks plus:
 

@@ -123,7 +123,8 @@ Done when:
 
 ### PR 1 - Remove platform leakage from the application layer
 
-**Status:** implemented on `refactor/application-platform-boundaries` (pull request opened, not merged).
+**Status:** implemented on `refactor/application-platform-boundaries` and open as
+[#576](https://github.com/vitala89/applye/pull/576). Not merged.
 Production scan on `main`: Tauri 2 files, Router 3, clipboard 2, localStorage 1, sessionStorage 3.
 After this branch those counts are 0 in production application code. The audit also found
 `sessionStorage` in `wizard-progress.service.ts`, `tailoring-pass-drafts.service.ts`, and

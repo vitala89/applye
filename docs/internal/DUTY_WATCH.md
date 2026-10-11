@@ -50,7 +50,7 @@ Before a watch can be marked complete:
 - **Agent/tool:** Cursor
 - **Branch:** `refactor/application-platform-boundaries`
 - **Commits:** recorded in the pull request
-- **Pull request:** opened from this branch; not merged
+- **Pull request:** [#576](https://github.com/vitala89/applye/pull/576), not merged
 - **Objective:** Architecture Stabilization PR 1. Production code under `libs/application` no longer opens dialogs, navigates, writes the clipboard, opens mail, or touches browser storage.
 - **Completed:**
   - Save dialogs live in `exportThroughSaveDialog`. `DocumentExportService` names the file, writes a supplied path, and still opens or reveals a finished file through `SystemGateway`.

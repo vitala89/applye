@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-11, second review of application platform boundaries
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-platform-boundaries`
+- **Commits:** recorded in the pull request
+- **Pull request:** [#576](https://github.com/vitala89/applye/pull/576), not merged
+- **Objective:** Close the second review of PR 1. Notification effects must not track the toast list, and Open/Reveal must stay a narrow shell adapter rather than a page calling `invoke`.
+- **Completed:**
+  - Every `JobPageNotices` effect reads the application signal, then toasts inside `untracked`. A regression test uses the real `ToastService`: one toast, auto-dismiss, flush again, and the same failure does not create another.
+  - Open and Reveal moved to `apps/desktop/src/app/core/native-shell`. The page calls the adapter. The adapter still calls `open_file` and `reveal_in_folder`. Rust `ExportedPaths`, the pdf/docx limit, and canonical-path checks are unchanged.
+  - ESLint rejects `@tauri-apps/api/core` in desktop production files outside that adapter, including a dynamic import. A desktop test reads those files back.
+  - ADR-0005 amendment sixty-eight and `docs/architecture.md` record business IPC in `libs/data`, presentation shell effects in the desktop adapter, and neither in `libs/application`.
+- **Not completed:** Native section G was not walked. PR 2 was not started.
+- **Files or packages changed:** `job-page-notices`, the native-shell adapter, ESLint, ADR-0005, architecture, current state, changelog, and this log.
+- **Validation:** `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed. `nx run-many -t lint,type-check,test -p application,desktop --skip-nx-cache` passed. Application tests: 131 suites, 1688. Desktop tests: 134 suites, 1231. `nx build desktop` succeeded with the existing warnings: initial bundle 1.54 MB against 1.52 MB (over by 22.44 kB), unused `DiscoverDetailScoreComponent`, and the Sass `@import` deprecation. Rust was not run; no Rust file changed. A temporary removal of `untracked` on the review-failure effect made the new desktop test fail with a second toast (`id: 2`) after dismiss; the line was restored before the green run. Native section G was not run.
+- **Privacy/security impact:** The file launcher is still limited to a pdf or docx this run wrote, or a file under the app data directory, after `canonicalize`. No new command and no wider path.
+- **Decisions and assumptions:** The review named `untracked` and the adapter. No new port. The Rust guard stays the security boundary.
+- **Risks or compatibility impact:** Visible toasts and open/reveal were not intended to change. A dismiss no longer repeats the notice.
+- **Open issues or blockers:** Native section G is unchecked. The pull request is waiting for another review.
+- **Next first action:** Review pull request #576 again and do not merge it from the agent session. After it merges, start Architecture Stabilization PR 2. Do not start Career Evidence, gateway splits, or Rust command splits in that review.
+- **Evidence:** The toast regression uses the real service, so a dismiss writes the toast signal. The page scan fails if a production desktop file outside `native-shell` names `@tauri-apps/api/core`, `open_file`, or `reveal_in_folder`.
+
 ### 2026-10-11, review fixes for application platform boundaries
 
 - **Status:** complete

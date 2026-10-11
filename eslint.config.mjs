@@ -183,6 +183,11 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         { selector: GATEWAY_INJECTION, message: GATEWAY_INJECTION_MESSAGE },
+        {
+          selector: "ImportExpression[source.value='@tauri-apps/api/core']",
+          message:
+            'Custom Tauri commands belong in libs/data or apps/desktop/src/app/core/native-shell. A page calls the adapter.',
+        },
       ],
     },
   },
@@ -245,6 +250,45 @@ export default tseslint.config(
           selector: "Identifier[name='ToastService']",
           message:
             'User notification belongs to apps/desktop. Return an outcome or an error signal.',
+        },
+        {
+          selector: "ImportExpression[source.value='@tauri-apps/api/core']",
+          message:
+            'Custom Tauri commands belong in libs/data or apps/desktop/src/app/core/native-shell. A page calls the adapter.',
+        },
+      ],
+    },
+  },
+  {
+    // Desktop files that are not components. The component block above owns
+    // those files; this one must not match them or it would replace that rule.
+    files: ['apps/desktop/src/**/*.ts'],
+    ignores: ['**/*.component.ts', '**/app.ts', '**/native-shell/**', '**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "ImportExpression[source.value='@tauri-apps/api/core']",
+          message:
+            'Custom Tauri commands belong in libs/data or apps/desktop/src/app/core/native-shell. A page calls the adapter.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['apps/desktop/src/**/*.ts'],
+    ignores: ['**/native-shell/**', '**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@tauri-apps/api/core',
+              message:
+                'Custom Tauri commands belong in libs/data or apps/desktop/src/app/core/native-shell. A page calls the adapter.',
+            },
+          ],
         },
       ],
     },

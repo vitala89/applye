@@ -17,7 +17,7 @@ describe('exported file actions', () => {
     delete internals.__TAURI_INTERNALS__;
   });
 
-  it('opens and reveals through the same commands the gateway uses', async () => {
+  it('opens and reveals through the guarded shell commands', async () => {
     await openExportedPath('/tmp/cv.pdf');
     await revealExportedPath('/tmp/cv.pdf');
 

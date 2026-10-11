@@ -3570,6 +3570,20 @@ A native save dialog that throws is not a successful export and not a cancel. `f
 Reveal for a file the wizard just wrote moved to the desktop button. `SystemGateway` still has
 those commands for other callers. Hashing, file reading, and backup stay where they are.
 
+## Amendment sixty-eight: shell effects are not business IPC
+
+`open_file` and `reveal_in_folder` stay the Rust commands they are. `ExportedPaths` still
+remembers only a pdf or docx this run wrote, `canonicalize` still resolves `..` and symlinks,
+and a path outside the app data directory still has to be one of those remembered files. Nothing
+in this amendment widens what the renderer can launch.
+
+Who may call them is the narrower rule. Business and data IPC goes through a typed gateway in
+`libs/data`. A presentation-only OS effect goes through `apps/desktop/src/app/core/native-shell`.
+`libs/application` does neither. A page calls `openExportedPath` or `revealExportedPath`. It does
+not import `@tauri-apps/api/core` and it does not name the command. ESLint rejects that import
+everywhere in the desktop app except the adapter, and a desktop test reads the production files
+back to keep a dynamic import from slipping past the rule.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

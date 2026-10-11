@@ -1,4 +1,4 @@
-import { Injectable, effect, inject } from '@angular/core';
+import { Injectable, effect, inject, untracked } from '@angular/core';
 import {
   CoverLetterTailorService,
   CvGapDialogService,
@@ -29,34 +29,44 @@ export class JobPageNotices {
   private readonly letters = inject(CoverLetterTailorService);
 
   constructor() {
+    // `ToastService.show` reads and writes its own signals. Those reads stay
+    // untracked, or an auto-dismiss re-runs this effect and repeats the toast
+    // while the application failure is still set.
     effect(() => {
       const message = this.review.unexpectedFailure();
-      if (message) this.toast.error(message);
+      if (!message) return;
+      untracked(() => this.toast.error(message));
     });
     effect(() => {
       const message = this.detail.loadError();
-      if (message) this.toast.error(message);
+      if (!message) return;
+      untracked(() => this.toast.error(message));
     });
     effect(() => {
       const message = this.lifecycle.partialLoadError();
-      if (message) this.toast.error(message);
+      if (!message) return;
+      untracked(() => this.toast.error(message));
     });
     effect(() => {
       const warning = this.tailoring.baselineWarning();
-      if (warning) this.toast.warning(warning);
+      if (!warning) return;
+      untracked(() => this.toast.warning(warning));
     });
     effect(() => {
-      if (!this.portal.error()) return;
+      const failed = this.portal.error();
       const status = this.portal.status();
-      if (status) this.toast.error(status);
+      if (!failed || !status) return;
+      untracked(() => this.toast.error(status));
     });
     effect(() => {
       const error = this.gap.analyzeError();
-      if (error) this.toast.warning(`${this.t()('jobs.gap_analysis_unavailable')} ${error}`);
+      if (!error) return;
+      untracked(() => this.toast.warning(`${this.t()('jobs.gap_analysis_unavailable')} ${error}`));
     });
     effect(() => {
       const error = this.letters.error();
-      if (error) this.toast.error(error);
+      if (!error) return;
+      untracked(() => this.toast.error(error));
     });
   }
 }

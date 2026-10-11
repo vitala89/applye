@@ -8,7 +8,10 @@ import { JobActionsService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 import { WizardActivityService } from '@applye/application';
 import { exportThroughSaveDialog } from '../../documents/save-dialog-export';
-import { openExportedPath, revealExportedPath } from '../../documents/exported-file-actions';
+import {
+  openExportedPath,
+  revealExportedPath,
+} from '../../../core/native-shell/exported-file-actions';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 
 /**

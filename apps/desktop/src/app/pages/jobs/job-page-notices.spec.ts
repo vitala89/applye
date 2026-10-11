@@ -53,6 +53,8 @@ describe('JobPageNotices', () => {
     TestBed.flushEffects();
   });
 
+  afterEach(() => TestBed.resetTestingModule());
+
   it('stays quiet while every notice is empty', () => {
     expect(toast.error).not.toHaveBeenCalled();
     expect(toast.warning).not.toHaveBeenCalled();
@@ -70,5 +72,55 @@ describe('JobPageNotices', () => {
     TestBed.flushEffects();
 
     expect(toast.warning).toHaveBeenCalledWith('jobs.gap_analysis_unavailable provider down');
+  });
+});
+
+describe('JobPageNotices does not track the toast list', () => {
+  const unexpectedFailure = signal<string | null>(null);
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    unexpectedFailure.set(null);
+    TestBed.configureTestingModule({
+      providers: [
+        JobPageNotices,
+        ToastService,
+        TranslateService,
+        { provide: DocumentReviewStatusService, useValue: { unexpectedFailure } },
+        { provide: JobDetailStore, useValue: { loadError: signal<string | null>(null) } },
+        {
+          provide: JobDetailLifecycleStore,
+          useValue: { partialLoadError: signal<string | null>(null) },
+        },
+        { provide: TailoringService, useValue: { baselineWarning: signal<string | null>(null) } },
+        {
+          provide: PortalAnswersService,
+          useValue: { error: signal(false), status: signal('') },
+        },
+        { provide: CvGapDialogService, useValue: { analyzeError: signal<string | null>(null) } },
+        { provide: CoverLetterTailorService, useValue: { error: signal('') } },
+      ],
+    });
+    TestBed.inject(JobPageNotices);
+    TestBed.flushEffects();
+  });
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    TestBed.resetTestingModule();
+  });
+
+  it('toasts a failure once, including after the toast dismisses itself', () => {
+    unexpectedFailure.set('database is gone');
+    TestBed.flushEffects();
+
+    const toast = TestBed.inject(ToastService);
+    expect(toast.toasts().map((item) => item.message)).toEqual(['database is gone']);
+
+    jest.advanceTimersByTime(7000);
+    TestBed.flushEffects();
+
+    expect(toast.toasts()).toEqual([]);
   });
 });

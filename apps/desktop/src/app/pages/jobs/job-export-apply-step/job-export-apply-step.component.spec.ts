@@ -14,7 +14,7 @@ jest.mock('@tauri-apps/plugin-dialog', () => ({
 }));
 
 const fileActions: string[] = [];
-jest.mock('../../documents/exported-file-actions', () => ({
+jest.mock('../../../core/native-shell/exported-file-actions', () => ({
   openExportedPath: (path: string) => {
     fileActions.push(`open:${path}`);
     return Promise.resolve();

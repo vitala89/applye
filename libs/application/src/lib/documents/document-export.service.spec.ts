@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService } from './document-export.service';
@@ -25,8 +25,6 @@ describe('DocumentExportService', () => {
       cvDocumentExportPdfWysiwyg: jest.fn(async () => undefined),
       coverLetterDocumentExport: jest.fn(async () => undefined),
       coverLetterDocumentExportPdfWysiwyg: jest.fn(async () => undefined),
-      openFile: jest.fn(async () => undefined),
-      revealInFolder: jest.fn(async () => undefined),
     };
 
     TestBed.resetTestingModule();
@@ -35,7 +33,6 @@ describe('DocumentExportService', () => {
         DocumentExportService,
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
-        { provide: SystemGateway, useValue: db },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
       ],
     });
@@ -182,12 +179,14 @@ describe('DocumentExportService', () => {
     expect(s.lastExport()).toBeNull();
   });
 
-  it('opens and reveals through the db bridge', () => {
+  it('records a dialog failure and stops the spinner without writing', () => {
     const s = make();
-    s.openFile('/tmp/out.pdf');
-    s.revealFile('/tmp/out.pdf');
+    s.beginExport('cv', 'pdf', cv);
+    s.failDialog(new Error('dialog crashed'));
 
-    expect(db.openFile).toHaveBeenCalledWith('/tmp/out.pdf');
-    expect(db.revealInFolder).toHaveBeenCalledWith('/tmp/out.pdf');
+    expect(s.exporting()).toBe(false);
+    expect(s.error()).toBe(true);
+    expect(s.status()).toContain('jobs.wizard.export_failed');
+    expect(db.cvDocumentExportPdfWysiwyg).not.toHaveBeenCalled();
   });
 });

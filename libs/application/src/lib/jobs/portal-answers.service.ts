@@ -2,7 +2,6 @@ import { Injectable, inject, signal } from '@angular/core';
 import { AiService, DraftsGateway, SystemGateway } from '@applye/data';
 import { Job, Profile, Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../shell/toast.service';
 
 export interface PortalAnswerDraft {
   question: string;
@@ -26,7 +25,6 @@ export class PortalAnswersService {
   private readonly drafts = inject(DraftsGateway);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
-  private readonly toast = inject(ToastService);
 
   private readonly t = this.i18n.t;
 
@@ -166,7 +164,6 @@ export class PortalAnswersService {
     } catch (e) {
       this.error.set(true);
       this.status.set(String(e));
-      this.toast.error(String(e));
     } finally {
       this.drafting.set(false);
     }
@@ -225,7 +222,6 @@ export class PortalAnswersService {
     } catch (e) {
       this.error.set(true);
       this.status.set(String(e));
-      this.toast.error(String(e));
     } finally {
       this.redrafting.set(null);
     }

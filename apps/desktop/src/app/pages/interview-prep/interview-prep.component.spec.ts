@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
 import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { InterviewPrepStore } from '@applye/application';
 import { InterviewPrepComponent } from './interview-prep.component';
 

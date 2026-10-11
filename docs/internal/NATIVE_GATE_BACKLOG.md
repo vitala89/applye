@@ -563,3 +563,6 @@ because synthetic clicks do not reach the webview.
       stays expanded.
 - [ ] Start an apply wizard, open a linked document, come back. The wizard step and any final-check
       result that was still valid are still there.
+- [ ] After a successful wizard export, Open and Reveal still open the file and its folder.
+- [ ] Saving a job, deleting a job, and a failed document action still show the same toasts. A
+      refused precondition stays on the status line and does not toast.

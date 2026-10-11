@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Settings } from '@applye/core';
 import { AiService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ParsedProfile, ProfileImportStore, ToastService } from '@applye/application';
+import { ParsedProfile, ProfileImportStore } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { ProfileRawEditorComponent } from './profile-raw-editor.component';
 
 const SETTINGS = {
@@ -109,5 +110,17 @@ describe('ProfileRawEditorComponent', () => {
 
     expect(store(fixture).preview()).toBeNull();
     expect(emitted).toEqual([]);
+  });
+
+  it('toasts when the provider call itself fails', async () => {
+    fixture = createFixture('# Mira');
+    const ai = TestBed.inject(AiService) as unknown as { run: jest.Mock };
+    ai.run.mockRejectedValueOnce(new Error('no key'));
+    const toast = TestBed.inject(ToastService) as unknown as { error: jest.Mock };
+
+    await instance(fixture).parse();
+
+    expect(store(fixture).callFailed()).toBe(true);
+    expect(toast.error).toHaveBeenCalledTimes(1);
   });
 });

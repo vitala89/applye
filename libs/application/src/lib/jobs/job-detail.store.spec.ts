@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import type { Application, DocumentLibraryItem, Job, Profile, Settings } from '@applye/core';
 import { DocumentsGateway, JobsGateway, JobsStore, ProfileSettingsGateway } from '@applye/data';
 import { JobDetailStore } from './job-detail.store';
-import { ToastService } from '../shell/toast.service';
 
 const JOB = { id: 5, company: 'Acme', title: 'Engineer', language: 'en', jdText: 'React' } as Job;
 const PROFILE = { fullMd: '# Me' } as Profile;
@@ -30,7 +29,6 @@ function createStore(over: Record<string, jest.Mock> = {}) {
     ...over,
   };
   const jobs = { patchOverviewRow: jest.fn() };
-  const toast = { error: jest.fn() };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -39,10 +37,9 @@ function createStore(over: Record<string, jest.Mock> = {}) {
       { provide: JobsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: JobsStore, useValue: jobs },
-      { provide: ToastService, useValue: toast },
     ],
   });
-  return { store: TestBed.inject(JobDetailStore), db, jobs, toast };
+  return { store: TestBed.inject(JobDetailStore), db, jobs };
 }
 
 describe('JobDetailStore', () => {
@@ -200,8 +197,8 @@ describe('JobDetailStore', () => {
    * profile yet", and a job whose reads threw looked like "nothing scored yet".
    */
   describe('fail-soft reads', () => {
-    it('records and raises why the context could not be loaded', async () => {
-      const { store, toast } = createStore({
+    it('records why the context could not be loaded', async () => {
+      const { store } = createStore({
         getProfile: jest.fn().mockRejectedValue(new Error('db gone')),
       });
 
@@ -209,17 +206,15 @@ describe('JobDetailStore', () => {
 
       expect(store.profile()).toBeNull();
       expect(store.loadError()).toContain('db gone');
-      expect(toast.error).toHaveBeenCalledTimes(1);
     });
 
-    it('records and raises why a job could not be fully loaded', async () => {
-      const { store, toast } = createStore({
+    it('records why a job could not be fully loaded', async () => {
+      const { store } = createStore({
         listApplications: jest.fn().mockRejectedValue(new Error('read failed')),
       });
 
       expect(await store.loadJob(5)).toBe(false);
       expect(store.loadError()).toContain('read failed');
-      expect(toast.error).toHaveBeenCalledTimes(1);
     });
 
     it('clears the error once a load succeeds', async () => {

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 import {
   DocumentEditorDestination,
   JobDocumentDraftsStore,
@@ -7,12 +7,45 @@ import {
 } from '@applye/application';
 import { parkFinalChecks } from '../../core/browser-ui-state';
 
+/** The route the desktop builds from a semantic editor destination. */
+export function editorRoute(destination: DocumentEditorDestination): {
+  commands: (string | number)[];
+  extras: { queryParams: Params } | undefined;
+} {
+  const commands = [
+    destination.kind === 'cv' ? '/documents/cv' : '/documents/cover-letter',
+    destination.documentId,
+  ];
+  const back = destination.returnTo;
+  if (!back) return { commands, extras: undefined };
+  if (back.context === 'myJobs') {
+    return {
+      commands,
+      extras: {
+        queryParams: { returnTo: 'myJobs', jobId: back.jobId, jobLabel: back.jobLabel },
+      },
+    };
+  }
+  return {
+    commands,
+    extras: {
+      queryParams: {
+        returnTo: 'applyWizard',
+        jobId: back.jobId,
+        documentType: destination.kind,
+        documentId: destination.documentId,
+        reviewHash: back.reviewHash,
+        ...(destination.preview ? { preview: '1' } : {}),
+      },
+    },
+  };
+}
+
 /**
  * Turns a document-editor destination into a route change.
  *
- * The stores decide the path and whether final checks must survive the trip.
- * This service is the only thing on the jobs page that calls `Router` for
- * those destinations.
+ * The stores decide which document and which trip back. This service is the
+ * only thing on the jobs page that calls `Router` for those destinations.
  */
 @Injectable()
 export class JobEditorNavigation {
@@ -38,9 +71,7 @@ export class JobEditorNavigation {
     if (destination.parkedReview) {
       parkFinalChecks(destination.parkedReview.reviewHash, destination.parkedReview.checks);
     }
-    await this.router.navigate(
-      destination.commands,
-      destination.queryParams ? { queryParams: destination.queryParams } : undefined,
-    );
+    const route = editorRoute(destination);
+    await this.router.navigate(route.commands, route.extras);
   }
 }

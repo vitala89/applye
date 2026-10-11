@@ -44,6 +44,31 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-11, review fixes for application platform boundaries
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-platform-boundaries`
+- **Commits:** recorded in the pull request
+- **Pull request:** [#576](https://github.com/vitala89/applye/pull/576), not merged
+- **Objective:** Close the architecture review of PR 1 on the same branch. Production `libs/application` must not notify, must not know Angular routes, must recover when the save dialog throws, and must not open or reveal files.
+- **Completed:**
+  - `ToastService` moved back to `apps/desktop`. Ten production callers now expose an outcome or an error signal. The jobs page, Discover, and the profile raw editor decide the toast. A refused precondition stays silent.
+  - `DocumentEditorDestination` is document kind, document id, preview, return context, and parked checks. `editorRoute` in the desktop maps that to the existing CV and cover-letter routes.
+  - `failDialog` records `jobs.wizard.export_failed` and clears `exporting` when the native save dialog throws. No export command runs.
+  - Open and Reveal run from `exported-file-actions.ts`. `DocumentExportService` keeps export state only. `SystemGateway` still owns the commands for other callers.
+  - ESLint rejects `ToastService` in production application files. `platform-effects.spec.ts` scans the same tree for the platform strings.
+  - ADR-0005 amendment sixty-seven records the toast move, the semantic destination, the dialog failure, and Open/Reveal.
+- **Not completed:** Native section G was not walked. PR 2 was not started. No Rust, schema, gateway split, `DocumentRegionTag` move, or Career Evidence work.
+- **Files or packages changed:** the toast move, the ten former callers, desktop notice helpers, semantic destinations, save-dialog failure, Open/Reveal, their specs, ESLint, ADR-0005, the stabilization plan, current state, changelog, and the native-gate backlog.
+- **Validation:** `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed after the docs edit (file-size and the first three were also green before it; file-size is re-run with the docs). `nx run-many -t lint,type-check -p application,desktop --skip-nx-cache` passed. `nx run-many -t test -p application,desktop --skip-nx-cache` passed after Prettier: application 131 suites, 1688 tests; desktop 133 suites, 1229 tests. `npm run desktop:build` succeeded. It printed the existing initial-bundle warning (1.54 MB against 1.52 MB, over by 22.44 kB), the unused `DiscoverDetailScoreComponent` warning, and the existing Sass `@import` deprecation. Rust gates were not run; no Rust file changed. Native section G was not run.
+- **Privacy/security impact:** No new storage, network path, or career-data sync. Toasts, dialogs, and file open/reveal still happen only in the desktop UI, after the same user actions.
+- **Decisions and assumptions:** The review text was the decision. No notification port and no route DTO. Amendment sixty-six stays as the record of the first slice. This entry corrects that slice's claim that `DocumentExportService` still opens or reveals a file.
+- **Risks or compatibility impact:** Visible toasts and routes were not intended to change. A toast that used to fire after the jobs page was destroyed can now only fire while that page is alive. Section G still has to see the real window.
+- **Open issues or blockers:** Native section G is unchecked. The pull request is waiting for another review.
+- **Next first action:** Review pull request #576 again and do not merge it from the agent session. After it merges, start Architecture Stabilization PR 2. Do not start Career Evidence, gateway splits, or Rust command splits in that review.
+- **Evidence:** Production application scan after the change: no `ToastService`, no `@tauri-apps`, no `@angular/router`, no browser storage, no `openUrl`, no `openFile` / `revealFile`, and no `/documents/cv` or query-param maps.
+
 ### 2026-10-11, remove platform effects from the application layer
 
 - **Status:** complete

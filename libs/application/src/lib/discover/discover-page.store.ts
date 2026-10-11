@@ -1,7 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { type ScanSourceResult } from '@applye/core';
-import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../shell/toast.service';
 import { DiscoverDetailStore } from './discover-detail.store';
 import { type FeedRow, DiscoverFeedStore } from './discover-feed.store';
 import { DiscoverProfileContextStore } from './discover-profile-context.store';
@@ -11,6 +9,12 @@ import { DiscoverSourcesStore, formatScanTime } from './discover-sources.store';
 
 /** Which of the screen's six mutually exclusive states is showing. */
 export type DiscoverView = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
+
+/** What clearing the unsaved feed did. The desktop phrases the toast. */
+export type ClearFeedResult =
+  | { status: 'idle' }
+  | { status: 'failed'; message: string }
+  | { status: 'cleared'; removed: number };
 
 /**
  * The Discover screen's own state: which of its six views is showing, what the
@@ -36,8 +40,6 @@ export class DiscoverPageStore {
   private readonly detail = inject(DiscoverDetailStore);
   private readonly context = inject(DiscoverProfileContextStore);
   private readonly match = inject(DiscoverRowMatchStore);
-  private readonly toast = inject(ToastService);
-  private readonly t = inject(TranslateService).t;
 
   /** True until the first load settles, which is what draws the skeleton. */
   readonly loading = signal(true);
@@ -152,17 +154,14 @@ export class DiscoverPageStore {
    * the count removed so a destructive action is acknowledged rather than
    * silently succeeding.
    */
-  async confirmClearFeed(): Promise<void> {
-    if (this.clearing()) return;
+  async confirmClearFeed(): Promise<ClearFeedResult> {
+    if (this.clearing()) return { status: 'idle' };
     this.clearing.set(true);
     try {
       const result = await this.feed.clear();
-      if ('error' in result) {
-        this.toast.error(result.error);
-        return;
-      }
+      if ('error' in result) return { status: 'failed', message: result.error };
       this.clearConfirm.set(false);
-      this.toast.success(this.t()('discover.clear_done').replace('{n}', String(result.removed)));
+      return { status: 'cleared', removed: result.removed };
     } finally {
       this.clearing.set(false);
     }

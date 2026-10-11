@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { PipelineCard } from '@applye/core';
 import { AiService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { PipelineComponent } from './pipeline.component';
 
 /**

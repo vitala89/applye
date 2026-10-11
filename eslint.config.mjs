@@ -241,6 +241,11 @@ export default tseslint.config(
           selector: "MemberExpression[object.name='navigator']",
           message: 'Clipboard and other browser effects belong to apps/desktop.',
         },
+        {
+          selector: "Identifier[name='ToastService']",
+          message:
+            'User notification belongs to apps/desktop. Return an outcome or an error signal.',
+        },
       ],
     },
   },

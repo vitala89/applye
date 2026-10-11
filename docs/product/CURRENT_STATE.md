@@ -27,9 +27,11 @@ says the backend is created with the first real backend slice.
 `#567`, `#568`, `#569`, `#573`, `#574`, and `#575` are merged. Architecture Stabilization PR 1
 (remove platform effects from `libs/application`) is open as
 [#576](https://github.com/vitala89/applye/pull/576) on
-`refactor/application-platform-boundaries`. After it merges, the next step is PR 2: remove hidden
-cross-feature cycles and define application feature direction. Do not start Career Evidence, PR 3
-gateway work, or Rust command splits in that review.
+`refactor/application-platform-boundaries`. The review blockers on that pull request are addressed
+on the same branch: toasts, semantic editor destinations, save-dialog failure, and Open/Reveal.
+It is waiting for another review and is not merged. After it merges, the next step is PR 2: remove
+hidden cross-feature cycles and define application feature direction. Do not start Career Evidence,
+PR 3 gateway work, or Rust command splits in that review.
 
 ## Implementation sequence
 

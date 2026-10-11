@@ -196,6 +196,6 @@ export class JobDocumentDraftsStore {
     });
     if (!result?.document.id) return null;
     if (result.application) this.detail.application.set(result.application);
-    return { commands: ['/documents/cover-letter', result.document.id] };
+    return { kind: 'cover_letter', documentId: result.document.id };
   }
 }

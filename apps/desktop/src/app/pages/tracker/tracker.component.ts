@@ -20,7 +20,7 @@ import {
   TrackerRowsStore,
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { TrackerColumnDrawerComponent } from './tracker-column-drawer/tracker-column-drawer.component';
 import { TrackerTableComponent } from './tracker-table/tracker-table.component';
 import { TrackerRowMenuComponent } from './tracker-row-menu/tracker-row-menu.component';

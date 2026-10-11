@@ -13,6 +13,18 @@ jest.mock('@tauri-apps/plugin-dialog', () => ({
   save: (...args: unknown[]) => save(...args),
 }));
 
+const fileActions: string[] = [];
+jest.mock('../../documents/exported-file-actions', () => ({
+  openExportedPath: (path: string) => {
+    fileActions.push(`open:${path}`);
+    return Promise.resolve();
+  },
+  revealExportedPath: (path: string) => {
+    fileActions.push(`reveal:${path}`);
+    return Promise.resolve();
+  },
+}));
+
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;
 const CV = { id: 3, kind: 'cv' } as DocumentLibraryItem;
 const COVER_LETTER = { id: 4, kind: 'cover_letter' } as DocumentLibraryItem;
@@ -44,8 +56,6 @@ function stubs() {
         runs.push({ kind, format, item });
         await onExported(kind);
       },
-      openFile: (path: string) => commits.push(`open:${path}`),
-      revealFile: (path: string) => commits.push(`reveal:${path}`),
     },
     linkedDocs: {
       cv: signal<DocumentLibraryItem | null>(CV),
@@ -140,7 +150,7 @@ describe('JobExportApplyStepComponent', () => {
     const cmp = fixture.componentInstance as unknown as Internals;
     cmp.openExportedFile('/tmp/cv.pdf');
     cmp.revealExportedFile('/tmp/cv.pdf');
-    expect(s.commits).toEqual(['open:/tmp/cv.pdf', 'reveal:/tmp/cv.pdf']);
+    expect(fileActions).toEqual(['open:/tmp/cv.pdf', 'reveal:/tmp/cv.pdf']);
   });
 
   /// Start over resets tailoring, the score and the export state and then moves

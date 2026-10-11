@@ -3551,6 +3551,25 @@ filename, a URL, a destination, or an outcome. The desktop performs it. There is
 ESLint rejects `@tauri-apps/*`, `@angular/router`, `navigator`, `localStorage`, and
 `sessionStorage` in production files under `libs/application`. Specs may still fake an effect.
 
+## Amendment sixty-seven: the layer does not notify, and a destination is not a route
+
+Amendment three said nothing in `libs/application` notifies. Amendment fifty-four later moved
+`ToastService` into the library because the class was signal state with no gateway. The review of
+PR #576 held the earlier rule: a service that shows a message is still notifying, and a port that
+only exists so the library can notify is the same thing. `ToastService` is back in `apps/desktop`.
+Stores record an outcome or an error. The page decides whether to toast. `refuse` stays silent.
+
+The same review rejected `DocumentEditorDestination` while it still carried route commands and
+query maps. The application outcome is now the document kind, the document id, an optional preview
+flag, a return context (`myJobs` or `applyWizard`), and parked final checks. `JobEditorNavigation`
+is the only place that turns that into `/documents/cv/:id`, `/documents/cover-letter/:id`, and the
+existing query parameters.
+
+A native save dialog that throws is not a successful export and not a cancel. `failDialog` records
+`jobs.wizard.export_failed`, clears `exporting`, and does not call the export command. Open and
+Reveal for a file the wizard just wrote moved to the desktop button. `SystemGateway` still has
+those commands for other callers. Hashing, file reading, and backup stay where they are.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

@@ -1,14 +1,21 @@
+import { ReviewDocumentKind } from '../documents/document-gen.service';
 import { FinalChecks } from './final-checks.service';
 
 /**
- * Where the desktop should open a document editor.
- *
- * The application layer chooses the route and the query facts. The page
- * navigates. `parkedReview` is the final-checks snapshot the page keeps in
- * session storage for the trip into the editor and back.
+ * Where a document editor should open, as facts about the document and the
+ * trip back. The desktop turns this into a route. Nothing here is a path,
+ * a query map, or a router instruction.
  */
+export type DocumentEditorReturn =
+  | { context: 'myJobs'; jobId: number; jobLabel: string }
+  | { context: 'applyWizard'; jobId: number; reviewHash: string };
+
 export interface DocumentEditorDestination {
-  commands: (string | number)[];
-  queryParams?: Record<string, string | number>;
+  kind: ReviewDocumentKind;
+  documentId: number;
+  /** The wizard's Review action opens the rendered document first. */
+  preview?: boolean;
+  returnTo?: DocumentEditorReturn;
+  /** Final checks the desktop keeps for the trip into the editor and back. */
   parkedReview?: { reviewHash: string; checks: FinalChecks };
 }

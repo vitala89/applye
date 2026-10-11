@@ -1,7 +1,8 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { FollowupDraftService, ToastService } from '@applye/application';
+import { FollowupDraftService } from '@applye/application';
+import { ToastService } from '../../../../core/toast/toast.service';
 import { PipelineCard } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { FollowupComposerComponent } from './followup-composer.component';

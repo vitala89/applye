@@ -40,7 +40,7 @@ export interface FinalCheckInputs {
  * against, so editing a document afterwards marks the result outdated instead
  * of leaving a stale green tick on screen.
  *
- * The same hash is what the desktop uses as the sessionStorage key that
+ * The same hash is what the desktop uses as the storage key that
  * survives the round trip into the document editor and back. This service
  * holds the result; the page parks and restores it (ADR-0005, amendment
  * sixty-six).

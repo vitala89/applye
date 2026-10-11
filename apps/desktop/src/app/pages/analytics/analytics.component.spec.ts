@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import type { AnalyticsApplication, AnalyticsFacts } from '@applye/core';
 import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { AnalyticsComponent } from './analytics.component';
 
 /**

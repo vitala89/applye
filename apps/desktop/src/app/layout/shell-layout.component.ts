@@ -21,7 +21,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-angular';
-import { DatabaseBackupStore, ShellStore, ToastService } from '@applye/application';
+import { DatabaseBackupStore, ShellStore } from '@applye/application';
+import { ToastService } from '../core/toast/toast.service';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { UnsavedJobPromptComponent } from '../shared/unsaved-job-prompt/unsaved-job-prompt.component';

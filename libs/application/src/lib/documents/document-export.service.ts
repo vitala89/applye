@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { DocumentsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { suggestCoverLetterFilename, suggestCvFilename } from './document-filename';
 import { TranslateService } from '@applye/i18n';
@@ -51,7 +51,6 @@ export interface LastExport {
 @Injectable()
 export class DocumentExportService {
   private readonly db = inject(DocumentsGateway);
-  private readonly system = inject(SystemGateway);
   private readonly i18n = inject(TranslateService);
 
   private readonly t = this.i18n.t;
@@ -103,6 +102,16 @@ export class DocumentExportService {
   }
 
   /**
+   * The native save dialog failed before a path existed. Same status line as a
+   * failed write, and the spinner stops. No export command runs.
+   */
+  failDialog(cause: unknown): void {
+    this.status.set(`${this.t()('jobs.wizard.export_failed')}: ${String(cause)}`);
+    this.error.set(true);
+    this.exporting.set(false);
+  }
+
+  /**
    * Writes `filePath`, then hands back to `onExported` so the caller can commit
    * the document. That commit runs inside this method's try/catch on purpose:
    * it is the last step of one user action, and a failure there has always been
@@ -141,14 +150,6 @@ export class DocumentExportService {
     } finally {
       this.exporting.set(false);
     }
-  }
-
-  openFile(path: string): void {
-    void this.system.openFile(path);
-  }
-
-  revealFile(path: string): void {
-    void this.system.revealInFolder(path);
   }
 
   /** Suggested save name - see `document-filename.ts` for the rule and why. */

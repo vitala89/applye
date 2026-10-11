@@ -9,7 +9,8 @@ import {
   SystemGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { FollowupDraftService, ToastService } from '@applye/application';
+import { FollowupDraftService } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { QuickViewModalComponent } from './quick-view-modal.component';
 
 /**

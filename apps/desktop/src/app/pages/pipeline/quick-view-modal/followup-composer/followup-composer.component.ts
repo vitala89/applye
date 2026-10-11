@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Copy, LucideAngularModule, Mail } from 'lucide-angular';
-import { FOLLOWUP_LANGUAGES, FollowupDraftService, ToastService } from '@applye/application';
+import { FOLLOWUP_LANGUAGES, FollowupDraftService } from '@applye/application';
+import { ToastService } from '../../../../core/toast/toast.service';
 import { PipelineCard, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 

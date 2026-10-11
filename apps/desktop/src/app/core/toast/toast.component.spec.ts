@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@applye/i18n';
-import { Toast } from '@applye/application';
+import { Toast } from './toast.model';
 import { ToastComponent } from './toast.component';
-import { ToastService } from '@applye/application';
+import { ToastService } from './toast.service';
 
 function make(kind: Toast['kind']): Toast {
   return { id: 1, kind, message: 'hello', createdAt: 0 };

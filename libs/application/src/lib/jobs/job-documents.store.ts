@@ -63,12 +63,12 @@ export class JobDocumentsStore {
   ): Promise<DocumentEditorDestination | null> {
     const job = this.detail.job();
     if (!job?.id) return null;
-    const commands = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
     if (!returnToWizard) {
       return {
-        commands,
-        queryParams: {
-          returnTo: 'myJobs',
+        kind,
+        documentId: id,
+        returnTo: {
+          context: 'myJobs',
           jobId: job.id,
           jobLabel: job.company || job.title || '',
         },
@@ -77,17 +77,10 @@ export class JobDocumentsStore {
     const reviewHash = await this.finalChecks.documentsHash();
     const parkedReview = this.finalChecks.checksToPark(reviewHash);
     return {
-      commands,
-      queryParams: {
-        returnTo: 'applyWizard',
-        jobId: job.id,
-        documentType: kind,
-        documentId: id,
-        reviewHash,
-        // Open the editor showing the rendered result first (Review = look at
-        // it), not the raw section editor.
-        preview: '1',
-      },
+      kind,
+      documentId: id,
+      preview: true,
+      returnTo: { context: 'applyWizard', jobId: job.id, reviewHash },
       ...(parkedReview ? { parkedReview } : {}),
     };
   }

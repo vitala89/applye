@@ -1,7 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService } from '../documents/document-export.service';
-import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
 import { FinalChecks, FinalChecksService } from './final-checks.service';
@@ -55,8 +54,10 @@ export class JobDetailLifecycleStore {
   private readonly exportSvc = inject(DocumentExportService);
   private readonly portal = inject(PortalAnswersService);
   private readonly jobActions = inject(JobActionsService);
-  private readonly toast = inject(ToastService);
   private readonly t = inject(TranslateService).t;
+
+  /** A later read failed after the job itself loaded. Null when the load is whole. */
+  readonly partialLoadError = signal<string | null>(null);
 
   /** The job id the screen currently reflects, so a route param change to a
    * different job triggers a real reload instead of leaving stale content. */
@@ -126,6 +127,7 @@ export class JobDetailLifecycleStore {
     if (!(await this.detail.loadJob(id))) return;
     const job = this.detail.job();
     if (!job) return;
+    this.partialLoadError.set(null);
     try {
       // Restores this job's score on open, falling back to a stale one when the
       // profile has changed since. See `JobScoringService.loadCached`.
@@ -139,7 +141,7 @@ export class JobDetailLifecycleStore {
       await this.portal.loadFromCache(job, this.detail.profile(), this.detail.settings());
       await this.tailoring.restoreFromCache();
     } catch (e) {
-      this.toast.error(`${this.t()('jobs.load_partial_failed')} ${String(e)}`);
+      this.partialLoadError.set(`${this.t()('jobs.load_partial_failed')} ${String(e)}`);
     }
   }
 

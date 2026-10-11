@@ -1,37 +1,29 @@
 import { TestBed } from '@angular/core/testing';
-import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 
 describe('DocumentReviewStatusService', () => {
   let svc: DocumentReviewStatusService;
-  let toasts: string[];
 
   beforeEach(() => {
-    toasts = [];
-    TestBed.configureTestingModule({
-      providers: [
-        DocumentReviewStatusService,
-        { provide: ToastService, useValue: { error: (m: string) => toasts.push(m) } },
-      ],
-    });
+    TestBed.configureTestingModule({ providers: [DocumentReviewStatusService] });
     svc = TestBed.inject(DocumentReviewStatusService);
   });
 
   describe('the two kinds of failure', () => {
-    it('toasts an unexpected failure, because nothing else reports it', () => {
+    it('records an unexpected failure apart from the status line', () => {
       svc.fail(new Error('database is gone'));
 
       expect(svc.status()).toContain('database is gone');
       expect(svc.error()).toBe(true);
-      expect(toasts).toEqual([svc.status()]);
+      expect(svc.unexpectedFailure()).toBe(svc.status());
     });
 
-    it('does not toast a refused precondition, which the user caused and can see', () => {
+    it('does not mark a refused precondition as an unexpected failure', () => {
       svc.refuse('Tailor the CV first.');
 
       expect(svc.status()).toBe('Tailor the CV first.');
       expect(svc.error()).toBe(true);
-      expect(toasts).toEqual([]);
+      expect(svc.unexpectedFailure()).toBeNull();
     });
   });
 
@@ -64,7 +56,7 @@ describe('DocumentReviewStatusService', () => {
       expect(result).toBeNull();
       expect(svc.error()).toBe(true);
       expect(svc.status()).toContain('upstream said no');
-      expect(toasts.length).toBe(1);
+      expect(svc.unexpectedFailure()).toContain('upstream said no');
     });
 
     it('keeps a message the body set for itself', async () => {
@@ -82,7 +74,7 @@ describe('DocumentReviewStatusService', () => {
 
       expect(result).toBeNull();
       expect(svc.status()).toBe('No profile yet.');
-      expect(toasts).toEqual([]);
+      expect(svc.unexpectedFailure()).toBeNull();
     });
   });
 
@@ -93,6 +85,7 @@ describe('DocumentReviewStatusService', () => {
 
       expect(svc.status()).toBe('saved, unchanged');
       expect(svc.error()).toBe(false);
+      expect(svc.unexpectedFailure()).toBeNull();
     });
   });
 

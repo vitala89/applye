@@ -8,6 +8,7 @@ import { JobActionsService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 import { WizardActivityService } from '@applye/application';
 import { exportThroughSaveDialog } from '../../documents/save-dialog-export';
+import { openExportedPath, revealExportedPath } from '../../documents/exported-file-actions';
 import { JOB_DETAIL_ICONS } from '../job-detail-icons';
 
 /**
@@ -77,10 +78,10 @@ export class JobExportApplyStepComponent {
   }
 
   protected openExportedFile(path: string): void {
-    this.exportSvc.openFile(path);
+    void openExportedPath(path);
   }
 
   protected revealExportedFile(path: string): void {
-    this.exportSvc.revealFile(path);
+    void revealExportedPath(path);
   }
 }

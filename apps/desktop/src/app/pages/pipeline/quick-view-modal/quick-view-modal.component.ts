@@ -14,7 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ExternalLink, Flag, LucideAngularModule, X } from 'lucide-angular';
 import { QuickViewStore, companyInitials, scoreClass } from '@applye/application';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import {
   Application,
   ApplicationStatus,

@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DocumentsGateway, JobsGateway, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../shell/toast.service';
 import { JobActionsService } from './job-actions.service';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 
@@ -11,7 +10,6 @@ describe('JobActionsService', () => {
   let patched: { id: number; patch: Record<string, unknown> }[];
   let deleted: number[];
   let forgotten: number[];
-  let toasts: { kind: string; text: string }[];
   let upsertFails: boolean;
   let deleteFails: boolean;
   let statusFails: boolean;
@@ -23,7 +21,6 @@ describe('JobActionsService', () => {
     patched = [];
     deleted = [];
     forgotten = [];
-    toasts = [];
     upsertFails = false;
     deleteFails = false;
     statusFails = false;
@@ -55,11 +52,6 @@ describe('JobActionsService', () => {
         return Promise.resolve();
       },
     };
-    const toast = {
-      success: (text: string) => toasts.push({ kind: 'success', text }),
-      error: (text: string) => toasts.push({ kind: 'error', text }),
-    };
-
     TestBed.configureTestingModule({
       providers: [
         JobActionsService,
@@ -67,7 +59,6 @@ describe('JobActionsService', () => {
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: JobsStore, useValue: store },
-        { provide: ToastService, useValue: toast },
         {
           provide: JobIdentityResolverService,
           useValue: { clear: (id: number) => forgotten.push(id) },
@@ -100,7 +91,7 @@ describe('JobActionsService', () => {
 
       expect(app).toBeNull();
       expect(svc.message()).toContain('write failed');
-      expect(toasts.at(-1)?.kind).toBe('error');
+      expect(svc.outcome()?.kind).toBe('error');
       expect(svc.busy()).toBe(false);
       expect(patched).toEqual([]);
     });
@@ -110,6 +101,8 @@ describe('JobActionsService', () => {
 
       expect(await svc.save(7, null)).toBeNull();
       expect(upserted).toEqual([]);
+      expect(svc.outcome()).toBeNull();
+      expect(svc.outcomeEpoch()).toBe(0);
     });
   });
 
@@ -117,7 +110,7 @@ describe('JobActionsService', () => {
     it('deletes the job and reports success', async () => {
       expect(await svc.remove(7)).toBe(true);
       expect(deleted).toEqual([7]);
-      expect(toasts.at(-1)?.kind).toBe('success');
+      expect(svc.outcome()?.kind).toBe('success');
     });
 
     it('stops the identification badge offering a job that no longer exists', async () => {
@@ -242,7 +235,7 @@ describe('JobActionsService', () => {
       expect(await svc.createApplication(ensure, commit)).toBeNull();
       expect(svc.busy()).toBe(false);
       expect(svc.message()).toContain('document commit failed');
-      expect(toasts.at(-1)?.kind).toBe('error');
+      expect(svc.outcome()?.kind).toBe('error');
     });
 
     it('returns the page to a usable state when the application cannot be created', async () => {
@@ -290,7 +283,7 @@ describe('JobActionsService', () => {
       expect(await svc.apply(5, 7)).toBeNull();
       expect(patched).toEqual([]);
       expect(svc.busy()).toBe(false);
-      expect(toasts.at(-1)?.kind).toBe('error');
+      expect(svc.outcome()?.kind).toBe('error');
     });
 
     it('refuses a second run while one is in flight', async () => {

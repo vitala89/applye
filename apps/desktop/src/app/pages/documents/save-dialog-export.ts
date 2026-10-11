@@ -15,8 +15,14 @@ export async function exportThroughSaveDialog(
 ): Promise<void> {
   const filename = exportSvc.beginExport(kind, format, item);
   if (!filename || !item) return;
-  const { save } = await import('@tauri-apps/plugin-dialog');
-  const filePath = await save({ defaultPath: filename });
+  let filePath: string | null;
+  try {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    filePath = await save({ defaultPath: filename });
+  } catch (cause) {
+    exportSvc.failDialog(cause);
+    return;
+  }
   if (!filePath) {
     exportSvc.cancelExport();
     return;

@@ -17,13 +17,13 @@ export interface ProviderGuide {
   iconUrl?: string;
   /** Prefix hint shown as the key input's placeholder (e.g. "sk-ant-api03-"). */
   keyPrefix: string;
-  /** Where the user creates a key; opened via openUrl(). */
+  /** Where the user creates a key. The desktop opens it. */
   consoleUrl: string;
   /** i18n key for the short console hostname label (e.g. "console.anthropic.com"). */
   consoleLabelKey: string;
   /** Ordered i18n keys for the numbered setup steps. */
   stepKeys: string[];
-  /** Optional external tutorial video; opened via openUrl(). */
+  /** Optional external tutorial video. The desktop opens it. */
   helpVideoUrl?: string;
   /** i18n key for the name to show in CLI bridge mode, where the product is
    * the CLI rather than the API - "Claude Code", not "Claude". Falls back to

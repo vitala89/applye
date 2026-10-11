@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { FinalChecks, JobDocumentDraftsStore, JobDocumentsStore } from '@applye/application';
 import { parkFinalChecks } from '../../core/browser-ui-state';
-import { JobEditorNavigation } from './job-editor-navigation';
+import { editorRoute, JobEditorNavigation } from './job-editor-navigation';
 
 jest.mock('../../core/browser-ui-state', () => ({
   parkFinalChecks: jest.fn(),
@@ -39,8 +39,10 @@ describe('JobEditorNavigation', () => {
           provide: JobDocumentsStore,
           useValue: {
             openCv: async () => ({
-              commands: ['/documents/cv', 11],
-              queryParams: { returnTo: 'applyWizard', reviewHash: 'rh' },
+              kind: 'cv' as const,
+              documentId: 11,
+              preview: true,
+              returnTo: { context: 'applyWizard' as const, jobId: 4, reviewHash: 'rh' },
               parkedReview: { reviewHash: 'rh', checks: CHECKS },
             }),
             openCoverLetter: async () => null,
@@ -50,7 +52,8 @@ describe('JobEditorNavigation', () => {
           provide: JobDocumentDraftsStore,
           useValue: {
             startTailoringCoverLetter: async () => ({
-              commands: ['/documents/cover-letter', 22],
+              kind: 'cover_letter' as const,
+              documentId: 22,
             }),
           },
         },
@@ -65,7 +68,16 @@ describe('JobEditorNavigation', () => {
     expect(navigated).toEqual([
       {
         commands: ['/documents/cv', 11],
-        extras: { queryParams: { returnTo: 'applyWizard', reviewHash: 'rh' } },
+        extras: {
+          queryParams: {
+            returnTo: 'applyWizard',
+            jobId: 4,
+            documentType: 'cv',
+            documentId: 11,
+            reviewHash: 'rh',
+            preview: '1',
+          },
+        },
       },
     ]);
   });
@@ -81,5 +93,18 @@ describe('JobEditorNavigation', () => {
     await TestBed.inject(JobEditorNavigation).openTailoredCoverLetter();
 
     expect(navigated).toEqual([{ commands: ['/documents/cover-letter', 22], extras: undefined }]);
+  });
+
+  it('maps a My Jobs return onto the existing query', () => {
+    expect(
+      editorRoute({
+        kind: 'cv',
+        documentId: 11,
+        returnTo: { context: 'myJobs', jobId: 4, jobLabel: 'Acme' },
+      }),
+    ).toEqual({
+      commands: ['/documents/cv', 11],
+      extras: { queryParams: { returnTo: 'myJobs', jobId: 4, jobLabel: 'Acme' } },
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DatabaseBackupStore, ToastService } from '@applye/application';
+import { DatabaseBackupStore } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { TranslateService } from '@applye/i18n';
 
 import { SettingsDataBackupComponent } from './settings-data-backup.component';

@@ -1,5 +1,5 @@
 import { ErrorHandler, Injectable, inject } from '@angular/core';
-import { ToastService } from '@applye/application';
+import { ToastService } from './toast.service';
 
 @Injectable()
 export class ToastErrorHandler implements ErrorHandler {

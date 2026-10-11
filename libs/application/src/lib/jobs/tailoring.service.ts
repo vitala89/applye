@@ -2,7 +2,6 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiService, DraftsGateway, SystemGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { WizardActivityService } from './wizard-activity.service';
-import { ToastService } from '../shell/toast.service';
 import {
   PASSES,
   PassNumber,
@@ -44,7 +43,6 @@ export class TailoringService {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly activity = inject(WizardActivityService);
-  private readonly toast = inject(ToastService);
 
   private readonly t = this.i18n.t;
 
@@ -174,7 +172,6 @@ export class TailoringService {
         ).replace('{n}', String(baseline.cvId));
     if (warning && this.baselineWarning() !== warning) {
       this.baselineWarning.set(warning);
-      this.toast.warning(warning);
     }
     const baselineMd = baseline.md;
     const lang = settings.defaultDocLanguage ?? 'en';

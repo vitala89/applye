@@ -1,6 +1,9 @@
 import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { DocumentLibraryItem } from '@applye/core';
+import { DocumentsGateway } from '@applye/data';
 import { DocumentExportService } from '@applye/application';
+import { TranslateService } from '@applye/i18n';
 import { exportThroughSaveDialog } from './save-dialog-export';
 
 const save = jest.fn();
@@ -25,6 +28,11 @@ describe('exportThroughSaveDialog', () => {
       }),
       cancelExport: jest.fn(() => {
         cancelled.push('cancel');
+        exportSvc.exporting.set(false);
+      }),
+      failDialog: jest.fn((cause: unknown) => {
+        exportSvc.status.set(`jobs.wizard.export_failed: ${String(cause)}`);
+        exportSvc.error.set(true);
         exportSvc.exporting.set(false);
       }),
       exportTo: jest.fn(
@@ -76,5 +84,33 @@ describe('exportThroughSaveDialog', () => {
 
     expect(save).not.toHaveBeenCalled();
     expect(s.calls).toEqual([]);
+  });
+
+  it('stops the spinner and records the error when the save dialog rejects', async () => {
+    save.mockRejectedValueOnce(new Error('dialog crashed'));
+    const pdf = jest.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        DocumentExportService,
+        {
+          provide: DocumentsGateway,
+          useValue: {
+            cvDocumentExportPdfWysiwyg: pdf,
+            cvDocumentExport: jest.fn(),
+            coverLetterDocumentExport: jest.fn(),
+            coverLetterDocumentExportPdfWysiwyg: jest.fn(),
+          },
+        },
+        { provide: TranslateService, useValue: { t: signal((key: string) => key) } },
+      ],
+    });
+    const exportSvc = TestBed.inject(DocumentExportService);
+
+    await exportThroughSaveDialog(exportSvc, 'cv', 'pdf', item, async () => undefined);
+
+    expect(exportSvc.exporting()).toBe(false);
+    expect(exportSvc.error()).toBe(true);
+    expect(exportSvc.status()).toContain('jobs.wizard.export_failed');
+    expect(pdf).not.toHaveBeenCalled();
   });
 });

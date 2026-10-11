@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DatabaseBackupStore, suggestBackupFilename, ToastService } from '@applye/application';
+import { DatabaseBackupStore, suggestBackupFilename } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { TranslateService } from '@applye/i18n';
 import { ArchiveRestore, Database, LoaderCircle, LucideAngularModule } from 'lucide-angular';
 

@@ -2,7 +2,6 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Application } from '@applye/core';
 import { JobsGateway, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../shell/toast.service';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 /**
@@ -20,7 +19,6 @@ import { JobIdentityResolverService } from './job-identity-resolver.service';
 export class JobActionsService {
   private readonly db = inject(JobsGateway);
   private readonly jobsStore = inject(JobsStore);
-  private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
   private readonly identity = inject(JobIdentityResolverService);
   private readonly t = this.i18n.t;
@@ -38,6 +36,13 @@ export class JobActionsService {
   readonly applying = signal(false);
   readonly message = signal('');
   readonly deleteConfirmOpen = signal(false);
+  /**
+   * The last completed action, success or failure. `outcomeEpoch` moves only
+   * when one is recorded, so a busy early return does not look like a new
+   * notice. The desktop toasts from the pair.
+   */
+  readonly outcome = signal<{ kind: 'success' | 'error'; message: string } | null>(null);
+  readonly outcomeEpoch = signal(0);
   readonly deleting = signal(false);
 
   openDeleteConfirm(): void {
@@ -71,7 +76,7 @@ export class JobActionsService {
       // for - the DB is the single source of truth for the overview row.
       this.jobsStore.patchOverviewRow(jobId, { status: app.status });
       this.message.set(this.t()('jobs.saved_ok'));
-      this.toast.success(this.t()('jobs.saved_ok'));
+      this.report('success', this.t()('jobs.saved_ok'));
       return app;
     } catch (e) {
       this.fail(e);
@@ -112,7 +117,7 @@ export class JobActionsService {
     try {
       const app = await ensureApplication();
       await commitDocuments();
-      this.toast.success(this.t()('jobs.application_saved_ok'));
+      this.report('success', this.t()('jobs.application_saved_ok'));
       return app;
     } catch (e) {
       this.fail(e);
@@ -141,7 +146,7 @@ export class JobActionsService {
       // Mirror the status the DB actually recorded, not the literal we asked
       // for - the DB is the single source of truth for the overview row.
       this.jobsStore.patchOverviewRow(jobId, { status: updated.status });
-      this.toast.success(this.t()('jobs.applied_ok'));
+      this.report('success', this.t()('jobs.applied_ok'));
       return updated;
     } catch (e) {
       this.fail(e);
@@ -165,7 +170,7 @@ export class JobActionsService {
       // The identification badge offers a way back to a job. Deleting one is
       // the case where that page no longer exists.
       this.identity.clear(jobId);
-      this.toast.success(this.t()('jobs.delete_ok'));
+      this.report('success', this.t()('jobs.delete_ok'));
       return true;
     } catch (e) {
       this.fail(e);
@@ -177,6 +182,11 @@ export class JobActionsService {
 
   private fail(e: unknown): void {
     this.message.set(String(e));
-    this.toast.error(String(e));
+    this.report('error', String(e));
+  }
+
+  private report(kind: 'success' | 'error', message: string): void {
+    this.outcome.set({ kind, message });
+    this.outcomeEpoch.update((n) => n + 1);
   }
 }

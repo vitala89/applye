@@ -131,8 +131,9 @@ describe('JobDocumentsStore', () => {
       const destination = await store.openCv(11);
 
       expect(destination).toEqual({
-        commands: ['/documents/cv', 11],
-        queryParams: { returnTo: 'myJobs', jobId: 4, jobLabel: 'Acme' },
+        kind: 'cv',
+        documentId: 11,
+        returnTo: { context: 'myJobs', jobId: 4, jobLabel: 'Acme' },
       });
       // The hash is only worth computing for the path that compares it later.
       expect(hashCalls).toBe(0);
@@ -143,16 +144,13 @@ describe('JobDocumentsStore', () => {
       const destination = await store.openCoverLetter(12, true);
 
       expect(stored).toEqual(['hash-9']);
-      expect(destination?.commands).toEqual(['/documents/cover-letter', 12]);
-      expect(destination?.queryParams).toEqual({
-        returnTo: 'applyWizard',
-        jobId: 4,
-        documentType: 'cover_letter',
+      expect(destination).toEqual({
+        kind: 'cover_letter',
         documentId: 12,
-        reviewHash: 'hash-9',
-        preview: '1',
+        preview: true,
+        returnTo: { context: 'applyWizard', jobId: 4, reviewHash: 'hash-9' },
+        parkedReview: { reviewHash: 'hash-9', checks: expect.anything() },
       });
-      expect(destination?.parkedReview?.reviewHash).toBe('hash-9');
     });
   });
 

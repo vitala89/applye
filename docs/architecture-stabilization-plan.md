@@ -124,13 +124,17 @@ Done when:
 ### PR 1 - Remove platform leakage from the application layer
 
 **Status:** implemented on `refactor/application-platform-boundaries` and open as
-[#576](https://github.com/vitala89/applye/pull/576). Not merged.
-Production scan on `main`: Tauri 2 files, Router 3, clipboard 2, localStorage 1, sessionStorage 3.
-After this branch those counts are 0 in production application code. The audit also found
-`sessionStorage` in `wizard-progress.service.ts`, `tailoring-pass-drafts.service.ts`, and
-`final-checks.service.ts`, in addition to the sidebar `localStorage` key. Those four storage sites
-moved with the Tauri, router, and clipboard leaks. `window` / `document` matches in this library
-were comments. PR 2 is unchanged.
+[#576](https://github.com/vitala89/applye/pull/576). Not merged. A review of that pull request
+required four further cuts, and they are on the same branch: `ToastService` left the library,
+editor destinations are semantic facts rather than routes, a rejected save dialog records
+`failDialog` without leaving the spinner up, and Open/Reveal run from the desktop button.
+Production scan on `main`: Tauri 2 files, Router 3, clipboard 2, localStorage 1, sessionStorage 3,
+plus `ToastService` in the library and ten production callers. After this branch those counts are
+0 in production application code, including toast ownership, route strings, and file open/reveal
+UI actions. The audit also found `sessionStorage` in `wizard-progress.service.ts`,
+`tailoring-pass-drafts.service.ts`, and `final-checks.service.ts`, in addition to the sidebar
+`localStorage` key. Those four storage sites moved with the Tauri, router, and clipboard leaks.
+`window` / `document` matches in this library were comments. PR 2 is unchanged.
 
 Audit every production file under `libs/application` for:
 

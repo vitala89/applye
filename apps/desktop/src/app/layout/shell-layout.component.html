@@ -33,7 +33,7 @@
       [attr.title]="
         shell.sidebarCollapsed() ? t()('shell.sidebar_expand') : t()('shell.sidebar_collapse')
       "
-      (click)="shell.toggleSidebar()"
+      (click)="toggleSidebar()"
     >
       <lucide-icon
         [img]="shell.sidebarCollapsed() ? icons.panelExpand : icons.panelCollapse"

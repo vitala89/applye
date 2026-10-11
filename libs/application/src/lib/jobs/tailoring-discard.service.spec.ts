@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
-import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
 import { TailorScoreService } from './tailor-score.service';
@@ -32,7 +31,6 @@ describe('TailoringDiscardService', () => {
   let status: DocumentReviewStatusService;
   let passDrafts: TailoringPassDraftsService;
   let deleted: number[];
-  let toasts: string[];
   let deleteFails: boolean;
 
   const DRAFT_CV = { id: 11, isApplicationDraft: true } as never;
@@ -40,7 +38,6 @@ describe('TailoringDiscardService', () => {
 
   beforeEach(() => {
     deleted = [];
-    toasts = [];
     deleteFails = false;
     sessionStorage.clear();
 
@@ -63,7 +60,6 @@ describe('TailoringDiscardService', () => {
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
-        { provide: ToastService, useValue: { error: (m: string) => toasts.push(m) } },
       ],
     });
 
@@ -164,12 +160,12 @@ describe('TailoringDiscardService', () => {
 
     it('reports the failure as an error, not as an ordinary status line', async () => {
       // The regression this test exists for: the failure used to be written to
-      // the status line with no error flag and no toast, so a discard that
-      // destroyed nothing looked exactly like one that succeeded.
+      // the status line with no error flag, so a discard that destroyed nothing
+      // looked exactly like one that succeeded.
       expect(await svc.discard(context())).toBe(false);
       expect(status.error()).toBe(true);
       expect(status.status()).toContain('database is locked');
-      expect(toasts.length).toBe(1);
+      expect(status.unexpectedFailure()).toContain('database is locked');
     });
 
     it('leaves the confirmation open, because nothing was discarded', async () => {

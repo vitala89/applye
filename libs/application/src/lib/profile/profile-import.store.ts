@@ -3,7 +3,6 @@ import { Settings } from '@applye/core';
 import { AiService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ParsedProfile } from './profile-parse.util';
-import { ToastService } from '../shell/toast.service';
 
 /**
  * The `profile-import` parse behind Profile's raw-markdown editor: whether a
@@ -20,12 +19,13 @@ import { ToastService } from '../shell/toast.service';
 @Injectable()
 export class ProfileImportStore {
   private readonly ai = inject(AiService);
-  private readonly toast = inject(ToastService);
   private readonly t = inject(TranslateService).t;
 
   readonly parsing = signal(false);
   readonly status = signal('');
   readonly error = signal(false);
+  /** True only when the provider call itself threw. A null parse is a status line. */
+  readonly callFailed = signal(false);
   readonly preview = signal<ParsedProfile | null>(null);
 
   /**
@@ -34,6 +34,7 @@ export class ProfileImportStore {
    * automatically.
    */
   async parse(markdown: string, settings: Settings | null): Promise<void> {
+    this.callFailed.set(false);
     const text = markdown.trim();
     if (!text) {
       this.status.set(this.t()('profile.parse_empty_hint'));
@@ -67,7 +68,7 @@ export class ProfileImportStore {
     } catch (e) {
       this.status.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
       this.error.set(true);
-      this.toast.error(this.t()('profile.parse_failed'));
+      this.callFailed.set(true);
     } finally {
       this.parsing.set(false);
     }

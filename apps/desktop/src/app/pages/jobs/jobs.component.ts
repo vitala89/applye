@@ -29,16 +29,18 @@ import { JobCrossJobConfirmComponent } from './job-cross-job-confirm/job-cross-j
 import { JobDeleteConfirmComponent } from './job-delete-confirm/job-delete-confirm.component';
 import { JobDetailActionsComponent } from './job-detail-actions/job-detail-actions.component';
 import { JobDiscardConfirmComponent } from './job-discard-confirm/job-discard-confirm.component';
+import { JobEditorNavigation } from './job-editor-navigation';
 import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.component';
 import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
 import { CvPhotoPromptService } from '@applye/application';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { PortalAnswersService } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { DocumentExportService } from '@applye/application';
 import { TailoringService } from '@applye/application';
 import { JobScoringService } from '@applye/application';
 import { WizardNavService } from '@applye/application';
+import { readParkedFinalChecks } from '../../core/browser-ui-state';
 import { scrollOnTick } from '../../core/scroll-to-top';
 import { CoverLetterTailorService } from '@applye/application';
 import { DocumentReviewStatusService } from '@applye/application';
@@ -56,6 +58,8 @@ import {
   JobScoringStore,
   JobTailoringStore,
 } from '@applye/application';
+import { JobPageNotices } from './job-page-notices';
+import { showJobActionOutcome } from './show-job-action-outcome';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JobExportApplyStepComponent } from './job-export-apply-step/job-export-apply-step.component';
 import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.component';
@@ -117,6 +121,8 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     JobScoringStore,
     JobTailoringStore,
     JobDetailLifecycleStore,
+    JobEditorNavigation,
+    JobPageNotices,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -125,6 +131,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly store = inject(JobDetailStore);
   /** Which documents this application is linked to, and how they are reached. */
   protected readonly docs = inject(JobDocumentsStore);
+  /** Opens those documents. The store returns the destination; this navigates. */
+  protected readonly editorNav = inject(JobEditorNavigation);
   /** Generating one of them. */
   protected readonly drafts = inject(JobDocumentDraftsStore);
   /** The review step's token-free checks over both. */
@@ -137,6 +145,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   /** What the user can do to the job now open. The two actions that end in a
    * navigation return a boolean and leave the routing here. */
   protected readonly actions = inject(JobActionsStore);
+  private readonly jobActions = inject(JobActionsService);
   /** What opening a job loads, and what leaving one throws away. */
   protected readonly lifecycle = inject(JobDetailLifecycleStore);
   private readonly i18n = inject(TranslateService);
@@ -273,9 +282,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly profilePhoto = computed(() => this.profile()?.photoDataUri ?? null);
 
   async acceptPhotoPrompt(): Promise<void> {
-    const doc = await this.photoPrompt.accept(this.profilePhoto(), this.docs.cv());
-    if (doc) {
-      this.docs.cv.set(doc);
+    const outcome = await this.photoPrompt.accept(this.profilePhoto(), this.docs.cv());
+    if (outcome.kind === 'open-profile') await this.router.navigate(['/profile']);
+    if (outcome.kind === 'updated') {
+      this.docs.cv.set(outcome.document);
       this.checks.markOutdated();
     }
     const status = this.photoPrompt.status();
@@ -326,6 +336,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
+    inject(JobPageNotices);
     // Derived from the job rather than pushed at each site that changes it.
     // Pushed, it was set once on load and every other path had to remember:
     // a re-parse did not, and naming a job by hand did not, so the header kept
@@ -360,20 +371,34 @@ export class JobsComponent implements OnInit, OnDestroy {
         params.get('returnTo') === 'applyWizard' || params.get('wizardStep') === 'documents',
       documentSaved: params.get('documentSaved') === '1',
       reviewHash: params.get('reviewHash'),
+      parkedChecks: readParkedFinalChecks(params.get('reviewHash')),
     };
   }
 
-  /** Create Application, then leave for My Jobs - the store does the work and
-   * says whether the job is done with this screen; routing stays here
-   * (ADR-0005). Apply itself is a separate, unrouted action - see
-   * `JobActionsStore.applyNow`, bound directly from the template. */
+  /** Create Application, then leave for My Jobs. The store does the work and
+   * says whether the job is done with this screen; routing and the toast stay
+   * here (ADR-0005). */
   async createApplication(): Promise<void> {
-    if (await this.actions.createApplication()) await this.router.navigate(['/jobs']);
+    const done = await showJobActionOutcome(this.jobActions, this.toast, () =>
+      this.actions.createApplication(),
+    );
+    if (done) await this.router.navigate(['/jobs']);
   }
 
   /** Same shape: the store deletes, the page leaves a screen with no job. */
   async confirmDeleteJob(): Promise<void> {
-    if (await this.actions.confirmDeleteJob()) await this.router.navigate(['/jobs']);
+    const done = await showJobActionOutcome(this.jobActions, this.toast, () =>
+      this.actions.confirmDeleteJob(),
+    );
+    if (done) await this.router.navigate(['/jobs']);
+  }
+
+  protected saveJob(): Promise<void> {
+    return showJobActionOutcome(this.jobActions, this.toast, () => this.actions.saveJob());
+  }
+
+  protected applyNow(): Promise<void> {
+    return showJobActionOutcome(this.jobActions, this.toast, () => this.actions.applyNow());
   }
 
   ngOnDestroy(): void {

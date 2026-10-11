@@ -1,8 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { WizardProgressService } from './wizard-progress.service';
 
-const STORAGE_KEY = 'applye:wizardProgress';
-
 describe('WizardProgressService', () => {
   function make(): WizardProgressService {
     TestBed.resetTestingModule();
@@ -10,18 +8,10 @@ describe('WizardProgressService', () => {
     return TestBed.inject(WizardProgressService);
   }
 
-  beforeEach(() => {
-    sessionStorage.clear();
-  });
-
-  it('records progress in the signal and sessionStorage', () => {
+  it('records progress in the signal', () => {
     const service = make();
     service.set(7, 3);
     expect(service.progress()).toEqual({ jobId: 7, step: 3 });
-    expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? 'null')).toEqual({
-      jobId: 7,
-      step: 3,
-    });
   });
 
   it('overwrites the prior step for the same session', () => {
@@ -31,25 +21,17 @@ describe('WizardProgressService', () => {
     expect(service.progress()).toEqual({ jobId: 7, step: 4 });
   });
 
-  it('hydrates from sessionStorage on construction', () => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ jobId: 9, step: 2 }));
+  it('hydrates a value the desktop read back', () => {
     const service = make();
+    service.hydrate({ jobId: 9, step: 2 });
     expect(service.progress()).toEqual({ jobId: 9, step: 2 });
   });
 
-  it('ignores malformed stored progress', () => {
-    sessionStorage.setItem(STORAGE_KEY, '{ not json');
-    expect(make().progress()).toBeNull();
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ jobId: 'x' }));
-    expect(make().progress()).toBeNull();
-  });
-
-  it('clear() wipes signal and storage', () => {
+  it('clear() wipes the signal', () => {
     const service = make();
     service.set(7, 3);
     service.clear();
     expect(service.progress()).toBeNull();
-    expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 
   it('clear(jobId) only clears the matching job', () => {

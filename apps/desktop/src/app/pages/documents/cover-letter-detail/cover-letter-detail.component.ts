@@ -16,7 +16,7 @@ import {
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
 
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
@@ -33,6 +33,7 @@ import {
   myJobsReturnJobId,
   type BackLabelKeys,
 } from '../document-editor-return';
+import { exportThroughSaveDialog } from '../save-dialog-export';
 import { beginLivePrint } from '../wysiwyg-print';
 
 /** This editor's half of the shared back-button vocabulary. */
@@ -315,7 +316,9 @@ export class CoverLetterDetailComponent {
   async exportPdfWysiwyg(): Promise<void> {
     const saved = await this.docs.save();
     if (!saved) return;
-    await this.exportSvc.run('cover_letter', 'pdf', saved, () => Promise.resolve());
+    await exportThroughSaveDialog(this.exportSvc, 'cover_letter', 'pdf', saved, () =>
+      Promise.resolve(),
+    );
   }
 
   async save(): Promise<void> {

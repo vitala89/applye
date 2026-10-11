@@ -1,5 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { ToastService } from '../shell/toast.service';
+import { Injectable, signal } from '@angular/core';
 import { ReviewDocumentKind } from '../documents/document-gen.service';
 
 /**
@@ -18,22 +17,28 @@ import { ReviewDocumentKind } from '../documents/document-gen.service';
  */
 @Injectable()
 export class DocumentReviewStatusService {
-  private readonly toast = inject(ToastService);
-
   readonly status = signal('');
   readonly error = signal(false);
+  /**
+   * Set only by `fail`. A refusal uses the status line and leaves this null,
+   * so the desktop can toast the unexpected case without toasting a
+   * precondition the user can already read.
+   */
+  readonly unexpectedFailure = signal<string | null>(null);
   readonly chooseCvOpen = signal(false);
   readonly chooseCoverLetterOpen = signal(false);
 
   clear(): void {
     this.status.set('');
     this.error.set(false);
+    this.unexpectedFailure.set(null);
   }
 
   /** Names what happened, and clears an error a previous attempt left behind. */
   succeed(message: string): void {
     this.status.set(message);
     this.error.set(false);
+    this.unexpectedFailure.set(null);
   }
 
   /**
@@ -49,14 +54,15 @@ export class DocumentReviewStatusService {
 
   /**
    * An unexpected failure: whatever the database, the AI provider or the
-   * filesystem threw. Toasted as well as shown, because the user may have
-   * navigated away from the step by the time it lands.
+   * filesystem threw. Recorded apart from a refusal, because the user may
+   * have left the step by the time it lands and the desktop still needs to
+   * say so.
    */
   fail(cause: unknown): void {
     const message = String(cause);
     this.status.set(message);
     this.error.set(true);
-    this.toast.error(message);
+    this.unexpectedFailure.set(message);
   }
 
   /**

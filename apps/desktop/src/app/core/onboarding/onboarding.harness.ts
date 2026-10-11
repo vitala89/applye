@@ -10,7 +10,7 @@ import {
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ThemeService } from '../theme.service';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../toast/toast.service';
 import { OnboardingComponent } from './onboarding.component';
 import {
   OnboardingAiKeyStore,

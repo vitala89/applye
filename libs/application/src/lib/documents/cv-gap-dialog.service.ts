@@ -9,9 +9,7 @@ import {
   type CvGapQuestion,
 } from '@applye/core';
 
-import { ToastService } from '../shell/toast.service';
-import { TranslateService } from '@applye/i18n';
-import type { GapAnalysis } from './gap-fill';
+import { type GapAnalysis } from './gap-fill';
 import type { ReviewDocumentKind } from './document-gen.service';
 
 export interface CvGapResult {
@@ -38,8 +36,6 @@ export interface CvGapResult {
 @Injectable()
 export class CvGapDialogService {
   private readonly ai = inject(AiService);
-  private readonly toast = inject(ToastService);
-  private readonly t = inject(TranslateService).t;
 
   readonly analyzing = signal(false);
   readonly open = signal(false);
@@ -82,8 +78,8 @@ export class CvGapDialogService {
    * generation, but it does distinguish its two silent outcomes: an empty
    * `questions` list means "ask nothing", while `ok: false` means the model was
    * never reached. Both continue to a document; only the second is a failure,
-   * and it is reported here rather than left for the caller to notice, because
-   * every caller treats gap-fill as optional and would otherwise drop it.
+   * and it is recorded on `analyzeError` so the desktop can say so. Every
+   * caller treats gap-fill as optional and would otherwise drop it.
    */
   async analyze(
     cvText: string,
@@ -111,7 +107,6 @@ export class CvGapDialogService {
     } catch (e) {
       const error = String(e);
       this.analyzeError.set(error);
-      this.toast.warning(`${this.t()('jobs.gap_analysis_unavailable')} ${error}`);
       return { ok: false, error };
     }
   }

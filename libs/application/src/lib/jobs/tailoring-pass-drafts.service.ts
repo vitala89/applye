@@ -6,8 +6,6 @@ export interface TailoringPassDrafts {
   ids: number[];
 }
 
-const STORAGE_KEY = 'applye:tailoringPassDrafts';
-
 /**
  * Which document-library rows the in-flight tailoring pass created.
  *
@@ -23,11 +21,11 @@ const STORAGE_KEY = 'applye:tailoringPassDrafts';
  * (`JobActionsStore.openWizard` and the cross-job confirm) and only one
  * creation path, so this hook cannot be missed on a route the other forgot.
  *
- * Backed by `sessionStorage` for the same reason `WizardProgressService` is:
- * the discard service is component-scoped, so an in-memory record would be lost
- * the moment the user stepped into the document editor, and the discard would
- * widen back out to everything. Browser storage in `libs/application` is
- * `ADR-0005` amendment thirty-three, unchanged here.
+ * The record has to outlive the jobs page: the discard service is
+ * component-scoped, and stepping into the document editor destroys that page.
+ * This service is a root singleton, and the desktop mirrors `current` into
+ * session storage so a reload inside the same app session still knows which
+ * rows the pass owns (ADR-0005, amendment sixty-six).
  *
  * One pass at a time, matching `WizardProgress` - the cross-job confirm already
  * refuses to run two. **The failure direction is deliberate**: an app restart
@@ -36,27 +34,10 @@ const STORAGE_KEY = 'applye:tailoringPassDrafts';
  */
 @Injectable({ providedIn: 'root' })
 export class TailoringPassDraftsService {
-  private readonly state = signal<TailoringPassDrafts | null>(this.read());
+  readonly current = signal<TailoringPassDrafts | null>(null);
 
-  private storage(): Storage | undefined {
-    return globalThis.sessionStorage ?? undefined;
-  }
-
-  private read(): TailoringPassDrafts | null {
-    const raw = this.storage()?.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    try {
-      const p = JSON.parse(raw) as TailoringPassDrafts;
-      if (typeof p?.jobId !== 'number' || !Array.isArray(p.ids)) return null;
-      return { jobId: p.jobId, ids: p.ids.filter((id) => typeof id === 'number') };
-    } catch {
-      return null;
-    }
-  }
-
-  private write(next: TailoringPassDrafts): void {
-    this.state.set(next);
-    this.storage()?.setItem(STORAGE_KEY, JSON.stringify(next));
+  hydrate(drafts: TailoringPassDrafts | null): void {
+    this.current.set(drafts);
   }
 
   /**
@@ -65,15 +46,15 @@ export class TailoringPassDraftsService {
    * previous job's ids are no longer anyone's to delete.
    */
   record(jobId: number, documentId: number): void {
-    const current = this.state();
+    const current = this.current();
     const ids = current?.jobId === jobId ? current.ids : [];
     if (ids.includes(documentId)) return;
-    this.write({ jobId, ids: [...ids, documentId] });
+    this.current.set({ jobId, ids: [...ids, documentId] });
   }
 
   /** The rows this pass created for `jobId`, empty for any other job. */
   ids(jobId: number | null): number[] {
-    const current = this.state();
+    const current = this.current();
     return current && jobId != null && current.jobId === jobId ? current.ids : [];
   }
 
@@ -83,8 +64,7 @@ export class TailoringPassDraftsService {
    * `WizardProgressService.clear` uses, for the same reason.
    */
   clear(jobId?: number): void {
-    if (jobId != null && this.state()?.jobId !== jobId) return;
-    this.state.set(null);
-    this.storage()?.removeItem(STORAGE_KEY);
+    if (jobId != null && this.current()?.jobId !== jobId) return;
+    this.current.set(null);
   }
 }

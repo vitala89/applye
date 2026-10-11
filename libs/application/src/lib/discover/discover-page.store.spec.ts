@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { TranslateService } from '@applye/i18n';
 import { DiscoverDetailStore } from './discover-detail.store';
 import { type FeedRow, DiscoverFeedStore } from './discover-feed.store';
 import { DiscoverPageStore } from './discover-page.store';
@@ -8,7 +7,6 @@ import { DiscoverProfileContextStore } from './discover-profile-context.store';
 import { DiscoverRowMatchStore } from './discover-row-match.store';
 import { DiscoverScanStore } from './discover-scan.store';
 import { DiscoverSourcesStore } from './discover-sources.store';
-import { ToastService } from '../shell/toast.service';
 
 describe('DiscoverPageStore', () => {
   let store: DiscoverPageStore;
@@ -76,14 +74,6 @@ describe('DiscoverPageStore', () => {
           useValue: { keywords: signal(['angular']), marketChangedSinceScan: marketChanged },
         },
         { provide: DiscoverRowMatchStore, useValue: { badgeFor: () => null } },
-        {
-          provide: ToastService,
-          useValue: {
-            error: (m: string) => calls.push(`toast.error:${m}`),
-            success: (m: string) => calls.push(`toast.success:${m}`),
-          },
-        },
-        { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
       ],
     });
     store = TestBed.inject(DiscoverPageStore);
@@ -223,9 +213,8 @@ describe('DiscoverPageStore', () => {
     it('clears, closes the confirm and reports the count', async () => {
       store.askClearFeed();
 
-      await store.confirmClearFeed();
-
-      expect(calls).toEqual(['clear', 'toast.success:discover.clear_done']);
+      expect(await store.confirmClearFeed()).toEqual({ status: 'cleared', removed: 3 });
+      expect(calls).toEqual(['clear']);
       expect(store.clearConfirm()).toBe(false);
       expect(store.clearing()).toBe(false);
     });
@@ -236,9 +225,11 @@ describe('DiscoverPageStore', () => {
       clearResult = { error: 'database is locked' };
       store.askClearFeed();
 
-      await store.confirmClearFeed();
-
-      expect(calls).toEqual(['clear', 'toast.error:database is locked']);
+      expect(await store.confirmClearFeed()).toEqual({
+        status: 'failed',
+        message: 'database is locked',
+      });
+      expect(calls).toEqual(['clear']);
       expect(store.clearConfirm()).toBe(true);
     });
 

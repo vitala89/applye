@@ -12,7 +12,6 @@ import {
 } from '@applye/core';
 import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../shell/toast.service';
 import { parseCoverLetterFromResponse } from './cover-letter-response';
 
 /** Everything the tailored copy is built from. The page still owns the library
@@ -52,7 +51,6 @@ export class CoverLetterTailorService {
   private readonly db = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
-  private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
 
   readonly modalOpen = signal(false);
@@ -95,8 +93,8 @@ export class CoverLetterTailorService {
 
   /**
    * Runs the tailoring pass and persists the copy. Returns null when a run is
-   * already in flight or the run failed - failure is reported through `error`
-   * and a toast, never thrown at the page.
+   * already in flight or the run failed. Failure is recorded on `error` and
+   * never thrown at the page.
    */
   async run(ctx: CoverLetterTailorContext): Promise<CoverLetterTailorResult | null> {
     if (this.running()) return null;
@@ -145,7 +143,6 @@ export class CoverLetterTailorService {
       return { document, application };
     } catch (e) {
       this.error.set(String(e));
-      this.toast.error(String(e));
       return null;
     } finally {
       this.running.set(false);

@@ -1,5 +1,6 @@
-// Typed wrapper around Tauri's invoke() - frontend never calls invoke() directly.
-// Validates we're running inside Tauri before dispatching (dev guard).
+// Business and data IPC. Pages do not call this, and they do not call invoke().
+// The one presentation exception is apps/desktop/src/app/core/native-shell, which
+// reaches the guarded open/reveal commands. ADR-0005, amendment sixty-eight.
 
 declare global {
   interface Window {

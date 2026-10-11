@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Copy, LucideAngularModule, Mail } from 'lucide-angular';
-import { FOLLOWUP_LANGUAGES, FollowupDraftService, ToastService } from '@applye/application';
+import { FOLLOWUP_LANGUAGES, FollowupDraftService } from '@applye/application';
+import { ToastService } from '../../../../core/toast/toast.service';
 import { PipelineCard, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 
@@ -65,11 +66,13 @@ export class FollowupComposerComponent {
     this.followup.changeLanguage(language);
   }
 
-  protected copyFollowup(): Promise<void> {
-    return this.followup.copy();
+  protected async copyFollowup(): Promise<void> {
+    await navigator.clipboard.writeText(this.followup.draftText());
+    this.followup.markCopied();
   }
 
-  protected openFollowupInMail(): Promise<void> {
-    return this.followup.openInMail();
+  protected async openFollowupInMail(): Promise<void> {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    await openUrl(this.followup.mailtoUrl());
   }
 }

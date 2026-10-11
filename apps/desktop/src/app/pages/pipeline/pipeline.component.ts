@@ -32,7 +32,7 @@ import {
 import { TranslateService } from '@applye/i18n';
 import { PipelineCardComponent } from './pipeline-card/pipeline-card.component';
 import { QuickViewModalComponent } from './quick-view-modal/quick-view-modal.component';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 
 interface KanbanCol {
   status: ApplicationStatus;

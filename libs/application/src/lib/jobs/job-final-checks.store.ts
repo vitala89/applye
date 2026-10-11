@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
-import { FinalCheckInputs, FinalChecksService } from './final-checks.service';
+import { FinalCheckInputs, FinalChecks, FinalChecksService } from './final-checks.service';
 import { JobDetailStore } from './job-detail.store';
 
 /**
@@ -48,8 +48,10 @@ export class JobFinalChecksStore {
     return this.svc.refreshFreshness(this.inputs());
   }
 
-  storeForReturn(reviewHash: string): void {
-    this.svc.storeForReturn(reviewHash);
+  /** The snapshot to keep for the editor round trip, or null before any run. */
+  checksToPark(reviewHash: string): { reviewHash: string; checks: FinalChecks } | null {
+    const checks = this.checks();
+    return checks ? { reviewHash, checks } : null;
   }
 
   /**

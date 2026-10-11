@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { TrackerColumnsStore, TrackerReportStore, TrackerRowsStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { TrackerExportModalComponent } from './tracker-export-modal.component';
 
 /**

@@ -3,7 +3,6 @@ import { Settings } from '@applye/core';
 import { AiService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ProfileImportStore } from './profile-import.store';
-import { ToastService } from '../shell/toast.service';
 
 const SETTINGS = {
   aiMode: 'api',
@@ -16,20 +15,17 @@ describe('ProfileImportStore', () => {
   let store: ProfileImportStore;
   let renderSkill: jest.Mock;
   let run: jest.Mock;
-  let toast: { success: jest.Mock; error: jest.Mock };
   let t: (key: string) => string;
 
   beforeEach(() => {
     renderSkill = jest.fn().mockResolvedValue({ systemPrompt: 's', userPrompt: 'u' });
     run = jest.fn().mockResolvedValue({ text: '{"name":"Mira"}', tokensInput: 1, tokensOutput: 1 });
-    toast = { success: jest.fn(), error: jest.fn() };
 
     TestBed.configureTestingModule({
       providers: [
         ProfileImportStore,
         TranslateService,
         { provide: AiService, useValue: { renderSkill, run } },
-        { provide: ToastService, useValue: toast },
       ],
     });
     store = TestBed.inject(ProfileImportStore);
@@ -112,7 +108,7 @@ describe('ProfileImportStore', () => {
     expect(store.error()).toBe(true);
     expect(store.status()).toContain('no key');
     expect(store.parsing()).toBe(false);
-    expect(toast.error).toHaveBeenCalled();
+    expect(store.callFailed()).toBe(true);
   });
 
   /** `take` is the only way the preview leaves, and it leaves exactly once -

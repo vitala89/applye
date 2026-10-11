@@ -3531,6 +3531,59 @@ so the rule's value here is the message and the re-export path, not the coverage
 why it had to be repaired rather than dropped: a newcomer who injects a gateway into a component
 should read a sentence naming this ADR, not a list of project tags.
 
+## Amendment sixty-six: browser storage is application state, and the browser API is not
+
+Amendment thirty-three put `localStorage` and `sessionStorage` inside `libs/application`. The
+reading was that a rail preference and a wizard session are screen state that happens to outlive
+the component, and a storage port would have been a new public symbol for one boolean.
+
+Architecture Stabilization PR 1 keeps the state and moves the API. `ShellStore`,
+`WizardProgressService`, `TailoringPassDraftsService`, and the final-checks snapshot still own the
+values. `apps/desktop` reads and writes the same keys (`applye.sidebar.collapsed`,
+`applye:wizardProgress`, `applye:tailoringPassDrafts`, `applye:wizardFinalChecks:`). Nothing new
+goes into SQLite, and nothing becomes syncable career data.
+
+The same pull request moves the other platform effects the same way: the save dialog, clipboard
+writes, `mailto:` opening, and document-editor navigation. The application method returns a
+filename, a URL, a destination, or an outcome. The desktop performs it. There is no
+`PlatformAdapter` in `libs/application`.
+
+ESLint rejects `@tauri-apps/*`, `@angular/router`, `navigator`, `localStorage`, and
+`sessionStorage` in production files under `libs/application`. Specs may still fake an effect.
+
+## Amendment sixty-seven: the layer does not notify, and a destination is not a route
+
+Amendment three said nothing in `libs/application` notifies. Amendment fifty-four later moved
+`ToastService` into the library because the class was signal state with no gateway. The review of
+PR #576 held the earlier rule: a service that shows a message is still notifying, and a port that
+only exists so the library can notify is the same thing. `ToastService` is back in `apps/desktop`.
+Stores record an outcome or an error. The page decides whether to toast. `refuse` stays silent.
+
+The same review rejected `DocumentEditorDestination` while it still carried route commands and
+query maps. The application outcome is now the document kind, the document id, an optional preview
+flag, a return context (`myJobs` or `applyWizard`), and parked final checks. `JobEditorNavigation`
+is the only place that turns that into `/documents/cv/:id`, `/documents/cover-letter/:id`, and the
+existing query parameters.
+
+A native save dialog that throws is not a successful export and not a cancel. `failDialog` records
+`jobs.wizard.export_failed`, clears `exporting`, and does not call the export command. Open and
+Reveal for a file the wizard just wrote moved to the desktop button. `SystemGateway` still has
+those commands for other callers. Hashing, file reading, and backup stay where they are.
+
+## Amendment sixty-eight: shell effects are not business IPC
+
+`open_file` and `reveal_in_folder` stay the Rust commands they are. `ExportedPaths` still
+remembers only a pdf or docx this run wrote, `canonicalize` still resolves `..` and symlinks,
+and a path outside the app data directory still has to be one of those remembered files. Nothing
+in this amendment widens what the renderer can launch.
+
+Who may call them is the narrower rule. Business and data IPC goes through a typed gateway in
+`libs/data`. A presentation-only OS effect goes through `apps/desktop/src/app/core/native-shell`.
+`libs/application` does neither. A page calls `openExportedPath` or `revealExportedPath`. It does
+not import `@tauri-apps/api/core` and it does not name the command. ESLint rejects that import
+everywhere in the desktop app except the adapter, and a desktop test reads the production files
+back to keep a dynamic import from slipping past the rule.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

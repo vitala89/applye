@@ -10,7 +10,6 @@ import {
 import { TranslateService } from '@applye/i18n';
 import { TailorContext, TailoringService } from './tailoring.service';
 import { WizardActivityService } from './wizard-activity.service';
-import { ToastService } from '../shell/toast.service';
 
 /**
  * Covers the behaviour that used to live inline in `JobsComponent`. The pass
@@ -22,7 +21,6 @@ describe('TailoringService', () => {
   let db: { hashText: jest.Mock };
   let drafts: { tailoringCacheGet: jest.Mock; tailoringCacheSave: jest.Mock };
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
-  let toast: { warning: jest.Mock };
 
   const JOB_ID = 7;
 
@@ -67,7 +65,6 @@ describe('TailoringService', () => {
       tailoringCacheGet: jest.fn(async () => null),
       tailoringCacheSave: jest.fn(async () => undefined),
     };
-    toast = { warning: jest.fn() };
     let call = 0;
     ai = {
       renderSkill: jest.fn(async () => ({
@@ -89,7 +86,6 @@ describe('TailoringService', () => {
         { provide: DraftsGateway, useValue: drafts },
         { provide: AiService, useValue: ai },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
-        { provide: ToastService, useValue: toast },
       ],
     });
     return TestBed.inject(TailoringService);
@@ -233,7 +229,6 @@ describe('TailoringService', () => {
     // that the CV id was interpolated into it - not the English wording, which
     // now lives in the locale files.
     expect(s.baselineWarning()).toContain('jobs.tailor_base_cv_unreadable');
-    expect(toast.warning).toHaveBeenCalledTimes(1);
   });
 
   it('raises no baseline warning when the selected CV reads', async () => {
@@ -241,7 +236,6 @@ describe('TailoringService', () => {
     await s.run(ctx());
 
     expect(s.baselineWarning()).toBeNull();
-    expect(toast.warning).not.toHaveBeenCalled();
   });
 
   it('stops on a failing pass and reports it', async () => {

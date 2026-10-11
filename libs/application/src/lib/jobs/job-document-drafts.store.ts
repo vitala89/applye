@@ -1,5 +1,4 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { Application, DocumentLibraryItem, Job, type CvGapAnswer } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { CoverLetterDraftService } from '../documents/cover-letter-draft.service';
@@ -10,6 +9,7 @@ import { DocumentGenService, ReviewDocumentKind } from '../documents/document-ge
 import { GapFillHooks } from '../documents/gap-fill';
 import { JobGapFillService, jobDocLabel } from '../documents/job-gap-fill.service';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
+import { DocumentEditorDestination } from './document-editor-destination';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
 import { JobDetailStore } from './job-detail.store';
@@ -41,7 +41,6 @@ export class JobDocumentDraftsStore {
   private readonly gapSvc = inject(CvGapDialogService);
   private readonly docGen = inject(DocumentGenService);
   private readonly passDrafts = inject(TailoringPassDraftsService);
-  private readonly router = inject(Router);
   private readonly t = inject(TranslateService).t;
 
   /**
@@ -186,7 +185,7 @@ export class JobDocumentDraftsStore {
     if (letters) this.detail.coverLetters.set(letters);
   }
 
-  async startTailoringCoverLetter(): Promise<void> {
+  async startTailoringCoverLetter(): Promise<DocumentEditorDestination | null> {
     const result = await this.coverLetterTailor.run({
       job: this.detail.job(),
       profile: this.detail.profile(),
@@ -195,8 +194,8 @@ export class JobDocumentDraftsStore {
       application: this.detail.application(),
       label: (job) => jobDocLabel(job, 'Tailored Cover Letter'),
     });
-    if (!result) return;
+    if (!result?.document.id) return null;
     if (result.application) this.detail.application.set(result.application);
-    void this.router.navigate(['/documents/cover-letter', result.document.id]);
+    return { kind: 'cover_letter', documentId: result.document.id };
   }
 }

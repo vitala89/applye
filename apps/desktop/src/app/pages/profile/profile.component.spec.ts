@@ -9,7 +9,7 @@ import {
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { ProfileStore } from '@applye/application';
 import { ProfileComponent } from './profile.component';
 

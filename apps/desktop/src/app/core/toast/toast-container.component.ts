@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ToastComponent } from './toast.component';
-import { ToastService } from '@applye/application';
+import { ToastService } from './toast.service';
 
 @Component({
   selector: 'app-toast-container',

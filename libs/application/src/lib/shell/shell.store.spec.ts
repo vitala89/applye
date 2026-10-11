@@ -3,8 +3,6 @@ import type { Settings } from '@applye/core';
 import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { ShellStore } from './shell.store';
 
-const SIDEBAR_KEY = 'applye.sidebar.collapsed';
-
 const settings = (over: Partial<Settings> = {}): Settings =>
   ({ id: 1, uiLanguage: 'de', ...over }) as Settings;
 
@@ -23,7 +21,6 @@ function createStore(getSettings: jest.Mock) {
 }
 
 describe('ShellStore', () => {
-  beforeEach(() => globalThis.localStorage?.clear());
   afterEach(() => TestBed.resetTestingModule());
 
   describe('the stored UI language', () => {
@@ -82,25 +79,24 @@ describe('ShellStore', () => {
       expect(store.sidebarCollapsed()).toBe(false);
     });
 
-    it('starts collapsed when the last session collapsed it', () => {
-      globalThis.localStorage.setItem(SIDEBAR_KEY, '1');
+    it('takes the collapsed flag the shell hydrated', () => {
       const { store } = createStore(jest.fn().mockResolvedValue(settings()));
+
+      store.hydrateSidebar(true);
 
       expect(store.sidebarCollapsed()).toBe(true);
     });
 
-    /** The preference is per-machine, so it is written where it is read from -
-     * localStorage - rather than into the settings table. */
-    it('persists both directions of the toggle', () => {
+    /** The preference is per-machine. The shell writes it; this store only
+     * flips the signal, and never the settings row. */
+    it('toggles the rail without writing anything itself', () => {
       const { store } = createStore(jest.fn().mockResolvedValue(settings()));
 
       store.toggleSidebar();
       expect(store.sidebarCollapsed()).toBe(true);
-      expect(globalThis.localStorage.getItem(SIDEBAR_KEY)).toBe('1');
 
       store.toggleSidebar();
       expect(store.sidebarCollapsed()).toBe(false);
-      expect(globalThis.localStorage.getItem(SIDEBAR_KEY)).toBe('0');
     });
 
     it('does not touch the database when the rail is toggled', () => {

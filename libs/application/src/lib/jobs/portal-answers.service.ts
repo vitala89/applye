@@ -2,7 +2,6 @@ import { Injectable, inject, signal } from '@angular/core';
 import { AiService, DraftsGateway, SystemGateway } from '@applye/data';
 import { Job, Profile, Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../shell/toast.service';
 
 export interface PortalAnswerDraft {
   question: string;
@@ -26,7 +25,6 @@ export class PortalAnswersService {
   private readonly drafts = inject(DraftsGateway);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
-  private readonly toast = inject(ToastService);
 
   private readonly t = this.i18n.t;
 
@@ -102,10 +100,14 @@ export class PortalAnswersService {
     this.answers.set(answers);
   }
 
-  async copyAnswer(index: number): Promise<void> {
-    const answer = this.answers()[index]?.answer;
-    if (!answer) return;
-    await navigator.clipboard.writeText(answer);
+  /** The text Copy should put on the clipboard, or '' when that row is empty. */
+  answerText(index: number): string {
+    return this.answers()[index]?.answer ?? '';
+  }
+
+  /** The desktop calls this after the clipboard write succeeds. */
+  noteCopied(index: number): void {
+    if (!this.answerText(index)) return;
     this.copiedIndex.set(index);
     setTimeout(() => this.copiedIndex.set(null), 1500);
   }
@@ -162,7 +164,6 @@ export class PortalAnswersService {
     } catch (e) {
       this.error.set(true);
       this.status.set(String(e));
-      this.toast.error(String(e));
     } finally {
       this.drafting.set(false);
     }
@@ -221,7 +222,6 @@ export class PortalAnswersService {
     } catch (e) {
       this.error.set(true);
       this.status.set(String(e));
-      this.toast.error(String(e));
     } finally {
       this.redrafting.set(null);
     }

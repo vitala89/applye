@@ -1,10 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService } from '../documents/document-export.service';
-import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
-import { FinalChecksService } from './final-checks.service';
+import { FinalChecks, FinalChecksService } from './final-checks.service';
 import { documentReviewLanguageFor, inferDocumentRegion } from './job-document-defaults';
 import { JobActionsService } from './job-actions.service';
 import { JobDetailStore } from './job-detail.store';
@@ -30,6 +29,8 @@ export interface JobRouteEntry {
   documentSaved: boolean;
   /** The documents hash as it stood when the editor was opened. */
   reviewHash: string | null;
+  /** Checks the page read back for that hash, when the documents are unchanged. */
+  parkedChecks?: FinalChecks | null;
 }
 
 /**
@@ -53,8 +54,10 @@ export class JobDetailLifecycleStore {
   private readonly exportSvc = inject(DocumentExportService);
   private readonly portal = inject(PortalAnswersService);
   private readonly jobActions = inject(JobActionsService);
-  private readonly toast = inject(ToastService);
   private readonly t = inject(TranslateService).t;
+
+  /** A later read failed after the job itself loaded. Null when the load is whole. */
+  readonly partialLoadError = signal<string | null>(null);
 
   /** The job id the screen currently reflects, so a route param change to a
    * different job triggers a real reload instead of leaving stale content. */
@@ -124,6 +127,7 @@ export class JobDetailLifecycleStore {
     if (!(await this.detail.loadJob(id))) return;
     const job = this.detail.job();
     if (!job) return;
+    this.partialLoadError.set(null);
     try {
       // Restores this job's score on open, falling back to a stale one when the
       // profile has changed since. See `JobScoringService.loadCached`.
@@ -137,7 +141,7 @@ export class JobDetailLifecycleStore {
       await this.portal.loadFromCache(job, this.detail.profile(), this.detail.settings());
       await this.tailoring.restoreFromCache();
     } catch (e) {
-      this.toast.error(`${this.t()('jobs.load_partial_failed')} ${String(e)}`);
+      this.partialLoadError.set(`${this.t()('jobs.load_partial_failed')} ${String(e)}`);
     }
   }
 
@@ -154,8 +158,7 @@ export class JobDetailLifecycleStore {
 
     const currentHash = await this.checks.documentsHash();
     if (currentHash === entry.reviewHash) {
-      const restored = this.finalChecksSvc.restoreAfterReturn(entry.reviewHash);
-      if (restored) this.checks.checks.set(restored);
+      if (entry.parkedChecks) this.checks.checks.set(entry.parkedChecks);
       this.checks.outdated.set(false);
       this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_unchanged'));
     } else {

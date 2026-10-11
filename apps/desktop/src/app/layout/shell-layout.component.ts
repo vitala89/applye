@@ -21,7 +21,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-angular';
-import { DatabaseBackupStore, ShellStore, ToastService } from '@applye/application';
+import { DatabaseBackupStore, ShellStore } from '@applye/application';
+import { ToastService } from '../core/toast/toast.service';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { UnsavedJobPromptComponent } from '../shared/unsaved-job-prompt/unsaved-job-prompt.component';
@@ -35,6 +36,11 @@ import { WizardProgressService } from '@applye/application';
 import { WizardActivity, WizardActivityService } from '@applye/application';
 import { DocumentGenService } from '@applye/application';
 import { ThemeService } from '../core/theme.service';
+import {
+  BrowserUiState,
+  readSidebarCollapsed,
+  writeSidebarCollapsed,
+} from '../core/browser-ui-state';
 
 @Component({
   selector: 'app-shell-layout',
@@ -55,6 +61,16 @@ import { ThemeService } from '../core/theme.service';
 })
 export class ShellLayoutComponent implements OnInit {
   protected readonly shell = inject(ShellStore);
+
+  constructor() {
+    inject(BrowserUiState);
+    this.shell.hydrateSidebar(readSidebarCollapsed());
+  }
+
+  protected toggleSidebar(): void {
+    this.shell.toggleSidebar();
+    writeSidebarCollapsed(this.shell.sidebarCollapsed());
+  }
   protected readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);

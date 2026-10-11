@@ -5,6 +5,7 @@ import { ButtonDirective } from '@applye/ui';
 import { Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ParsedProfile, ProfileImportStore } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 
 /**
  * Profile's raw-markdown editor: the textarea, the scaffold hint, and the
@@ -33,6 +34,7 @@ import { ParsedProfile, ProfileImportStore } from '@applye/application';
 })
 export class ProfileRawEditorComponent {
   protected readonly store = inject(ProfileImportStore);
+  private readonly toast = inject(ToastService);
   protected readonly t = inject(TranslateService).t;
 
   readonly markdown = input.required<string>();
@@ -45,8 +47,9 @@ export class ProfileRawEditorComponent {
 
   /** The page owns the markdown, so the store is handed it rather than reading
    * it; everything the parse produces is the store's. */
-  protected parse(): Promise<void> {
-    return this.store.parse(this.markdown(), this.settings());
+  protected async parse(): Promise<void> {
+    await this.store.parse(this.markdown(), this.settings());
+    if (this.store.callFailed()) this.toast.error(this.t()('profile.parse_failed'));
   }
 
   protected apply(): void {

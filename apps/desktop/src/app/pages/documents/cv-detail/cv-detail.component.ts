@@ -48,8 +48,9 @@ import {
 
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { exportThroughSaveDialog } from '../save-dialog-export';
 import { CvSectionActionsComponent } from './cv-section-actions/cv-section-actions.component';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { CvPreviewComponent } from './cv-preview/cv-preview.component';
 import { CvLiveStylePanelComponent } from './cv-live-style-panel/cv-live-style-panel.component';
 import { CvSummaryEditorComponent } from './section-editors/cv-summary-editor.component';
@@ -263,7 +264,7 @@ export class CvDetailComponent {
     await this.nextStableFrame();
     const saved = await this.document.save();
     if (!saved) return;
-    await this.exportSvc.run('cv', 'pdf', saved, () => Promise.resolve());
+    await exportThroughSaveDialog(this.exportSvc, 'cv', 'pdf', saved, () => Promise.resolve());
   }
 
   /** Blur the focused inline editor - firing its `(blur)` handler, which commits

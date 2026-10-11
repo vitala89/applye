@@ -9,7 +9,6 @@ import type {
 } from '@applye/core';
 import { DocumentsGateway, JobsGateway, JobsStore, ProfileSettingsGateway } from '@applye/data';
 import { baseCvChoices } from './job-document-defaults';
-import { ToastService } from '../shell/toast.service';
 import { TranslateService } from '@applye/i18n';
 
 /**
@@ -40,7 +39,6 @@ export class JobDetailStore {
   private readonly jobsDb = inject(JobsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly jobs = inject(JobsStore);
-  private readonly toast = inject(ToastService);
   private readonly t = inject(TranslateService).t;
 
   readonly job = signal<Job | null>(null);
@@ -109,10 +107,9 @@ export class JobDetailStore {
     }
   }
 
-  /** Records a fail-soft read failure and raises it once. */
+  /** Records a fail-soft read failure. The desktop decides whether to toast it. */
   private fail(message: string): void {
     this.loadError.set(message);
-    this.toast.error(message);
   }
 
   /**

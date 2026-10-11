@@ -1,7 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiService, DraftsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
 import { PipelineCard, SupportedLanguage } from '@applye/core';
-import { openUrl } from '@tauri-apps/plugin-opener';
 
 export const FOLLOWUP_LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -39,9 +38,9 @@ export function parseFollowupDraft(text: string): { subject: string; body: strin
  * quick-view modal.
  *
  * One cached AI call per (application, language, model). Applye never sends
- * anything: `openInMail` hands a pre-filled `mailto:` link to the user's own
- * mail client, which is the only thing that can transmit it. There is no other
- * code path here that sends mail.
+ * anything. `mailtoUrl` is a pre-filled link the desktop hands to the user's
+ * own mail client, which is the only thing that can transmit it. There is no
+ * other code path here that sends mail.
  */
 @Injectable()
 export class FollowupDraftService {
@@ -164,19 +163,24 @@ export class FollowupDraftService {
     }
   }
 
-  async copy(): Promise<void> {
-    await navigator.clipboard.writeText(`${this.subject()}\n\n${this.body()}`);
+  /** Subject and body, in the shape Copy puts on the clipboard. */
+  draftText(): string {
+    return `${this.subject()}\n\n${this.body()}`;
+  }
+
+  /** The desktop calls this after the clipboard write succeeds. */
+  markCopied(): void {
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 1500);
   }
 
   /**
-   * Opens the user's own mail client via `mailto:`. Built by hand (not
+   * A `mailto:` URL for the user's own mail client. Built by hand (not
    * URLSearchParams) because mailto: query values use RFC 3986
    * percent-encoding, where a space is `%20` - URLSearchParams encodes spaces
    * as `+`, which most mail clients show literally instead of decoding.
    */
-  async openInMail(): Promise<void> {
+  mailtoUrl(): string {
     const to = encodeURIComponent(this.to().trim());
     const params = [
       ['subject', this.subject()],
@@ -186,6 +190,6 @@ export class FollowupDraftService {
       .filter(([, value]) => value)
       .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
       .join('&');
-    await openUrl(`mailto:${to}?${params}`);
+    return `mailto:${to}?${params}`;
   }
 }

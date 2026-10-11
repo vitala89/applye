@@ -3,7 +3,6 @@ import { signal } from '@angular/core';
 import { Application, Job, Profile, Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService } from '../documents/document-export.service';
-import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
 import { FinalChecksService } from './final-checks.service';
@@ -40,7 +39,6 @@ describe('JobDetailLifecycleStore', () => {
   let deleteConfirmOpen: ReturnType<typeof signal<boolean>>;
   let crossJobConfirmOpen: ReturnType<typeof signal<boolean>>;
   let successes: string[];
-  let errors: string[];
   let invalidated: number;
   let loadLinkedThrows: boolean;
 
@@ -59,7 +57,6 @@ describe('JobDetailLifecycleStore', () => {
     deleteConfirmOpen = signal(true);
     crossJobConfirmOpen = signal(true);
     successes = [];
-    errors = [];
     invalidated = 0;
     loadLinkedThrows = false;
 
@@ -131,7 +128,6 @@ describe('JobDetailLifecycleStore', () => {
           provide: FinalChecksService,
           useValue: {
             reset: () => order.push('finalChecksReset'),
-            restoreAfterReturn: () => restoredChecks,
           },
         },
         {
@@ -168,7 +164,6 @@ describe('JobDetailLifecycleStore', () => {
           },
         },
         { provide: JobActionsService, useValue: { deleteConfirmOpen } },
-        { provide: ToastService, useValue: { error: (m: string) => errors.push(m) } },
       ],
     });
     store = TestBed.inject(JobDetailLifecycleStore);
@@ -244,8 +239,7 @@ describe('JobDetailLifecycleStore', () => {
 
       await store.enterJob(4, entry());
 
-      expect(errors.length).toBe(1);
-      expect(errors[0]).toContain('linked docs failed');
+      expect(store.partialLoadError()).toContain('linked docs failed');
       expect(order).not.toContain('restoreTailoring');
     });
   });
@@ -282,7 +276,14 @@ describe('JobDetailLifecycleStore', () => {
     });
 
     it('restores the checks when the documents came back unchanged', async () => {
-      await store.enterJob(4, entry({ documentSaved: true, reviewHash: 'hash-same' }));
+      await store.enterJob(
+        4,
+        entry({
+          documentSaved: true,
+          reviewHash: 'hash-same',
+          parkedChecks: restoredChecks as JobRouteEntry['parkedChecks'],
+        }),
+      );
 
       expect(checksSignal()).toEqual({ ats: 'pass' });
       expect(outdated()).toBe(false);

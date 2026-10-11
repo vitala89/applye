@@ -49,7 +49,7 @@ export interface SourceWriteResult {
  *
  * **Nothing here notifies the user.** Every write reports its outcome and the
  * drawer decides what to say. That is the layer's rule rather than this store's
- * preference: `ToastService` is app-level by construction, and a store reaching
+ * preference: user notification belongs to the desktop, and a store reaching
  * for it would make the whole layer depend on the app.
  */
 @Injectable()

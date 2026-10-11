@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AiService } from '@applye/data';
 import { CvGapDialogService } from './cv-gap-dialog.service';
-import { ToastService } from '../shell/toast.service';
 
 /**
  * The reported bug: starting a cover letter while a CV was still generating
@@ -11,7 +10,6 @@ import { ToastService } from '../shell/toast.service';
  */
 describe('CvGapDialogService', () => {
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
-  let toast: { warning: jest.Mock };
 
   const job = { id: 7, jdText: 'a job' } as never;
   const settings = { aiMode: 'api', provider: 'claude', economyModel: 'm' } as never;
@@ -27,14 +25,9 @@ describe('CvGapDialogService', () => {
         tokensOutput: 1,
       })),
     };
-    toast = { warning: jest.fn() };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [
-        CvGapDialogService,
-        { provide: AiService, useValue: ai },
-        { provide: ToastService, useValue: toast },
-      ],
+      providers: [CvGapDialogService, { provide: AiService, useValue: ai }],
     });
     return TestBed.inject(CvGapDialogService);
   }
@@ -179,7 +172,6 @@ describe('CvGapDialogService', () => {
       expect(result.ok === true && result.questions).toHaveLength(1);
       expect(ai.run).toHaveBeenCalledWith(expect.objectContaining({ model: 'm' }));
       expect(s.analyzeError()).toBeNull();
-      expect(toast.warning).not.toHaveBeenCalled();
     });
 
     it('reports the failure when the model cannot be reached, and still does not block', async () => {
@@ -191,7 +183,6 @@ describe('CvGapDialogService', () => {
       expect(result.ok).toBe(false);
       expect(result.ok === false && result.error).toContain('provider down');
       expect(s.analyzeError()).toContain('provider down');
-      expect(toast.warning).toHaveBeenCalledTimes(1);
     });
 
     it('clears a previous failure when a later analysis succeeds', async () => {

@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { Application, DocumentLibraryItem, Job, Profile } from '@applye/core';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
@@ -16,7 +15,6 @@ const job = (): Job => ({ id: 4, title: 'Angular dev', company: 'Acme' }) as Job
 
 describe('JobDocumentsStore', () => {
   let store: JobDocumentsStore;
-  let navigated: { path: unknown[]; extras: Record<string, unknown> }[];
   let cv: ReturnType<typeof signal<DocumentLibraryItem | null>>;
   let coverLetter: ReturnType<typeof signal<DocumentLibraryItem | null>>;
   let committed: string[];
@@ -32,7 +30,6 @@ describe('JobDocumentsStore', () => {
   let linkResult: { application: Application } | null;
 
   beforeEach(() => {
-    navigated = [];
     cv = signal<DocumentLibraryItem | null>(null);
     coverLetter = signal<DocumentLibraryItem | null>(null);
     committed = [];
@@ -50,15 +47,6 @@ describe('JobDocumentsStore', () => {
     TestBed.configureTestingModule({
       providers: [
         JobDocumentsStore,
-        {
-          provide: Router,
-          useValue: {
-            navigate: (path: unknown[], extras: Record<string, unknown>) => {
-              navigated.push({ path, extras });
-              return Promise.resolve(true);
-            },
-          },
-        },
         {
           provide: JobDetailStore,
           useValue: {
@@ -92,7 +80,13 @@ describe('JobDocumentsStore', () => {
               hashCalls += 1;
               return Promise.resolve('hash-9');
             },
-            storeForReturn: (h: string) => stored.push(h),
+            checksToPark: (h: string) => {
+              stored.push(h);
+              return {
+                reviewHash: h,
+                checks: { inputHash: h, ats: 'pass', hr: 'strong', fit: 'valid', notes: [] },
+              };
+            },
             refreshFreshness: () => Promise.resolve(),
             markOutdated: () => {
               marked += 1;
@@ -134,31 +128,28 @@ describe('JobDocumentsStore', () => {
 
   describe('opening a document', () => {
     it('returns to the job, and costs no hash, from the My Jobs badges', async () => {
-      await store.openCv(11);
+      const destination = await store.openCv(11);
 
-      expect(navigated).toEqual([
-        {
-          path: ['/documents/cv', 11],
-          extras: { queryParams: { returnTo: 'myJobs', jobId: 4, jobLabel: 'Acme' } },
-        },
-      ]);
+      expect(destination).toEqual({
+        kind: 'cv',
+        documentId: 11,
+        returnTo: { context: 'myJobs', jobId: 4, jobLabel: 'Acme' },
+      });
       // The hash is only worth computing for the path that compares it later.
       expect(hashCalls).toBe(0);
       expect(stored).toEqual([]);
     });
 
     it('carries the review hash back into the wizard', async () => {
-      await store.openCoverLetter(12, true);
+      const destination = await store.openCoverLetter(12, true);
 
       expect(stored).toEqual(['hash-9']);
-      expect(navigated[0].path).toEqual(['/documents/cover-letter', 12]);
-      expect(navigated[0].extras['queryParams']).toEqual({
-        returnTo: 'applyWizard',
-        jobId: 4,
-        documentType: 'cover_letter',
+      expect(destination).toEqual({
+        kind: 'cover_letter',
         documentId: 12,
-        reviewHash: 'hash-9',
-        preview: '1',
+        preview: true,
+        returnTo: { context: 'applyWizard', jobId: 4, reviewHash: 'hash-9' },
+        parkedReview: { reviewHash: 'hash-9', checks: expect.anything() },
       });
     });
   });

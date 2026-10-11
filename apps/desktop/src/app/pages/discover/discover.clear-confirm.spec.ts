@@ -8,7 +8,7 @@ import {
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { DiscoverComponent } from './discover.component';
 
 /**

@@ -9,7 +9,6 @@ import {
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PortalAnswersService } from './portal-answers.service';
-import { ToastService } from '../shell/toast.service';
 
 /**
  * Covers the behaviour that used to live inline in `JobsComponent`. The service
@@ -27,7 +26,6 @@ describe('PortalAnswersService', () => {
   };
   let drafts: { portalAnswersGet: jest.Mock; portalAnswersSave: jest.Mock };
   let ai: { renderSkill: jest.Mock; run: jest.Mock };
-  let toast: { error: jest.Mock };
 
   function make(): PortalAnswersService {
     db = {
@@ -45,7 +43,6 @@ describe('PortalAnswersService', () => {
         tokensOutput: 5,
       })),
     };
-    toast = { error: jest.fn() };
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -56,7 +53,6 @@ describe('PortalAnswersService', () => {
         { provide: SystemGateway, useValue: db },
         { provide: DraftsGateway, useValue: drafts },
         { provide: AiService, useValue: ai },
-        { provide: ToastService, useValue: toast },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
       ],
     });
@@ -180,7 +176,7 @@ describe('PortalAnswersService', () => {
     expect(s.status()).toBe('jobs.portal_cached');
   });
 
-  it('draft surfaces a failure through the error flag, status and a toast', async () => {
+  it('draft surfaces a failure through the error flag and the status line', async () => {
     const s = make();
     ai.run.mockRejectedValue(new Error('provider offline'));
 
@@ -188,7 +184,6 @@ describe('PortalAnswersService', () => {
 
     expect(s.error()).toBe(true);
     expect(s.status()).toContain('provider offline');
-    expect(toast.error).toHaveBeenCalled();
     expect(s.drafting()).toBe(false);
   });
 
@@ -262,5 +257,23 @@ describe('PortalAnswersService', () => {
     const s = make();
     await s.redraft(3, job, profile, settings);
     expect(ai.run).not.toHaveBeenCalled();
+  });
+
+  it('exposes an answer for the clipboard and only marks it copied on request', () => {
+    jest.useFakeTimers();
+    const s = make();
+    s.answers.set([{ question: 'Q0', answer: 'A0' }]);
+
+    expect(s.answerText(0)).toBe('A0');
+    expect(s.answerText(1)).toBe('');
+
+    s.noteCopied(1);
+    expect(s.copiedIndex()).toBeNull();
+
+    s.noteCopied(0);
+    expect(s.copiedIndex()).toBe(0);
+    jest.advanceTimersByTime(1500);
+    expect(s.copiedIndex()).toBeNull();
+    jest.useRealTimers();
   });
 });

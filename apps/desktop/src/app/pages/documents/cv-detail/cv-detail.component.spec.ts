@@ -1,9 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+jest.mock('@tauri-apps/plugin-dialog', () => ({
+  save: jest.fn(async () => null),
+}));
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService, CvStyleStore } from '@applye/application';
+import { CvStyleStore } from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { mergePersonalField } from '@applye/application';
 import { By } from '@angular/platform-browser';
 import { CvDetailComponent } from './cv-detail.component';

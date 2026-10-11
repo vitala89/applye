@@ -18,7 +18,7 @@ import type { AnalyticsBarRow } from './analytics-bar-list/analytics-bar-list.co
 import { AnalyticsKpiRowComponent } from './analytics-kpi-row/analytics-kpi-row.component';
 import { AnalyticsTrendComponent } from './analytics-trend/analytics-trend.component';
 import { AnalyticsKpi, AnalyticsPeriod } from '@applye/core';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 
 const PERIODS: AnalyticsPeriod[] = ['30d', '90d', 'all'];
 

@@ -91,7 +91,12 @@ Imports go through the published entry point (`@applye/core`, never
 
 ## Desktop backend (Rust / Tauri)
 
-- Commands are exposed via Tauri IPC and consumed through typed wrappers in `libs/data`.
+- Commands are exposed via Tauri IPC. Business and data commands are consumed through
+  typed wrappers in `libs/data`. Presentation-only shell effects, opening or revealing a
+  file this app just wrote, go through `apps/desktop/src/app/core/native-shell`. That
+  adapter calls the existing guarded Rust commands. `libs/application` calls neither.
+  A page calls the adapter and does not name a Tauri command. ADR-0005, amendment
+  sixty-eight.
 - **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
   generated documents, and the AI result cache.
 - Document export **ships as PDF**, rendered from the same HTML the preview shows. A DOCX renderer

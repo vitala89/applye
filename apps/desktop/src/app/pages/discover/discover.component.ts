@@ -49,7 +49,8 @@ import {
   DiscoverScanStore,
   DiscoverSourcesStore,
 } from '@applye/application';
-import { ToastService } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
+import { announceClearFeed } from './announce-clear-feed';
 
 /** A titled block of feed rows ("For you" / "More openings"). */
 /** One block of the deterministically parsed job description. */
@@ -139,6 +140,16 @@ export class DiscoverComponent {
   /** What is on screen right now: which view, what the last scan reported, and
    * the drawer, confirm and detail the user can open. */
   protected readonly page = inject(DiscoverPageStore);
+
+  protected confirmClearFeed(): Promise<void> {
+    return this.page
+      .confirmClearFeed()
+      .then((result) =>
+        announceClearFeed(result, this.toast, (removed) =>
+          this.t()('discover.clear_done').replace('{n}', String(removed)),
+        ),
+      );
+  }
 
   protected readonly detail = inject(DiscoverDetailStore);
   /** What a posting is read against: target roles, pay and geography. */

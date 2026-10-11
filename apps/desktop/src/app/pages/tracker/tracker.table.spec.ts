@@ -8,7 +8,8 @@ import {
   TrackerGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService, TrackerColumnsStore, TrackerRowEditorStore } from '@applye/application';
+import { TrackerColumnsStore, TrackerRowEditorStore } from '@applye/application';
+import { ToastService } from '../../core/toast/toast.service';
 import { TrackerComponent } from './tracker.component';
 
 /**

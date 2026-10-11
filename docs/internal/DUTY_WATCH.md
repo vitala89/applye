@@ -44,6 +44,80 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-11, second review of application platform boundaries
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-platform-boundaries`
+- **Commits:** recorded in the pull request
+- **Pull request:** [#576](https://github.com/vitala89/applye/pull/576), not merged
+- **Objective:** Close the second review of PR 1. Notification effects must not track the toast list, and Open/Reveal must stay a narrow shell adapter rather than a page calling `invoke`.
+- **Completed:**
+  - Every `JobPageNotices` effect reads the application signal, then toasts inside `untracked`. A regression test uses the real `ToastService`: one toast, auto-dismiss, flush again, and the same failure does not create another.
+  - Open and Reveal moved to `apps/desktop/src/app/core/native-shell`. The page calls the adapter. The adapter still calls `open_file` and `reveal_in_folder`. Rust `ExportedPaths`, the pdf/docx limit, and canonical-path checks are unchanged.
+  - ESLint rejects `@tauri-apps/api/core` in desktop production files outside that adapter, including a dynamic import. A desktop test reads those files back.
+  - ADR-0005 amendment sixty-eight and `docs/architecture.md` record business IPC in `libs/data`, presentation shell effects in the desktop adapter, and neither in `libs/application`.
+- **Not completed:** Native section G was not walked. PR 2 was not started.
+- **Files or packages changed:** `job-page-notices`, the native-shell adapter, ESLint, ADR-0005, architecture, current state, changelog, and this log.
+- **Validation:** `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed. `nx run-many -t lint,type-check,test -p application,desktop --skip-nx-cache` passed. Application tests: 131 suites, 1688. Desktop tests: 134 suites, 1231. `nx build desktop` succeeded with the existing warnings: initial bundle 1.54 MB against 1.52 MB (over by 22.44 kB), unused `DiscoverDetailScoreComponent`, and the Sass `@import` deprecation. Rust was not run; no Rust file changed. A temporary removal of `untracked` on the review-failure effect made the new desktop test fail with a second toast (`id: 2`) after dismiss; the line was restored before the green run. Native section G was not run.
+- **Privacy/security impact:** The file launcher is still limited to a pdf or docx this run wrote, or a file under the app data directory, after `canonicalize`. No new command and no wider path.
+- **Decisions and assumptions:** The review named `untracked` and the adapter. No new port. The Rust guard stays the security boundary.
+- **Risks or compatibility impact:** Visible toasts and open/reveal were not intended to change. A dismiss no longer repeats the notice.
+- **Open issues or blockers:** Native section G is unchecked. The pull request is waiting for another review.
+- **Next first action:** Review pull request #576 again and do not merge it from the agent session. After it merges, start Architecture Stabilization PR 2. Do not start Career Evidence, gateway splits, or Rust command splits in that review.
+- **Evidence:** The toast regression uses the real service, so a dismiss writes the toast signal. The page scan fails if a production desktop file outside `native-shell` names `@tauri-apps/api/core`, `open_file`, or `reveal_in_folder`.
+
+### 2026-10-11, review fixes for application platform boundaries
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-platform-boundaries`
+- **Commits:** recorded in the pull request
+- **Pull request:** [#576](https://github.com/vitala89/applye/pull/576), not merged
+- **Objective:** Close the architecture review of PR 1 on the same branch. Production `libs/application` must not notify, must not know Angular routes, must recover when the save dialog throws, and must not open or reveal files.
+- **Completed:**
+  - `ToastService` moved back to `apps/desktop`. Ten production callers now expose an outcome or an error signal. The jobs page, Discover, and the profile raw editor decide the toast. A refused precondition stays silent.
+  - `DocumentEditorDestination` is document kind, document id, preview, return context, and parked checks. `editorRoute` in the desktop maps that to the existing CV and cover-letter routes.
+  - `failDialog` records `jobs.wizard.export_failed` and clears `exporting` when the native save dialog throws. No export command runs.
+  - Open and Reveal run from `exported-file-actions.ts`. `DocumentExportService` keeps export state only. `SystemGateway` still owns the commands for other callers.
+  - ESLint rejects `ToastService` in production application files. `platform-effects.spec.ts` scans the same tree for the platform strings.
+  - ADR-0005 amendment sixty-seven records the toast move, the semantic destination, the dialog failure, and Open/Reveal.
+- **Not completed:** Native section G was not walked. PR 2 was not started. No Rust, schema, gateway split, `DocumentRegionTag` move, or Career Evidence work.
+- **Files or packages changed:** the toast move, the ten former callers, desktop notice helpers, semantic destinations, save-dialog failure, Open/Reveal, their specs, ESLint, ADR-0005, the stabilization plan, current state, changelog, and the native-gate backlog.
+- **Validation:** `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed after the docs edit (file-size and the first three were also green before it; file-size is re-run with the docs). `nx run-many -t lint,type-check -p application,desktop --skip-nx-cache` passed. `nx run-many -t test -p application,desktop --skip-nx-cache` passed after Prettier: application 131 suites, 1688 tests; desktop 133 suites, 1229 tests. `npm run desktop:build` succeeded. It printed the existing initial-bundle warning (1.54 MB against 1.52 MB, over by 22.44 kB), the unused `DiscoverDetailScoreComponent` warning, and the existing Sass `@import` deprecation. Rust gates were not run; no Rust file changed. Native section G was not run.
+- **Privacy/security impact:** No new storage, network path, or career-data sync. Toasts, dialogs, and file open/reveal still happen only in the desktop UI, after the same user actions.
+- **Decisions and assumptions:** The review text was the decision. No notification port and no route DTO. Amendment sixty-six stays as the record of the first slice. This entry corrects that slice's claim that `DocumentExportService` still opens or reveals a file.
+- **Risks or compatibility impact:** Visible toasts and routes were not intended to change. A toast that used to fire after the jobs page was destroyed can now only fire while that page is alive. Section G still has to see the real window.
+- **Open issues or blockers:** Native section G is unchecked. The pull request is waiting for another review.
+- **Next first action:** Review pull request #576 again and do not merge it from the agent session. After it merges, start Architecture Stabilization PR 2. Do not start Career Evidence, gateway splits, or Rust command splits in that review.
+- **Evidence:** Production application scan after the change: no `ToastService`, no `@tauri-apps`, no `@angular/router`, no browser storage, no `openUrl`, no `openFile` / `revealFile`, and no `/documents/cv` or query-param maps.
+
+### 2026-10-11, remove platform effects from the application layer
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-platform-boundaries`
+- **Commits:** recorded in the pull request
+- **Pull request:** [#576](https://github.com/vitala89/applye/pull/576), not merged
+- **Objective:** Architecture Stabilization PR 1. Production code under `libs/application` no longer opens dialogs, navigates, writes the clipboard, opens mail, or touches browser storage.
+- **Completed:**
+  - Save dialogs live in `exportThroughSaveDialog`. `DocumentExportService` names the file, writes a supplied path, and still opens or reveals a finished file through `SystemGateway`.
+  - Follow-up drafting returns `draftText()` and `mailtoUrl()`. The composer copies and opens the mail client.
+  - Portal answers expose `answerText()` and `noteCopied()`. `copyAnswer()` had no template caller.
+  - Document editors return `DocumentEditorDestination`. The photo prompt returns `CvPhotoPromptOutcome`. `JobEditorNavigation` and the jobs page perform the route change.
+  - Sidebar, wizard progress, tailoring-pass drafts, and parked final checks keep the same storage keys. `apps/desktop` reads and writes them. The values stay per-machine UI state, not SQLite and not syncable.
+  - ESLint rejects `@tauri-apps/*`, `@angular/router`, `navigator`, `localStorage`, and `sessionStorage` in production files under `libs/application`.
+  - ADR-0005 amendment sixty-six records the reversal of amendment thirty-three for the storage API. Native section G is the remaining walkthrough.
+- **Not completed:** Native section G was not walked. PR 2 (feature cycles and `DocumentRegionTag`) was not started. No Rust, schema, gateway split, or Career Evidence work.
+- **Files or packages changed:** application services and stores listed above, desktop export/navigation/storage helpers, their specs, `eslint.config.mjs`, ADR-0005, the stabilization plan, current state, changelog, and the native-gate backlog.
+- **Validation:** `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed. `nx run-many -t lint,type-check --projects=application,desktop --skip-nx-cache` passed. `nx test application --skip-nx-cache` passed, 131 suites, 1695 tests. `nx test desktop --skip-nx-cache` passed, 128 suites, 1210 tests. `npm run desktop:build` succeeded. It printed the existing initial-bundle warning (1.54 MB against 1.52 MB), the unused `DiscoverDetailScoreComponent` warning, and the existing Sass `@import` deprecation. Rust gates were not run; no Rust file changed. Native section G was not run.
+- **Privacy/security impact:** No new storage, network path, or career-data sync. The same four browser keys still hold UI-only state on this machine. Clipboard and mail still happen only after the user asks, and only in the desktop UI.
+- **Decisions and assumptions:** The prompt fixed ownership, so grilling did not open a question round. Amendment sixty-six is the record. `openFile` / `revealInFolder` stay on `SystemGateway` because that gateway already owns those infrastructure calls. Session storage was in scope because the definition of done forbids it in production application code, even though amendment thirty-three had allowed the API.
+- **Risks or compatibility impact:** User-visible behavior was not intended to change. A reviewer still needs section G on a real window: save-dialog cancel, follow-up copy and mail, sidebar relaunch, and wizard return.
+- **Open issues or blockers:** Native section G is unchecked.
+- **Next first action:** Review this pull request and do not merge it from the agent session. After it merges, start Architecture Stabilization PR 2: remove hidden cross-feature cycles and define application feature direction. Do not start Career Evidence, gateway splits, or Rust command splits in that review.
+- **Evidence:** `main` was fast-forwarded to `8a372049` (`#575` merged) before the branch. The working tree was clean and no pull request was open. Production leak scan after the change: Tauri 0, Router 0, clipboard 0, localStorage 0, sessionStorage 0. Before, on `main`: Tauri 2 files, Router 3, clipboard 2, localStorage 1, sessionStorage 3.
+
 ### 2026-10-06, local database backup and restore
 
 - **Status:** partial

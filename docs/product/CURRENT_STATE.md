@@ -1,7 +1,8 @@
 # Current Operational State
 
-**As of 2026-10-06.** Verify `git rev-parse --short HEAD` before trusting a hash. This header was
-written on `feat/database-backup-restore`, branched from `main` at `5fa2337b`.
+**As of 2026-10-11.** Verify `git rev-parse --short HEAD` before trusting a hash. The architecture
+stabilization branch was created from `main` at `959a119a`, after PR #573 (database backup/restore)
+and PR #574 (mandatory architecture-canon reading) merged.
 
 ## Active product direction
 
@@ -23,17 +24,31 @@ Hub, Network CRM, Interview Intelligence, or community features as available. Do
 Hono, D1, authentication, Cloudflare Workers resources, sync, or empty backend scaffolding. ADR-0007
 says the backend is created with the first real backend slice.
 
-`#567`, `#568`, and `#569` are merged. `#545` is merged. It is not an open pull request.
+`#567`, `#568`, `#569`, `#573`, and `#574` are merged. There are no open pull requests at the
+start of the architecture-stabilization pass.
 
 ## Implementation sequence
 
-Dependency order, not dates. This positioning cleanup is step 0. A local database backup and
-restore slice is in review first, because the desktop app is in active use and needs a snapshot
-before destructive testing. It is not a Career Intelligence step. After that pull request merges,
-the next product-development slice is **Career Evidence domain foundation**.
+Dependency order, not dates. PR #573 made local database backup/restore available before destructive
+testing, and PR #574 made the architecture canon mandatory for agents. A full repository architecture
+audit after those merges found several pre-existing boundary violations and legacy exceptions. Because
+Applye is public and Career Evidence will become a foundational bounded context, **Architecture
+Stabilization is now a blocking engineering step before Career Evidence**.
+
+The execution plan and exit criteria are in
+[Architecture Stabilization Plan](../architecture-stabilization-plan.md). The stabilization work is
+delivered as focused PRs; it is not one large rewrite.
 
 ```text
 0. Project-state / positioning cleanup
+0.5 Architecture Stabilization
+    - application/platform boundaries
+    - application feature dependency direction
+    - state/gateway ownership
+    - thin Rust/Tauri command boundaries
+    - dormant surface cleanup
+    - production file-size debt
+    - enforcement/docs reconciliation
 1. Career Evidence domain foundation
 2. Career Evidence desktop persistence
 3. Career Profile / Evidence UI
@@ -49,12 +64,13 @@ the next product-development slice is **Career Evidence domain foundation**.
 13+. Community Intelligence
 ```
 
-Step 1 is pure domain rules for user-confirmed Career Evidence, with tests. It does not include a
-desktop migration, a profile UI, or a web backend.
+Career Evidence does not start until the stabilization plan's exit criteria pass. Its first slice
+remains pure domain rules for user-confirmed Career Evidence, with tests; it does not include a desktop
+migration, a profile UI, or a web backend.
 
 ## Maintenance backlog
 
-Checked against `main` on 2026-10-05. None of these is the next product feature.
+Checked against `main` on 2026-10-11. Architecture Stabilization is the current engineering gate; the items below remain separate maintenance unless a stabilization PR explicitly absorbs one.
 
 - **Installer smoke-test phase 2.** `installer-smoke-test.yml` is still `workflow_dispatch`-only.
   `release.yml` has no smoke step. Wiring it in still needs an explicit go-ahead.
@@ -69,8 +85,8 @@ Checked against `main` on 2026-10-05. None of these is the next product feature.
 - **Developer ID signing and notarisation** stay deferred. The blocker is the Apple Developer Program
   fee, already decided. Do not re-propose it as a missed technical task.
 - **Missing tests.** `apps/desktop/src/app/pages/jobs/jobs.component.ts` is 419 lines and has no spec.
-- **Dependency and security maintenance.** Open Dependabot pull requests exist. They are not the
-  product queue. The August note of a single `glib` alert was not re-audited here.
+- **Dependency and security maintenance.** The previously open Dependabot updates were rolled up in
+  #572. The August note of a single `glib` alert was not re-audited here.
 - **Feature-index reconciliation.** Historical rows in `docs/product/FEATURE_INDEX.md` are not fully
   reconciled against everything shipped since `v0.22.0`. That reconciliation is maintenance. The
   product pointer is the Career Evidence row.

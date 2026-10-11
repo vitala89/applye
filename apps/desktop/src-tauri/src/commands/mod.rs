@@ -8,6 +8,7 @@ pub mod archetypes;
 pub mod ats;
 pub mod ats_format;
 pub mod ats_tokens;
+pub mod database_backup;
 pub mod discover;
 pub mod discover_fetch;
 pub mod discover_filter;
@@ -50,20 +51,3 @@ pub mod tracker;
 pub mod untrusted;
 pub mod url_parts;
 pub mod web_text;
-
-use tauri::State;
-
-use crate::db::Db;
-
-/// Backup stub for the future "export your data" feature: writes a clean,
-/// WAL-consistent copy of the SQLite database to `target_path` via VACUUM INTO.
-/// No UI yet - callable from the frontend / a future Settings action.
-#[tauri::command]
-pub async fn db_export(target_path: String, db: State<'_, Db>) -> Result<String, String> {
-    sqlx::query("VACUUM INTO ?")
-        .bind(&target_path)
-        .execute(&db.pool)
-        .await
-        .map_err(|e| format!("db_export: {e}"))?;
-    Ok(target_path)
-}

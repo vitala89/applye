@@ -1,12 +1,11 @@
 mod ai;
 mod commands;
+mod database_backup;
 mod db;
 mod keys;
 mod startup;
 
 use tauri::Manager;
-
-use crate::db::Db;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -71,13 +70,15 @@ pub fn run() {
                     return Ok(());
                 }
             };
-            let db = match tauri::async_runtime::block_on(Db::init(&app_data_dir)) {
-                Ok(db) => db,
-                Err(e) => {
-                    startup::fail(app.handle(), "opening the local database", &e);
-                    return Ok(());
-                }
-            };
+            let db =
+                match tauri::async_runtime::block_on(database_backup::open_database(&app_data_dir))
+                {
+                    Ok(db) => db,
+                    Err(e) => {
+                        startup::fail(app.handle(), "opening the local database", &e);
+                        return Ok(());
+                    }
+                };
             app.manage(db);
             // Handshake channels for the silent WYSIWYG print windows.
             app.manage(commands::print::PrintReady::default());
@@ -168,7 +169,9 @@ pub fn run() {
             commands::discover_sources::db_remove_source,
             commands::tailoring_journal::open_file,
             commands::tailoring_journal::reveal_in_folder,
-            commands::db_export,
+            commands::database_backup::backup_database,
+            commands::database_backup::prepare_database_restore,
+            commands::database_backup::take_database_restore_notice,
             commands::import::import_read_file,
             commands::import::import_preview,
             commands::import::import_confirm,

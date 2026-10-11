@@ -31,6 +31,7 @@ import { SettingsAiProviderComponent } from './settings-ai-provider/settings-ai-
 import { SettingsApiKeyComponent } from './settings-api-key/settings-api-key.component';
 import { SettingsCliStatusComponent } from './settings-cli-status/settings-cli-status.component';
 import { SettingsDangerZoneComponent } from './settings-danger-zone/settings-danger-zone.component';
+import { SettingsDataBackupComponent } from './settings-data-backup/settings-data-backup.component';
 import { SettingsGeoTargetComponent } from './settings-geo-target/settings-geo-target.component';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
@@ -47,9 +48,9 @@ const PROVIDER_VENDORS: Record<string, string> = {
 };
 
 /**
- * Settings renders and delegates. Five stores hold what used to be this class:
- * the settings row, the provider key, the CLI bridge, the geo target and the
- * connection test.
+ * Settings renders and delegates. The database backup section is its own child.
+ * Five stores hold the rest of what used to be this class: the settings row,
+ * the provider key, the CLI bridge, the geo target and the connection test.
  *
  * What stays here is what does not belong below a layer boundary - the theme,
  * the locale, every toast, and the reload after a factory reset - plus the
@@ -68,6 +69,7 @@ const PROVIDER_VENDORS: Record<string, string> = {
     SettingsApiKeyComponent,
     SettingsCliStatusComponent,
     SettingsDangerZoneComponent,
+    SettingsDataBackupComponent,
     SettingsGeoTargetComponent,
   ],
   templateUrl: './settings.component.html',

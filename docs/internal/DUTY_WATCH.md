@@ -44,6 +44,30 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-06, local database backup and restore
+
+- **Status:** partial
+- **Agent/tool:** Cursor
+- **Branch:** `feat/database-backup-restore`
+- **Commits:** recorded in the pull request
+- **Pull request:** opened from this branch
+- **Objective:** Give the desktop app a local SQLite backup and a restore that survives relaunch, before more Career Intelligence work.
+- **Completed:**
+  - Settings → Data saves a `VACUUM INTO` copy and can stage a restore. The previous `db_export` stub was the backup command; it now lives in `commands/database_backup.rs` as `backup_database`.
+  - Restore copies the chosen file into app data, checks the SQLite header, `PRAGMA quick_check`, the `settings` / `profile` / `_sqlx_migrations` tables, and migration version plus checksum. Older backups are accepted. Newer versions and checksum mismatches are rejected before the live database is replaced.
+  - The pending file is installed on the next process start, before `Db::init`. The previous database and its WAL sidecars are held aside until the restored file opens, then removed. A failed open puts the previous files back.
+  - API keys stay in the OS keychain. Backup and restore do not read or write them.
+  - Strings are in en, de, ru, es, fr, and uk. The native walkthrough is section F of `docs/internal/NATIVE_GATE_BACKLOG.md`.
+- **Not completed:** The maintainer has not driven the native dialog, relaunch, or keychain check. Career Evidence was not started.
+- **Files or packages changed:** Rust backup/restore modules and commands, `SystemGateway`, `DatabaseBackupStore`, the Settings data section, six locale catalogues, feature brief, feature index, changelog, current state, this log, and the native-gate backlog.
+- **Validation:** `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed. `nx run-many --target=lint --projects=data,application,desktop,i18n --skip-nx-cache` passed. `nx run-many --target=type-check --projects=desktop,web,i18n,data,application --skip-nx-cache` passed. `nx test` with `--skip-nx-cache` passed for data (84 tests), application (1699), desktop (1194), and i18n (21). `npm run desktop:build` succeeded; it printed a pre-existing initial-bundle budget warning (1.54 MB against 1.52 MB) and two unrelated Angular warnings. From `apps/desktop/src-tauri`: `cargo fmt --all -- --check`, `cargo clippy --lib --offline -- -D warnings`, `cargo test --lib --offline` (399 passed, 1 ignored), and `cargo check --offline` passed. Native section F was not run.
+- **Privacy/security impact:** The backup file is the full local career database and is written only where the user saves it. A pending copy and a rollback copy exist in app data until the restored database opens, then those copies are deleted. No network call, no AI call, and no keychain access. User-facing errors are stable codes, not row contents.
+- **Decisions and assumptions:** Grilling found no open product decision. The request specified the lifecycle, and the repository already had `VACUUM INTO`, the dialog plugin, and `relaunch()`. No new ADR. An older backup is migrated forward by the existing embedded migrations. A checksum that does not match this build is rejected even when the version number is older, because opening it would fail after the swap.
+- **Risks or compatibility impact:** A crash during the file swap is recovered from the rollback directory on the next launch. If that rollback itself cannot be put back, startup stops and names `applye.restore.rollback` in the app-data folder. The selected backup file is not modified.
+- **Open issues or blockers:** Native section F is unchecked.
+- **Next first action:** Review and merge this pull request, then walk section F of `docs/internal/NATIVE_GATE_BACKLOG.md`. After merge, branch from `main` and implement Career Evidence domain foundation: pure domain rules and tests in `libs/core` for user-confirmed Career Evidence. No desktop migration, no UI, and no web backend in that slice.
+- **Evidence:** `main` was fast-forwarded to `5fa2337b` before the branch. The working tree was clean and no pull request was open.
+
 ### 2026-10-06, roll up open Dependabot updates
 
 - **Status:** complete

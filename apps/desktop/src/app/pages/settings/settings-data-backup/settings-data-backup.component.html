@@ -1,0 +1,68 @@
+<div class="block">
+  <h4 class="block__title">{{ t()('settings.backup_title') }}</h4>
+  <p class="muted">{{ t()('settings.backup_hint') }}</p>
+  <p class="muted scope">{{ t()('settings.backup_scope') }}</p>
+  <button
+    class="btn btn--primary btn--md"
+    type="button"
+    [disabled]="store.backingUp() || store.restoring()"
+    (click)="backup()"
+  >
+    @if (store.backingUp()) {
+      <lucide-icon [img]="icons.loader" [size]="16" class="spin" aria-hidden="true" />
+      {{ t()('settings.backup_working') }}
+    } @else {
+      <lucide-icon [img]="icons.backup" [size]="16" aria-hidden="true" />
+      {{ t()('settings.backup_action') }}
+    }
+  </button>
+</div>
+
+<div class="block">
+  <h4 class="block__title">{{ t()('settings.restore_title') }}</h4>
+  <p class="muted">{{ t()('settings.restore_hint') }}</p>
+  @if (!store.confirmOpen()) {
+    <button
+      class="btn btn--restore btn--md"
+      type="button"
+      [disabled]="store.backingUp() || store.restoring()"
+      (click)="restore()"
+    >
+      <lucide-icon [img]="icons.restore" [size]="16" aria-hidden="true" />
+      {{ t()('settings.restore_action') }}
+    </button>
+  } @else {
+    <div
+      class="confirm"
+      role="alertdialog"
+      [attr.aria-label]="t()('settings.restore_confirm_title')"
+    >
+      <p class="confirm__q">{{ t()('settings.restore_confirm_title') }}</p>
+      <p class="muted">{{ t()('settings.restore_confirm_body') }}</p>
+      <p class="muted">{{ t()('settings.restore_confirm_keys') }}</p>
+      <div class="confirm__actions">
+        <button
+          class="btn btn--restore-solid btn--md"
+          type="button"
+          [disabled]="store.restoring()"
+          (click)="confirmRestore()"
+        >
+          @if (store.restoring()) {
+            <lucide-icon [img]="icons.loader" [size]="16" class="spin" aria-hidden="true" />
+            {{ t()('settings.restore_working') }}
+          } @else {
+            {{ t()('settings.restore_confirm_action') }}
+          }
+        </button>
+        <button
+          class="btn btn--secondary btn--md"
+          type="button"
+          [disabled]="store.restoring()"
+          (click)="store.cancelRestore()"
+        >
+          {{ t()('settings.restore_cancel') }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

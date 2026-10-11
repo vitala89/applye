@@ -18,12 +18,10 @@ import { tauriInvoke } from '../tauri.invoke';
  * **Four wrappers were deleted rather than moved**, because nothing in the
  * application called them - not a store, not a component, not a spec:
  * `generatedDocGet`, `exportDocx` and `exportPdf` are the old tailoring-journal
- * export path, superseded by the document-library export the app actually uses,
- * and `exportDatabase` is a backup command with no button and no translation
- * key anywhere. **Their Rust commands are still registered**, so nothing on
- * that side changed and a future caller can wrap them again in ten lines. Both
- * gaps are written up in the watch log rather than left as dead code that reads
- * like a feature.
+ * export path, superseded by the document-library export the app actually uses.
+ * **Those Rust commands are still registered.** Database backup is not one of
+ * them: `backupDatabase` and `prepareDatabaseRestore` are the Settings actions,
+ * and they are different commands on purpose.
  */
 @Injectable({ providedIn: 'root' })
 export class SystemGateway {
@@ -61,5 +59,23 @@ export class SystemGateway {
 
   hashText(text: string): Promise<string> {
     return tauriInvoke<string>('hash_text', { text });
+  }
+
+  /** WAL-consistent copy of the open database. Does not read the OS keychain. */
+  backupDatabase(path: string): Promise<void> {
+    return tauriInvoke<void>('backup_database', { targetPath: path });
+  }
+
+  /**
+   * Validate `path` and stage it for the next launch. The live database is
+   * replaced only after relaunch, before the pool opens.
+   */
+  prepareDatabaseRestore(path: string): Promise<void> {
+    return tauriInvoke<void>('prepare_database_restore', { sourcePath: path });
+  }
+
+  /** One-shot startup notice: `restored`, `failed:<code>`, or null. */
+  takeDatabaseRestoreNotice(): Promise<string | null> {
+    return tauriInvoke<string | null>('take_database_restore_notice');
   }
 }

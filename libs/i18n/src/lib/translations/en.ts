@@ -1039,6 +1039,43 @@ export const en: TranslationMap = {
     saved: 'Settings saved.',
     key_stored: 'API key stored in your OS keychain.',
     key_removed: 'API key removed from keychain.',
+    data_section: 'Data',
+    backup_title: 'Database backup',
+    backup_hint:
+      'Save a copy of your local Applye database. Use it before testing or making major changes.',
+    backup_scope:
+      'Included: data stored in the local Applye database. Not included: API keys in the operating-system keychain, files you already exported, and other files on this computer.',
+    backup_filter: 'SQLite database',
+    backup_action: 'Back up database',
+    backup_working: 'Backing up…',
+    backup_created: 'Backup created successfully.',
+    backup_failed: 'Could not create the backup. Your current database was not changed.',
+    restore_title: 'Restore database',
+    restore_hint: 'Replace the current Applye database with a previously created backup.',
+    restore_action: 'Restore database',
+    restore_working: 'Preparing restore…',
+    restore_confirm_title: 'Restore this backup?',
+    restore_confirm_body:
+      'Your current Applye database will be replaced by the selected backup. Applye will restart after the restore.',
+    restore_confirm_keys:
+      'API keys stored in your operating-system keychain are not restored or changed.',
+    restore_confirm_action: 'Restore and restart',
+    restore_cancel: 'Cancel',
+    restore_invalid:
+      'This file is not a readable SQLite database. The current database was not changed.',
+    restore_corrupt:
+      'This backup failed the database integrity check. The current database was not changed.',
+    restore_not_applye:
+      'This file is not an Applye database. The current database was not changed.',
+    restore_newer:
+      'This backup was created by a newer Applye database version. Update Applye before restoring it.',
+    restore_incompatible:
+      'This backup does not match this version of Applye and cannot be restored. The current database was not changed.',
+    restore_failed: 'Could not restore the backup. Your current database was not changed.',
+    restore_restart_failed:
+      'The backup is ready, but Applye could not restart. Quit Applye and open it again to finish restoring.',
+    restored: 'Database restored.',
+    danger_section: 'Danger zone',
   },
   dashboard: {
     title: 'Dashboard',

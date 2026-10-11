@@ -1073,6 +1073,41 @@ export const es: TranslationMap = stub(en, {
     saved: 'Ajustes guardados.',
     key_stored: 'Clave de API guardada en el llavero de tu sistema.',
     key_removed: 'Clave de API eliminada del llavero.',
+    data_section: 'Datos',
+    backup_title: 'Copia de la base de datos',
+    backup_hint:
+      'Guarda una copia de la base local de Applye. Úsala antes de probar o de hacer cambios grandes.',
+    backup_scope:
+      'Incluye: los datos de la base local de Applye. No incluye: las claves de API del llavero del sistema, los archivos que ya exportaste ni otros archivos del equipo.',
+    backup_filter: 'Base SQLite',
+    backup_action: 'Guardar copia de la base',
+    backup_working: 'Guardando copia…',
+    backup_created: 'La copia se creó correctamente.',
+    backup_failed: 'No se pudo crear la copia. La base actual no cambió.',
+    restore_title: 'Restaurar base de datos',
+    restore_hint: 'Sustituye la base actual de Applye por una copia creada antes.',
+    restore_action: 'Restaurar base de datos',
+    restore_working: 'Preparando la restauración…',
+    restore_confirm_title: '¿Restaurar esta copia?',
+    restore_confirm_body:
+      'La base actual de Applye se sustituirá por la copia seleccionada. Applye se reiniciará después.',
+    restore_confirm_keys:
+      'Las claves de API del llavero del sistema no se restauran ni se modifican.',
+    restore_confirm_action: 'Restaurar y reiniciar',
+    restore_cancel: 'Cancelar',
+    restore_invalid: 'Este archivo no es una base SQLite legible. La base actual no cambió.',
+    restore_corrupt:
+      'Esta copia no superó la comprobación de integridad. La base actual no cambió.',
+    restore_not_applye: 'Este archivo no es una base de Applye. La base actual no cambió.',
+    restore_newer:
+      'Esta copia proviene de una versión más reciente de la base de Applye. Actualiza Applye antes de restaurarla.',
+    restore_incompatible:
+      'Esta copia no coincide con esta versión de Applye y no se puede restaurar. La base actual no cambió.',
+    restore_failed: 'No se pudo restaurar la copia. La base actual no cambió.',
+    restore_restart_failed:
+      'La copia está lista, pero Applye no pudo reiniciarse. Cierra Applye y ábrelo de nuevo para terminar la restauración.',
+    restored: 'Base de datos restaurada.',
+    danger_section: 'Zona de peligro',
   },
   dashboard: {
     title: 'Panel',

@@ -141,4 +141,5 @@ export * from './lib/settings/connection-test.store';
 export * from './lib/settings/geo-target';
 export * from './lib/settings/geo-target.store';
 export * from './lib/settings/provider-key.store';
+export * from './lib/settings/database-backup.store';
 export * from './lib/settings/settings.store';

@@ -205,9 +205,14 @@
       }
     </section>
 
+    <section class="section">
+      <h3 class="eyebrow">{{ t()('settings.data_section') }}</h3>
+      <app-settings-data-backup />
+    </section>
+
     <!-- Danger zone: delete all data -->
     <section class="section section--danger">
-      <h3 class="eyebrow eyebrow--danger">Data</h3>
+      <h3 class="eyebrow eyebrow--danger">{{ t()('settings.danger_section') }}</h3>
       <app-settings-danger-zone
         [confirming]="store.confirmingReset()"
         [resetting]="store.resetting()"

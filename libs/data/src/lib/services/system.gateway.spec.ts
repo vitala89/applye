@@ -64,7 +64,20 @@ describe('SystemGateway', () => {
     expect(invoke).toHaveBeenCalledWith('health_check', undefined);
   });
 
-  it('sends seven distinct commands, one per method', async () => {
+  it('backs up and stages a restore with different commands and argument names', async () => {
+    await gateway.backupDatabase('/tmp/applye-backup.sqlite');
+    expect(invoke).toHaveBeenCalledWith('backup_database', {
+      targetPath: '/tmp/applye-backup.sqlite',
+    });
+    await gateway.prepareDatabaseRestore('/tmp/applye-backup.sqlite');
+    expect(invoke).toHaveBeenCalledWith('prepare_database_restore', {
+      sourcePath: '/tmp/applye-backup.sqlite',
+    });
+    await gateway.takeDatabaseRestoreNotice();
+    expect(invoke).toHaveBeenCalledWith('take_database_restore_notice', undefined);
+  });
+
+  it('sends ten distinct commands, one per method', async () => {
     await gateway.hashText('a');
     await gateway.openFile('a');
     await gateway.revealInFolder('a');
@@ -72,7 +85,10 @@ describe('SystemGateway', () => {
     await gateway.importPreview([] as never);
     await gateway.importConfirm([] as never, 'csv', 1);
     await gateway.healthCheck();
+    await gateway.backupDatabase('a');
+    await gateway.prepareDatabaseRestore('a');
+    await gateway.takeDatabaseRestoreNotice();
     const commands = (invoke as jest.Mock).mock.calls.map((c) => c[0] as string);
-    expect(new Set(commands).size).toBe(7);
+    expect(new Set(commands).size).toBe(10);
   });
 });

@@ -1064,6 +1064,45 @@ export const de: TranslationMap = {
     saved: 'Einstellungen gespeichert.',
     key_stored: 'API-Schlüssel im Schlüsselbund gespeichert.',
     key_removed: 'API-Schlüssel aus dem Schlüsselbund entfernt.',
+    data_section: 'Daten',
+    backup_title: 'Datenbanksicherung',
+    backup_hint:
+      'Speichere eine Kopie deiner lokalen Applye-Datenbank. Nutze sie, bevor du etwas ausprobierst oder größere Änderungen machst.',
+    backup_scope:
+      'Enthalten: Daten in der lokalen Applye-Datenbank. Nicht enthalten: API-Schlüssel im Schlüsselbund des Betriebssystems, bereits exportierte Dateien und andere Dateien auf diesem Computer.',
+    backup_filter: 'SQLite-Datenbank',
+    backup_action: 'Datenbank sichern',
+    backup_working: 'Sicherung läuft…',
+    backup_created: 'Sicherung wurde erstellt.',
+    backup_failed:
+      'Die Sicherung konnte nicht erstellt werden. Deine aktuelle Datenbank wurde nicht verändert.',
+    restore_title: 'Datenbank wiederherstellen',
+    restore_hint: 'Ersetze die aktuelle Applye-Datenbank durch eine früher erstellte Sicherung.',
+    restore_action: 'Datenbank wiederherstellen',
+    restore_working: 'Wiederherstellung wird vorbereitet…',
+    restore_confirm_title: 'Diese Sicherung wiederherstellen?',
+    restore_confirm_body:
+      'Deine aktuelle Applye-Datenbank wird durch die ausgewählte Sicherung ersetzt. Applye startet danach neu.',
+    restore_confirm_keys:
+      'API-Schlüssel im Schlüsselbund des Betriebssystems werden nicht wiederhergestellt und nicht verändert.',
+    restore_confirm_action: 'Wiederherstellen und neu starten',
+    restore_cancel: 'Abbrechen',
+    restore_invalid:
+      'Diese Datei ist keine lesbare SQLite-Datenbank. Die aktuelle Datenbank wurde nicht verändert.',
+    restore_corrupt:
+      'Diese Sicherung hat die Integritätsprüfung nicht bestanden. Die aktuelle Datenbank wurde nicht verändert.',
+    restore_not_applye:
+      'Diese Datei ist keine Applye-Datenbank. Die aktuelle Datenbank wurde nicht verändert.',
+    restore_newer:
+      'Diese Sicherung stammt von einer neueren Applye-Datenbankversion. Aktualisiere Applye, bevor du sie wiederherstellst.',
+    restore_incompatible:
+      'Diese Sicherung passt nicht zu dieser Applye-Version und kann nicht wiederhergestellt werden. Die aktuelle Datenbank wurde nicht verändert.',
+    restore_failed:
+      'Die Sicherung konnte nicht wiederhergestellt werden. Deine aktuelle Datenbank wurde nicht verändert.',
+    restore_restart_failed:
+      'Die Sicherung ist vorbereitet, aber Applye konnte nicht neu starten. Beende Applye und öffne es wieder, um die Wiederherstellung abzuschließen.',
+    restored: 'Datenbank wiederhergestellt.',
+    danger_section: 'Gefahrenbereich',
   },
   dashboard: {
     title: 'Übersicht',

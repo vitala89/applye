@@ -547,3 +547,19 @@ result in `docs/internal/DUTY_WATCH.md` when it has been walked. Until then it i
 
 Not listed, because it is done: the packaged macOS window has been seen rendering styled from the
 `0.29.2` dmg.
+
+## G. Platform effects moved out of the application layer
+
+The save dialog, follow-up copy / mail, and sidebar rail preference moved to the desktop in
+Architecture Stabilization PR 1. Unit tests cover the outcomes. These still need a real window
+because synthetic clicks do not reach the webview.
+
+- [ ] Export a CV from the editor. The save dialog offers the same filename as before. Cancel shows
+      no error. Saving writes the file and the status names the path.
+- [ ] Export from the apply wizard the same way, including cancel.
+- [ ] Pipeline follow-up: Copy puts the subject and body on the clipboard and the button flips to
+      the copied label. Open in mail opens the user's mail client with that subject and body.
+- [ ] Collapse the sidebar, quit, relaunch. The rail stays collapsed. Expand it and relaunch. It
+      stays expanded.
+- [ ] Start an apply wizard, open a linked document, come back. The wizard step and any final-check
+      result that was still valid are still there.

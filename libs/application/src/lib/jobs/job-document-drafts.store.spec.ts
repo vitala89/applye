@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { Application, DocumentLibraryItem, Job, Profile, Settings } from '@applye/core';
 import { CoverLetterDraftService } from '../documents/cover-letter-draft.service';
 import { CoverLetterTailorService } from '../documents/cover-letter-tailor.service';
@@ -46,7 +45,6 @@ describe('JobDocumentDraftsStore', () => {
     TestBed.configureTestingModule({
       providers: [
         JobDocumentDraftsStore,
-        { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
         {
           provide: JobDetailStore,
           useValue: {
@@ -208,7 +206,6 @@ describe('JobDocumentDraftsStore', () => {
       TestBed.configureTestingModule({
         providers: [
           JobDocumentDraftsStore,
-          { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
           {
             provide: JobDetailStore,
             useValue: {

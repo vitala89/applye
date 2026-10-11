@@ -187,6 +187,64 @@ export default tseslint.config(
     },
   },
   {
+    // Platform effects stay in the desktop app. A store returns an outcome;
+    // the page navigates, copies, opens a dialog, or reads browser storage.
+    // ADR-0005, amendment sixty-six. Specs are exempt: they fake the effect.
+    files: ['libs/application/src/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@angular/router',
+              message:
+                'Page navigation belongs to apps/desktop. Return a destination from libs/application.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@tauri-apps/*', '@tauri-apps/**'],
+              message:
+                'Tauri plugins belong to apps/desktop or libs/data. libs/application returns an outcome.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'navigator',
+          message: 'Clipboard and other browser effects belong to apps/desktop.',
+        },
+        {
+          name: 'localStorage',
+          message: 'Browser storage belongs to apps/desktop. Hydrate application state from there.',
+        },
+        {
+          name: 'sessionStorage',
+          message: 'Browser storage belongs to apps/desktop. Hydrate application state from there.',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[property.name='localStorage']",
+          message: 'Browser storage belongs to apps/desktop. Hydrate application state from there.',
+        },
+        {
+          selector: "MemberExpression[property.name='sessionStorage']",
+          message: 'Browser storage belongs to apps/desktop. Hydrate application state from there.',
+        },
+        {
+          selector: "MemberExpression[object.name='navigator']",
+          message: 'Clipboard and other browser effects belong to apps/desktop.',
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.html'],
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
     rules: {

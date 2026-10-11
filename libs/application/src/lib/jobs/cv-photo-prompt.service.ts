@@ -1,5 +1,4 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { CvContent, DocumentLibraryItem, withCvPhoto } from '@applye/core';
 
 import { DocumentsGateway } from '@applye/data';
@@ -18,10 +17,12 @@ import { DocumentRegionTag } from './job-document-defaults';
  * document write, sharing nothing with the rest of the jobs page except the CV
  * it patches. Component-scoped, so "once per visit" is the lifetime of the page.
  */
+export type CvPhotoPromptOutcome =
+  { kind: 'updated'; document: DocumentLibraryItem } | { kind: 'open-profile' } | { kind: 'none' };
+
 @Injectable()
 export class CvPhotoPromptService {
   private readonly db = inject(DocumentsGateway);
-  private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
   private readonly t = this.i18n.t;
 
@@ -46,27 +47,24 @@ export class CvPhotoPromptService {
    * "Yes, add my photo."
    *
    * With a photo already on the profile this writes it into the linked CV and
-   * returns the updated document. Without one it sends the user to the
-   * profile's Photo section, so the photo is cropped once and reused rather
-   * than re-uploaded per application. With no CV generated yet there is nothing
-   * to patch: the photo is on the profile and the region is set, so the CV
-   * picks it up when it is created.
-   *
-   * Returns the document to link, or null when there is nothing to link.
+   * returns the updated document. Without one the outcome is `open-profile`,
+   * and the page sends the user to the profile's Photo section, so the photo
+   * is cropped once and reused rather than re-uploaded per application. With
+   * no CV generated yet there is nothing to patch: the photo is on the profile
+   * and the region is set, so the CV picks it up when it is created.
    */
   async accept(
     photo: string | null,
     cv: DocumentLibraryItem | null,
-  ): Promise<DocumentLibraryItem | null> {
+  ): Promise<CvPhotoPromptOutcome> {
     this.status.set('');
     if (!photo) {
       this.open.set(false);
-      void this.router.navigate(['/profile']);
-      return null;
+      return { kind: 'open-profile' };
     }
     if (!cv?.id) {
       this.open.set(false);
-      return null;
+      return { kind: 'none' };
     }
 
     this.busy.set(true);
@@ -82,10 +80,10 @@ export class CvPhotoPromptService {
       });
       this.status.set(this.t()('jobs.wizard.photo_added'));
       this.open.set(false);
-      return doc;
+      return { kind: 'updated', document: doc };
     } catch (e) {
       this.status.set(String(e));
-      return null;
+      return { kind: 'none' };
     } finally {
       this.busy.set(false);
     }

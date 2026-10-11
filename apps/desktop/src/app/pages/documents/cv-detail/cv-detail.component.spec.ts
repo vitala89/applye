@@ -1,4 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+jest.mock('@tauri-apps/plugin-dialog', () => ({
+  save: jest.fn(async () => null),
+}));
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';

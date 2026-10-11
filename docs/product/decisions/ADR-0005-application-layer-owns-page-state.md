@@ -3531,6 +3531,26 @@ so the rule's value here is the message and the re-export path, not the coverage
 why it had to be repaired rather than dropped: a newcomer who injects a gateway into a component
 should read a sentence naming this ADR, not a list of project tags.
 
+## Amendment sixty-six: browser storage is application state, and the browser API is not
+
+Amendment thirty-three put `localStorage` and `sessionStorage` inside `libs/application`. The
+reading was that a rail preference and a wizard session are screen state that happens to outlive
+the component, and a storage port would have been a new public symbol for one boolean.
+
+Architecture Stabilization PR 1 keeps the state and moves the API. `ShellStore`,
+`WizardProgressService`, `TailoringPassDraftsService`, and the final-checks snapshot still own the
+values. `apps/desktop` reads and writes the same keys (`applye.sidebar.collapsed`,
+`applye:wizardProgress`, `applye:tailoringPassDrafts`, `applye:wizardFinalChecks:`). Nothing new
+goes into SQLite, and nothing becomes syncable career data.
+
+The same pull request moves the other platform effects the same way: the save dialog, clipboard
+writes, `mailto:` opening, and document-editor navigation. The application method returns a
+filename, a URL, a destination, or an outcome. The desktop performs it. There is no
+`PlatformAdapter` in `libs/application`.
+
+ESLint rejects `@tauri-apps/*`, `@angular/router`, `navigator`, `localStorage`, and
+`sessionStorage` in production files under `libs/application`. Specs may still fake an effect.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

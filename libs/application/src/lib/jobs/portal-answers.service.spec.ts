@@ -263,4 +263,22 @@ describe('PortalAnswersService', () => {
     await s.redraft(3, job, profile, settings);
     expect(ai.run).not.toHaveBeenCalled();
   });
+
+  it('exposes an answer for the clipboard and only marks it copied on request', () => {
+    jest.useFakeTimers();
+    const s = make();
+    s.answers.set([{ question: 'Q0', answer: 'A0' }]);
+
+    expect(s.answerText(0)).toBe('A0');
+    expect(s.answerText(1)).toBe('');
+
+    s.noteCopied(1);
+    expect(s.copiedIndex()).toBeNull();
+
+    s.noteCopied(0);
+    expect(s.copiedIndex()).toBe(0);
+    jest.advanceTimersByTime(1500);
+    expect(s.copiedIndex()).toBeNull();
+    jest.useRealTimers();
+  });
 });

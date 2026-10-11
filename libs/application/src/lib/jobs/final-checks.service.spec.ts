@@ -8,13 +8,8 @@ import { FinalCheckInputs, FinalChecksService } from './final-checks.service';
 /**
  * Covers the behaviour that used to live inline in `JobsComponent`. The rules
  * are token-free text analysis, so they are fully testable without a provider;
- * these are the first tests they have ever had.
- *
- * The storage tests run against **jsdom's real `sessionStorage`** rather than a
- * two-method fake behind a stub `DOCUMENT`. The fake implemented `getItem` and
- * `setItem` and nothing else, which is exactly as much of `Storage` as the
- * service happened to use - so it could only ever confirm the calls the service
- * already made, never that they add up to a working round trip.
+ * these are the first tests they have ever had. Parking a result across the
+ * editor round trip is the desktop's session storage, not this service.
  */
 describe('FinalChecksService', () => {
   let db: { hashText: jest.Mock };
@@ -73,10 +68,6 @@ describe('FinalChecksService', () => {
       ...over,
     };
   }
-
-  beforeEach(() => {
-    sessionStorage.clear();
-  });
 
   function make(): FinalChecksService {
     db = { hashText: jest.fn(async (s: string) => `hash:${s.length}`) };
@@ -254,32 +245,6 @@ describe('FinalChecksService', () => {
     await s.run(inputs({ cv: cvItem(), coverLetter: letterItem('x'.repeat(600)) }));
 
     expect(s.needRetailor(cvItem())).toBe(false);
-  });
-
-  it('parks a result under its review hash and restores it', async () => {
-    const s = make();
-    await s.run(inputs({ cv: cvItem() }));
-    const before = s.checks();
-
-    s.storeForReturn('rh');
-    s.reset();
-    expect(s.checks()).toBeNull();
-
-    expect(s.restoreAfterReturn('rh')).toEqual(before);
-  });
-
-  it('restores nothing for an unknown or corrupt review hash', () => {
-    const s = make();
-    expect(s.restoreAfterReturn('missing')).toBeNull();
-
-    sessionStorage.setItem('applye:wizardFinalChecks:corrupt', '{not json');
-    expect(s.restoreAfterReturn('corrupt')).toBeNull();
-  });
-
-  it('stores nothing when there is no result to park', () => {
-    const s = make();
-    s.storeForReturn('rh');
-    expect(sessionStorage.length).toBe(0);
   });
 
   it('reset clears both signals', async () => {

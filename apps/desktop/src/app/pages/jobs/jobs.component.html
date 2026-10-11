@@ -48,8 +48,8 @@
         (saveRequested)="actions.saveJob()"
         (applyRequested)="actions.applyNow()"
         (deleteRequested)="actions.openDeleteConfirm()"
-        (cvRequested)="docs.openCv($event)"
-        (coverLetterRequested)="docs.openCoverLetter($event)"
+        (cvRequested)="editorNav.openCv($event)"
+        (coverLetterRequested)="editorNav.openCoverLetter($event)"
       />
       <app-job-cross-job-confirm [jobId]="j.id" />
       <app-job-delete-confirm (confirmed)="confirmDeleteJob()" />
@@ -223,8 +223,8 @@
             [coverLetters]="coverLetters()"
             [finalTailoredCvMd]="tailorStore.finalCvMd()"
             [tailoring]="tailoring()"
-            (openCv)="docs.openCv($event, true)"
-            (openCoverLetter)="docs.openCoverLetter($event, true)"
+            (openCv)="editorNav.openCv($event, true)"
+            (openCoverLetter)="editorNav.openCoverLetter($event, true)"
             (createCv)="drafts.createCv(tailorStore.finalCvMd())"
             (createCoverLetter)="drafts.createCoverLetter()"
             (chooseDocument)="docs.chooseExisting($event.kind, $event.id)"
@@ -248,7 +248,7 @@
 
   <app-job-tailor-cover-letter-modal
     [coverLetters]="coverLetters()"
-    (confirmed)="drafts.startTailoringCoverLetter()"
+    (confirmed)="editorNav.openTailoredCoverLetter()"
   />
 </div>
 <app-job-photo-prompt [profilePhoto]="profilePhoto()" (accepted)="acceptPhotoPrompt()" />

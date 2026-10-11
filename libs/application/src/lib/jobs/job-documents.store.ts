@@ -1,5 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { Application } from '@applye/core';
 import {
   coverLetterStaleInput,
@@ -9,6 +8,7 @@ import {
 } from '../documents/application-document-actions';
 import { ReviewDocumentKind } from '../documents/document-gen.service';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
+import { DocumentEditorDestination } from './document-editor-destination';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
 import { JobDetailStore } from './job-detail.store';
@@ -37,18 +37,17 @@ export class JobDocumentsStore {
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly reviewStatus = inject(DocumentReviewStatusService);
   private readonly targets = inject(DocumentReviewTargetsService);
-  private readonly router = inject(Router);
 
   /** Aliases onto `LinkedDocumentsService`'s writable signals. */
   readonly cv = this.linkedDocs.cv;
   readonly coverLetter = this.linkedDocs.coverLetter;
 
-  async openCv(id: number, returnToWizard = false): Promise<void> {
-    await this.openEditor('cv', id, returnToWizard);
+  openCv(id: number, returnToWizard = false): Promise<DocumentEditorDestination | null> {
+    return this.openEditor('cv', id, returnToWizard);
   }
 
-  async openCoverLetter(id: number, returnToWizard = false): Promise<void> {
-    await this.openEditor('cover_letter', id, returnToWizard);
+  openCoverLetter(id: number, returnToWizard = false): Promise<DocumentEditorDestination | null> {
+    return this.openEditor('cover_letter', id, returnToWizard);
   }
 
   /**
@@ -61,23 +60,24 @@ export class JobDocumentsStore {
     kind: ReviewDocumentKind,
     id: number,
     returnToWizard: boolean,
-  ): Promise<void> {
+  ): Promise<DocumentEditorDestination | null> {
     const job = this.detail.job();
-    if (!job?.id) return;
-    const path = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
+    if (!job?.id) return null;
+    const commands = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
     if (!returnToWizard) {
-      await this.router.navigate(path, {
+      return {
+        commands,
         queryParams: {
           returnTo: 'myJobs',
           jobId: job.id,
           jobLabel: job.company || job.title || '',
         },
-      });
-      return;
+      };
     }
     const reviewHash = await this.finalChecks.documentsHash();
-    this.finalChecks.storeForReturn(reviewHash);
-    await this.router.navigate(path, {
+    const parkedReview = this.finalChecks.checksToPark(reviewHash);
+    return {
+      commands,
       queryParams: {
         returnTo: 'applyWizard',
         jobId: job.id,
@@ -88,7 +88,8 @@ export class JobDocumentsStore {
         // it), not the raw section editor.
         preview: '1',
       },
-    });
+      ...(parkedReview ? { parkedReview } : {}),
+    };
   }
 
   /** The application row the documents attach to, in this store's vocabulary so

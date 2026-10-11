@@ -4,7 +4,7 @@ import { DocumentExportService } from '../documents/document-export.service';
 import { ToastService } from '../shell/toast.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
-import { FinalChecksService } from './final-checks.service';
+import { FinalChecks, FinalChecksService } from './final-checks.service';
 import { documentReviewLanguageFor, inferDocumentRegion } from './job-document-defaults';
 import { JobActionsService } from './job-actions.service';
 import { JobDetailStore } from './job-detail.store';
@@ -30,6 +30,8 @@ export interface JobRouteEntry {
   documentSaved: boolean;
   /** The documents hash as it stood when the editor was opened. */
   reviewHash: string | null;
+  /** Checks the page read back for that hash, when the documents are unchanged. */
+  parkedChecks?: FinalChecks | null;
 }
 
 /**
@@ -154,8 +156,7 @@ export class JobDetailLifecycleStore {
 
     const currentHash = await this.checks.documentsHash();
     if (currentHash === entry.reviewHash) {
-      const restored = this.finalChecksSvc.restoreAfterReturn(entry.reviewHash);
-      if (restored) this.checks.checks.set(restored);
+      if (entry.parkedChecks) this.checks.checks.set(entry.parkedChecks);
       this.checks.outdated.set(false);
       this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_unchanged'));
     } else {

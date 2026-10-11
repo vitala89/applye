@@ -10,9 +10,6 @@ import {
 } from '@applye/data';
 import { FollowupDraftService, parseFollowupDraft } from './followup-draft.service';
 
-jest.mock('@tauri-apps/plugin-opener', () => ({ openUrl: jest.fn() }));
-import { openUrl } from '@tauri-apps/plugin-opener';
-
 /**
  * Follow-up drafting extracted out of the quick-view modal, which had reached
  * its size budget. One cached AI call per (application, language, model); the
@@ -49,7 +46,6 @@ describe('FollowupDraftService', () => {
         tokensOutput: 9,
       })),
     };
-    (openUrl as jest.Mock).mockClear();
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -150,26 +146,40 @@ describe('FollowupDraftService', () => {
     expect(s.error()).toBe('');
   });
 
-  describe('openInMail', () => {
-    it('percent-encodes spaces as %20, not +, so mail clients decode them', async () => {
+  describe('mailtoUrl', () => {
+    it('percent-encodes spaces as %20, not +, so mail clients decode them', () => {
       const s = make();
       s.to.set('hr@northlane.io');
       s.subject.set('Following up');
       s.body.set('Hello there');
-      await s.openInMail();
-      const url = (openUrl as jest.Mock).mock.calls[0][0] as string;
+      const url = s.mailtoUrl();
       expect(url).toContain('subject=Following%20up');
       expect(url).not.toContain('+');
     });
 
-    it('omits empty fields rather than sending blank params', async () => {
+    it('omits empty fields rather than sending blank params', () => {
       const s = make();
       s.to.set('hr@northlane.io');
       s.subject.set('Following up');
-      await s.openInMail();
-      const url = (openUrl as jest.Mock).mock.calls[0][0] as string;
+      const url = s.mailtoUrl();
       expect(url).not.toContain('cc=');
       expect(url).not.toContain('body=');
+    });
+
+    it('joins subject and body for the clipboard, and only marks copied on request', () => {
+      jest.useFakeTimers();
+      const s = make();
+      s.subject.set('Following up');
+      s.body.set('Hello there');
+
+      expect(s.draftText()).toBe('Following up\n\nHello there');
+      expect(s.copied()).toBe(false);
+
+      s.markCopied();
+      expect(s.copied()).toBe(true);
+      jest.advanceTimersByTime(1500);
+      expect(s.copied()).toBe(false);
+      jest.useRealTimers();
     });
   });
 });

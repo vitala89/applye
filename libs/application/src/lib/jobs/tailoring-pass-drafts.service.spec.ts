@@ -5,7 +5,6 @@ describe('TailoringPassDraftsService', () => {
   let svc: TailoringPassDraftsService;
 
   beforeEach(() => {
-    sessionStorage.clear();
     TestBed.configureTestingModule({ providers: [TailoringPassDraftsService] });
     svc = TestBed.inject(TailoringPassDraftsService);
   });
@@ -68,26 +67,9 @@ describe('TailoringPassDraftsService', () => {
     expect(svc.ids(7)).toEqual([]);
   });
 
-  // The discard service is component-scoped, so the record has to outlive the
-  // page component - stepping into the document editor destroys it, and an
-  // in-memory record would widen the next discard back out to everything.
-  it('survives a new instance within the same session', () => {
-    svc.record(7, 11);
+  it('hydrates a record the desktop read back', () => {
+    svc.hydrate({ jobId: 7, ids: [11] });
 
-    const revived = new TailoringPassDraftsService();
-
-    expect(revived.ids(7)).toEqual([11]);
-  });
-
-  it('reads a corrupted record as no record at all', () => {
-    sessionStorage.setItem('applye:tailoringPassDrafts', '{ not json');
-
-    expect(new TailoringPassDraftsService().ids(7)).toEqual([]);
-  });
-
-  it('reads a record with the wrong shape as no record at all', () => {
-    sessionStorage.setItem('applye:tailoringPassDrafts', JSON.stringify({ jobId: 7 }));
-
-    expect(new TailoringPassDraftsService().ids(7)).toEqual([]);
+    expect(svc.ids(7)).toEqual([11]);
   });
 });

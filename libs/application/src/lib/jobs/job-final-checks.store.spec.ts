@@ -17,7 +17,6 @@ describe('JobFinalChecksStore', () => {
   let ran: FinalCheckInputs[];
   let hashed: FinalCheckInputs[];
   let refreshed: FinalCheckInputs[];
-  let stored: string[];
   let linkedCv: ReturnType<typeof signal<DocumentLibraryItem | null>>;
   let linkedCoverLetter: ReturnType<typeof signal<DocumentLibraryItem | null>>;
 
@@ -27,7 +26,6 @@ describe('JobFinalChecksStore', () => {
     ran = [];
     hashed = [];
     refreshed = [];
-    stored = [];
     linkedCv = signal<DocumentLibraryItem | null>(null);
     linkedCoverLetter = signal<DocumentLibraryItem | null>(null);
 
@@ -46,7 +44,6 @@ describe('JobFinalChecksStore', () => {
         refreshed.push(i);
         return Promise.resolve();
       },
-      storeForReturn: (h: string) => stored.push(h),
     };
 
     TestBed.configureTestingModule({
@@ -122,12 +119,18 @@ describe('JobFinalChecksStore', () => {
     expect(outdated()).toBe(true);
   });
 
-  it('hands the hash it computed to the service that keeps it for the return trip', async () => {
+  it('parks the current result under the hash it computed', async () => {
+    checks.set({ ats: 'pass' });
     const hash = await store.documentsHash();
-    store.storeForReturn(hash);
 
+    expect(store.checksToPark(hash)).toEqual({ reviewHash: 'hash-1', checks: { ats: 'pass' } });
+    expect(store.checksToPark('unused')).toEqual({
+      reviewHash: 'unused',
+      checks: { ats: 'pass' },
+    });
+    checks.set(null);
+    expect(store.checksToPark(hash)).toBeNull();
     expect(hashed.length).toBe(1);
-    expect(stored).toEqual(['hash-1']);
   });
 
   it('refreshes freshness against the current inputs', async () => {

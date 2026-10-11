@@ -44,6 +44,32 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-11, remove platform effects from the application layer
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-platform-boundaries`
+- **Commits:** recorded in the pull request
+- **Pull request:** opened from this branch; not merged
+- **Objective:** Architecture Stabilization PR 1. Production code under `libs/application` no longer opens dialogs, navigates, writes the clipboard, opens mail, or touches browser storage.
+- **Completed:**
+  - Save dialogs live in `exportThroughSaveDialog`. `DocumentExportService` names the file, writes a supplied path, and still opens or reveals a finished file through `SystemGateway`.
+  - Follow-up drafting returns `draftText()` and `mailtoUrl()`. The composer copies and opens the mail client.
+  - Portal answers expose `answerText()` and `noteCopied()`. `copyAnswer()` had no template caller.
+  - Document editors return `DocumentEditorDestination`. The photo prompt returns `CvPhotoPromptOutcome`. `JobEditorNavigation` and the jobs page perform the route change.
+  - Sidebar, wizard progress, tailoring-pass drafts, and parked final checks keep the same storage keys. `apps/desktop` reads and writes them. The values stay per-machine UI state, not SQLite and not syncable.
+  - ESLint rejects `@tauri-apps/*`, `@angular/router`, `navigator`, `localStorage`, and `sessionStorage` in production files under `libs/application`.
+  - ADR-0005 amendment sixty-six records the reversal of amendment thirty-three for the storage API. Native section G is the remaining walkthrough.
+- **Not completed:** Native section G was not walked. PR 2 (feature cycles and `DocumentRegionTag`) was not started. No Rust, schema, gateway split, or Career Evidence work.
+- **Files or packages changed:** application services and stores listed above, desktop export/navigation/storage helpers, their specs, `eslint.config.mjs`, ADR-0005, the stabilization plan, current state, changelog, and the native-gate backlog.
+- **Validation:** `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed. `nx run-many -t lint,type-check --projects=application,desktop --skip-nx-cache` passed. `nx test application --skip-nx-cache` passed, 131 suites, 1695 tests. `nx test desktop --skip-nx-cache` passed, 128 suites, 1210 tests. `npm run desktop:build` succeeded. It printed the existing initial-bundle warning (1.54 MB against 1.52 MB), the unused `DiscoverDetailScoreComponent` warning, and the existing Sass `@import` deprecation. Rust gates were not run; no Rust file changed. Native section G was not run.
+- **Privacy/security impact:** No new storage, network path, or career-data sync. The same four browser keys still hold UI-only state on this machine. Clipboard and mail still happen only after the user asks, and only in the desktop UI.
+- **Decisions and assumptions:** The prompt fixed ownership, so grilling did not open a question round. Amendment sixty-six is the record. `openFile` / `revealInFolder` stay on `SystemGateway` because that gateway already owns those infrastructure calls. Session storage was in scope because the definition of done forbids it in production application code, even though amendment thirty-three had allowed the API.
+- **Risks or compatibility impact:** User-visible behavior was not intended to change. A reviewer still needs section G on a real window: save-dialog cancel, follow-up copy and mail, sidebar relaunch, and wizard return.
+- **Open issues or blockers:** Native section G is unchecked.
+- **Next first action:** Review this pull request and do not merge it from the agent session. After it merges, start Architecture Stabilization PR 2: remove hidden cross-feature cycles and define application feature direction. Do not start Career Evidence, gateway splits, or Rust command splits in that review.
+- **Evidence:** `main` was fast-forwarded to `8a372049` (`#575` merged) before the branch. The working tree was clean and no pull request was open. Production leak scan after the change: Tauri 0, Router 0, clipboard 0, localStorage 0, sessionStorage 0. Before, on `main`: Tauri 2 files, Router 3, clipboard 2, localStorage 1, sessionStorage 3.
+
 ### 2026-10-06, local database backup and restore
 
 - **Status:** partial

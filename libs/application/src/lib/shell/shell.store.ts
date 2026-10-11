@@ -2,9 +2,6 @@ import { Injectable, inject, signal } from '@angular/core';
 import type { SupportedLanguage } from '@applye/core';
 import { ProfileSettingsGateway } from '@applye/data';
 
-/** localStorage key for the sidebar rail preference. */
-const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
-
 /**
  * What the app shell holds: the stored UI language, and whether the sidebar is
  * a rail.
@@ -13,6 +10,11 @@ const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
  * effect, and this layer has refused to translate, navigate or toast in every
  * migration before it (ADR-0005). The store reads the preference; the shell
  * applies it.
+ *
+ * **The store does not touch browser storage.** Rail mode is a per-machine
+ * viewing preference, not career data, so it stays out of SQLite. The shell
+ * hydrates `sidebarCollapsed` and writes it back (ADR-0005, amendment
+ * sixty-six).
  *
  * Nothing else on the shell belongs here. The resume affordance is computed
  * from the app's own wizard services, the page title and the active route come
@@ -33,14 +35,8 @@ export class ShellStore {
    */
   readonly error = signal('');
 
-  /**
-   * Rail mode: labels hidden, icons kept. Remembered across sessions in
-   * localStorage rather than the settings table - it is a per-machine viewing
-   * preference, not user data worth syncing or exporting.
-   */
-  readonly sidebarCollapsed = signal(
-    globalThis.localStorage?.getItem(SIDEBAR_COLLAPSED_KEY) === '1',
-  );
+  /** Rail mode: labels hidden, icons kept. Expanded until the shell hydrates. */
+  readonly sidebarCollapsed = signal(false);
 
   /**
    * Never rejects. A failed read leaves `uiLanguage` null, which is what keeps
@@ -59,9 +55,11 @@ export class ShellStore {
     }
   }
 
+  hydrateSidebar(collapsed: boolean): void {
+    this.sidebarCollapsed.set(collapsed);
+  }
+
   toggleSidebar(): void {
-    const next = !this.sidebarCollapsed();
-    this.sidebarCollapsed.set(next);
-    globalThis.localStorage?.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0');
+    this.sidebarCollapsed.update((collapsed) => !collapsed);
   }
 }

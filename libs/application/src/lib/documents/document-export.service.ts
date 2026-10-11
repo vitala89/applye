@@ -35,9 +35,10 @@ export interface LastExport {
  * buttons, one document, two answers - and no amount of CSS could have closed
  * it, because the dialog is not ours to configure (`B4`).
  *
- * Everything exports through here now: a save dialog, then the Rust command
- * that opens a hidden window on the chromeless print route and drives the print
- * with the document's own page settings on `NSPrintInfo`.
+ * Everything exports through here now. The desktop opens the save dialog and
+ * passes the chosen path in; this service writes the file through the Rust
+ * command that opens a hidden window on the chromeless print route and drives
+ * the print with the document's own page settings on `NSPrintInfo`.
  *
  * **Callers save before calling, and that is deliberate.** The hidden window
  * renders the document **as it is stored**, so an unsaved edit would simply be
@@ -70,17 +71,15 @@ export class DocumentExportService {
   }
 
   /**
-   * Prompts for a path, writes the file, then hands back to `onExported` so the
-   * caller can commit the document. That commit runs inside this method's
-   * try/catch on purpose: it is the last step of one user action, and a failure
-   * there has always been reported on the same status line.
+   * Marks an export in flight and returns the name the save dialog should
+   * offer. A missing document is reported on the status line and returns null,
+   * so the dialog never opens.
    */
-  async run(
+  beginExport(
     kind: ReviewDocumentKind,
     format: ExportFormat,
     item: DocumentLibraryItem | null,
-    onExported: (kind: ReviewDocumentKind) => Promise<void>,
-  ): Promise<void> {
+  ): string | null {
     if (!item) {
       this.status.set(
         kind === 'cv'
@@ -88,17 +87,36 @@ export class DocumentExportService {
           : this.t()('jobs.wizard.export_missing_cover_letter_warning'),
       );
       this.error.set(true);
-      return;
+      return null;
     }
 
     this.exporting.set(`${kind}-${format}`);
     this.status.set('');
     this.error.set(false);
     this.lastExport.set(null);
+    return this.filename(item, format);
+  }
+
+  /** A dismissed save dialog. The spinner stops and nothing is reported. */
+  cancelExport(): void {
+    this.exporting.set(false);
+  }
+
+  /**
+   * Writes `filePath`, then hands back to `onExported` so the caller can commit
+   * the document. That commit runs inside this method's try/catch on purpose:
+   * it is the last step of one user action, and a failure there has always been
+   * reported on the same status line.
+   */
+  async exportTo(
+    kind: ReviewDocumentKind,
+    format: ExportFormat,
+    item: DocumentLibraryItem,
+    filePath: string,
+    onExported: (kind: ReviewDocumentKind) => Promise<void>,
+  ): Promise<void> {
+    this.exporting.set(`${kind}-${format}`);
     try {
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const filePath = await save({ defaultPath: this.filename(item, format) });
-      if (!filePath) return;
       if (kind === 'cv') {
         if (format === 'pdf') {
           await this.db.cvDocumentExportPdfWysiwyg(item.id, filePath);

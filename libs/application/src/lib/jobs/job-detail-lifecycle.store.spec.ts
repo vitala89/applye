@@ -131,7 +131,6 @@ describe('JobDetailLifecycleStore', () => {
           provide: FinalChecksService,
           useValue: {
             reset: () => order.push('finalChecksReset'),
-            restoreAfterReturn: () => restoredChecks,
           },
         },
         {
@@ -282,7 +281,14 @@ describe('JobDetailLifecycleStore', () => {
     });
 
     it('restores the checks when the documents came back unchanged', async () => {
-      await store.enterJob(4, entry({ documentSaved: true, reviewHash: 'hash-same' }));
+      await store.enterJob(
+        4,
+        entry({
+          documentSaved: true,
+          reviewHash: 'hash-same',
+          parkedChecks: restoredChecks as JobRouteEntry['parkedChecks'],
+        }),
+      );
 
       expect(checksSignal()).toEqual({ ats: 'pass' });
       expect(outdated()).toBe(false);

@@ -29,6 +29,7 @@ import { JobCrossJobConfirmComponent } from './job-cross-job-confirm/job-cross-j
 import { JobDeleteConfirmComponent } from './job-delete-confirm/job-delete-confirm.component';
 import { JobDetailActionsComponent } from './job-detail-actions/job-detail-actions.component';
 import { JobDiscardConfirmComponent } from './job-discard-confirm/job-discard-confirm.component';
+import { JobEditorNavigation } from './job-editor-navigation';
 import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.component';
 import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
 import { CvPhotoPromptService } from '@applye/application';
@@ -39,6 +40,7 @@ import { DocumentExportService } from '@applye/application';
 import { TailoringService } from '@applye/application';
 import { JobScoringService } from '@applye/application';
 import { WizardNavService } from '@applye/application';
+import { readParkedFinalChecks } from '../../core/browser-ui-state';
 import { scrollOnTick } from '../../core/scroll-to-top';
 import { CoverLetterTailorService } from '@applye/application';
 import { DocumentReviewStatusService } from '@applye/application';
@@ -117,6 +119,7 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     JobScoringStore,
     JobTailoringStore,
     JobDetailLifecycleStore,
+    JobEditorNavigation,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -125,6 +128,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly store = inject(JobDetailStore);
   /** Which documents this application is linked to, and how they are reached. */
   protected readonly docs = inject(JobDocumentsStore);
+  /** Opens those documents. The store returns the destination; this navigates. */
+  protected readonly editorNav = inject(JobEditorNavigation);
   /** Generating one of them. */
   protected readonly drafts = inject(JobDocumentDraftsStore);
   /** The review step's token-free checks over both. */
@@ -273,9 +278,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly profilePhoto = computed(() => this.profile()?.photoDataUri ?? null);
 
   async acceptPhotoPrompt(): Promise<void> {
-    const doc = await this.photoPrompt.accept(this.profilePhoto(), this.docs.cv());
-    if (doc) {
-      this.docs.cv.set(doc);
+    const outcome = await this.photoPrompt.accept(this.profilePhoto(), this.docs.cv());
+    if (outcome.kind === 'open-profile') await this.router.navigate(['/profile']);
+    if (outcome.kind === 'updated') {
+      this.docs.cv.set(outcome.document);
       this.checks.markOutdated();
     }
     const status = this.photoPrompt.status();
@@ -360,6 +366,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         params.get('returnTo') === 'applyWizard' || params.get('wizardStep') === 'documents',
       documentSaved: params.get('documentSaved') === '1',
       reviewHash: params.get('reviewHash'),
+      parkedChecks: readParkedFinalChecks(params.get('reviewHash')),
     };
   }
 

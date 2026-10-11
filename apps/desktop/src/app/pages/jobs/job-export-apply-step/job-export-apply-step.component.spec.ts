@@ -8,6 +8,11 @@ import { JobActionsService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 import { WizardActivityService } from '@applye/application';
 
+const save = jest.fn(async () => '/tmp/out.pdf');
+jest.mock('@tauri-apps/plugin-dialog', () => ({
+  save: (...args: unknown[]) => save(...args),
+}));
+
 const JOB = { id: 7, title: 'Senior Frontend Engineer' } as Job;
 const CV = { id: 3, kind: 'cv' } as DocumentLibraryItem;
 const COVER_LETTER = { id: 4, kind: 'cover_letter' } as DocumentLibraryItem;
@@ -24,10 +29,16 @@ function stubs() {
       status: signal(''),
       error: signal(false),
       lastExport: signal<{ filePath: string } | null>(null),
-      run: async (
+      beginExport: (kind: string, format: string, item: DocumentLibraryItem | null) => {
+        if (!item) return null;
+        return `${kind}.${format}`;
+      },
+      cancelExport: () => undefined,
+      exportTo: async (
         kind: string,
         format: string,
         item: DocumentLibraryItem | null,
+        _path: string,
         onExported: (k: string) => Promise<void>,
       ) => {
         runs.push({ kind, format, item });

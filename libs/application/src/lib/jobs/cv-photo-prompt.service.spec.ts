@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
 import { DocumentLibraryItem } from '@applye/core';
 import { DocumentsGateway, JobsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -8,14 +7,12 @@ import { CvPhotoPromptService } from './cv-photo-prompt.service';
 describe('CvPhotoPromptService', () => {
   let svc: CvPhotoPromptService;
   let upserts: Partial<DocumentLibraryItem>[];
-  let navigations: unknown[][];
   let upsertFails: boolean;
 
   const CV = { id: 4, contentJson: '{"sections":[]}' } as DocumentLibraryItem;
 
   beforeEach(() => {
     upserts = [];
-    navigations = [];
     upsertFails = false;
 
     const db = {
@@ -32,10 +29,6 @@ describe('CvPhotoPromptService', () => {
         TranslateService,
         { provide: JobsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
-        {
-          provide: Router,
-          useValue: { navigate: (c: unknown[]) => (navigations.push(c), Promise.resolve(true)) },
-        },
       ],
     });
     svc = TestBed.inject(CvPhotoPromptService);
@@ -65,11 +58,11 @@ describe('CvPhotoPromptService', () => {
   });
 
   it('writes the photo into the linked CV and returns it', async () => {
-    const doc = await svc.accept('data:image/jpeg;base64,xxx', CV);
+    const outcome = await svc.accept('data:image/jpeg;base64,xxx', CV);
 
     expect(upserts).toHaveLength(1);
     expect(upserts[0].id).toBe(4);
-    expect(doc?.id).toBe(4);
+    expect(outcome).toEqual({ kind: 'updated', document: expect.objectContaining({ id: 4 }) });
     expect(svc.open()).toBe(false);
     expect(svc.busy()).toBe(false);
   });
@@ -77,29 +70,28 @@ describe('CvPhotoPromptService', () => {
   it('sends the user to the profile when there is no photo yet', async () => {
     // Cropped once on the profile and reused, rather than re-uploaded per
     // application.
-    const doc = await svc.accept(null, CV);
+    const outcome = await svc.accept(null, CV);
 
-    expect(navigations).toEqual([['/profile']]);
+    expect(outcome).toEqual({ kind: 'open-profile' });
     expect(upserts).toEqual([]);
-    expect(doc).toBeNull();
   });
 
   it('writes nothing when no CV exists yet', async () => {
     // The photo is on the profile and the region is set, so the CV picks it up
     // when it is created. There is nothing to patch.
-    const doc = await svc.accept('data:image/jpeg;base64,xxx', null);
+    const outcome = await svc.accept('data:image/jpeg;base64,xxx', null);
 
     expect(upserts).toEqual([]);
-    expect(doc).toBeNull();
+    expect(outcome).toEqual({ kind: 'none' });
     expect(svc.open()).toBe(false);
   });
 
   it('reports a failed write and clears busy', async () => {
     upsertFails = true;
 
-    const doc = await svc.accept('data:image/jpeg;base64,xxx', CV);
+    const outcome = await svc.accept('data:image/jpeg;base64,xxx', CV);
 
-    expect(doc).toBeNull();
+    expect(outcome).toEqual({ kind: 'none' });
     expect(svc.status()).toContain('disk on fire');
     expect(svc.busy()).toBe(false);
   });

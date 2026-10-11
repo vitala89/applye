@@ -65,6 +65,7 @@ export * from './lib/jobs/job-actions.store';
 export * from './lib/jobs/job-detail-lifecycle.store';
 export * from './lib/jobs/job-detail.store';
 export * from './lib/jobs/job-document-drafts.store';
+export * from './lib/jobs/document-editor-destination';
 export * from './lib/jobs/job-documents.store';
 export * from './lib/jobs/job-final-checks.store';
 export * from './lib/jobs/job-tailoring.store';

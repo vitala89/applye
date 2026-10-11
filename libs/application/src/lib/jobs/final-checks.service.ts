@@ -40,14 +40,10 @@ export interface FinalCheckInputs {
  * against, so editing a document afterwards marks the result outdated instead
  * of leaving a stale green tick on screen.
  *
- * The same hash doubles as the sessionStorage key that survives the round trip
- * into the document editor and back.
- *
- * That storage is reached through `globalThis` rather than through the injected
- * `DOCUMENT`, which is what lets this live in `libs/application`. Not a
- * loosening of the layer's DOM rule but the rule as `ADR-0005` amendment
- * thirty-three already settled it for `sidebarCollapsed`: browser storage is
- * screen state that happens to outlive the session, not view.
+ * The same hash is what the desktop uses as the sessionStorage key that
+ * survives the round trip into the document editor and back. This service
+ * holds the result; the page parks and restores it (ADR-0005, amendment
+ * sixty-six).
  */
 @Injectable()
 export class FinalChecksService {
@@ -156,26 +152,6 @@ export class FinalChecksService {
       return;
     }
     this.outdated.set((await this.documentsHash(inputs)) !== checks.inputHash);
-  }
-
-  /** Parks the current result under `reviewHash` for the trip into the
-   * document editor, which destroys this page component. */
-  storeForReturn(reviewHash: string): void {
-    const checks = this.checks();
-    const storage = globalThis.sessionStorage;
-    if (!checks || !storage) return;
-    storage.setItem(`applye:wizardFinalChecks:${reviewHash}`, JSON.stringify(checks));
-  }
-
-  restoreAfterReturn(reviewHash: string): FinalChecks | null {
-    const storage = globalThis.sessionStorage;
-    const raw = storage?.getItem(`applye:wizardFinalChecks:${reviewHash}`);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as FinalChecks;
-    } catch {
-      return null;
-    }
   }
 
   /**

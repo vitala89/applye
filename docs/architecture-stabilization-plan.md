@@ -94,9 +94,9 @@ The October 2026 architecture audit found the following concrete debt:
    `npm run quality:file-size -- --all` at the start of the size-remediation phase.
 10. `libs/core/src/lib/core.ts` and its generated spec are unused Nx scaffold leftovers.
 11. parts of `docs/architecture.md` lag behind the stricter dependency direction already enforced in
-   code.
+    code.
 12. `docs/product/CURRENT_STATE.md` still described database backup/restore as in review after PR
-   #573 and the architecture-canon PR #574 had already merged.
+    #573 and the architecture-canon PR #574 had already merged.
 
 ## Delivery strategy
 
@@ -122,6 +122,14 @@ Done when:
 - CI/doc gates are green.
 
 ### PR 1 - Remove platform leakage from the application layer
+
+**Status:** implemented on `refactor/application-platform-boundaries` (pull request opened, not merged).
+Production scan on `main`: Tauri 2 files, Router 3, clipboard 2, localStorage 1, sessionStorage 3.
+After this branch those counts are 0 in production application code. The audit also found
+`sessionStorage` in `wizard-progress.service.ts`, `tailoring-pass-drafts.service.ts`, and
+`final-checks.service.ts`, in addition to the sidebar `localStorage` key. Those four storage sites
+moved with the Tauri, router, and clipboard leaks. `window` / `document` matches in this library
+were comments. PR 2 is unchanged.
 
 Audit every production file under `libs/application` for:
 

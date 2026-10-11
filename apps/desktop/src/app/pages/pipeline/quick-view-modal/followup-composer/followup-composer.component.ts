@@ -65,11 +65,13 @@ export class FollowupComposerComponent {
     this.followup.changeLanguage(language);
   }
 
-  protected copyFollowup(): Promise<void> {
-    return this.followup.copy();
+  protected async copyFollowup(): Promise<void> {
+    await navigator.clipboard.writeText(this.followup.draftText());
+    this.followup.markCopied();
   }
 
-  protected openFollowupInMail(): Promise<void> {
-    return this.followup.openInMail();
+  protected async openFollowupInMail(): Promise<void> {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    await openUrl(this.followup.mailtoUrl());
   }
 }

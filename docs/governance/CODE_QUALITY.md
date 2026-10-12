@@ -153,6 +153,11 @@ npm run quality:file-size
 
 The pre-commit hook checks staged files. CI compares the branch with its base and blocks regressions.
 
+`npm run quality:application-boundaries` is the separate gate for cycles inside `libs/application`.
+Nx cannot see those edges because the library is one project. The check also rejects a production
+self-import of `@applye/application` and a new file in the legacy `libs/core/src/lib/models` bucket.
+Run it with the file-size and attribution gates. CI and the pre-commit hook already do.
+
 ## Function and API shape
 
 - Prefer functions and methods under roughly 60 lines. Split orchestration from calculation.

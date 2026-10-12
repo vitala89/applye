@@ -1,9 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { CvContent, DocumentLibraryItem, withCvPhoto } from '@applye/core';
+import { CvContent, DocumentLibraryItem, DocumentRegionTag, withCvPhoto } from '@applye/core';
 
 import { DocumentsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { DocumentRegionTag } from './job-document-defaults';
 
 /**
  * The German-market photo prompt.

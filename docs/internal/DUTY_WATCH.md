@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-12, application feature boundaries
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-feature-boundaries`
+- **Commits:** recorded in the pull request
+- **Pull request:** opened from this branch, not merged
+- **Objective:** Architecture Stabilization PR 2. Remove the production cycle between `jobs` and `documents`, and enforce application feature direction.
+- **Completed:**
+  - The production graph on `main` had one cycle: `documents -> jobs` (`DocumentRegionTag` from `job-document-defaults` in `cover-letter-draft.service.ts` and `cv-draft.service.ts`) and `jobs -> documents` (eight files orchestrating document services). No other feature folder imported another.
+  - `DocumentRegionTag` and `inferDocumentRegion` moved to `libs/core/src/lib/documents/document-region.ts`. `documentReviewLanguageFor` and `baseCvChoices` stayed in the jobs feature.
+  - After the move the production graph is `jobs -> documents` only.
+  - `npm run quality:application-boundaries` scans production TypeScript with the TypeScript compiler API, counts type-only imports, rejects `@applye/application` and a relative barrel import, detects direct and transitive cycles, and rejects a new file in `libs/core/src/lib/models`. It runs in `npm run quality`, CI, and the pre-commit hook.
+- **Not completed:** PR 3 was not started. No Rust, schema, gateway split, file-size campaign, or Career Evidence work. Native section G was not walked; this change does not alter a window behavior.
+- **Files or packages changed:** document region in `libs/core`, the jobs and documents imports that used it, the desktop documents-step type import, the boundary checker and its tests, CI, the pre-commit hook, and the architecture, domain, quality, changelog, and current-state docs.
+- **Validation:** `npm run quality:test` passed, 27 tests. `npm run quality:file-size`, `npm run quality:attribution`, `npm run quality:application-boundaries`, `npm run format:check`, and `git diff --check` passed. `cv-draft.service.ts` is 194/225 non-empty lines, same as base. `nx run-many -t lint,type-check,test -p core,application,desktop --skip-nx-cache` passed. Core tests: 31 suites, 480. Application tests: 131 suites, 1688. Desktop tests: 134 suites, 1231. `nx run web:type-check --skip-nx-cache` passed. `npm run desktop:build` succeeded with the existing warnings: initial bundle 1.54 MB against 1.52 MB (over by 22.44 kB), unused `DiscoverDetailScoreComponent`, and the Sass `@import` deprecation. Rust was not run; no Rust file changed. A temporary `import type` from `documents` to `jobs/job-detail.store` made the checker fail with a cycle and an unapproved `documents -> jobs` edge; the import was removed and the acyclic graph was checked again.
+- **Privacy/security impact:** No new storage, network path, or career-data sync. Document region is the same four tags and the same German-versus-neutral rule.
+- **Decisions and assumptions:** The prompt fixed ownership, so grilling did not open a question round. `inferDocumentRegion` moved with the tag because its only input is a language string. No workflow seam was added: the audit found no pair of features that needed a third owner. The one approved edge is jobs orchestrating documents.
+- **Risks or compatibility impact:** User-visible behavior was not intended to change. `DocumentRegionTag` is no longer exported from `@applye/application`.
+- **Open issues or blockers:** none for this pull request. Do not merge it from the agent session.
+- **Next first action:** Review this pull request and do not merge it from the agent session. After it merges, start Architecture Stabilization PR 3: Correct state and gateway ownership. Do not start Career Evidence, Rust command splits, or the file-size campaign in that review.
+- **Evidence:** Production scan before the move: `documents -> jobs` in two files, `jobs -> documents` in eight files, no other cross-feature edge. Production scan after the move: `jobs -> documents` only.
+
 ### 2026-10-11, second review of application platform boundaries
 
 - **Status:** complete

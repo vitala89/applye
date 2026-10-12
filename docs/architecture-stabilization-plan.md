@@ -123,8 +123,7 @@ Done when:
 
 ### PR 1 - Remove platform leakage from the application layer
 
-**Status:** implemented on `refactor/application-platform-boundaries` and open as
-[#576](https://github.com/vitala89/applye/pull/576). Not merged. A review of that pull request
+**Status:** merged as [#576](https://github.com/vitala89/applye/pull/576) (`915e8072`). A review of that pull request
 required four further cuts, and they are on the same branch: `ToastService` left the library,
 editor destinations are semantic facts rather than routes, a rejected save dialog records
 `failDialog` without leaving the spinner up, and Open/Reveal run from the desktop button.
@@ -134,7 +133,7 @@ plus `ToastService` in the library and ten production callers. After this branch
 UI actions. The audit also found `sessionStorage` in `wizard-progress.service.ts`,
 `tailoring-pass-drafts.service.ts`, and `final-checks.service.ts`, in addition to the sidebar
 `localStorage` key. Those four storage sites moved with the Tauri, router, and clipboard leaks.
-`window` / `document` matches in this library were comments. PR 2 is unchanged.
+`window` / `document` matches in this library were comments. PR 2 is the next section.
 
 Audit every production file under `libs/application` for:
 
@@ -166,6 +165,13 @@ Preferred shape:
 Add tests for returned outcomes/navigation intentions where behavior moves.
 
 ### PR 2 - Remove hidden cross-feature cycles and define application feature direction
+
+**Status:** implemented on `refactor/application-feature-boundaries`. The production feature graph
+is acyclic. `jobs` orchestrates `documents`; `documents` does not import `jobs`.
+`DocumentRegionTag` and `inferDocumentRegion` live in `libs/core` under `documents/`.
+`npm run quality:application-boundaries` enforces that graph, rejects a production self-import of
+`@applye/application`, and rejects a new file in the legacy `libs/core/src/lib/models` bucket.
+After this pull request merges, the next step is **PR 3: Correct state and gateway ownership.**
 
 First remove the known `documents -> jobs` dependency by moving shared document vocabulary such as
 `DocumentRegionTag` to a neutral domain owner under `libs/core/src/lib/documents/`.
@@ -313,6 +319,7 @@ nx test <affected projects> --skip-nx-cache
 nx run <affected project>:type-check --skip-nx-cache
 npm run quality:file-size
 npm run quality:attribution
+npm run quality:application-boundaries
 npm run format:check
 git diff --check
 ```

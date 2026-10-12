@@ -75,6 +75,7 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body || '' }}
         run: |
           npm run quality:test
+          npm run quality:application-boundaries
           npm run quality:file-size -- --base "$QUALITY_BASE"
           npm run quality:attribution -- --base "$QUALITY_BASE" --pr-body-env PR_BODY
 

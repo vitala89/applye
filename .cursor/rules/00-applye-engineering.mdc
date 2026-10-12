@@ -23,6 +23,7 @@ Before handoff, run the relevant validation matrix checks plus:
 ```bash
 npm run quality:file-size
 npm run quality:attribution
+npm run quality:application-boundaries
 npm run format:check
 git diff --check
 ```

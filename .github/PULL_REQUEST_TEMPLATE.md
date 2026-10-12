@@ -13,6 +13,7 @@
 ## Checklist
 
 - [ ] `npm run quality:file-size` passes and no oversized source file grew
+- [ ] `npm run quality:application-boundaries` passes
 - [ ] New logic has a focused test seam; bug fixes include a regression test
 - [ ] `npm test`, `npm run lint`, `npm run type-check` pass locally when applicable
 - [ ] `cargo test` passes if Rust code was touched

@@ -7,6 +7,7 @@ Use the smallest sufficient validation set for the affected layers. Do not claim
 ```bash
 npm run quality:file-size
 npm run quality:attribution
+npm run quality:application-boundaries
 npm run format:check
 git diff --check
 ```

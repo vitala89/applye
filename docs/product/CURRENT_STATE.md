@@ -1,8 +1,8 @@
 # Current Operational State
 
 **As of 2026-10-13.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
-Stabilization PR 2 merged as #577 at `f5e5a181`. PR 3, state and gateway ownership, is the open
-pull request on `refactor/state-and-gateway-ownership`.
+Stabilization PR 2 merged as #577 at `f5e5a181`. PR 3, state and gateway ownership, is open as
+[#584](https://github.com/vitala89/applye/pull/584) on `refactor/state-and-gateway-ownership`.
 
 ## Active product direction
 

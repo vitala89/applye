@@ -193,7 +193,8 @@ repository-wide rename-only churn.
 
 ### PR 3 - Correct state and gateway ownership
 
-**Status:** open on `refactor/state-and-gateway-ownership`. `JobsStore` now lives in
+**Status:** open as [#584](https://github.com/vitala89/applye/pull/584) on
+`refactor/state-and-gateway-ownership`. `JobsStore` now lives in
 `libs/application`. `libs/data` keeps stateless IPC gateways. `JobsGateway` is jobs and scoring.
 `ApplicationsGateway` is application tracking, including analytics facts. `TrackerGateway` owns the
 tracker-only field write. `ProfileGateway` and `SettingsGateway` replace `ProfileSettingsGateway`.

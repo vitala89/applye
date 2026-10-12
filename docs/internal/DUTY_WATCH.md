@@ -49,8 +49,8 @@ Before a watch can be marked complete:
 - **Status:** complete
 - **Agent/tool:** Cursor
 - **Branch:** `refactor/state-and-gateway-ownership`
-- **Commits:** the tip of this branch
-- **Pull request:** opened from this branch against `main`; not merged
+- **Commits:** `ec34b2b6`, plus the docs commit that records pull request #584
+- **Pull request:** [#584](https://github.com/vitala89/applye/pull/584), not merged
 - **Objective:** Architecture Stabilization PR 3. Move reactive `JobsStore` into `libs/application` and split mixed IPC gateways by caller ownership.
 - **Completed:**
   - `JobsStore` lives at `libs/application/src/lib/jobs/jobs.store.ts`. `libs/data` no longer has a `stores/` directory or a `JobsStore` export. One runtime store. SQLite stays the source of truth.

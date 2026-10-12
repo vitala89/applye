@@ -166,7 +166,8 @@ Add tests for returned outcomes/navigation intentions where behavior moves.
 
 ### PR 2 - Remove hidden cross-feature cycles and define application feature direction
 
-**Status:** implemented on `refactor/application-feature-boundaries`. The production feature graph
+**Status:** open as [#577](https://github.com/vitala89/applye/pull/577) on
+`refactor/application-feature-boundaries`. Not merged. The production feature graph
 is acyclic. `jobs` orchestrates `documents`; `documents` does not import `jobs`.
 `DocumentRegionTag` and `inferDocumentRegion` live in `libs/core` under `documents/`.
 `npm run quality:application-boundaries` enforces that graph, rejects a production self-import of

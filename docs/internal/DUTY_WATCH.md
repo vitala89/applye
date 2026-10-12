@@ -49,8 +49,8 @@ Before a watch can be marked complete:
 - **Status:** complete
 - **Agent/tool:** Cursor
 - **Branch:** `refactor/application-feature-boundaries`
-- **Commits:** recorded in the pull request
-- **Pull request:** opened from this branch, not merged
+- **Commits:** `2f1f3a48`
+- **Pull request:** [#577](https://github.com/vitala89/applye/pull/577), not merged
 - **Objective:** Architecture Stabilization PR 2. Remove the production cycle between `jobs` and `documents`, and enforce application feature direction.
 - **Completed:**
   - The production graph on `main` had one cycle: `documents -> jobs` (`DocumentRegionTag` from `job-document-defaults` in `cover-letter-draft.service.ts` and `cv-draft.service.ts`) and `jobs -> documents` (eight files orchestrating document services). No other feature folder imported another.

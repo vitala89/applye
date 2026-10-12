@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import {
   Application,
   DocumentLibraryItem,
+  DocumentRegionTag,
   Job,
   LANGUAGE_NATIVE_NAMES,
   SUPPORTED_LANGUAGES,
@@ -12,7 +13,6 @@ import {
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from '@applye/application';
 import { DocumentReviewTargetsService } from '@applye/application';
-import { DocumentRegionTag } from '@applye/application';
 
 import { CvGapDialog } from '../cv-gap-dialog.component';
 import { CvPhotoPromptService } from '@applye/application';

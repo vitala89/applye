@@ -82,7 +82,7 @@ Before ending a completed, partial, blocked, or rolled-back non-trivial session:
 
 - review the final diff;
 - run and report the relevant checks;
-- run `npm run quality:file-size` and `npm run quality:attribution`;
+- run `npm run quality:file-size`, `npm run quality:attribution`, and `npm run quality:application-boundaries`;
 - update `docs/product/CURRENT_STATE.md` if project status changed;
 - append a truthful entry to `docs/internal/DUTY_WATCH.md`;
 - update changelog, roadmap, ADRs, specifications, migrations, privacy, security, and design docs when applicable;
@@ -94,7 +94,7 @@ Never claim a check passed unless it was actually run and observed.
 
 Commit messages and PR descriptions must not include `Co-authored-by`, `Signed-off-by`, generated-by text, assisted-by text, model names, or agent attribution. Commits are authored solely by the repository Git user. Never add the maintainer or Claude as a co-author.
 
-Before commit, run the relevant validation matrix entries, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` when available. Do not open a PR with a known failing gate unless the PR explicitly documents a blocked state.
+Before commit, run the relevant validation matrix entries, `npm run quality:file-size`, `npm run quality:attribution`, `npm run quality:application-boundaries`, `npm run format:check`, and `git diff --check` when available. Do not open a PR with a known failing gate unless the PR explicitly documents a blocked state.
 
 ## Token and context rules
 

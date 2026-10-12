@@ -1,6 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { SupportedLanguage } from '@applye/core';
-import { DocumentRegionTag } from './job-document-defaults';
+import { DocumentRegionTag, SupportedLanguage } from '@applye/core';
 import { FinalChecksService } from './final-checks.service';
 
 /**

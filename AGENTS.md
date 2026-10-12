@@ -151,7 +151,7 @@ The pre-commit hook and CI enforce the source-file size ratchet. Run `npm run qu
 
 1. Review the final diff.
 2. Run the smallest sufficient checks from `docs/governance/VALIDATION_MATRIX.md`.
-3. Run `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` when available.
+3. Run `npm run quality:file-size`, `npm run quality:attribution`, `npm run quality:application-boundaries`, `npm run format:check`, and `git diff --check` when available.
 4. Do not open a PR with a known formatting, lint, type, test, build, migration, security, file-size, or attribution failure unless the PR is explicitly documenting that blocked state.
 5. Update docs when behavior, workflow, privacy, security, architecture, migrations, or design expectations change.
 6. Update `docs/product/CURRENT_STATE.md` whenever the task changes current focus, implementation status, blockers, or next action.

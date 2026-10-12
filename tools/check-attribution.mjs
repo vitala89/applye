@@ -20,6 +20,13 @@ function git(args, { allowFailure = false } = {}) {
   }
 }
 
+const editorAttribution =
+  'cursor|claude|chatgpt|codex|copilot|gemini|antigravity|grok|devin|windsurf|aider';
+const madeWithEditor = new RegExp(
+  `^\\s*made with\\s+(?:\\[(?:${editorAttribution})\\]\\([^)\\r\\n]*\\)|(?:${editorAttribution})\\b)`,
+  'i',
+);
+
 const forbidden = [
   /^\s*co-authored-by\s*:/i,
   /^\s*signed-off-by\s*:/i,
@@ -28,6 +35,7 @@ const forbidden = [
   /^\s*(?:generated|written|authored|created|assisted)\s+(?:by|with)\s+(?:claude|chatgpt|codex|copilot|gemini|an?\s+ai|ai\s+agent)\b/i,
   /^\s*(?:claude|chatgpt|codex|copilot|gemini|ai\s+agent)\s+(?:generated|authored|assisted|created|wrote)\b/i,
   /^\s*🤖/u,
+  madeWithEditor,
 ];
 
 /**

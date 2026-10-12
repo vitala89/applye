@@ -1,6 +1,6 @@
 # Current Operational State
 
-**As of 2026-10-11.** Verify `git rev-parse --short HEAD` before trusting a hash. The architecture
+**As of 2026-10-12.** Verify `git rev-parse --short HEAD` before trusting a hash. The architecture
 stabilization branch was created from `main` at `959a119a`, after PR #573 (database backup/restore)
 and PR #574 (mandatory architecture-canon reading) merged.
 
@@ -24,15 +24,13 @@ Hub, Network CRM, Interview Intelligence, or community features as available. Do
 Hono, D1, authentication, Cloudflare Workers resources, sync, or empty backend scaffolding. ADR-0007
 says the backend is created with the first real backend slice.
 
-`#567`, `#568`, `#569`, `#573`, `#574`, and `#575` are merged. Architecture Stabilization PR 1
-(remove platform effects from `libs/application`) is open as
-[#576](https://github.com/vitala89/applye/pull/576) on
-`refactor/application-platform-boundaries`. The review blockers on that pull request are addressed
-on the same branch: toasts stay untracked when they fire, editor destinations are semantic,
-a rejected save dialog records `failDialog`, and Open/Reveal go through the desktop native-shell
-adapter. It is waiting for another review and is not merged. After it merges, the next step is
-PR 2: remove hidden cross-feature cycles and define application feature direction. Do not start
-Career Evidence, PR 3 gateway work, or Rust command splits in that review.
+`#567`, `#568`, `#569`, `#573`, `#574`, `#575`, and `#576` are merged. Architecture Stabilization
+PR 1 removed platform effects from `libs/application` (`915e8072`). PR 2 is open as
+[#577](https://github.com/vitala89/applye/pull/577) on `refactor/application-feature-boundaries`.
+It removes the `documents -> jobs` cycle and enforces application feature direction. After that
+pull request merges, the next step is **Architecture Stabilization PR 3: Correct state and gateway
+ownership.** Do not start Career Evidence, Rust command splits, or the file-size campaign in this
+pull request.
 
 ## Implementation sequence
 

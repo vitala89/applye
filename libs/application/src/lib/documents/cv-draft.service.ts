@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import {
   Application,
   DocumentLibraryItem,
+  DocumentRegionTag,
   Job,
   Settings,
   SupportedLanguage,
@@ -18,7 +19,6 @@ import { AiService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
-import { DocumentRegionTag } from '../jobs/job-document-defaults';
 
 type ParsedCv = ReturnType<typeof parseCvSkillResponse>;
 

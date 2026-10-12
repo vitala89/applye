@@ -26,7 +26,7 @@ Before designing, writing, refactoring, or reviewing code:
 `docs/internal/AGENT_START_HERE.md` is the canonical map for the concerns sometimes named `DDD_ARCHITECTURE.md`, `UBIQUITOUS_LANGUAGE.md`, `ARCHITECTURE_GUIDELINES.md`, `BACKEND_ARCHITECTURE.md`, `FRONTEND_ARCHITECTURE.md`, `CODE_STYLE.md`, and `AGENT_DEVELOPMENT_RULES.md`. Applye keeps one authoritative source per concern rather than duplicate files that can drift.
 
 Before handoff, run the relevant validation matrix checks plus `npm run quality:file-size`,
-`npm run quality:attribution`, `npm run format:check`, and `git diff --check`.
+`npm run quality:attribution`, `npm run quality:application-boundaries`, `npm run format:check`, and `git diff --check`.
 
 Never include `Co-authored-by`, `Signed-off-by`, generated-by text, model names, agent names, or
 similar attribution in commits or pull requests. Commits are authored only by the configured

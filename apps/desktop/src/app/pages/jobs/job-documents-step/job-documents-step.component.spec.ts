@@ -1,13 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { Application, DocumentLibraryItem, Job } from '@applye/core';
+import { Application, DocumentLibraryItem, DocumentRegionTag, Job } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { JobDocumentsStepComponent } from './job-documents-step.component';
 import { CvGapDialogService } from '@applye/application';
 import { DocumentReviewTargetsService } from '@applye/application';
 import { DocumentGenService } from '@applye/application';
 import { DocumentReviewStatusService } from '@applye/application';
-import { DocumentRegionTag } from '@applye/application';
 import { FinalChecksService } from '@applye/application';
 import { LinkedDocumentsService } from '@applye/application';
 import { CvPhotoPromptService } from '@applye/application';

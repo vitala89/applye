@@ -4,11 +4,11 @@ import {
   CoverLetterContent,
   CvContent,
   DocumentLibraryItem,
+  DocumentRegionTag,
   SupportedLanguage,
   cvContentToMd,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { DocumentRegionTag } from './job-document-defaults';
 
 export type FinalCheckStatus =
   'not_run' | 'pass' | 'needs_review' | 'strong' | 'needs_edits' | 'valid' | 'rescore' | 'outdated';

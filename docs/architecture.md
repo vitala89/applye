@@ -68,6 +68,22 @@ you immediately if its dependencies contradict them.
 Imports go through the published entry point (`@applye/core`, never
 `@applye/core/lib/models/job.model`). Deep imports bypass the public API and are treated as a defect.
 
+## Application feature direction
+
+Nx sees `libs/application` as one project, so it cannot reject a cycle between the feature folders
+inside it. Production TypeScript under `libs/application/src/lib` is a directed graph of those
+top-level folders, and that graph stays acyclic. A workflow may orchestrate another capability in
+one direction. It does not import that feature merely to borrow a type, enum, or pure rule that
+belongs to the domain. Type-only imports still count. Specs do not. Production code inside the
+library does not import `@applye/application` or the library barrel; that hides the feature edge.
+
+The allowed edges, each with a reason, live in `tools/lib/application-feature-policy.mjs`.
+`npm run quality:application-boundaries` fails on a cycle, on an edge that is not in that policy,
+on a self-import of the application library, and when the legacy
+`libs/core/src/lib/models` bucket gains a file or keeps an allowlist entry for a file that has moved. Shared document vocabulary, including `DocumentRegionTag` and
+`inferDocumentRegion`, lives in `libs/core` under `documents/`. Job-workflow rules, such as which
+language a review step opens in, stay in the jobs feature.
+
 ## Frontend (Angular)
 
 - **Angular 21**, standalone components, **zoneless** change detection (no `zone.js` polyfill is

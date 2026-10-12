@@ -1,10 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { inferDocumentRegion } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService } from '../documents/document-export.service';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { DocumentReviewTargetsService } from './document-review-targets.service';
 import { FinalChecks, FinalChecksService } from './final-checks.service';
-import { documentReviewLanguageFor, inferDocumentRegion } from './job-document-defaults';
+import { documentReviewLanguageFor } from './job-document-defaults';
 import { JobActionsService } from './job-actions.service';
 import { JobDetailStore } from './job-detail.store';
 import { JobDocumentsStore } from './job-documents.store';

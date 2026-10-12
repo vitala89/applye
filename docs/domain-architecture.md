@@ -17,37 +17,38 @@ The goal is simple: a business concept should have one stable meaning and one re
 
 These are the preferred business terms for the current product. The vocabulary is deliberately small. Extend it when the product gains a genuinely new concept, not when code needs another implementation detail.
 
-| Term | Meaning | Avoid using as a synonym |
-| --- | --- | --- |
-| **Job** | A job opportunity or posting Applye knows about. | item, record, vacancy entity |
-| **Job Source** | A source from which jobs are discovered or imported. | provider when the code means a job source |
-| **Job Identity** | The company/title identity resolved for a job. | metadata blob |
-| **Job Score** | The evaluation of a job against the candidate profile. | result when the specific score is meant |
-| **Candidate Profile / Profile** | The user's reusable career profile and preferences. | user data, candidate record |
-| **Career Evidence** | A user-confirmed or explicitly sourced fact supporting a skill, achievement, project or career claim. | AI guess, generated claim |
-| **Career Story** | A reusable evidence-backed story for interviews and professional positioning. | STAR blob |
-| **Communication Profile** | User-controlled preferences and observed speaking/writing patterns used to personalise delivery without changing facts. | personality profile |
-| **Application** | The user's tracked application to a job. | submission when no submission occurred |
-| **Pipeline** | The tracked progression of applications through job-search stages. | board when the domain concept, rather than the UI, is meant |
-| **Pipeline Stage** | A business stage in the application pipeline. | column when the domain concept is meant |
-| **Interview** | An interview associated with an application. | event when the interview itself is meant |
-| **Follow-up** | A follow-up action or draft associated with the application workflow. | message when the broader workflow action is meant |
-| **CV** | A curriculum vitae/resume document managed by Applye. UI copy may use the market-appropriate word. | file when the document concept is meant |
-| **Cover Letter** | A cover-letter document managed by Applye. | document blob |
-| **Draft** | A not-yet-final document or generated proposal that remains under user control. | temp record |
-| **Tailoring** | Adapting a CV or cover letter to a particular job. | processing, transformation |
-| **Scoring** | Evaluating job/profile fit. | processing, analysis when the specific workflow is meant |
-| **Company** | An employer/organisation that may have many jobs, applications, people, interviews and reports. | company string on an application |
-| **Job Opportunity** | A role/posting at a Company; it may exist without an Application. | application |
-| **Contact** | A person the user has intentionally added to their professional network. | every discovered person |
-| **Interaction** | A recorded touchpoint with a Contact, such as LinkedIn, email, call, interview or referral. | message when the broader touchpoint is meant |
-| **Interview Preparation** | Preparation material and workflow for an interview. | prep data |
-| **Preparation Plan** | A structured, adaptive curriculum for a company/role/stage. | generated chat |
-| **Interview Experience** | User-reviewed record of what happened in a real interview stage. | raw transcript |
-| **Community Contribution** | An explicit, reviewed payload a user chooses to share beyond private data. | automatic upload |
-| **Claim** | A statement derived from a source or inference that carries provenance and verification state. | fact without source |
-| **Freshness** | How current a claim is, independently of confidence. | confidence |
-| **AI Proposal** | AI-produced output presented for user review or acceptance. | decision, action |
+| Term                            | Meaning                                                                                                                        | Avoid using as a synonym                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| **Job**                         | A job opportunity or posting Applye knows about.                                                                               | item, record, vacancy entity                                |
+| **Job Source**                  | A source from which jobs are discovered or imported.                                                                           | provider when the code means a job source                   |
+| **Job Identity**                | The company/title identity resolved for a job.                                                                                 | metadata blob                                               |
+| **Job Score**                   | The evaluation of a job against the candidate profile.                                                                         | result when the specific score is meant                     |
+| **Candidate Profile / Profile** | The user's reusable career profile and preferences.                                                                            | user data, candidate record                                 |
+| **Career Evidence**             | A user-confirmed or explicitly sourced fact supporting a skill, achievement, project or career claim.                          | AI guess, generated claim                                   |
+| **Career Story**                | A reusable evidence-backed story for interviews and professional positioning.                                                  | STAR blob                                                   |
+| **Communication Profile**       | User-controlled preferences and observed speaking/writing patterns used to personalise delivery without changing facts.        | personality profile                                         |
+| **Application**                 | The user's tracked application to a job.                                                                                       | submission when no submission occurred                      |
+| **Pipeline**                    | The tracked progression of applications through job-search stages.                                                             | board when the domain concept, rather than the UI, is meant |
+| **Pipeline Stage**              | A business stage in the application pipeline.                                                                                  | column when the domain concept is meant                     |
+| **Interview**                   | An interview associated with an application.                                                                                   | event when the interview itself is meant                    |
+| **Follow-up**                   | A follow-up action or draft associated with the application workflow.                                                          | message when the broader workflow action is meant           |
+| **CV**                          | A curriculum vitae/resume document managed by Applye. UI copy may use the market-appropriate word.                             | file when the document concept is meant                     |
+| **Cover Letter**                | A cover-letter document managed by Applye.                                                                                     | document blob                                               |
+| **Document Region**             | Regional conventions for a CV or cover letter: `de`, `us`, `uk`, or `generic`. Document-domain vocabulary, not a Jobs concept. | a jobs setting                                              |
+| **Draft**                       | A not-yet-final document or generated proposal that remains under user control.                                                | temp record                                                 |
+| **Tailoring**                   | Adapting a CV or cover letter to a particular job.                                                                             | processing, transformation                                  |
+| **Scoring**                     | Evaluating job/profile fit.                                                                                                    | processing, analysis when the specific workflow is meant    |
+| **Company**                     | An employer/organisation that may have many jobs, applications, people, interviews and reports.                                | company string on an application                            |
+| **Job Opportunity**             | A role/posting at a Company; it may exist without an Application.                                                              | application                                                 |
+| **Contact**                     | A person the user has intentionally added to their professional network.                                                       | every discovered person                                     |
+| **Interaction**                 | A recorded touchpoint with a Contact, such as LinkedIn, email, call, interview or referral.                                    | message when the broader touchpoint is meant                |
+| **Interview Preparation**       | Preparation material and workflow for an interview.                                                                            | prep data                                                   |
+| **Preparation Plan**            | A structured, adaptive curriculum for a company/role/stage.                                                                    | generated chat                                              |
+| **Interview Experience**        | User-reviewed record of what happened in a real interview stage.                                                               | raw transcript                                              |
+| **Community Contribution**      | An explicit, reviewed payload a user chooses to share beyond private data.                                                     | automatic upload                                            |
+| **Claim**                       | A statement derived from a source or inference that carries provenance and verification state.                                 | fact without source                                         |
+| **Freshness**                   | How current a claim is, independently of confidence.                                                                           | confidence                                                  |
+| **AI Proposal**                 | AI-produced output presented for user review or acceptance.                                                                    | decision, action                                            |
 
 `Application` is not synonymous with `Job`. A job may exist without an application. Likewise, generating or tailoring documents does not mean an application has been submitted. Names and state transitions must preserve those distinctions.
 
@@ -97,6 +98,8 @@ The exact allowed dependency graph is defined and enforced by `docs/architecture
 Put framework-agnostic business concepts, invariants, typed contracts, and pure domain rules here when they are shared or deserve an independent domain seam.
 
 Domain code must not depend on Angular, Tauri, SQLite, network clients, filesystem APIs, or presentation concerns.
+
+`libs/core/src/lib/models` is a legacy bucket. New bounded-context models do not go there. A new concept uses a domain-owned folder such as `core/documents`, `core/career`, `core/company`, `core/network`, or `core/interview`. `npm run quality:application-boundaries` rejects a new filename in that bucket. The allowlist shrinks with the files: moving or deleting a legacy model removes its entry in the same change, without a placeholder, and that filename cannot be recreated in the bucket afterwards.
 
 Prefer behaviour-oriented names such as `scoreJob`, `resolveJobIdentity`, or `canMoveApplicationToStage` over generic verbs such as `process`, `handle`, or `execute` when the business action is known.
 

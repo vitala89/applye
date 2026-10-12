@@ -5,6 +5,7 @@ import {
   COVER_LETTER_TONE_DEFAULT,
   CoverLetterContent,
   DocumentLibraryItem,
+  DocumentRegionTag,
   Job,
   Profile,
   Settings,
@@ -16,7 +17,6 @@ import { AiService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { parseCoverLetterFromResponse } from './cover-letter-response';
 import { DocumentGenService } from './document-gen.service';
-import { DocumentRegionTag } from '../jobs/job-document-defaults';
 import { GapFillHooks, foldInGapAnswers } from './gap-fill';
 
 /** Everything the cover letter is built from, plus the hand-offs the page still

@@ -79,8 +79,8 @@ library does not import `@applye/application` or the library barrel; that hides 
 
 The allowed edges, each with a reason, live in `tools/lib/application-feature-policy.mjs`.
 `npm run quality:application-boundaries` fails on a cycle, on an edge that is not in that policy,
-on a self-import of the application library, and on a new file in the legacy
-`libs/core/src/lib/models` bucket. Shared document vocabulary, including `DocumentRegionTag` and
+on a self-import of the application library, and when the legacy
+`libs/core/src/lib/models` bucket gains a file or keeps an allowlist entry for a file that has moved. Shared document vocabulary, including `DocumentRegionTag` and
 `inferDocumentRegion`, lives in `libs/core` under `documents/`. Job-workflow rules, such as which
 language a review step opens in, stay in the jobs feature.
 

@@ -99,7 +99,7 @@ Put framework-agnostic business concepts, invariants, typed contracts, and pure 
 
 Domain code must not depend on Angular, Tauri, SQLite, network clients, filesystem APIs, or presentation concerns.
 
-`libs/core/src/lib/models` is a legacy bucket. New bounded-context models do not go there. A new concept uses a domain-owned folder such as `core/documents`, `core/career`, `core/company`, `core/network`, or `core/interview`. `npm run quality:application-boundaries` rejects a new filename in that bucket. Deleting a legacy file does not require a placeholder.
+`libs/core/src/lib/models` is a legacy bucket. New bounded-context models do not go there. A new concept uses a domain-owned folder such as `core/documents`, `core/career`, `core/company`, `core/network`, or `core/interview`. `npm run quality:application-boundaries` rejects a new filename in that bucket. The allowlist shrinks with the files: moving or deleting a legacy model removes its entry in the same change, without a placeholder, and that filename cannot be recreated in the bucket afterwards.
 
 Prefer behaviour-oriented names such as `scoreJob`, `resolveJobIdentity`, or `canMoveApplicationToStage` over generic verbs such as `process`, `handle`, or `execute` when the business action is known.
 

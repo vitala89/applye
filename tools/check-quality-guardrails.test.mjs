@@ -155,6 +155,26 @@ test('attribution guard accepts a normal commit message and rejects forbidden tr
   result = run(process.execPath, [attributionScript, '--message-file', invalidMessage]);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /co-authored-by/i);
+
+  const cursorFooter = join(directory, 'cursor-footer.txt');
+  writeFileSync(cursorFooter, 'Made with [Cursor](https://cursor.com)\n');
+  result = run(process.execPath, [attributionScript, '--message-file', cursorFooter]);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Made with \[Cursor\]/i);
+
+  const cursorPlain = join(directory, 'cursor-plain.txt');
+  writeFileSync(cursorPlain, 'Made with Cursor\n');
+  result = run(process.execPath, [attributionScript, '--message-file', cursorPlain]);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Made with Cursor/i);
+
+  const ordinaryProse = join(directory, 'ordinary-prose.txt');
+  writeFileSync(
+    ordinaryProse,
+    'fix: keep the commit focused\n\nUse the cursor to edit the field.\n',
+  );
+  result = run(process.execPath, [attributionScript, '--message-file', ordinaryProse]);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
 });
 
 test('attribution guard scans branch commits and pull-request text', (t) => {

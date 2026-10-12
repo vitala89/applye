@@ -155,7 +155,7 @@ The pre-commit hook checks staged files. CI compares the branch with its base an
 
 `npm run quality:application-boundaries` is the separate gate for cycles inside `libs/application`.
 Nx cannot see those edges because the library is one project. The check also rejects a production
-self-import of `@applye/application` and a new file in the legacy `libs/core/src/lib/models` bucket.
+self-import of `@applye/application`, a new file in the legacy `libs/core/src/lib/models` bucket, and a legacy-model allowlist entry whose file is gone.
 Run it with the file-size and attribution gates. CI and the pre-commit hook already do.
 
 ## Function and API shape

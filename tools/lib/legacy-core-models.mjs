@@ -21,6 +21,14 @@ function listFiles(directory) {
   return files;
 }
 
+function modelNamesOnDisk(modelsDirectory) {
+  if (!existsSync(modelsDirectory)) return [];
+
+  return listFiles(modelsDirectory)
+    .map((file) => relative(modelsDirectory, file).split(sep).join('/'))
+    .sort();
+}
+
 /**
  * @returns {string[]} repo-relative paths of files that are not in the legacy set
  */
@@ -29,14 +37,20 @@ export function findNewGenericModels(
   repositoryRoot,
   allowlist = legacyCoreModelFiles,
 ) {
-  if (!existsSync(modelsDirectory)) return [];
-
   const allowed = new Set(allowlist);
-  return listFiles(modelsDirectory)
-    .map((file) => relative(modelsDirectory, file).split(sep).join('/'))
+  return modelNamesOnDisk(modelsDirectory)
     .filter((name) => !allowed.has(name))
-    .sort()
     .map((name) => relative(repositoryRoot, join(modelsDirectory, name)).split(sep).join('/'));
+}
+
+/**
+ * Allowlist names that are no longer files. A missing directory makes every
+ * entry stale: the permission must leave with the file.
+ * @returns {string[]}
+ */
+export function findStaleLegacyModelEntries(modelsDirectory, allowlist = legacyCoreModelFiles) {
+  const present = new Set(modelNamesOnDisk(modelsDirectory));
+  return allowlist.filter((name) => !present.has(name)).sort();
 }
 
 export function formatLegacyModelViolation(paths) {
@@ -44,5 +58,14 @@ export function formatLegacyModelViolation(paths) {
     'Do not add new domain models to libs/core/src/lib/models.',
     'Create a domain-owned folder instead.',
     ...paths.map((path) => `  ${path}`),
+  ].join('\n');
+}
+
+export function formatStaleLegacyModelAllowlist(names) {
+  return [
+    'Legacy core/models allowlist contains a file that no longer exists:',
+    ...names.map((name) => `  ${name}`),
+    '',
+    'Remove the stale allowlist entry so this legacy filename cannot return.',
   ].join('\n');
 }

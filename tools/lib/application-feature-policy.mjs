@@ -14,9 +14,11 @@ export const approvedApplicationEdges = [
 ];
 
 /**
- * Filenames that already live in the legacy `libs/core/src/lib/models` bucket.
- * Deleting one does not require a placeholder. Adding any other file fails:
- * a new domain concept gets its own folder under `libs/core/src/lib`.
+ * Filenames that still live in the legacy `libs/core/src/lib/models` bucket.
+ * The list is a shrinking ratchet: a file on disk that is not listed fails, and
+ * a listed name that is no longer on disk fails too. Moving a legacy model
+ * removes its entry in the same change. No placeholder file is required, and
+ * the old filename cannot be recreated in this bucket afterwards.
  */
 export const legacyCoreModelFiles = [
   'application.model.ts',

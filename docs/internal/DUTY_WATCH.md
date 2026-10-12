@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-12, feature-boundary review fixes
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/application-feature-boundaries`
+- **Commits:** recorded on the branch after this entry
+- **Pull request:** [#577](https://github.com/vitala89/applye/pull/577), not merged
+- **Objective:** Make the legacy `core/models` allowlist a shrinking ratchet, and reject `Made with Cursor` attribution in commit and pull-request text.
+- **Completed:**
+  - An allowlist name with no file on disk fails, and removing that name is what lets a moved model pass. Recreating the old filename afterwards fails.
+  - The attribution guard rejects `Made with Cursor` and `Made with [Cursor](...)`. A sentence that merely uses the word cursor still passes.
+  - The pull request text no longer carries the editor footer, and it separates local Rust skips from CI Rust results.
+- **Not completed:** PR 3 was not started. The pull request was not merged. No manual UI walkthrough.
+- **Files or packages changed:** the legacy-model guard, the attribution guard, their tests, and the short architecture notes that described the allowlist.
+- **Validation:** `npm run quality:test` passed, 27 tests, including the shrinking-allowlist ratchet and the `Made with Cursor` footer. `npm run quality:application-boundaries`, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed. No application, core, or desktop source changed, so those lint and test targets were not re-run. Rust was not run locally.
+- **Privacy/security impact:** none. No career data, storage, or network path changed.
+- **Decisions and assumptions:** The review text was the decision. The attribution pattern names known editors and agents. It does not ban the word cursor in ordinary prose.
+- **Risks or compatibility impact:** A future move of a legacy model must drop its allowlist entry in the same change.
+- **Open issues or blockers:** none for this pull request.
+- **Next first action:** After #577 merges, start Architecture Stabilization PR 3: Correct state and gateway ownership. Do not start it in this review.
+- **Evidence:** The ratchet test covers the live legacy set, a new filename, a stale entry, the migrated allowlist, and recreating the removed name.
+
 ### 2026-10-12, application feature boundaries
 
 - **Status:** complete

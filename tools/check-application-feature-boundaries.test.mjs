@@ -11,7 +11,12 @@ import {
   evaluateApplicationBoundaries,
   scanApplicationFeatures,
 } from './lib/application-feature-graph.mjs';
-import { findNewGenericModels, formatLegacyModelViolation } from './lib/legacy-core-models.mjs';
+import {
+  findNewGenericModels,
+  findStaleLegacyModelEntries,
+  formatLegacyModelViolation,
+  formatStaleLegacyModelAllowlist,
+} from './lib/legacy-core-models.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const checker = join(repositoryRoot, 'tools', 'check-application-feature-boundaries.mjs');
@@ -269,27 +274,48 @@ test('an unapproved one-way edge fails', (t) => {
   assert.match(result.problems.join('\n'), /pipeline -> jobs/);
 });
 
-test('the current legacy model set passes and a new generic model fails', (t) => {
+test('the legacy core/models allowlist is a shrinking ratchet', (t) => {
   const realModels = join(repositoryRoot, 'libs/core/src/lib/models');
   assert.deepEqual(findNewGenericModels(realModels, repositoryRoot), []);
+  assert.deepEqual(findStaleLegacyModelEntries(realModels), []);
 
   const { root } = fixture(t);
   const models = join(root, 'libs/core/src/lib/models');
+  const legacy = ['job.model.ts'];
   writeModule(root, 'libs/core/src/lib/models/job.model.ts', 'export type Job = { id: number };\n');
-  assert.deepEqual(findNewGenericModels(models, root), []);
 
   writeModule(
     root,
     'libs/core/src/lib/models/career-evidence.model.ts',
     'export type CareerEvidence = { id: number };\n',
   );
-  const added = findNewGenericModels(models, root);
+  const added = findNewGenericModels(models, root, legacy);
   assert.deepEqual(added, ['libs/core/src/lib/models/career-evidence.model.ts']);
+  assert.match(formatLegacyModelViolation(added), /Do not add new domain models/);
+  rmSync(join(models, 'career-evidence.model.ts'));
+
+  rmSync(join(models, 'job.model.ts'));
+  const stale = findStaleLegacyModelEntries(models, legacy);
+  assert.deepEqual(stale, ['job.model.ts']);
+  const staleMessage = formatStaleLegacyModelAllowlist(stale);
   assert.match(
-    formatLegacyModelViolation(added),
-    /Do not add new domain models to libs\/core\/src\/lib\/models/,
+    staleMessage,
+    /Legacy core\/models allowlist contains a file that no longer exists:/,
   );
-  assert.match(formatLegacyModelViolation(added), /Create a domain-owned folder instead/);
+  assert.match(staleMessage, /job\.model\.ts/);
+  assert.match(
+    staleMessage,
+    /Remove the stale allowlist entry so this legacy filename cannot return/,
+  );
+
+  const migrated = [];
+  assert.deepEqual(findNewGenericModels(models, root, migrated), []);
+  assert.deepEqual(findStaleLegacyModelEntries(models, migrated), []);
+
+  writeModule(root, 'libs/core/src/lib/models/job.model.ts', 'export type Job = { id: number };\n');
+  assert.deepEqual(findNewGenericModels(models, root, migrated), [
+    'libs/core/src/lib/models/job.model.ts',
+  ]);
 });
 
 test('the repository checker accepts the real application graph', () => {
@@ -298,7 +324,7 @@ test('the repository checker accepts the real application graph', () => {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /Application feature graph is acyclic/);
   assert.match(result.stdout, /jobs -> documents/);
-  assert.match(result.stdout, /Legacy core\/models bucket: no new generic model/);
+  assert.match(result.stdout, /Legacy core\/models bucket: allowlist matches the files on disk/);
   assert.doesNotMatch(result.stdout, /documents -> jobs/);
 });
 

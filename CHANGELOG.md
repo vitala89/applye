@@ -12,7 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
-- **Application feature dependencies are checked.** Feature folders inside `libs/application` can no longer form a cycle, and a new domain model cannot be added to the generic `libs/core` `models` bucket. Document region (`de`, `us`, `uk`, `generic`) is document-domain vocabulary in `libs/core`. No user-facing behavior was intended to change.
+- **Application feature dependencies are checked.** Feature folders inside `libs/application` can no longer form a cycle, and the generic `libs/core` `models` bucket can only shrink: a new file is rejected, and a legacy allowlist entry must leave with its file. Document region (`de`, `us`, `uk`, `generic`) is document-domain vocabulary in `libs/core`. No user-facing behavior was intended to change.
 - **The application layer no longer performs platform effects.** Save dialogs, clipboard writes,
   `mailto:` links, document-editor navigation, toasts, Open/Reveal, and the sidebar / wizard
   session storage now belong to the desktop app. Open and Reveal go through the native-shell

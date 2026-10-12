@@ -6,7 +6,12 @@ import {
   evaluateApplicationBoundaries,
   scanApplicationFeatures,
 } from './lib/application-feature-graph.mjs';
-import { findNewGenericModels, formatLegacyModelViolation } from './lib/legacy-core-models.mjs';
+import {
+  findNewGenericModels,
+  findStaleLegacyModelEntries,
+  formatLegacyModelViolation,
+  formatStaleLegacyModelAllowlist,
+} from './lib/legacy-core-models.mjs';
 
 const repositoryRoot = process.cwd();
 const applicationLib = resolve(repositoryRoot, 'libs/application/src/lib');
@@ -23,8 +28,10 @@ const graph = evaluateApplicationBoundaries(scan, {
   approvedEdges: approvedApplicationEdges,
 });
 const newModels = findNewGenericModels(modelsDirectory, repositoryRoot);
+const staleModels = findStaleLegacyModelEntries(modelsDirectory);
 const problems = [...graph.problems];
 if (newModels.length > 0) problems.push(formatLegacyModelViolation(newModels));
+if (staleModels.length > 0) problems.push(formatStaleLegacyModelAllowlist(staleModels));
 
 if (problems.length > 0) {
   console.error(problems.join('\n\n'));
@@ -43,7 +50,5 @@ if (graph.summary.length === 0) {
   }
 }
 
-if (existsSync(modelsDirectory)) {
-  console.log('');
-  console.log('Legacy core/models bucket: no new generic model.');
-}
+console.log('');
+console.log('Legacy core/models bucket: allowlist matches the files on disk.');

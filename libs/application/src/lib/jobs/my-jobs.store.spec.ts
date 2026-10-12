@@ -1,7 +1,8 @@
+import { JobsStore } from './jobs.store';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import type { JobOverview } from '@applye/core';
-import { JobsStore } from '@applye/data';
+
 import { MyJobsStore } from './my-jobs.store';
 
 const row = (over: Partial<JobOverview> = {}): JobOverview =>

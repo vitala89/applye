@@ -4,8 +4,10 @@ import {
   AiService,
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { CoverLetterAiStore } from './cover-letter-ai.store';
 import { CoverLetterContentStore } from './cover-letter-content.store';
@@ -60,8 +62,10 @@ function createStore(over: Record<string, jest.Mock> = {}) {
       // The document store hands the loaded row's style to this one; the AI
       // paths never touch it, but the injector still has to resolve it.
       CoverLetterStyleStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
       { provide: AiService, useValue: ai },

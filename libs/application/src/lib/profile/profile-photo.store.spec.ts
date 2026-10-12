@@ -1,5 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { ProfilePhotoStore } from './profile-photo.store';
 
 function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
@@ -12,8 +18,10 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   TestBed.configureTestingModule({
     providers: [
       ProfilePhotoStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],
   });

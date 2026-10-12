@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import type { Settings } from '@applye/core';
-import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { ShellStore } from './shell.store';
 
 const settings = (over: Partial<Settings> = {}): Settings =>
@@ -12,8 +18,10 @@ function createStore(getSettings: jest.Mock) {
   TestBed.configureTestingModule({
     providers: [
       ShellStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],
   });

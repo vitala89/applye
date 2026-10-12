@@ -1,6 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProfilePhotoStore } from '@applye/application';
-import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
 import { ProfilePhotoComponent } from './profile-photo.component';
@@ -37,8 +43,10 @@ function createFixture(photo: string | null): ComponentFixture<ProfilePhotoCompo
     imports: [ProfilePhotoComponent],
     providers: [
       TranslateService,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: ToastService, useValue: toast },
     ],

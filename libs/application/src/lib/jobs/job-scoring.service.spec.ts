@@ -1,11 +1,12 @@
+import { JobsStore } from './jobs.store';
 import { TestBed } from '@angular/core/testing';
 import {
   AiService,
   AtsService,
   DocumentsGateway,
   JobsGateway,
-  JobsStore,
   SystemGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { JobScoringService, ScoreContext, parseScoreResponse } from './job-scoring.service';
 import { TailorScoreService } from './tailor-score.service';
@@ -73,6 +74,7 @@ describe('JobScoringService', () => {
         TailorScoreService,
         WizardActivityService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: AiService, useValue: ai },

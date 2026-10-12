@@ -4,8 +4,10 @@ import {
   AiService,
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import { CvPhotoStore } from './cv-photo.store';
@@ -60,8 +62,10 @@ describe('CvRegenerationStore', () => {
         CvPhotoStore,
         CvStyleStore,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
-        { provide: ProfileSettingsGateway, useValue: db },
+        { provide: ProfileGateway, useValue: db },
+        { provide: SettingsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: AiService, useValue: ai },
       ],

@@ -1,5 +1,6 @@
+import { JobsStore } from './jobs.store';
 import { TestBed } from '@angular/core/testing';
-import { DocumentsGateway, JobsGateway, JobsStore } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { JobActionsService } from './job-actions.service';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
@@ -57,6 +58,7 @@ describe('JobActionsService', () => {
         JobActionsService,
         TranslateService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: JobsStore, useValue: store },
         {

@@ -4,7 +4,9 @@ import {
   DocumentsGateway,
   JobsGateway,
   KeysService,
-  ProfileSettingsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
 import { OnboardingAiSetupStore } from './onboarding-ai-setup.store';
@@ -27,8 +29,10 @@ describe('OnboardingAiSetupStore', () => {
         OnboardingAiKeyStore,
         OnboardingAiSetupStore,
         OnboardingCliBridgeStore,
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: { probeClis: jest.fn().mockResolvedValue([]) } },
         { provide: KeysService, useValue: { hasProviderKey: jest.fn().mockResolvedValue(false) } },

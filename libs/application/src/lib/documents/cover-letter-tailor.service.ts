@@ -10,7 +10,7 @@ import {
   buildTailoredContent,
   readBaseLetter,
 } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, ApplicationsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { parseCoverLetterFromResponse } from './cover-letter-response';
 
@@ -48,7 +48,7 @@ export interface CoverLetterTailorResult {
  */
 @Injectable()
 export class CoverLetterTailorService {
-  private readonly db = inject(JobsGateway);
+  private readonly db = inject(ApplicationsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);

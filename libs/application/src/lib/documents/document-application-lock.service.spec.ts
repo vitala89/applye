@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Application } from '@applye/core';
-import { JobsGateway } from '@applye/data';
+import { JobsGateway, ApplicationsGateway } from '@applye/data';
 import { DocumentApplicationLockService } from './document-application-lock.service';
 
 describe('DocumentApplicationLockService', () => {
@@ -12,6 +12,10 @@ describe('DocumentApplicationLockService', () => {
       providers: [
         DocumentApplicationLockService,
         { provide: JobsGateway, useValue: { listApplications: () => Promise.resolve(apps) } },
+        {
+          provide: ApplicationsGateway,
+          useValue: { listApplications: () => Promise.resolve(apps) },
+        },
       ],
     });
     svc = TestBed.inject(DocumentApplicationLockService);

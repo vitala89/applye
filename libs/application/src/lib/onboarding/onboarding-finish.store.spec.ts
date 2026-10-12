@@ -1,6 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import type { CvContent, CvParsedContent } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { OnboardingFinishStore } from './onboarding-finish.store';
 import { OnboardingResumeStore } from './onboarding-resume.store';
 import { OnboardingReviewStore } from './onboarding-review.store';
@@ -35,7 +42,7 @@ describe('OnboardingFinishStore', () => {
 
     // One stub object, several tokens - the document library comes from
     // `DocumentsGateway` and the profile and settings rows from
-    // `ProfileSettingsGateway`.
+    // `ProfileGateway`.
     const docsStub = {
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),
       getProfile: jest.fn().mockResolvedValue(null),
@@ -50,8 +57,10 @@ describe('OnboardingFinishStore', () => {
         OnboardingResumeStore,
         OnboardingReviewStore,
         OnboardingTargetingStore,
-        { provide: ProfileSettingsGateway, useValue: docsStub },
+        { provide: ProfileGateway, useValue: docsStub },
+        { provide: SettingsGateway, useValue: docsStub },
         { provide: JobsGateway, useValue: docsStub },
+        { provide: ApplicationsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
       ],

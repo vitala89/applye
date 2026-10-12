@@ -1,10 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { JobOverview } from '@applye/core';
-import { JobsGateway } from '../services/jobs.gateway';
+import { JobsGateway } from '@applye/data';
 
 /**
  * Shared reactive projection over the jobs list. SQLite (via `JobsGateway`) stays
- * the source of truth - this only mirrors it in memory so My Jobs and the job
+ * the source of truth. This only mirrors it in memory so My Jobs and the job
  * detail view stay in sync without a full reload after every mutation.
  *
  * Plain Angular signals rather than an NgRx SignalStore. The store had grown to

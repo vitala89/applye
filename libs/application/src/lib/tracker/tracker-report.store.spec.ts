@@ -3,8 +3,10 @@ import type { TrackerCustomColumn, TrackerRow } from '@applye/core';
 import {
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   TrackerGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TrackerColumnsStore } from './tracker-columns.store';
@@ -38,11 +40,13 @@ function createStore(rows: TrackerRow[] = [], customColumns: TrackerCustomColumn
       TrackerReportStore,
       // One stub object, several tokens. The subject itself only needs the
       // tracker gateway, but it injects `TrackerRowsStore`, which reads
-      // `getSettings` through `ProfileSettingsGateway` and `deleteJob` through
+      // `getSettings` through `ProfileGateway` and `deleteJob` through
       // `JobsGateway` - a spec provides for the dependency graph, not for the
       // subject alone.
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },
       { provide: TranslateService, useValue: i18n },

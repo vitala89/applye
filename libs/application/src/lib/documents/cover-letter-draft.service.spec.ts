@@ -1,6 +1,12 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { AiService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  SystemGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { CoverLetterDraftContext, CoverLetterDraftService } from './cover-letter-draft.service';
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { DocumentGenService } from './document-gen.service';
@@ -193,6 +199,7 @@ describe('CoverLetterDraftService', () => {
         CoverLetterDraftService,
         CvGapDialogService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: AiService, useValue: ai },

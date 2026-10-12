@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CoverLetterStyleStore } from '@applye/application';
-import { DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover.component';
 
 describe('CoverLetterStylePopoverComponent', () => {
@@ -15,6 +15,7 @@ describe('CoverLetterStylePopoverComponent', () => {
       providers: [
         CoverLetterStyleStore,
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
       ],
     }).compileComponents();

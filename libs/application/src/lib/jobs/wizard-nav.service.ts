@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { JobsGateway, JobsStore } from '@applye/data';
+import { JobsGateway } from '@applye/data';
+import { JobsStore } from './jobs.store';
 import { WizardProgressService } from './wizard-progress.service';
 
 /** What the caller still owes once the job has loaded, if anything. */

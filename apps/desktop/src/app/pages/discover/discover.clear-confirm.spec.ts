@@ -4,7 +4,9 @@ import {
   DiscoverGateway,
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import type { DiscoverFeedItem, DiscoverSource } from '@applye/core';
@@ -79,9 +81,11 @@ describe('Discover: the clear-feed confirmation', () => {
         provideRouter([]),
         // One stub object, several tokens. The page's stores read sources and
         // the feed through `DiscoverGateway`, and the profile and the settings
-        // through `ProfileSettingsGateway`.
-        { provide: ProfileSettingsGateway, useValue: db },
+        // through `ProfileGateway`.
+        { provide: ProfileGateway, useValue: db },
+        { provide: SettingsGateway, useValue: db },
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: DiscoverGateway, useValue: db },
         TranslateService,

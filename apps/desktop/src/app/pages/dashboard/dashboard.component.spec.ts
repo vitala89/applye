@@ -1,6 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DocumentsGateway, JobsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { DashboardStore } from '@applye/application';
 import { DashboardComponent } from './dashboard.component';
@@ -61,7 +68,7 @@ describe('DashboardComponent resume card', () => {
     sessionStorage.clear();
     getJob = jest.fn().mockResolvedValue({ id: 12, title: 'Platform Engineer', company: 'Globex' });
 
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       listPipelineCards: jest.fn().mockResolvedValue([]),
       listJobsOverview: jest.fn().mockResolvedValue([CLAIMED]),
       getProfile: jest
@@ -75,8 +82,10 @@ describe('DashboardComponent resume card', () => {
       imports: [DashboardComponent],
       providers: [
         provideRouter([]),
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: SystemGateway, useValue: dbStub },
         { provide: PasteJobModalService, useValue: { open: jest.fn() } },
@@ -118,7 +127,7 @@ describe('DashboardComponent resume card', () => {
   // an unclaimed row here would appear in Recent jobs labelled "Saved" - the
   // exact ambiguity the ADR exists to remove.
   it('keeps unclaimed jobs out of Recent jobs', async () => {
-    (TestBed.inject(ProfileSettingsGateway).listJobsOverview as jest.Mock).mockResolvedValue([
+    (TestBed.inject(ProfileGateway).listJobsOverview as jest.Mock).mockResolvedValue([
       { ...CLAIMED, claimed: true },
       { id: 99, title: 'Ghost Role', company: 'Nowhere Inc', status: null, claimed: false },
     ]);
@@ -129,10 +138,10 @@ describe('DashboardComponent resume card', () => {
   });
 
   it('still reads as a new user when every job is merely analysed', async () => {
-    (TestBed.inject(ProfileSettingsGateway).listJobsOverview as jest.Mock).mockResolvedValue([
+    (TestBed.inject(ProfileGateway).listJobsOverview as jest.Mock).mockResolvedValue([
       { id: 99, title: 'Ghost Role', company: 'Nowhere Inc', status: null, claimed: false },
     ]);
-    (TestBed.inject(ProfileSettingsGateway).getProfile as jest.Mock).mockResolvedValue({
+    (TestBed.inject(ProfileGateway).getProfile as jest.Mock).mockResolvedValue({
       id: 1,
       fullMd: '',
     });

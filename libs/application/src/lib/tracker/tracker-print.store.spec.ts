@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { TrackerRow } from '@applye/core';
-import { DocumentsGateway, JobsGateway, TrackerGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, TrackerGateway, ApplicationsGateway } from '@applye/data';
 import { TrackerPrintStore } from './tracker-print.store';
 
 function row(over: Partial<TrackerRow> = {}): TrackerRow {
@@ -17,6 +17,7 @@ function createStore(rows: TrackerRow[] = []) {
     providers: [
       TrackerPrintStore,
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },
     ],

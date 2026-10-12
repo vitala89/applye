@@ -1,6 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import type { JobOverview, PipelineCard, Profile } from '@applye/core';
-import { DocumentsGateway, JobsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { DashboardStore } from './dashboard.store';
 
 const card = (over: Partial<PipelineCard> = {}): PipelineCard =>
@@ -27,8 +34,10 @@ function createStore(over: Partial<Record<string, jest.Mock>> = {}) {
   TestBed.configureTestingModule({
     providers: [
       DashboardStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
     ],

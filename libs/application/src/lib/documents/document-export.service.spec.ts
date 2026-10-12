@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { DocumentExportService } from './document-export.service';
@@ -32,6 +32,7 @@ describe('DocumentExportService', () => {
       providers: [
         DocumentExportService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },
       ],

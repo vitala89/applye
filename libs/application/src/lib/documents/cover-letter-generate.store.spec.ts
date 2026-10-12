@@ -1,6 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import type { Job } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { CoverLetterGenerateStore } from './cover-letter-generate.store';
 
 const JOBS = [
@@ -34,8 +41,10 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   TestBed.configureTestingModule({
     providers: [
       CoverLetterGenerateStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: AiService, useValue: ai },
     ],

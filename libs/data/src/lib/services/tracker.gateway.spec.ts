@@ -51,6 +51,12 @@ describe('TrackerGateway', () => {
     expect(invoke).toHaveBeenCalledWith('tracker_report_export_pdf_wysiwyg', params);
   });
 
+  it('patches tracker fields under one input key', async () => {
+    const input = { applicationId: 3, notes: 'n' };
+    await gateway.updateApplicationTrackerFields(input as never);
+    expect(invoke).toHaveBeenCalledWith('db_update_application_tracker_fields', { input });
+  });
+
   it('archives and unarchives by application id', async () => {
     await gateway.setApplicationArchived(5, true);
     expect(invoke).toHaveBeenCalledWith('db_set_application_archived', { id: 5, archived: true });
@@ -71,15 +77,17 @@ describe('TrackerGateway', () => {
     expect(invoke).toHaveBeenCalledWith('tracker_custom_column_remove', { id: 'c1' });
   });
 
-  it('sends seven distinct commands, one per method', async () => {
+  it('sends eight distinct commands, one per method', async () => {
     await gateway.trackerRows();
     await gateway.exportReport('', 'csv', 'f');
     await gateway.trackerReportExportPdfWysiwyg({} as never);
+    await gateway.updateApplicationTrackerFields({} as never);
     await gateway.setApplicationArchived(1, true);
     await gateway.trackerCustomColumns();
     await gateway.addTrackerCustomColumn('a', 'b', 'text');
     await gateway.removeTrackerCustomColumn('a');
     const commands = (invoke as jest.Mock).mock.calls.map((c) => c[0] as string);
-    expect(new Set(commands).size).toBe(7);
+    expect(commands).toHaveLength(8);
+    expect(new Set(commands).size).toBe(8);
   });
 });

@@ -58,6 +58,8 @@ The libraries are a stack, and dependencies only ever point downward:
 - **`i18n` (type:util)** and **`data` (type:data)** depend on `core` only.
 - **`data` is `scope:desktop` on purpose.** It wraps Tauri IPC, and the web app has no Tauri
   runtime; the tag is what stops someone importing it into `apps/web` and shipping a broken page.
+  Those wrappers are stateless. Reactive application state, including `JobsStore`, lives in
+  `libs/application`. SQLite remains the source of truth.
 - **Apps depend on libraries. Libraries never depend on apps, and never on each other sideways.**
 
 This is enforced, not merely documented: every project carries `type:` and `scope:` tags in its
@@ -90,7 +92,7 @@ language a review step opens in, stay in the jobs feature.
   loaded in either app).
 - **Signals for state, and nothing else.** Component state is `signal()` and `computed()`. State
   that outlives a component lives in an `@Injectable({providedIn:'root'})` service built from the
-  same primitives - `libs/data/.../jobs.store.ts` is the pattern. There is no state-management
+  same primitives - `libs/application/src/lib/jobs/jobs.store.ts` is the pattern. There is no state-management
   library: NgRx was removed once it amounted to one store of seventy-six lines whose peer range
   would have gated every future Angular major.
 - **`ChangeDetectionStrategy.OnPush` on every component.** It is not Angular's default in 21.2, but

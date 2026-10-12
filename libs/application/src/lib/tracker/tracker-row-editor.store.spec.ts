@@ -3,8 +3,10 @@ import type { TrackerRow } from '@applye/core';
 import {
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   TrackerGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TrackerColumnDef } from './tracker-columns';
 import { TrackerRowEditorStore } from './tracker-row-editor.store';
@@ -30,8 +32,10 @@ function createStore(rows: TrackerRow[] = []) {
     providers: [
       TrackerRowsStore,
       TrackerRowEditorStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },
     ],

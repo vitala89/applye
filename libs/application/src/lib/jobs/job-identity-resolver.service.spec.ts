@@ -6,7 +6,9 @@ import {
   JobsGateway,
   JobSourceService,
   KeysService,
-  ProfileSettingsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 import {
@@ -103,8 +105,10 @@ describe('JobIdentityResolverService', () => {
         { provide: JobSourceService, useValue: source },
         { provide: AiService, useValue: ai },
         { provide: KeysService, useValue: { hasProviderKey: () => Promise.resolve(hasKey) } },
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: JobIdentityPromptService, useValue: prompt },
       ],

@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AiService, DraftsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import { AiService, DraftsGateway, SettingsGateway, SystemGateway } from '@applye/data';
 import { PipelineCard, SupportedLanguage } from '@applye/core';
 
 export const FOLLOWUP_LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
@@ -44,7 +44,7 @@ export function parseFollowupDraft(text: string): { subject: string; body: strin
  */
 @Injectable()
 export class FollowupDraftService {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly db = inject(SettingsGateway);
   private readonly system = inject(SystemGateway);
   /** Follow-up drafts moved to their own gateway; `db` stays for `hashText`
    * and `getSettings`. */

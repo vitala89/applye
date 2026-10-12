@@ -6,7 +6,9 @@ import {
   DocumentsGateway,
   JobsGateway,
   KeysService,
-  ProfileSettingsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ThemeService } from '../theme.service';
@@ -85,7 +87,7 @@ export async function createOnboarding(): Promise<OnboardingHarness> {
     .fn()
     .mockResolvedValue({ text: '{"archetypes":["Staff FE"],"compRange":"EUR 90-120K"}' });
 
-  const dbStub: Partial<ProfileSettingsGateway> = {
+  const dbStub: Partial<ProfileGateway & SettingsGateway> = {
     getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en', aiMode: 'api' }),
     documentLibraryList: jest.fn().mockResolvedValue([]),
     cvTemplatesList: jest.fn().mockResolvedValue([]),
@@ -98,8 +100,10 @@ export async function createOnboarding(): Promise<OnboardingHarness> {
   await TestBed.configureTestingModule({
     imports: [OnboardingComponent],
     providers: [
-      { provide: ProfileSettingsGateway, useValue: dbStub },
+      { provide: ProfileGateway, useValue: dbStub },
+      { provide: SettingsGateway, useValue: dbStub },
       { provide: JobsGateway, useValue: dbStub },
+      { provide: ApplicationsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       {
         provide: AiService,

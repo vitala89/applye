@@ -1,6 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { WizardActivityService } from '@applye/application';
 import { ShellLayoutComponent } from './shell-layout.component';
@@ -22,7 +28,7 @@ describe('ShellLayoutComponent update badge', () => {
   }
 
   beforeEach(async () => {
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en', aiMode: 'api' }),
       getProfile: jest.fn().mockResolvedValue(null),
     };
@@ -31,8 +37,10 @@ describe('ShellLayoutComponent update badge', () => {
       imports: [ShellLayoutComponent],
       providers: [
         provideRouter([]),
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         TranslateService,
         {
@@ -94,7 +102,7 @@ describe('ShellLayoutComponent bare-scoring badge', () => {
   }
 
   beforeEach(async () => {
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en', aiMode: 'api' }),
       getProfile: jest.fn().mockResolvedValue(null),
     };
@@ -103,8 +111,10 @@ describe('ShellLayoutComponent bare-scoring badge', () => {
       imports: [ShellLayoutComponent],
       providers: [
         provideRouter([]),
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         TranslateService,
         {

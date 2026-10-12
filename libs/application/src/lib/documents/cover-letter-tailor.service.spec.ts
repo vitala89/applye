@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { CoverLetterTailorContext, CoverLetterTailorService } from './cover-letter-tailor.service';
 
 describe('CoverLetterTailorService', () => {
@@ -76,6 +76,7 @@ describe('CoverLetterTailorService', () => {
       providers: [
         CoverLetterTailorService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: AiService, useValue: ai },
       ],
@@ -106,6 +107,10 @@ describe('CoverLetterTailorService', () => {
         providers: [
           CoverLetterTailorService,
           { provide: JobsGateway, useValue: { documentLibraryList: () => Promise.reject('down') } },
+          {
+            provide: ApplicationsGateway,
+            useValue: { documentLibraryList: () => Promise.reject('down') },
+          },
           { provide: AiService, useValue: {} },
         ],
       });

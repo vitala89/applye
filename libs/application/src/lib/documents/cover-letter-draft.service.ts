@@ -12,7 +12,7 @@ import {
   SupportedLanguage,
   emptyCoverLetterContent,
 } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { AiService, DocumentsGateway, ApplicationsGateway, SystemGateway } from '@applye/data';
 
 import { CvGapDialogService } from './cv-gap-dialog.service';
 import { parseCoverLetterFromResponse } from './cover-letter-response';
@@ -76,7 +76,7 @@ export interface CoverLetterDraftResult {
  */
 @Injectable()
 export class CoverLetterDraftService {
-  private readonly db = inject(JobsGateway);
+  private readonly db = inject(ApplicationsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);

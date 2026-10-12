@@ -166,13 +166,12 @@ Add tests for returned outcomes/navigation intentions where behavior moves.
 
 ### PR 2 - Remove hidden cross-feature cycles and define application feature direction
 
-**Status:** open as [#577](https://github.com/vitala89/applye/pull/577) on
-`refactor/application-feature-boundaries`. Not merged. The production feature graph
-is acyclic. `jobs` orchestrates `documents`; `documents` does not import `jobs`.
-`DocumentRegionTag` and `inferDocumentRegion` live in `libs/core` under `documents/`.
+**Status:** merged as [#577](https://github.com/vitala89/applye/pull/577) at `f5e5a181`. The
+production feature graph is acyclic. `jobs` orchestrates `documents`; `documents` does not import
+`jobs`. `DocumentRegionTag` and `inferDocumentRegion` live in `libs/core` under `documents/`.
 `npm run quality:application-boundaries` enforces that graph, rejects a production self-import of
 `@applye/application`, and rejects a new file in the legacy `libs/core/src/lib/models` bucket.
-After this pull request merges, the next step is **PR 3: Correct state and gateway ownership.**
+The next step after that merge is **PR 3: Correct state and gateway ownership.**
 
 First remove the known `documents -> jobs` dependency by moving shared document vocabulary such as
 `DocumentRegionTag` to a neutral domain owner under `libs/core/src/lib/documents/`.
@@ -193,6 +192,14 @@ Existing model moves are opportunistic unless a move is necessary to break a bou
 repository-wide rename-only churn.
 
 ### PR 3 - Correct state and gateway ownership
+
+**Status:** open on `refactor/state-and-gateway-ownership`. `JobsStore` now lives in
+`libs/application`. `libs/data` keeps stateless IPC gateways. `JobsGateway` is jobs and scoring.
+`ApplicationsGateway` is application tracking, including analytics facts. `TrackerGateway` owns the
+tracker-only field write. `ProfileGateway` and `SettingsGateway` replace `ProfileSettingsGateway`.
+`resetAllData` stays on `SettingsGateway` because the Settings Danger Zone is the use case. No
+`CareerGateway`. After this pull request merges, the next step is **PR 4: Thin Rust command
+boundary, part A.** Do not start PR 4 here.
 
 Move the reactive `JobsStore` out of `libs/data` into `libs/application` without changing SQLite
 as source of truth.

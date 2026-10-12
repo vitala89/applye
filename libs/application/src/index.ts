@@ -60,6 +60,7 @@ export * from './lib/jobs/cv-photo-prompt.service';
 export * from './lib/jobs/document-review-status.service';
 export * from './lib/jobs/document-review-targets.service';
 export * from './lib/jobs/final-checks.service';
+export * from './lib/jobs/jobs.store';
 export * from './lib/jobs/job-actions.service';
 export * from './lib/jobs/job-actions.store';
 export * from './lib/jobs/job-detail-lifecycle.store';

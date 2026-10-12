@@ -1,6 +1,13 @@
+import { JobsStore } from './jobs.store';
 import { TestBed } from '@angular/core/testing';
 import type { Application, DocumentLibraryItem, Job, Profile, Settings } from '@applye/core';
-import { DocumentsGateway, JobsGateway, JobsStore, ProfileSettingsGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { JobDetailStore } from './job-detail.store';
 
 const JOB = { id: 5, company: 'Acme', title: 'Engineer', language: 'en', jdText: 'React' } as Job;
@@ -33,8 +40,10 @@ function createStore(over: Record<string, jest.Mock> = {}) {
   TestBed.configureTestingModule({
     providers: [
       JobDetailStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: JobsStore, useValue: jobs },
     ],

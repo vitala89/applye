@@ -6,7 +6,7 @@ import {
   serializeCompensation,
   type Profile,
 } from '@applye/core';
-import { DocumentsGateway, ProfileSettingsGateway } from '@applye/data';
+import { DocumentsGateway, ProfileGateway, SettingsGateway } from '@applye/data';
 import {
   appendCompensation,
   applyContactOverrides,
@@ -39,7 +39,8 @@ export type OnboardingCvSaveOutcome = 'saved' | 'skipped' | 'failed';
  */
 @Injectable()
 export class OnboardingFinishStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly resume = inject(OnboardingResumeStore);
   private readonly review = inject(OnboardingReviewStore);
@@ -88,7 +89,7 @@ export class OnboardingFinishStore {
     // user skipped through. Writing an empty row would only make the dashboard
     // banner disagree with itself.
     if (!fullMd.trim() && !this.targeting.archetypes().length) return;
-    await this.db.upsertProfile({
+    await this.profileGateway.upsertProfile({
       fullMd,
       scoringJson: existing?.scoringJson,
       scoringHash: existing?.scoringHash,
@@ -114,7 +115,7 @@ export class OnboardingFinishStore {
     const parsed = this.review.parsedCv();
     if (!parsed || this.resume.path() === 'skip') return 'skipped';
     try {
-      const settings = await this.db.getSettings();
+      const settings = await this.settingsGateway.getSettings();
       const inputHash = this.resume.inputHash();
       // Re-running the wizard on the same file must not stack up copies. The
       // existing document wins: it may already carry edits made in Documents,
@@ -161,7 +162,7 @@ export class OnboardingFinishStore {
 
   private async readExistingProfile(): Promise<Profile | null> {
     try {
-      return await this.db.getProfile();
+      return await this.profileGateway.getProfile();
     } catch {
       // Unreadable profile - better to write the new one than to lose the run.
       return null;

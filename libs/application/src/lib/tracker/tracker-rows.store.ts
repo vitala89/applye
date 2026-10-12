@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Settings, TrackerRow } from '@applye/core';
-import { JobsGateway, ProfileSettingsGateway, TrackerGateway } from '@applye/data';
+import { JobsGateway, SettingsGateway, TrackerGateway } from '@applye/data';
 import {
   TrackerRange,
   TrackerSegment,
@@ -25,10 +25,10 @@ import {
  */
 @Injectable()
 export class TrackerRowsStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly db = inject(SettingsGateway);
   private readonly jobs = inject(JobsGateway);
   /** Rows and archiving come from `TrackerGateway`, `deleteJob` from
-   * `JobsGateway`, and `db` is `ProfileSettingsGateway`, for `getSettings`. */
+   * `JobsGateway`, and `db` is `SettingsGateway`, for `getSettings`. */
   private readonly tracker = inject(TrackerGateway);
 
   readonly all = signal<TrackerRow[]>([]);

@@ -6,6 +6,7 @@ import {
   DraftsGateway,
   JobsGateway,
   SystemGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PortalAnswersService } from './portal-answers.service';
@@ -49,6 +50,7 @@ describe('PortalAnswersService', () => {
       providers: [
         PortalAnswersService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: DraftsGateway, useValue: drafts },

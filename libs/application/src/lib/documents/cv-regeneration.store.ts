@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { CvSectionKey, Settings } from '@applye/core';
 import { mergeRegeneratedSection, parseCvSkillResponse } from '@applye/core';
-import { AiService, ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import { AiService, ProfileGateway, SettingsGateway, SystemGateway } from '@applye/data';
 import { CvDocumentStore } from './cv-document.store';
 import {
   CvNoProfileError,
@@ -30,7 +30,8 @@ const MAX_TOKENS = 8192;
  */
 @Injectable()
 export class CvRegenerationStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly document = inject(CvDocumentStore);
@@ -78,7 +79,10 @@ export class CvRegenerationStore {
     if (this.regeneratingKey() || !doc) return false;
     this.regeneratingKey.set(key);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       if (!profile?.fullMd) throw new CvNoProfileError();
 
       const language = resolveDocLanguage(doc.language, settings.defaultDocLanguage);
@@ -124,7 +128,10 @@ export class CvRegenerationStore {
     if (this.pullingProfile() || !personal) return false;
     this.pullingProfile.set(true);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       if (!profile?.fullMd) throw new CvNoProfileError();
 
       const doc = this.document.doc();

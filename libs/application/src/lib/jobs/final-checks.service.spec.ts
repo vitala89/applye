@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, SystemGateway, ApplicationsGateway } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { FinalCheckInputs, FinalChecksService } from './final-checks.service';
@@ -77,6 +77,7 @@ describe('FinalChecksService', () => {
       providers: [
         FinalChecksService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: TranslateService, useValue: { t: signal((k: string) => k) } },

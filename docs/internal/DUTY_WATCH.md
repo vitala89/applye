@@ -44,6 +44,30 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-13, state and gateway ownership
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/state-and-gateway-ownership`
+- **Commits:** the tip of this branch
+- **Pull request:** opened from this branch against `main`; not merged
+- **Objective:** Architecture Stabilization PR 3. Move reactive `JobsStore` into `libs/application` and split mixed IPC gateways by caller ownership.
+- **Completed:**
+  - `JobsStore` lives at `libs/application/src/lib/jobs/jobs.store.ts`. `libs/data` no longer has a `stores/` directory or a `JobsStore` export. One runtime store. SQLite stays the source of truth.
+  - `cache-signal.guard.spec.ts` rejects a `stores/` path, a `*.store.ts` file, and a `signal` or `computed` import or call under `libs/data`. Comments that mention the word do not fail. `@Injectable` remains allowed.
+  - `JobsGateway` keeps jobs and scoring. `ApplicationsGateway` owns application tracking, including `getAnalyticsFacts`. `TrackerGateway` owns `updateApplicationTrackerFields`. `ProfileGateway` and `SettingsGateway` replace `ProfileSettingsGateway`. `resetAllData` stays on `SettingsGateway`.
+  - IPC command strings and argument shapes are pinned in the gateway specs. No Rust command, schema, or migration changed.
+  - The production feature graph stays `jobs -> documents`.
+- **Not completed:** The pull request was not merged. PR 4 was not started. No manual Tauri walkthrough.
+- **Files or packages changed:** `libs/data` gateways and the state-ownership guard, `libs/application` callers and `JobsStore`, desktop and application specs that provide those tokens, and the architecture docs named in the task.
+- **Validation:** `npm run quality:test` passed, 27 tests. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files). `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` passed. `nx run-many -t type-check,lint,test -p data,application,desktop --skip-nx-cache` passed. `nx build desktop --skip-nx-cache` passed. From `apps/desktop/src-tauri`: `cargo fmt --check`, `cargo test --lib` (399 passed, 0 failed, 1 ignored), `cargo clippy -- -D warnings`, and `cargo check` passed.
+- **Privacy/security impact:** none beyond the existing local SQLite path. No new storage, sync, or network call. Command names and payload keys are unchanged, so the running Tauri contract stays the same.
+- **Decisions and assumptions:** Caller ownership decided the split. `getAnalyticsFacts` stays on `ApplicationsGateway` because the facts are per-application signals and a one-method analytics gateway is not a boundary. `resetAllData` stays on `SettingsGateway` because Settings is the only caller. Test fixtures may provide one stub object under more than one gateway token.
+- **Risks or compatibility impact:** A gateway method that invoked the wrong Rust command would pass mocked application tests and fail only in the app. The gateway specs are what catch that. `job-scoring.service.ts` grew 211 to 212 non-empty lines, under its 225 ratchet. `cv-detail.component.spec.ts` grew 483 to 500, under its 580 test budget.
+- **Open issues or blockers:** none for this pull request.
+- **Next first action:** After this pull request merges, start Architecture Stabilization PR 4: Thin Rust command boundary, part A (applications, documents, interview, import). Do not start it before the merge.
+- **Evidence:** `libs/data` has no `stores/` directory. Production TypeScript has no `ProfileSettingsGateway`. The feature-boundary checker reports only `jobs -> documents`.
+
 ### 2026-10-12, feature-boundary review fixes
 
 - **Status:** complete

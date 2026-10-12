@@ -10,7 +10,9 @@ import {
   DocumentsGateway,
   JobsGateway,
   KeysService,
-  ProfileSettingsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { GeoTargetStore } from './geo-target.store';
 import { SettingsStore } from './settings.store';
@@ -37,10 +39,12 @@ function createStore(row: Partial<Settings> = {}, over: Record<string, jest.Mock
       GeoTargetStore,
       // One stub object, several tokens: the store itself reads the source plan
       // through `DiscoverGateway`, and its `SettingsStore` dependency writes
-      // settings through `ProfileSettingsGateway`. A spec provides for the
+      // settings through `ProfileGateway`. A spec provides for the
       // dependency graph, not for the subject alone.
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: DiscoverGateway, useValue: db },
       { provide: KeysService, useValue: {} },

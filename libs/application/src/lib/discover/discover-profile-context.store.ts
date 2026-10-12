@@ -6,7 +6,7 @@ import {
   parseLocalMarkets,
   parseProfileMd,
 } from '@applye/core';
-import { ProfileSettingsGateway } from '@applye/data';
+import { ProfileGateway, SettingsGateway } from '@applye/data';
 
 /** The compensation target read out of the profile markdown. */
 export interface CompensationTarget {
@@ -33,7 +33,8 @@ const NO_TARGET: CompensationTarget = { min: '', max: '', currency: '', period: 
  */
 @Injectable()
 export class DiscoverProfileContextStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
 
   private readonly archetypesState = signal<Archetype[]>([]);
   private readonly keywordsState = signal<string[]>([]);
@@ -70,7 +71,10 @@ export class DiscoverProfileContextStore {
 
   /** Reads the profile and the settings. Throws; the page reports. */
   async load(): Promise<void> {
-    const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+    const [profile, settings] = await Promise.all([
+      this.profileGateway.getProfile(),
+      this.settingsGateway.getSettings(),
+    ]);
 
     const archetypes = parseArchetypes(profile?.targetArchetypes);
     this.archetypesState.set(archetypes);

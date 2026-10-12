@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DocumentsGateway, JobsGateway, JobSourceService } from '@applye/data';
+import { DocumentsGateway, JobsGateway, JobSourceService, ApplicationsGateway } from '@applye/data';
 import { JobIntakeService } from './job-intake.service';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 
@@ -81,6 +81,7 @@ describe('JobIntakeService', () => {
       providers: [
         JobIntakeService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: JobSourceService, useValue: source },
         { provide: JobIdentityResolverService, useValue: identity },

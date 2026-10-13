@@ -12,6 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Application state and IPC gateways have separate owners.** `JobsStore` lives in the application layer. Data-layer gateways stay stateless: jobs and scoring, application tracking, tracker field edits, profile, and settings. No user-facing behavior was intended to change.
 - **Application feature dependencies are checked.** Feature folders inside `libs/application` can no longer form a cycle, and the generic `libs/core` `models` bucket can only shrink: a new file is rejected, and a legacy allowlist entry must leave with its file. Document region (`de`, `us`, `uk`, `generic`) is document-domain vocabulary in `libs/core`. No user-facing behavior was intended to change.
 - **The application layer no longer performs platform effects.** Save dialogs, clipboard writes,
   `mailto:` links, document-editor navigation, toasts, Open/Reveal, and the sidebar / wizard

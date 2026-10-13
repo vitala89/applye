@@ -4,8 +4,10 @@ import {
   AiService,
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
@@ -66,7 +68,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
     hashText = jest.fn().mockImplementation(async (text: string) => fakeHash(text));
     run = jest.fn().mockResolvedValue({ text: 'generated', tokensInput: 1, tokensOutput: 1 });
 
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       getProfile,
       upsertProfile,
       hashText,
@@ -78,8 +80,10 @@ describe('ProfileComponent scoring freshness wiring', () => {
     await TestBed.configureTestingModule({
       imports: [ProfileComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: SystemGateway, useValue: dbStub },
         {

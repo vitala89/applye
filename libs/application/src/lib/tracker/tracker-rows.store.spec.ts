@@ -3,8 +3,10 @@ import type { Settings, TrackerRow } from '@applye/core';
 import {
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   TrackerGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TrackerRowsStore } from './tracker-rows.store';
 
@@ -23,8 +25,10 @@ function createStore(rows: TrackerRow[] = [], settings: Partial<Settings> | null
   TestBed.configureTestingModule({
     providers: [
       TrackerRowsStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: TrackerGateway, useValue: db },
     ],

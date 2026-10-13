@@ -1,14 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { JobOverview } from '@applye/core';
-import { JobsGateway } from '../services/jobs.gateway';
+import { JobsGateway } from '@applye/data';
 import { JobsStore } from './jobs.store';
 
 /**
  * The store is a cache in front of SQLite, so the behaviour worth pinning is
  * where it may and may not skip a read, and whether the in-memory mirror stays
- * truthful after a mutation. `libs/data` had one spec for the whole layer
- * before this; the store is the part of it that holds state, so it is the part
- * most able to drift.
+ * truthful after a mutation. SQLite, through `JobsGateway`, stays the source
+ * of truth. The in-memory mirror is application state.
  */
 const row = (id: number): JobOverview =>
   ({ id, company: `Company ${id}`, title: `Role ${id}` }) as JobOverview;

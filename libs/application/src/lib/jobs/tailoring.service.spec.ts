@@ -6,6 +6,7 @@ import {
   DraftsGateway,
   JobsGateway,
   SystemGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TailorContext, TailoringService } from './tailoring.service';
@@ -81,6 +82,7 @@ describe('TailoringService', () => {
         TailoringService,
         WizardActivityService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: DraftsGateway, useValue: drafts },

@@ -5,7 +5,9 @@ import {
   DocumentsGateway,
   InterviewGateway,
   JobsGateway,
-  ProfileSettingsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -21,11 +23,11 @@ const STAGE: InterviewStage = {
   status: 'scheduled',
 };
 
-function buildComponent(overrides: { db?: Partial<ProfileSettingsGateway> } = {}): {
+function buildComponent(overrides: { db?: Partial<ProfileGateway & SettingsGateway> } = {}): {
   component: InterviewPrepDetailComponent;
   fixture: ComponentFixture<InterviewPrepDetailComponent>;
 } {
-  const dbStub: Partial<ProfileSettingsGateway> = {
+  const dbStub: Partial<ProfileGateway & SettingsGateway> = {
     listPipelineCards: jest.fn().mockResolvedValue([
       {
         id: 1,
@@ -44,6 +46,7 @@ function buildComponent(overrides: { db?: Partial<ProfileSettingsGateway> } = {}
     imports: [InterviewPrepDetailComponent],
     providers: [
       { provide: JobsGateway, useValue: dbStub },
+      { provide: ApplicationsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: InterviewGateway, useValue: dbStub },
       TranslateService,

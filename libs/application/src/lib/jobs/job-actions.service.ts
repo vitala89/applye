@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Application } from '@applye/core';
-import { JobsGateway, JobsStore } from '@applye/data';
+import { ApplicationsGateway } from '@applye/data';
+import { JobsStore } from './jobs.store';
 import { TranslateService } from '@applye/i18n';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 
@@ -17,7 +18,7 @@ import { JobIdentityResolverService } from './job-identity-resolver.service';
  */
 @Injectable()
 export class JobActionsService {
-  private readonly db = inject(JobsGateway);
+  private readonly db = inject(ApplicationsGateway);
   private readonly jobsStore = inject(JobsStore);
   private readonly i18n = inject(TranslateService);
   private readonly identity = inject(JobIdentityResolverService);

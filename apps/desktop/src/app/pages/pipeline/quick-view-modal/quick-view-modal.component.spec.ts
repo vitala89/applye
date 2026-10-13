@@ -1,7 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import { AiService, DocumentsGateway, InterviewGateway, JobsGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  InterviewGateway,
+  JobsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
 import { QuickViewModalComponent } from './quick-view-modal.component';
@@ -39,8 +45,8 @@ async function createFixture(
 ): Promise<ComponentFixture<QuickViewModalComponent>> {
   navigate.mockClear();
   TestBed.resetTestingModule();
-  // One stub, two tokens: the interview stages come from `InterviewGateway`
-  // and the applications, their status and their comments from `JobsGateway`.
+  // One stub, several tokens: interview stages come from `InterviewGateway`,
+  // and application status and comments come from `ApplicationsGateway`.
   const dbStub = {
     listInterviewStages: stagesRejectWith
       ? jest.fn().mockRejectedValue(stagesRejectWith)
@@ -51,6 +57,7 @@ async function createFixture(
     imports: [QuickViewModalComponent],
     providers: [
       { provide: JobsGateway, useValue: dbStub },
+      { provide: ApplicationsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: InterviewGateway, useValue: dbStub },
       { provide: AiService, useValue: { renderSkill: jest.fn(), run: jest.fn() } },

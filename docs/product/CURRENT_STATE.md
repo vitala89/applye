@@ -1,8 +1,8 @@
 # Current Operational State
 
-**As of 2026-10-12.** Verify `git rev-parse --short HEAD` before trusting a hash. The architecture
-stabilization branch was created from `main` at `959a119a`, after PR #573 (database backup/restore)
-and PR #574 (mandatory architecture-canon reading) merged.
+**As of 2026-10-13.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
+Stabilization PR 2 merged as #577 at `f5e5a181`. PR 3, state and gateway ownership, is open as
+[#584](https://github.com/vitala89/applye/pull/584) on `refactor/state-and-gateway-ownership`.
 
 ## Active product direction
 
@@ -24,13 +24,14 @@ Hub, Network CRM, Interview Intelligence, or community features as available. Do
 Hono, D1, authentication, Cloudflare Workers resources, sync, or empty backend scaffolding. ADR-0007
 says the backend is created with the first real backend slice.
 
-`#567`, `#568`, `#569`, `#573`, `#574`, `#575`, and `#576` are merged. Architecture Stabilization
-PR 1 removed platform effects from `libs/application` (`915e8072`). PR 2 is open as
-[#577](https://github.com/vitala89/applye/pull/577) on `refactor/application-feature-boundaries`.
-It removes the `documents -> jobs` cycle and enforces application feature direction. After that
-pull request merges, the next step is **Architecture Stabilization PR 3: Correct state and gateway
-ownership.** Do not start Career Evidence, Rust command splits, or the file-size campaign in this
-pull request.
+`#567`, `#568`, `#569`, `#573`, `#574`, `#575`, `#576`, and `#577` are merged. Architecture
+Stabilization PR 1 removed platform effects from `libs/application` (`915e8072`). PR 2 merged as
+[#577](https://github.com/vitala89/applye/pull/577) and left the production feature graph as
+`jobs -> documents`. PR 3 moves `JobsStore` into `libs/application` and splits gateway ownership:
+jobs and scoring, application tracking, tracker field edits, profile, and settings. SQLite stays
+the source of truth. After that pull request merges, the next step is **Architecture Stabilization
+PR 4: Thin Rust command boundary, part A.** Do not start Career Evidence, the Rust command split,
+or the file-size campaign in this pull request.
 
 ## Implementation sequence
 

@@ -5,8 +5,10 @@ import {
   DocumentsGateway,
   DraftsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { FollowupDraftService, parseFollowupDraft } from './followup-draft.service';
 
@@ -50,8 +52,10 @@ describe('FollowupDraftService', () => {
     TestBed.configureTestingModule({
       providers: [
         FollowupDraftService,
-        { provide: ProfileSettingsGateway, useValue: db },
+        { provide: ProfileGateway, useValue: db },
+        { provide: SettingsGateway, useValue: db },
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
         { provide: DraftsGateway, useValue: drafts },

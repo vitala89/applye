@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Application, DocumentLibraryItem, Job } from '@applye/core';
-import { DocumentsGateway, JobsGateway } from '@applye/data';
+import { ApplicationsGateway, DocumentsGateway, JobsGateway } from '@applye/data';
 
 /**
  * The cover-letter library: the documents, the two lists needed to name which
@@ -16,7 +16,8 @@ import { DocumentsGateway, JobsGateway } from '@applye/data';
  */
 @Injectable()
 export class CoverLetterListStore {
-  private readonly db = inject(JobsGateway);
+  private readonly jobs = inject(JobsGateway);
+  private readonly applicationsGateway = inject(ApplicationsGateway);
   private readonly docs = inject(DocumentsGateway);
 
   readonly coverLetters = signal<DocumentLibraryItem[]>([]);
@@ -41,8 +42,8 @@ export class CoverLetterListStore {
     try {
       const [letters, jobs, applications] = await Promise.all([
         this.docs.documentLibraryList('cover_letter'),
-        this.db.listJobs(),
-        this.db.listApplications(),
+        this.jobs.listJobs(),
+        this.applicationsGateway.listApplications(),
       ]);
       this.coverLetters.set(letters);
       this.trackedJobs.set(jobs);

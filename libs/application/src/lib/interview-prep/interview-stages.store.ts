@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { InterviewStage, InterviewStageStatus, PipelineCard } from '@applye/core';
-import { InterviewGateway, JobsGateway } from '@applye/data';
+import { InterviewGateway, ApplicationsGateway } from '@applye/data';
 import { type StageFormValue, emptyStageForm, stageGatewayFields } from './interview-stage-form';
 
 /**
@@ -20,7 +20,7 @@ import { type StageFormValue, emptyStageForm, stageGatewayFields } from './inter
  */
 @Injectable()
 export class InterviewStagesStore {
-  private readonly db = inject(JobsGateway);
+  private readonly db = inject(ApplicationsGateway);
   /** Every stage operation comes from `InterviewGateway`; `db` stays for the
    * cards this store reads to find the application. */
   private readonly interview = inject(InterviewGateway);

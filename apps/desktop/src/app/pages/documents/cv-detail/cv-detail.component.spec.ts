@@ -5,7 +5,14 @@ jest.mock('@tauri-apps/plugin-dialog', () => ({
 }));
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvStyleStore } from '@applye/application';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -26,7 +33,7 @@ describe('mergePersonalField', () => {
 describe('CvDetailComponent personal-details top card visibility', () => {
   let component: CvDetailComponent;
   let fixture: ComponentFixture<CvDetailComponent>;
-  let dbStub: Partial<ProfileSettingsGateway>;
+  let dbStub: Partial<ProfileGateway & SettingsGateway>;
 
   beforeEach(async () => {
     // A real document (not null) so the component's own async `load()` -
@@ -70,8 +77,10 @@ describe('CvDetailComponent personal-details top card visibility', () => {
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
@@ -204,7 +213,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
   // root fields - all round-trip untouched.
   let component: CvDetailComponent;
   let fixture: ComponentFixture<CvDetailComponent>;
-  let dbStub: Partial<ProfileSettingsGateway>;
+  let dbStub: Partial<ProfileGateway & SettingsGateway>;
 
   const richStyle = {
     ...CV_STYLE_DEFAULT,
@@ -240,8 +249,10 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
@@ -342,7 +353,7 @@ describe('CvDetailComponent export/print hardening', () => {
         ],
       }),
     };
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
@@ -357,8 +368,10 @@ describe('CvDetailComponent export/print hardening', () => {
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
@@ -464,7 +477,7 @@ describe('CvDetailComponent export/print hardening', () => {
 
 describe('CvDetailComponent back navigation', () => {
   async function setup(params: Record<string, string | null>) {
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
@@ -476,8 +489,10 @@ describe('CvDetailComponent back navigation', () => {
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
@@ -533,7 +548,7 @@ describe('CvDetailComponent applied lock (P2)', () => {
       styleJson: JSON.stringify(CV_STYLE_DEFAULT),
       contentJson: JSON.stringify({ sections: [] }),
     };
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       getProfile: jest.fn().mockResolvedValue(null),
@@ -546,8 +561,10 @@ describe('CvDetailComponent applied lock (P2)', () => {
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,

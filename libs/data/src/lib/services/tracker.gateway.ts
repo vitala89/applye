@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { TrackerCustomColumn, TrackerRow } from '@applye/core';
+import {
+  Application,
+  ApplicationTrackerFieldsInput,
+  TrackerCustomColumn,
+  TrackerRow,
+} from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /**
@@ -18,6 +23,11 @@ import { tauriInvoke } from '../tauri.invoke';
  * The seven methods here were **interleaved through the Jobs section** rather
  * than gathered under a banner, which is the third gateway in a row to find
  * its methods mis-filed.
+ *
+ * `updateApplicationTrackerFields` is the tracker-only write: contact,
+ * next action, salary, and notes. Application status, priority, and comments
+ * stay on `ApplicationsGateway` even when the tracker screen triggers a
+ * status change.
  */
 @Injectable({ providedIn: 'root' })
 export class TrackerGateway {
@@ -46,6 +56,11 @@ export class TrackerGateway {
     fallbackContent: string;
   }): Promise<string> {
     return tauriInvoke<string>('tracker_report_export_pdf_wysiwyg', params);
+  }
+
+  /** Job Tracker inline edit - patches only contact/next-action/salary/notes. */
+  async updateApplicationTrackerFields(input: ApplicationTrackerFieldsInput): Promise<Application> {
+    return tauriInvoke<Application>('db_update_application_tracker_fields', { input });
   }
 
   /** Soft-archive / restore a tracker row (kept in the report either way). */

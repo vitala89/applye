@@ -6,7 +6,7 @@ import type {
   SupportedLanguage,
 } from '@applye/core';
 import { buildCvContent, parseCvSkillResponse } from '@applye/core';
-import { AiService, DocumentsGateway, ProfileSettingsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, SettingsGateway } from '@applye/data';
 
 /**
  * What reading the picked file produced. Each is a different thing on screen,
@@ -46,7 +46,7 @@ const DEFAULT_REGION_TAG = 'de';
  */
 @Injectable()
 export class CvImportStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly db = inject(SettingsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
 

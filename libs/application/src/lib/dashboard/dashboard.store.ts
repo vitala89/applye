@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { JobOverview, PipelineCard, Profile } from '@applye/core';
-import { JobsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import { ApplicationsGateway, JobsGateway, ProfileGateway, SystemGateway } from '@applye/data';
 import { MS_HOUR, SOON_HOURS, monogram, scheduledMs, whenLabel } from './dashboard.util';
 
 /** One upcoming interview, ready for the list to render. */
@@ -35,8 +35,9 @@ export type ProgressJobId = () => number | null | undefined;
  */
 @Injectable()
 export class DashboardStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly db = inject(ProfileGateway);
   private readonly jobs = inject(JobsGateway);
+  private readonly applications = inject(ApplicationsGateway);
   private readonly system = inject(SystemGateway);
 
   readonly loading = signal(true);
@@ -69,7 +70,7 @@ export class DashboardStore {
     this.loading.set(true);
     try {
       const [cards, overview, profile] = await Promise.all([
-        this.jobs.listPipelineCards(),
+        this.applications.listPipelineCards(),
         this.jobs.listJobsOverview(),
         this.db.getProfile(),
       ]);

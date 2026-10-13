@@ -7,7 +7,14 @@ import type {
   Settings,
   SupportedLanguage,
 } from '@applye/core';
-import { DocumentsGateway, JobsGateway, JobsStore, ProfileSettingsGateway } from '@applye/data';
+import {
+  ApplicationsGateway,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+} from '@applye/data';
+import { JobsStore } from './jobs.store';
 import { baseCvChoices } from './job-document-defaults';
 import { TranslateService } from '@applye/i18n';
 
@@ -35,8 +42,10 @@ import { TranslateService } from '@applye/i18n';
  */
 @Injectable()
 export class JobDetailStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
   private readonly jobsDb = inject(JobsGateway);
+  private readonly applications = inject(ApplicationsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly jobs = inject(JobsStore);
   private readonly t = inject(TranslateService).t;
@@ -71,7 +80,10 @@ export class JobDetailStore {
    * without them the user can still paste a job description. */
   async loadContext(): Promise<void> {
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       this.profile.set(profile);
       this.settings.set(settings);
       this.loadError.set(null);
@@ -92,7 +104,7 @@ export class JobDetailStore {
       this.job.set(job);
       this.jdText.set(job.jdText ?? '');
 
-      const applications = await this.jobsDb.listApplications();
+      const applications = await this.applications.listApplications();
       const application = applications.find((a) => a.jobId === id) ?? null;
       this.application.set(application);
 
@@ -155,7 +167,7 @@ export class JobDetailStore {
     const job = this.job();
     if (!job?.id) return null;
 
-    const created = await this.jobsDb.upsertApplication({
+    const created = await this.applications.upsertApplication({
       jobId: job.id,
       status: 'saved',
       docLanguage,

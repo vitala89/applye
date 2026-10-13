@@ -1,7 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterDetailComponent } from './cover-letter-detail.component';
@@ -12,7 +19,7 @@ describe('CoverLetterDetailComponent preview atoms', () => {
   let fixture: ComponentFixture<CoverLetterDetailComponent>;
 
   beforeEach(async () => {
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
       listApplications: jest.fn().mockResolvedValue([]),
@@ -22,6 +29,7 @@ describe('CoverLetterDetailComponent preview atoms', () => {
       imports: [CoverLetterDetailComponent],
       providers: [
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
@@ -120,7 +128,7 @@ describe('CoverLetterDetailComponent preview atoms', () => {
 
 describe('CoverLetterDetailComponent back navigation', () => {
   async function setup(params: Record<string, string | null>) {
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
       listApplications: jest.fn().mockResolvedValue([]),
@@ -131,6 +139,7 @@ describe('CoverLetterDetailComponent back navigation', () => {
       imports: [CoverLetterDetailComponent],
       providers: [
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,
@@ -194,7 +203,7 @@ describe('CoverLetterDetailComponent applied lock (P2)', () => {
   };
 
   async function setup(linkedApp: Record<string, unknown> | null) {
-    const dbStub: Partial<ProfileSettingsGateway> = {
+    const dbStub: Partial<ProfileGateway & SettingsGateway> = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
       listApplications: jest
@@ -206,6 +215,7 @@ describe('CoverLetterDetailComponent applied lock (P2)', () => {
       imports: [CoverLetterDetailComponent],
       providers: [
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: AiService, useValue: {} },
         TranslateService,

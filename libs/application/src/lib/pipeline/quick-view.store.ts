@@ -6,7 +6,7 @@ import type {
   InterviewStage,
   Priority,
 } from '@applye/core';
-import { InterviewGateway, JobsGateway } from '@applye/data';
+import { InterviewGateway, ApplicationsGateway } from '@applye/data';
 import { pickCurrentStage, sortStages } from './interview-stage-view';
 
 /**
@@ -27,8 +27,8 @@ import { pickCurrentStage, sortStages } from './interview-stage-view';
  */
 @Injectable()
 export class QuickViewStore {
-  private readonly db = inject(JobsGateway);
-  /** Stages come from `InterviewGateway`; `db` is `JobsGateway`, for the
+  private readonly db = inject(ApplicationsGateway);
+  /** Stages come from `InterviewGateway`; `db` is `ApplicationsGateway`, for the
    * comment and status writes. */
   private readonly interview = inject(InterviewGateway);
 

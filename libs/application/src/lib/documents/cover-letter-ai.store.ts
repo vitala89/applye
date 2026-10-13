@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { Settings, SupportedLanguage } from '@applye/core';
 import { parseCoverLetterResponse } from '@applye/core';
-import { AiService, ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import { AiService, ProfileGateway, SettingsGateway, SystemGateway } from '@applye/data';
 import { CoverLetterContentStore } from './cover-letter-content.store';
 import { CoverLetterDocumentStore } from './cover-letter-document.store';
 import {
@@ -35,7 +35,8 @@ import {
  */
 @Injectable()
 export class CoverLetterAiStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
   private readonly system = inject(SystemGateway);
   private readonly ai = inject(AiService);
   private readonly letter = inject(CoverLetterContentStore);
@@ -96,7 +97,10 @@ export class CoverLetterAiStore {
     if (this.busy() || !doc) return false;
     this.drafting.set(true);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       if (!profile?.fullMd) throw new CoverLetterNoProfileError();
 
       const text = await this.generate(
@@ -128,7 +132,10 @@ export class CoverLetterAiStore {
     const sectionName = coverLetterSectionName(blockKey, index);
     this.regeneratingBlock.set(sectionName);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       if (!profile?.fullMd) throw new CoverLetterNoProfileError();
 
       const ctx = this.context(doc.language, settings);

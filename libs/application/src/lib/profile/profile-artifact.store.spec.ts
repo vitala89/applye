@@ -4,8 +4,10 @@ import {
   AiService,
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { ProfileArtifactStore } from './profile-artifact.store';
 import { ProfileFormStore } from './profile-form.store';
@@ -40,8 +42,10 @@ function createStores(over: Record<string, jest.Mock> = {}, row: Partial<Profile
       ProfileFormStore,
       ProfileStore,
       ProfileArtifactStore,
-      { provide: ProfileSettingsGateway, useValue: db },
+      { provide: ProfileGateway, useValue: db },
+      { provide: SettingsGateway, useValue: db },
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: SystemGateway, useValue: db },
       { provide: AiService, useValue: ai },

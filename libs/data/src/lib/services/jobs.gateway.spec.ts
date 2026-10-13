@@ -6,30 +6,12 @@ import { JobsGateway } from './jobs.gateway';
 jest.mock('@tauri-apps/api/core', () => ({ invoke: jest.fn(async () => null) }));
 
 /**
- * Pins the command strings and argument shapes, the one thing this move could
- * break that nothing else would see - every consumer stubs the gateway, so a
- * method invoking the wrong Rust command leaves the suite green and fails only
- * in the running app. `drafts.gateway.spec.ts` is the shape being copied.
+ * Pins the command strings and argument shapes. Application tests stub this
+ * gateway, so a method invoking the wrong Rust command leaves the suite green
+ * and fails only in the running app.
  *
- * This domain's traps, each with its own test below:
- *
- * - **Six of the eighteen commands carry no `db_` prefix** - the three
- *   `score_cache_*`, `check_archetype_match`, `set_application_priority`,
- *   `add_application_comment` and `list_application_comments`. Copying a
- *   neighbouring method and keeping its prefix is the failure mode.
- * - **The two sibling setters disagree about their first argument name.**
- *   `setApplicationStatus` sends `id`; `setApplicationPriority` sends
- *   `applicationId`. Both take an application's primary key.
- * - **Three different wrapper keys.** `upsertJob` sends `{ job }`,
- *   `upsertApplication` sends `{ application }`, and both `scoreCacheSave` and
- *   `updateApplicationTrackerFields` send `{ input }`.
- * - **Two projections break the `db_list_*` naming of their neighbours**:
- *   `listPipelineCards` invokes `db_pipeline_cards` and `getAnalyticsFacts`
- *   invokes `db_analytics_facts`.
- *
- * `tauriInvoke` refuses to dispatch outside Tauri, so `__TAURI_INTERNALS__` is
- * set to satisfy that guard - the check being made here is about what is sent,
- * not about the guard.
+ * `check_archetype_match` and the three `score_cache_*` commands carry no
+ * `db_` prefix. `upsertJob` sends `{ job }`. `scoreCacheSave` sends `{ input }`.
  */
 describe('JobsGateway', () => {
   let gateway: JobsGateway;
@@ -87,54 +69,7 @@ describe('JobsGateway', () => {
     expect(invoke).toHaveBeenCalledWith('score_cache_save', { input });
   });
 
-  it('lists applications, pipeline cards and analytics facts under three unrelated commands', async () => {
-    // `db_pipeline_cards` and `db_analytics_facts` deliberately do not follow
-    // the `db_list_*` naming of the method next to them.
-    await gateway.listApplications();
-    expect(invoke).toHaveBeenCalledWith('db_list_applications', undefined);
-    await gateway.listPipelineCards();
-    expect(invoke).toHaveBeenCalledWith('db_pipeline_cards', undefined);
-    await gateway.getAnalyticsFacts();
-    expect(invoke).toHaveBeenCalledWith('db_analytics_facts', undefined);
-  });
-
-  it('upserts an application under the `application` key', async () => {
-    const application = { jobId: 7, status: 'applied' };
-    await gateway.upsertApplication(application as never);
-    expect(invoke).toHaveBeenCalledWith('db_upsert_application', { application });
-  });
-
-  it('sends `id` for a status change but `applicationId` for a priority change', async () => {
-    // The two setters take the same primary key under different names; a
-    // copy-paste between them sends an argument Rust will not bind.
-    await gateway.setApplicationStatus(3, 'applied' as never);
-    expect(invoke).toHaveBeenCalledWith('db_set_application_status', { id: 3, status: 'applied' });
-    await gateway.setApplicationPriority(3, 'high' as never);
-    expect(invoke).toHaveBeenCalledWith('set_application_priority', {
-      applicationId: 3,
-      priority: 'high',
-    });
-  });
-
-  it('patches tracker fields under one input key', async () => {
-    const input = { applicationId: 3, notes: 'n' };
-    await gateway.updateApplicationTrackerFields(input as never);
-    expect(invoke).toHaveBeenCalledWith('db_update_application_tracker_fields', { input });
-  });
-
-  it('adds and lists application comments by application id', async () => {
-    await gateway.addApplicationComment(3, 'hi');
-    expect(invoke).toHaveBeenCalledWith('add_application_comment', {
-      applicationId: 3,
-      commentText: 'hi',
-    });
-    await gateway.listApplicationComments(3);
-    expect(invoke).toHaveBeenCalledWith('list_application_comments', { applicationId: 3 });
-  });
-
-  it('sends eighteen distinct commands, one per method', async () => {
-    // Counted rather than listed: the failure this catches is two methods
-    // sharing a string after a copy-paste, which each test above would pass.
+  it('sends nine distinct commands, one per method', async () => {
     await gateway.listJobs();
     await gateway.upsertJob({} as never);
     await gateway.listJobsOverview();
@@ -144,31 +79,23 @@ describe('JobsGateway', () => {
     await gateway.scoreCacheGet(1, 'h');
     await gateway.scoreCacheLatest(1);
     await gateway.scoreCacheSave({} as never);
-    await gateway.listApplications();
-    await gateway.listPipelineCards();
-    await gateway.getAnalyticsFacts();
-    await gateway.upsertApplication({} as never);
-    await gateway.setApplicationStatus(1, 'applied' as never);
-    await gateway.updateApplicationTrackerFields({} as never);
-    await gateway.setApplicationPriority(1, 'high' as never);
-    await gateway.addApplicationComment(1, 'c');
-    await gateway.listApplicationComments(1);
     const commands = (invoke as jest.Mock).mock.calls.map((c) => c[0] as string);
-    expect(commands).toHaveLength(18);
-    expect(new Set(commands).size).toBe(18);
+    expect(commands).toHaveLength(9);
+    expect(new Set(commands).size).toBe(9);
   });
 
-  it('prefixes only twelve of the eighteen commands with `db_`', async () => {
-    // The six that do not are the exact set a "make it consistent" edit would
-    // break: Rust registers them under these names and no others.
+  it('prefixes only five of the nine commands with `db_`', async () => {
     await gateway.checkArchetypeMatch('t', 'jd', undefined);
     await gateway.scoreCacheGet(1, 'h');
     await gateway.scoreCacheLatest(1);
     await gateway.scoreCacheSave({} as never);
-    await gateway.setApplicationPriority(1, 'high' as never);
-    await gateway.addApplicationComment(1, 'c');
-    await gateway.listApplicationComments(1);
     const commands = (invoke as jest.Mock).mock.calls.map((c) => c[0] as string);
     expect(commands.filter((c) => c.startsWith('db_'))).toEqual([]);
+    expect(commands).toEqual([
+      'check_archetype_match',
+      'score_cache_get',
+      'score_cache_latest',
+      'score_cache_save',
+    ]);
   });
 });

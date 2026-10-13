@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { SupportedLanguage } from '@applye/core';
-import { ProfileSettingsGateway } from '@applye/data';
+import { SettingsGateway } from '@applye/data';
 
 /**
  * What the app shell holds: the stored UI language, and whether the sidebar is
@@ -23,7 +23,7 @@ import { ProfileSettingsGateway } from '@applye/data';
  */
 @Injectable()
 export class ShellStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly db = inject(SettingsGateway);
 
   /** Null until the settings row has been read, and after a failed read. */
   readonly uiLanguage = signal<SupportedLanguage | null>(null);

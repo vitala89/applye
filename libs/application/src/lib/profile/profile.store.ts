@@ -11,7 +11,7 @@ import {
   scoringState as computeScoringState,
   serializeArchetypes,
 } from '@applye/core';
-import { ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import { ProfileGateway, SettingsGateway, SystemGateway } from '@applye/data';
 import { ProfileFormStore } from './profile-form.store';
 
 /** Every collapsible section on the profile page. */
@@ -40,7 +40,8 @@ export type ProfileSectionKey =
  */
 @Injectable()
 export class ProfileStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
   private readonly system = inject(SystemGateway);
   readonly editor = inject(ProfileFormStore);
 
@@ -118,7 +119,10 @@ export class ProfileStore {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [p, s] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [p, s] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       this.profile.set(p);
       this.settings.set(s);
       this.editor.adoptMarkdown(p?.fullMd ?? '');
@@ -199,7 +203,7 @@ export class ProfileStore {
     >,
     mdHash?: string,
   ): Promise<Profile> {
-    const saved = await this.db.upsertProfile(input);
+    const saved = await this.profileGateway.upsertProfile(input);
     this.profile.set(saved);
     this.lastSavedAt.set(saved.updatedAt ?? null);
     if (mdHash) {

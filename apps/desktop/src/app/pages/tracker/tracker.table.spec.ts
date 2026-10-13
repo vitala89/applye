@@ -4,8 +4,10 @@ import { TrackerRow } from '@applye/core';
 import {
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   TrackerGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { TrackerColumnsStore, TrackerRowEditorStore } from '@applye/application';
@@ -55,9 +57,10 @@ describe('TrackerComponent grid', () => {
     navigate = jest.fn();
     updateFields = jest.fn().mockResolvedValue(undefined);
     TestBed.resetTestingModule();
-    // One stub object, several tokens: the grid's rows and archiving come from
-    // `TrackerGateway`, `deleteJob` and the status write from `JobsGateway`, and
-    // the settings row from `ProfileSettingsGateway`.
+    // One stub object, several tokens: `TrackerGateway` serves tracker rows,
+    // archive, and tracker field writes; `JobsGateway` serves `deleteJob`;
+    // `ApplicationsGateway` serves application status; `SettingsGateway` serves
+    // the settings row.
     const dbStub = {
       trackerRows: jest.fn().mockResolvedValue(rows),
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),
@@ -70,8 +73,10 @@ describe('TrackerComponent grid', () => {
     TestBed.configureTestingModule({
       imports: [TrackerComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: TrackerGateway, useValue: dbStub },
         { provide: Router, useValue: { navigate } },

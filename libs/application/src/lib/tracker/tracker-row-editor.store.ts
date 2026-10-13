@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { ApplicationStatus, TrackerRow } from '@applye/core';
-import { JobsGateway } from '@applye/data';
+import { ApplicationsGateway, TrackerGateway } from '@applye/data';
 import { TrackerColumnDef, trackerCustomValues } from './tracker-columns';
 import {
   buildTrackerFieldsInput,
@@ -36,7 +36,8 @@ export type TrackerEditReload = () => Promise<void>;
  */
 @Injectable()
 export class TrackerRowEditorStore {
-  private readonly db = inject(JobsGateway);
+  private readonly applications = inject(ApplicationsGateway);
+  private readonly tracker = inject(TrackerGateway);
   private readonly rows = inject(TrackerRowsStore);
 
   readonly editId = signal<number | null>(null);
@@ -100,12 +101,12 @@ export class TrackerRowEditorStore {
     if (!draft || this.saving()) return false;
     this.saving.set(true);
     try {
-      await this.db.updateApplicationTrackerFields(
+      await this.tracker.updateApplicationTrackerFields(
         buildTrackerFieldsInput(draft, this.draftCustom()),
       );
       const original = this.rows.all().find((r) => r.id === draft.id);
       if (trackerStatusChanged(draft, original)) {
-        await this.db.setApplicationStatus(draft.id, draft.status as ApplicationStatus);
+        await this.applications.setApplicationStatus(draft.id, draft.status as ApplicationStatus);
       }
       this.editId.set(null);
       this.draft.set(null);

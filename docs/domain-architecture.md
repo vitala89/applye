@@ -111,7 +111,7 @@ Examples include job intake, document tailoring orchestration, application workf
 
 ### `libs/data`: infrastructure and ports to Tauri
 
-Data access stays behind focused gateways such as `JobsGateway`, `DraftsGateway`, and `ProfileSettingsGateway`.
+Data access stays behind focused stateless gateways such as `JobsGateway`, `ApplicationsGateway`, `ProfileGateway`, `SettingsGateway`, and `DraftsGateway`. Reactive screen state stays in `libs/application`.
 
 Applye deliberately uses **Gateway** rather than mechanically introducing `IJobRepository` / `JobRepositoryImpl`. A gateway can represent IPC and persistence capabilities without pretending that every infrastructure boundary is a DDD Repository.
 

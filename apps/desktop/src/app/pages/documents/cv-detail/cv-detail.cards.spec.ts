@@ -1,7 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CV_STYLE_DEFAULT, resolvePageSettings } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  AiService,
+  DocumentsGateway,
+  JobsGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvStyleStore } from '@applye/application';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -72,8 +79,10 @@ describe('CvDetailComponent card wiring', () => {
     await TestBed.configureTestingModule({
       imports: [CvDetailComponent],
       providers: [
-        { provide: ProfileSettingsGateway, useValue: docsStub },
+        { provide: ProfileGateway, useValue: docsStub },
+        { provide: SettingsGateway, useValue: docsStub },
         { provide: JobsGateway, useValue: docsStub },
+        { provide: ApplicationsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
         TranslateService,

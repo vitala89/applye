@@ -1,5 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DocumentsGateway, JobsGateway, ProfileSettingsGateway, SystemGateway } from '@applye/data';
+import {
+  DocumentsGateway,
+  JobsGateway,
+  SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
+} from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { BootGateStore } from '@applye/application';
 import { FirstLaunchComponent, type FirstLaunchDismiss } from './first-launch.component';
@@ -33,7 +40,7 @@ describe('FirstLaunchComponent', () => {
       dismissFails ? Promise.reject(new Error('disk full')) : Promise.resolve(),
     );
     // One stub object, several tokens - `SystemGateway` serves the shared
-    // operations and `ProfileSettingsGateway` the settings row. The migration is
+    // operations and `SettingsGateway` the settings row. The migration is
     // finished, so every token here names a domain gateway.
     const dbStub = {
       updateSettings,
@@ -43,8 +50,10 @@ describe('FirstLaunchComponent', () => {
       imports: [FirstLaunchComponent],
       providers: [
         TranslateService,
-        { provide: ProfileSettingsGateway, useValue: dbStub },
+        { provide: ProfileGateway, useValue: dbStub },
+        { provide: SettingsGateway, useValue: dbStub },
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
         { provide: SystemGateway, useValue: dbStub },
       ],

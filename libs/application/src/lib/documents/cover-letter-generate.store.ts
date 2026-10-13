@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { CoverLetterContent, DocumentLibraryItem, Job, SupportedLanguage } from '@applye/core';
 import { parseCoverLetterResponse } from '@applye/core';
-import { AiService, DocumentsGateway, ProfileSettingsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, ProfileGateway, SettingsGateway } from '@applye/data';
 import {
   COVER_LETTER_GENERIC_JD,
   COVER_LETTER_SECTION_ALL,
@@ -40,7 +40,8 @@ export interface GenerateLabels {
  */
 @Injectable()
 export class CoverLetterGenerateStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
 
@@ -69,7 +70,7 @@ export class CoverLetterGenerateStore {
     this.createdId.set(null);
     this.open.set(true);
     try {
-      const settings = await this.db.getSettings();
+      const settings = await this.settingsGateway.getSettings();
       this.language.set(settings.defaultDocLanguage ?? 'en');
     } catch {
       // Keep the fallback language.
@@ -96,7 +97,10 @@ export class CoverLetterGenerateStore {
     this.busy.set(true);
     this.error.set('');
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       if (!profile?.fullMd) return 'no-profile';
 
       const rendered = await this.ai.renderSkill(COVER_LETTER_SKILL, {

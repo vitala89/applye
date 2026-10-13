@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { AnalyticsApplication, AnalyticsFacts } from '@applye/core';
-import { DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { AnalyticsStore } from './analytics.store';
 
 const app = (over: Partial<AnalyticsApplication> = {}): AnalyticsApplication =>
@@ -19,6 +19,7 @@ function createStore(getAnalyticsFacts: jest.Mock) {
     providers: [
       AnalyticsStore,
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
     ],
   });

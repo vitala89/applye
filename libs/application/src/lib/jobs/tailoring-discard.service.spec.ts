@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { DocumentsGateway, JobsGateway, SystemGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, SystemGateway, ApplicationsGateway } from '@applye/data';
 import { DocumentReviewStatusService } from './document-review-status.service';
 import { LinkedDocumentsService } from '../documents/linked-documents.service';
 import { TailorScoreService } from './tailor-score.service';
@@ -58,6 +58,7 @@ describe('TailoringDiscardService', () => {
         LinkedDocumentsService,
         TailorScoreService,
         { provide: JobsGateway, useValue: db },
+        { provide: ApplicationsGateway, useValue: db },
         { provide: DocumentsGateway, useValue: db },
         { provide: SystemGateway, useValue: db },
       ],

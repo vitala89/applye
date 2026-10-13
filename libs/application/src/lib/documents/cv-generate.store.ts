@@ -7,7 +7,13 @@ import {
   parseArchetypes,
   parseCvSkillResponse,
 } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway, ProfileSettingsGateway } from '@applye/data';
+import {
+  AiService,
+  ApplicationsGateway,
+  DocumentsGateway,
+  ProfileGateway,
+  SettingsGateway,
+} from '@applye/data';
 
 /**
  * What one generation attempt did. Each is a different fact, and none of them
@@ -52,8 +58,9 @@ const DEFAULT_REGION_TAG = 'de';
  */
 @Injectable()
 export class CvGenerateStore {
-  private readonly db = inject(ProfileSettingsGateway);
-  private readonly jobs = inject(JobsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
+  private readonly applications = inject(ApplicationsGateway);
   private readonly docs = inject(DocumentsGateway);
   private readonly ai = inject(AiService);
 
@@ -85,7 +92,10 @@ export class CvGenerateStore {
     this.createdId.set(null);
     this.open.set(true);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       this.archetypeTag.set(archetypeNames(parseArchetypes(profile?.targetArchetypes))[0] ?? '');
       this.language.set(settings.defaultDocLanguage ?? 'en');
       this.templateId.set(this.defaultTemplate(templates)?.id ?? null);
@@ -118,7 +128,10 @@ export class CvGenerateStore {
     if (this.busy()) return 'busy';
     this.busy.set(true);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      const [profile, settings] = await Promise.all([
+        this.profileGateway.getProfile(),
+        this.settingsGateway.getSettings(),
+      ]);
       if (!profile?.fullMd) return 'no-profile';
 
       const job = this.selectedJob(jobs);
@@ -203,9 +216,9 @@ export class CvGenerateStore {
    * A job with no application row yet is left alone: there is nothing to
    * attach it to, and inventing one here would be a second feature. */
   private async linkToApplication(jobId: number, documentId: number): Promise<void> {
-    const apps = await this.jobs.listApplications();
+    const apps = await this.applications.listApplications();
     const app = apps.find((a) => a.jobId === jobId);
-    if (app) await this.jobs.upsertApplication({ ...app, cvDocumentId: documentId });
+    if (app) await this.applications.upsertApplication({ ...app, cvDocumentId: documentId });
   }
 
   /** The template matching the chosen region, or the first one there is. */

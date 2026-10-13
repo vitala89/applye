@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
-import { DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../core/toast/toast.service';
 import { InterviewPrepStore } from '@applye/application';
@@ -35,6 +35,7 @@ async function createFixture(): Promise<ComponentFixture<InterviewPrepComponent>
     imports: [InterviewPrepComponent],
     providers: [
       { provide: JobsGateway, useValue: dbStub },
+      { provide: ApplicationsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: Router, useValue: { navigate } },
       TranslateService,

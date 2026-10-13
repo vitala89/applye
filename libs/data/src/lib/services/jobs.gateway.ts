@@ -1,44 +1,26 @@
 import { Injectable } from '@angular/core';
-import { AnalyticsFacts, Job, JobOverview, ScoringCache } from '@applye/core';
-import {
-  Application,
-  ApplicationStatus,
-  ApplicationTrackerFieldsInput,
-  Comment,
-  PipelineCard,
-  Priority,
-} from '@applye/core';
+import { Job, JobOverview, ScoringCache } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /**
- * Jobs and their applications: the job rows, the score cache keyed on them, the
- * pipeline and analytics projections, and the per-application edits the tracker
- * and the quick view make.
+ * Jobs and the score cache keyed on them.
  *
- * **The seventh per-domain gateway** - see `CODE_QUALITY.md` for the migration
- * and `DraftsGateway` for the pattern.
+ * Application tracking lives on `ApplicationsGateway`. Tracker field edits
+ * live on `TrackerGateway`. This gateway does not grow those methods back.
  *
- * **The score cache is here because its readers are.** `TrackerGateway`'s pull
- * request corrected the domain list on that point: all three `scoreCache*`
- * methods are read by `job-scoring.service.ts` and `job-intake.service.ts`, and
- * by nothing in the tracker.
+ * The score cache is here because its readers are. All three `scoreCache*`
+ * methods are read by `job-scoring.service.ts` and `job-intake.service.ts`,
+ * and by nothing in the tracker.
  *
- * **`checkArchetypeMatch` arrived from the Profile banner**, the fourth gateway
- * in a row to find a method mis-filed. It reads no profile row - the archetypes
- * come in as an argument, already parsed - and its only caller is
- * `job-intake.service.ts`, which uses it as a zero-token screen on a pasted job
- * description. It is a job predicate that happens to take profile data.
+ * `checkArchetypeMatch` reads no profile row. The archetypes come in as an
+ * argument, already parsed, and its only caller is `job-intake.service.ts`.
  *
- * Two naming traps live in this domain, both pinned by the spec: three commands
- * carry no `db_` prefix (`set_application_priority`, `add_application_comment`,
- * `list_application_comments`, plus the three `score_cache_*` and
- * `check_archetype_match`), and the two sibling setters disagree about their
- * first argument - `db_set_application_status` sends `id`, while
- * `set_application_priority` sends `applicationId`.
+ * Four commands carry no `db_` prefix: `check_archetype_match` and the three
+ * `score_cache_*` commands. `scoreCacheSave` sends `{ input }`. `upsertJob`
+ * sends `{ job }`.
  */
 @Injectable({ providedIn: 'root' })
 export class JobsGateway {
-  // --- Jobs ---
   async listJobs(): Promise<Job[]> {
     return tauriInvoke<Job[]>('db_list_jobs');
   }
@@ -72,7 +54,6 @@ export class JobsGateway {
     return tauriInvoke<void>('db_delete_job', { id });
   }
 
-  // --- Score cache ---
   async scoreCacheGet(jobId: number, profileHash: string): Promise<ScoringCache | null> {
     return tauriInvoke<ScoringCache | null>('score_cache_get', { jobId, profileHash });
   }
@@ -101,49 +82,5 @@ export class JobsGateway {
     tokensOutput: number;
   }): Promise<ScoringCache> {
     return tauriInvoke<ScoringCache>('score_cache_save', { input });
-  }
-
-  // --- Applications ---
-  async listApplications(): Promise<Application[]> {
-    return tauriInvoke<Application[]>('db_list_applications');
-  }
-
-  async listPipelineCards(): Promise<PipelineCard[]> {
-    return tauriInvoke<PipelineCard[]>('db_pipeline_cards');
-  }
-
-  /** Raw per-application signals + follow-up timestamps for the Analytics
-   *  screen; all aggregation happens client-side via `computeAnalytics`. */
-  async getAnalyticsFacts(): Promise<AnalyticsFacts> {
-    return tauriInvoke<AnalyticsFacts>('db_analytics_facts');
-  }
-
-  async upsertApplication(
-    application: Partial<Application> & Pick<Application, 'jobId' | 'status'>,
-  ): Promise<Application> {
-    return tauriInvoke<Application>('db_upsert_application', { application });
-  }
-
-  async setApplicationStatus(id: number, status: ApplicationStatus): Promise<Application> {
-    return tauriInvoke<Application>('db_set_application_status', { id, status });
-  }
-
-  /** Job Tracker inline edit - patches only contact/next-action/salary/notes. */
-  async updateApplicationTrackerFields(input: ApplicationTrackerFieldsInput): Promise<Application> {
-    return tauriInvoke<Application>('db_update_application_tracker_fields', { input });
-  }
-
-  /** Pipeline quick-view priority flag - distinct from the legitimacy tier. */
-  async setApplicationPriority(applicationId: number, priority: Priority): Promise<Application> {
-    return tauriInvoke<Application>('set_application_priority', { applicationId, priority });
-  }
-
-  async addApplicationComment(applicationId: number, commentText: string): Promise<Comment> {
-    return tauriInvoke<Comment>('add_application_comment', { applicationId, commentText });
-  }
-
-  /** Oldest → newest, for the quick-view comment feed. */
-  async listApplicationComments(applicationId: number): Promise<Comment[]> {
-    return tauriInvoke<Comment[]>('list_application_comments', { applicationId });
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { JobsGateway } from '@applye/data';
+import { ApplicationsGateway } from '@applye/data';
 
 export type LockableDocumentKind = 'cv' | 'cover_letter';
 
@@ -17,12 +17,12 @@ export type LockableDocumentKind = 'cv' | 'cover_letter';
  */
 @Injectable()
 export class DocumentApplicationLockService {
-  private readonly jobs = inject(JobsGateway);
+  private readonly applications = inject(ApplicationsGateway);
 
   readonly locked = signal(false);
 
   async check(kind: LockableDocumentKind, documentId: number): Promise<void> {
-    const apps = await this.jobs.listApplications();
+    const apps = await this.applications.listApplications();
     const linked = apps.find((a) =>
       kind === 'cv' ? a.cvDocumentId === documentId : a.coverLetterDocumentId === documentId,
     );

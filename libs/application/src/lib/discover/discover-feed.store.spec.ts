@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { DiscoverFeedItem } from '@applye/core';
-import { DiscoverGateway, DocumentsGateway, JobsGateway } from '@applye/data';
+import { DiscoverGateway, DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { DiscoverFeedStore, FEED_PAGE } from './discover-feed.store';
 
 function item(): DiscoverFeedItem {
@@ -38,6 +38,7 @@ function createStore(over: Partial<Db> = {}): { store: DiscoverFeedStore; db: Db
       // One stub object, two tokens: the store reads the feed through
       // `DiscoverGateway` and saves an application through `JobsGateway`.
       { provide: JobsGateway, useValue: db },
+      { provide: ApplicationsGateway, useValue: db },
       { provide: DocumentsGateway, useValue: db },
       { provide: DiscoverGateway, useValue: db },
     ],

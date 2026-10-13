@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { AnalyticsApplication, AnalyticsFacts } from '@applye/core';
-import { AiService, DocumentsGateway, JobsGateway } from '@applye/data';
+import { AiService, DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../core/toast/toast.service';
 import { AnalyticsComponent } from './analytics.component';
@@ -84,6 +84,7 @@ describe('AnalyticsComponent', () => {
       imports: [AnalyticsComponent],
       providers: [
         { provide: JobsGateway, useValue: docsStub },
+        { provide: ApplicationsGateway, useValue: docsStub },
         { provide: DocumentsGateway, useValue: docsStub },
         { provide: AiService, useValue: {} },
         TranslateService,
@@ -110,6 +111,10 @@ describe('AnalyticsComponent', () => {
         providers: [
           {
             provide: JobsGateway,
+            useValue: { getAnalyticsFacts: () => new Promise(() => undefined) },
+          },
+          {
+            provide: ApplicationsGateway,
             useValue: { getAnalyticsFacts: () => new Promise(() => undefined) },
           },
           { provide: AiService, useValue: {} },

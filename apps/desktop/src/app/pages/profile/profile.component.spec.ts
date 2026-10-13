@@ -4,8 +4,10 @@ import {
   AiService,
   DocumentsGateway,
   JobsGateway,
-  ProfileSettingsGateway,
   SystemGateway,
+  ProfileGateway,
+  SettingsGateway,
+  ApplicationsGateway,
 } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
@@ -16,7 +18,7 @@ import { ProfileComponent } from './profile.component';
 function createFixture(): ComponentFixture<ProfileComponent> {
   TestBed.resetTestingModule();
   // One stub object, several tokens - `SystemGateway` serves the shared
-  // operations and `ProfileSettingsGateway` the profile row.
+  // operations and `ProfileGateway` the profile row.
   const dbStub = {
     getProfile: jest.fn().mockResolvedValue(null),
     getSettings: jest
@@ -28,8 +30,10 @@ function createFixture(): ComponentFixture<ProfileComponent> {
   TestBed.configureTestingModule({
     imports: [ProfileComponent],
     providers: [
-      { provide: ProfileSettingsGateway, useValue: dbStub },
+      { provide: ProfileGateway, useValue: dbStub },
+      { provide: SettingsGateway, useValue: dbStub },
       { provide: JobsGateway, useValue: dbStub },
+      { provide: ApplicationsGateway, useValue: dbStub },
       { provide: DocumentsGateway, useValue: dbStub },
       { provide: SystemGateway, useValue: dbStub },
       {

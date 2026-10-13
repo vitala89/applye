@@ -3584,6 +3584,34 @@ not import `@tauri-apps/api/core` and it does not name the command. ESLint rejec
 everywhere in the desktop app except the adapter, and a desktop test reads the production files
 back to keep a dynamic import from slipping past the rule.
 
+## Amendment sixty-nine: reactive state leaves `libs/data`
+
+Amendment thirty-six recorded that the job overview rows stayed in `libs/data`. That paragraph
+stands. `JobsStore` was the shared cache, and a second copy would have been able to disagree with
+the first. Architecture Stabilization PR 3 does not add a second store. It moves that one store.
+
+The boundary this amendment adds is:
+
+```text
+libs/application    reactive application state and use-case orchestration
+libs/data           stateless Tauri IPC gateways
+```
+
+SQLite, through those gateways, stays the source of truth. `JobsStore` still loads once, reloads
+when forced, patches a row locally, and drops a row after a confirmed delete. It now lives at
+`libs/application/src/lib/jobs/jobs.store.ts` and is exported from `@applye/application`.
+`libs/data` does not export it.
+
+`cache-signal.guard.spec.ts` keeps the old uninitialized-cache check and also rejects a new store
+file or signal-backed state anywhere under `libs/data`. Gateways remain `@Injectable`. The guard
+ignores a comment that merely contains the word `signal`.
+
+The same pull request splits mixed gateways by caller ownership. `JobsGateway` keeps jobs and
+scoring. `ApplicationsGateway` takes application lifecycle, pipeline cards, priority, comments, and
+analytics facts. `TrackerGateway` takes the tracker-only field write. `ProfileGateway` and
+`SettingsGateway` replace `ProfileSettingsGateway`. `resetAllData` stays with settings. No schema,
+migration, or Rust command name changes.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

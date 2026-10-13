@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CoverLetterStyleStore } from '@applye/application';
-import { DocumentsGateway, JobsGateway } from '@applye/data';
+import { DocumentsGateway, JobsGateway, ApplicationsGateway } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card.component';
 
@@ -17,6 +17,7 @@ describe('CoverLetterStyleCardComponent', () => {
       providers: [
         CoverLetterStyleStore,
         { provide: JobsGateway, useValue: dbStub },
+        { provide: ApplicationsGateway, useValue: dbStub },
         { provide: DocumentsGateway, useValue: dbStub },
       ],
     }).compileComponents();

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { Application, CvTemplate, DocumentLibraryItem, Job } from '@applye/core';
-import { DocumentsGateway, JobsGateway } from '@applye/data';
+import { ApplicationsGateway, DocumentsGateway, JobsGateway } from '@applye/data';
 
 /**
  * The CV library: the documents, the templates every creation flow picks from,
@@ -22,7 +22,8 @@ import { DocumentsGateway, JobsGateway } from '@applye/data';
  */
 @Injectable()
 export class CvListStore {
-  private readonly db = inject(JobsGateway);
+  private readonly jobs = inject(JobsGateway);
+  private readonly applicationsGateway = inject(ApplicationsGateway);
   private readonly docs = inject(DocumentsGateway);
 
   readonly cvs = signal<DocumentLibraryItem[]>([]);
@@ -49,8 +50,8 @@ export class CvListStore {
       const [cvs, templates, jobs, applications] = await Promise.all([
         this.docs.documentLibraryList('cv'),
         this.docs.cvTemplatesList(),
-        this.db.listJobs(),
-        this.db.listApplications(),
+        this.jobs.listJobs(),
+        this.applicationsGateway.listApplications(),
       ]);
       this.cvs.set(cvs);
       this.templates.set(templates);

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { JobOverview } from '@applye/core';
-import { JobsStore } from '@applye/data';
+import { JobsStore } from './jobs.store';
 import { isRowVisible, rowStatus } from './job-overview-rows';
 
 export type SortKey =
@@ -10,9 +10,9 @@ export type SortKey =
  * The My Jobs table: what is being searched, filtered and sorted, and which row
  * is waiting on a delete confirmation.
  *
- * The rows themselves are `JobsStore`'s, in `libs/data` - it is the shared
- * cache two screens read, and duplicating it here would be a second copy that
- * could disagree with the first. This store holds only what is true of *this*
+ * The rows themselves are `JobsStore`'s. It is the shared cache two screens
+ * read, and duplicating it here would be a second copy that could disagree
+ * with the first. SQLite stays the source of truth. This store holds only what is true of *this*
  * screen.
  *
  * Sorting and filtering run client-side over the loaded overview: the table is

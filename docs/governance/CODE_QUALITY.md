@@ -257,6 +257,17 @@ enforces the one shape that is banned - a null-initialized cache signal filled b
 migration: the guard was written when `db.service.ts` was the only file it needed to cover, and the
 `.service.ts` glob silently stopped matching as each domain moved out.
 
+Architecture Stabilization PR 3 tightened the same rule. `JobsStore` moved to `libs/application`.
+`libs/data` no longer exports it. The guard now fails if production code under `libs/data` adds a
+`stores/` directory, a `*.store.ts` file, or a `signal` / `computed` import or call. A comment that
+mentions the word does not count, and `@Injectable` gateways stay legal. The historical
+`ProfileSettingsGateway` class is gone: profile reads and the photo are `ProfileGateway`, settings
+reads, writes, and `resetAllData` are `SettingsGateway`. `resetAllData` stays there because the
+Settings Danger Zone is the only caller, not because the command is narrow. `JobsGateway` is jobs
+and scoring. `ApplicationsGateway` is application tracking, including `getAnalyticsFacts`.
+`TrackerGateway` owns `updateApplicationTrackerFields`. Application status stays on
+`ApplicationsGateway` even when the tracker screen changes it.
+
 **The order is by files touched, not by method count** - the two are almost uncorrelated, and the
 point of going smallest-first is a reviewable diff. Measured: discover 11 files · interview 14 ·
 tracker 14 · system 39 · jobs 54 · documents 56 · **profile and settings 68**, on seven methods.

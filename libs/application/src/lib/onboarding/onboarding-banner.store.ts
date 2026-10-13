@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { ProfileSettingsGateway } from '@applye/data';
+import { ProfileGateway, SettingsGateway } from '@applye/data';
 import { shouldShowOnboardingBanner } from './onboarding-gate.util';
 
 /**
@@ -18,7 +18,8 @@ import { shouldShowOnboardingBanner } from './onboarding-gate.util';
  */
 @Injectable()
 export class OnboardingBannerStore {
-  private readonly db = inject(ProfileSettingsGateway);
+  private readonly profileGateway = inject(ProfileGateway);
+  private readonly settingsGateway = inject(SettingsGateway);
 
   readonly visible = signal(false);
 
@@ -30,7 +31,10 @@ export class OnboardingBannerStore {
    */
   async load(): Promise<void> {
     try {
-      const [settings, profile] = await Promise.all([this.db.getSettings(), this.db.getProfile()]);
+      const [settings, profile] = await Promise.all([
+        this.settingsGateway.getSettings(),
+        this.profileGateway.getProfile(),
+      ]);
       this.visible.set(shouldShowOnboardingBanner(settings, profile));
     } catch {
       this.visible.set(false);

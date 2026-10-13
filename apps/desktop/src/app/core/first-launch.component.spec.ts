@@ -40,7 +40,7 @@ describe('FirstLaunchComponent', () => {
       dismissFails ? Promise.reject(new Error('disk full')) : Promise.resolve(),
     );
     // One stub object, several tokens - `SystemGateway` serves the shared
-    // operations and `ProfileGateway` the settings row. The migration is
+    // operations and `SettingsGateway` the settings row. The migration is
     // finished, so every token here names a domain gateway.
     const dbStub = {
       updateSettings,

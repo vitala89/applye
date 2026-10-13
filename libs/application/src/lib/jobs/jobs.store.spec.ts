@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { JobOverview } from '@applye/core';
-import { JobsGateway, ApplicationsGateway } from '@applye/data';
+import { JobsGateway } from '@applye/data';
 import { JobsStore } from './jobs.store';
 
 /**
@@ -25,10 +25,7 @@ describe('JobsStore', () => {
       deleteJob: jest.fn().mockResolvedValue(undefined),
     };
     TestBed.configureTestingModule({
-      providers: [
-        { provide: JobsGateway, useValue: db },
-        { provide: ApplicationsGateway, useValue: db },
-      ],
+      providers: [{ provide: JobsGateway, useValue: db }],
     });
     store = TestBed.inject(JobsStore);
   });

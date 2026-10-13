@@ -40,7 +40,7 @@ function createStore(rows: TrackerRow[] = [], customColumns: TrackerCustomColumn
       TrackerReportStore,
       // One stub object, several tokens. The subject itself only needs the
       // tracker gateway, but it injects `TrackerRowsStore`, which reads
-      // `getSettings` through `ProfileGateway` and `deleteJob` through
+      // `getSettings` through `SettingsGateway` and `deleteJob` through
       // `JobsGateway` - a spec provides for the dependency graph, not for the
       // subject alone.
       { provide: ProfileGateway, useValue: db },

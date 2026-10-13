@@ -57,9 +57,10 @@ describe('TrackerComponent grid', () => {
     navigate = jest.fn();
     updateFields = jest.fn().mockResolvedValue(undefined);
     TestBed.resetTestingModule();
-    // One stub object, several tokens: the grid's rows and archiving come from
-    // `TrackerGateway`, `deleteJob` and the status write from `JobsGateway`, and
-    // the settings row from `ProfileGateway`.
+    // One stub object, several tokens: `TrackerGateway` serves tracker rows,
+    // archive, and tracker field writes; `JobsGateway` serves `deleteJob`;
+    // `ApplicationsGateway` serves application status; `SettingsGateway` serves
+    // the settings row.
     const dbStub = {
       trackerRows: jest.fn().mockResolvedValue(rows),
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en' }),

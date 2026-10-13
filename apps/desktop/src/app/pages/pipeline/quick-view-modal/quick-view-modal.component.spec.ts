@@ -45,8 +45,8 @@ async function createFixture(
 ): Promise<ComponentFixture<QuickViewModalComponent>> {
   navigate.mockClear();
   TestBed.resetTestingModule();
-  // One stub, two tokens: the interview stages come from `InterviewGateway`
-  // and the applications, their status and their comments from `JobsGateway`.
+  // One stub, several tokens: interview stages come from `InterviewGateway`,
+  // and application status and comments come from `ApplicationsGateway`.
   const dbStub = {
     listInterviewStages: stagesRejectWith
       ? jest.fn().mockRejectedValue(stagesRejectWith)

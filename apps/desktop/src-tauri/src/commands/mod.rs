@@ -1,6 +1,9 @@
-// Tauri command handlers - each module maps to a frontend invoke() call.
-// All DB commands are async and receive the shared Db pool via Tauri State.
-// All SQL lives here in Rust; the Angular frontend only calls typed invoke()s.
+// Tauri IPC adapters. Each module maps to a frontend invoke() call.
+// A command receives Tauri State and serialized arguments, then delegates.
+// Workflow, domain rules, and SQL live in the feature modules next to this
+// one (`applications`, `documents`, `interview`, `tracklist_import`, and the
+// modules that later slices will extract). The Angular frontend only calls
+// typed invoke()s.
 
 pub mod analytics;
 pub mod applications;

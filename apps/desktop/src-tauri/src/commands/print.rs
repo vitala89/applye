@@ -54,9 +54,7 @@ pub async fn cv_document_export_pdf_wysiwyg(
     #[cfg(not(target_os = "macos"))]
     {
         let _ = (&app, &ready); // silence unused warnings on the fallback path
-        let bytes =
-            crate::commands::documents_export::cv_document_export_bytes_core(id, "pdf", &db.pool)
-                .await?;
+        let bytes = crate::documents::export_cv_bytes(id, "pdf", &db.pool).await?;
         std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
         // So the open/reveal buttons can reach a file the user asked us to put
         // outside the app's own folder. See `commands::exported_paths`.
@@ -87,10 +85,7 @@ pub async fn cover_letter_document_export_pdf_wysiwyg(
     #[cfg(not(target_os = "macos"))]
     {
         let _ = (&app, &ready); // silence unused warnings on the fallback path
-        let bytes = crate::commands::documents_export::cover_letter_document_export_bytes_core(
-            id, "pdf", &db.pool,
-        )
-        .await?;
+        let bytes = crate::documents::export_cover_letter_bytes(id, "pdf", &db.pool).await?;
         std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
         // So the open/reveal buttons can reach a file the user asked us to put
         // outside the app's own folder. See `commands::exported_paths`.
@@ -282,7 +277,7 @@ async fn export_pdf_wysiwyg_core(
     {
         // Page geometry from the document's style - the print box the preview
         // laid itself out for.
-        let doc = crate::commands::documents::document_library_get_core(id, &db.pool)
+        let doc = crate::documents::get(id, &db.pool)
             .await?
             .ok_or_else(|| "document_export: document not found".to_string())?;
         let page_settings: crate::commands::documents_style::PageSettings = doc

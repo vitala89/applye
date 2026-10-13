@@ -115,6 +115,10 @@ language a review step opens in, stay in the jobs feature.
   adapter calls the existing guarded Rust commands. `libs/application` calls neither.
   A page calls the adapter and does not name a Tauri command. ADR-0005, amendment
   sixty-eight.
+- `commands/` is the Tauri IPC adapter. Applications, Documents, Interview, and Tracklist
+  Import keep workflow, pure rules, and SQL in `applications`, `documents`, `interview`, and
+  `tracklist_import`. Other command modules still mix those responsibilities until
+  Architecture Stabilization PR 5. A full diagram pass is PR 8.
 - **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
   generated documents, and the AI result cache.
 - Document export **ships as PDF**, rendered from the same HTML the preview shows. A DOCX renderer

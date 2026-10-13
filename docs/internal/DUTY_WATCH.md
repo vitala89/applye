@@ -44,6 +44,30 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-14, thin Rust command boundary part A
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/thin-rust-command-boundaries-a`
+- **Commits:** this change
+- **Pull request:** opened from this branch, not merged
+- **Objective:** Architecture Stabilization PR 4. Make the Applications, Documents, Interview, and Tracklist Import Tauri commands thin IPC adapters.
+- **Completed:**
+  - PR 3 is merged as #584 at `6a6fdcb5`. Local `main` matches `origin/main`. No other architecture pull request was open.
+  - `commands/applications.rs`, `commands/documents.rs`, `commands/interview.rs`, and `commands/import.rs` delegate. SQL for those domains lives in the feature modules. Application status changes, including an interview-stage rejection, go through `applications::set_status` in one transaction.
+  - Interview initial status and rejection propagation, application priority, and tracklist status normalization have focused tests below Tauri.
+  - Document draft list/get/commit/delete behavior, the template repair tests, and the CV/photo parser guards moved with the code that owns them. Export and print load a library document through `documents::get`.
+  - Command names in `lib.rs` and the serialized argument names are unchanged. No migration or schema change. No TypeScript gateway change.
+- **Not completed:** The pull request was not merged. PR 5 was not started. No dormant command was deleted. No manual Tauri walkthrough.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/{applications,documents,interview,tracklist_import}` and the matching command adapters, plus the stabilization docs.
+- **Validation:** From `apps/desktop/src-tauri`: `cargo fmt --check` passed, `cargo test --lib` passed (408 passed, 0 failed, 1 ignored), `cargo clippy --offline -- -D warnings` passed, `cargo check --offline` passed. `npm run quality:file-size` passed (`print.rs` 355/400, down from 360). `npm run quality:attribution` passed. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files). `npm run format:check` passed. `git diff --check` passed. `nx test data --skip-nx-cache` passed (82 tests). `nx run data:type-check --skip-nx-cache` passed. `npm run quality:file-size:all` reported no new over-budget file.
+- **Privacy/security impact:** Imported tracklists and CV files stay local. XLS/XLSX, DOCX, and PDF parsing still goes through `catch_parser_panic`. No new network call, telemetry, or log of file contents. Export still records only the path the user chose.
+- **Decisions and assumptions:** Documents has no `domain.rs` because its load-bearing rules are SQL statements, not a separate pure function. `documents_blocks` and `documents_style` stay under `commands/` so this slice does not become the Tailoring rewrite. The export command still writes the chosen path because `ExportedPaths` is Tauri state. Tracklist and CV readers call `commands::untrusted::catch_parser_panic`, which is the shared parser guard, not another feature's workflow.
+- **Risks or compatibility impact:** Effective Rust source for the four command files moved from 344, 271, 273, and 271 lines to 58, 48, 45, and 24. Export byte generation still calls Tailoring and the block/style helpers. That dependency is the PR 5 seam.
+- **Open issues or blockers:** none for this pull request.
+- **Next first action:** After this pull request merges, start Architecture Stabilization PR 5: Thin Rust command boundary, part B (job identity, Discover parsing/filtering, Tailoring, job paste, scoring). Do not start it before the merge, and do not merge this pull request from the agent session.
+- **Evidence:** `rg` finds no `#[tauri::command]`, no `tauri::State`, and no `commands::applications` under the four feature modules. The targeted command adapters contain no SQL. `lib.rs` still registers the same command paths.
+
 ### 2026-10-13, state and gateway ownership
 
 - **Status:** complete

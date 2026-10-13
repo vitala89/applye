@@ -1,9 +1,13 @@
 mod ai;
+mod applications;
 mod commands;
 mod database_backup;
 mod db;
+mod documents;
+mod interview;
 mod keys;
 mod startup;
+mod tracklist_import;
 
 use tauri::Manager;
 

@@ -44,6 +44,21 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-14, parser guard and document helpers leave commands
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/thin-rust-command-boundaries-a`
+- **Pull request:** [#585](https://github.com/vitala89/applye/pull/585), not merged
+- **Objective:** Stop the Documents and Tracklist Import features from using `commands/` as a utility layer, without starting the Tailoring rewrite.
+- **Completed:** `catch_parser_panic` lives in `src/untrusted.rs`. CV and cover-letter block conversion lives in `documents/blocks.rs`. Style types and the pure style/theme checks live in `documents/style.rs`. `check_style_safety` and `validate_theme` stay registered on `commands::documents_style` and only delegate. Tailoring and print import those types from `documents::style`.
+- **Not completed:** Export and block conversion still call the Tailoring renderers under `commands/`. That is the PR 5 seam. #585 is not merged. PR 5 was not started.
+- **Files or packages changed:** `untrusted.rs`, `documents/blocks.rs`, `documents/style.rs`, the thin `commands/documents_style.rs`, Tailoring and print imports, and the open-PR docs. Those docs name PR #585 and the branch, and do not pin a head SHA.
+- **Validation:** `cargo fmt --check` passed. `cargo test --lib` passed (408 passed, 0 failed, 1 ignored). `cargo clippy --offline -- -D warnings` passed. `cargo check --offline` passed. `npm run quality:file-size`, `quality:attribution`, `quality:application-boundaries`, `format:check`, and `git diff --check` passed. `quality:file-size:all` reported no new over-budget file.
+- **Privacy/security impact:** Parser panic behavior is unchanged. The guard moved; its tests moved with it.
+- **Decisions and assumptions:** `StyledBlock` stays in Tailoring. Moving it would start PR 5.
+- **Next first action:** After #585 merges, start Architecture Stabilization PR 5: Thin Rust command boundary, part B. Do not merge #585 from the agent session.
+
 ### 2026-10-14, thin Rust command boundary part A
 
 - **Status:** complete

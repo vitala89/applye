@@ -8,6 +8,7 @@ mod interview;
 mod keys;
 mod startup;
 mod tracklist_import;
+mod untrusted;
 
 use tauri::Manager;
 

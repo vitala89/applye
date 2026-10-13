@@ -3,7 +3,7 @@
 
 use serde::Serialize;
 
-use crate::commands::untrusted::catch_parser_panic;
+use crate::untrusted::catch_parser_panic;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

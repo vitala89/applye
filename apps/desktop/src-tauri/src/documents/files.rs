@@ -4,8 +4,8 @@
 use base64::Engine as _;
 use serde::Serialize;
 
-use crate::commands::untrusted::catch_parser_panic;
 use crate::db::stable_hash;
+use crate::untrusted::catch_parser_panic;
 
 /// Extracted plain text from an uploaded CV file, ready for the `cv-import`
 /// skill. `input_hash` lets the caller skip a repeat AI call for a file

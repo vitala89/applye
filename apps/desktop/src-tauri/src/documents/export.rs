@@ -6,10 +6,10 @@
 //! This is the library export, distinct from the job-specific `generated_docs`
 //! journal. It never touches `applications.cv_path`.
 
+use super::blocks::{cover_letter_content_to_blocks, cv_content_to_blocks};
 use super::files::data_uri_to_bytes;
 use super::persistence::{self, DocumentLibraryItem};
-use crate::commands::documents_blocks::{cover_letter_content_to_blocks, cv_content_to_blocks};
-use crate::commands::documents_style::{CvStyle, PhotoPlacement};
+use super::style::{CvStyle, PhotoPlacement};
 
 /// Effective export style - mirrors the TS load-time merge
 /// `{ ...CV_STYLE_DEFAULT, ...themeStyleSeed(theme), ...styleJson }`: the theme

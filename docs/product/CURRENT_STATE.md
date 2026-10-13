@@ -2,8 +2,7 @@
 
 **As of 2026-10-14.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
 Stabilization PR 3 merged as #584 at `6a6fdcb5`. PR 4, thin Rust command boundary part A, is open as
-[#585](https://github.com/vitala89/applye/pull/585) on `refactor/thin-rust-command-boundaries-a`
-(`16a6d448`).
+[#585](https://github.com/vitala89/applye/pull/585) on `refactor/thin-rust-command-boundaries-a`.
 
 ## Active product direction
 
@@ -32,7 +31,9 @@ Stabilization PR 1 removed platform effects from `libs/application` (`915e8072`)
 `6a6fdcb5`: `JobsStore` lives in `libs/application`, and gateway ownership is split across jobs and
 scoring, application tracking, tracker field edits, profile, and settings. SQLite stays the source
 of truth. PR 4 makes the Applications, Documents, Interview, and Tracklist Import Rust commands thin
-IPC adapters. After this pull request merges, the next step is **Architecture Stabilization PR 5:
+IPC adapters. Document style rules, block conversion, and the untrusted-parser guard live outside
+`commands/`. Export still calls the Tailoring renderers that remain under `commands/` until PR 5.
+After this pull request merges, the next step is **Architecture Stabilization PR 5:
 Thin Rust command boundary, part B.** Do not start Career Evidence, PR 5, or the file-size campaign
 in this pull request.
 

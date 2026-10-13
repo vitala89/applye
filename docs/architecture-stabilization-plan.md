@@ -219,7 +219,8 @@ No component may gain a gateway dependency while this migration runs.
 
 ### PR 4 - Thin Rust command boundary, part A: high-value domains
 
-**Status:** this pull request, branch `refactor/thin-rust-command-boundaries-a`. Applications,
+**Status:** open as [#585](https://github.com/vitala89/applye/pull/585) on
+`refactor/thin-rust-command-boundaries-a` (`16a6d448`). Applications,
 Documents, Interview, and Tracklist Import command modules are IPC adapters. Workflow, the pure
 rules that exist, and SQL live in `applications`, `documents`, `interview`, and `tracklist_import`.
 Interview rejection reuses `applications::set_status`. Export byte generation still calls the

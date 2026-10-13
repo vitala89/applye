@@ -1,8 +1,9 @@
 # Current Operational State
 
 **As of 2026-10-14.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
-Stabilization PR 3 merged as #584 at `6a6fdcb5`. PR 4, thin Rust command boundary part A, is this
-pull request on `refactor/thin-rust-command-boundaries-a`.
+Stabilization PR 3 merged as #584 at `6a6fdcb5`. PR 4, thin Rust command boundary part A, is open as
+[#585](https://github.com/vitala89/applye/pull/585) on `refactor/thin-rust-command-boundaries-a`
+(`16a6d448`).
 
 ## Active product direction
 

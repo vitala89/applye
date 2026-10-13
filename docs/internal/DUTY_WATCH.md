@@ -49,8 +49,8 @@ Before a watch can be marked complete:
 - **Status:** complete
 - **Agent/tool:** Cursor
 - **Branch:** `refactor/thin-rust-command-boundaries-a`
-- **Commits:** this change
-- **Pull request:** opened from this branch, not merged
+- **Commits:** `16a6d448`, plus the docs commit that records pull request #585
+- **Pull request:** [#585](https://github.com/vitala89/applye/pull/585), not merged
 - **Objective:** Architecture Stabilization PR 4. Make the Applications, Documents, Interview, and Tracklist Import Tauri commands thin IPC adapters.
 - **Completed:**
   - PR 3 is merged as #584 at `6a6fdcb5`. Local `main` matches `origin/main`. No other architecture pull request was open.

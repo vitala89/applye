@@ -9,23 +9,23 @@
 // section, and the font-embedding pass that makes a Lato CV render as Lato in
 // Word instead of silently substituting.
 
-use super::tailoring::*;
-use super::tailoring_fonts::{FONT_LATO_B, FONT_LATO_R, FONT_OPENSANS_B, FONT_OPENSANS_R};
-use super::tailoring_markdown::{md_to_blocks, parse_inline_runs};
-use super::tailoring_page::{resolve_page, PageConfig};
-use crate::documents::style::CvStyle;
+use super::blocks::*;
+use super::fonts::{FONT_LATO_B, FONT_LATO_R, FONT_OPENSANS_B, FONT_OPENSANS_R};
+use super::markdown::{md_to_blocks, parse_inline_runs};
+use super::page::{resolve_page, PageConfig};
+use crate::tailoring::style::CvStyle;
 
 /// Tailored-CV journal export (markdown in, document-wide default style).
 pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    let page = resolve_page(&crate::documents::style::PageSettings::default());
+    let page = resolve_page(&crate::tailoring::style::PageSettings::default());
     // Journal exports have no section tags; a photo (when present) sits at the
     // top of the document - AboveCenter mirrors that top placement.
     render_blocks_docx(
         &resolved,
         photo,
-        crate::documents::style::PhotoPlacement::AboveCenter,
+        crate::tailoring::style::PhotoPlacement::AboveCenter,
         &page,
     )
 }
@@ -358,10 +358,10 @@ fn embed_fonts_in_docx(docx: Vec<u8>, faces: &[EmbedFace]) -> Result<Vec<u8>, St
 pub(crate) fn render_blocks_docx(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
-    placement: crate::documents::style::PhotoPlacement,
+    placement: crate::tailoring::style::PhotoPlacement,
     page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
-    use crate::documents::style::PhotoPlacement;
+    use crate::tailoring::style::PhotoPlacement;
     use docx_rs::*;
 
     // Page size + margins. docx-rs takes twips (1 mm ≈ 56.6929 twips / DXA).
@@ -445,10 +445,10 @@ pub(crate) fn render_blocks_docx(
 
 #[cfg(test)]
 mod tests {
-    use super::super::tailoring::tests::sb;
+    use super::super::blocks::tests::sb;
     use super::*;
-    use crate::commands::tailoring_theme::builtin_theme;
-    use crate::documents::style::{CvStyle, PhotoPlacement};
+    use crate::tailoring::style::{CvStyle, PhotoPlacement};
+    use crate::tailoring::theme::builtin_theme;
 
     #[test]
     fn docx_embeds_lato_face_when_used() {
@@ -467,7 +467,7 @@ mod tests {
                 sb(BlockLevel::Body, Some("summary"), "Hello world", false),
             ],
         );
-        let page = resolve_page(&crate::documents::style::PageSettings::default());
+        let page = resolve_page(&crate::tailoring::style::PageSettings::default());
         let bytes =
             render_blocks_docx(&blocks, None, PhotoPlacement::AboveCenter, &page).expect("docx");
 
@@ -515,7 +515,7 @@ mod tests {
             &theme,
             &[sb(BlockLevel::Body, Some("summary"), "Hi", false)],
         );
-        let page = resolve_page(&crate::documents::style::PageSettings::default());
+        let page = resolve_page(&crate::tailoring::style::PageSettings::default());
         let bytes =
             render_blocks_docx(&blocks, None, PhotoPlacement::AboveCenter, &page).expect("docx");
         let mut zip = zip::ZipArchive::new(std::io::Cursor::new(&bytes)).expect("zip");
@@ -526,7 +526,7 @@ mod tests {
 
     #[test]
     fn docx_photo_center_and_side_placements_render() {
-        let style = crate::documents::style::CvStyle::default();
+        let style = crate::tailoring::style::CvStyle::default();
         let blocks = vec![
             StyledBlock {
                 level: BlockLevel::H1,
@@ -548,7 +548,7 @@ mod tests {
             },
         ];
         let resolved = resolve_blocks(&style, &blocks, false);
-        let page = resolve_page(&crate::documents::style::PageSettings::default());
+        let page = resolve_page(&crate::tailoring::style::PageSettings::default());
         let photo: &[u8] = include_bytes!("../../test-assets/1x1.png"); // tiny valid PNG
 
         // All three placements produce a non-empty valid .docx byte stream.

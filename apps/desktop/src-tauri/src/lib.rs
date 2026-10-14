@@ -3,12 +3,18 @@ mod applications;
 mod commands;
 mod database_backup;
 mod db;
+mod discover;
 mod documents;
+mod exported_paths;
 mod interview;
+mod jobs;
 mod keys;
 mod startup;
+mod tailoring;
 mod tracklist_import;
 mod untrusted;
+mod url_parts;
+mod web_text;
 
 use tauri::Manager;
 
@@ -87,7 +93,7 @@ pub fn run() {
             app.manage(db);
             // Handshake channels for the silent WYSIWYG print windows.
             app.manage(commands::print::PrintReady::default());
-            app.manage(commands::exported_paths::ExportedPaths::default());
+            app.manage(exported_paths::ExportedPaths::default());
 
             Ok(())
         })
@@ -172,8 +178,8 @@ pub fn run() {
             commands::discover_sources::db_apply_market_source_plan,
             commands::discover_sources::db_add_source,
             commands::discover_sources::db_remove_source,
-            commands::tailoring_journal::open_file,
-            commands::tailoring_journal::reveal_in_folder,
+            commands::shell::open_file,
+            commands::shell::reveal_in_folder,
             commands::database_backup::backup_database,
             commands::database_backup::prepare_database_restore,
             commands::database_backup::take_database_restore_notice,

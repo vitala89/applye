@@ -9,22 +9,22 @@
 // command layer. Everything here turns content already in hand into bytes,
 // which is why the wrapper and the placement can be asserted in tests.
 
-use crate::documents::style::CvStyle;
+use crate::tailoring::style::CvStyle;
 
-use super::tailoring::{resolve_blocks, BlockLevel, RenderBlock};
-use super::tailoring_fonts::*;
-use super::tailoring_markdown::md_to_blocks;
-use super::tailoring_page::{resolve_page, PageConfig};
+use super::blocks::{resolve_blocks, BlockLevel, RenderBlock};
+use super::fonts::*;
+use super::markdown::md_to_blocks;
+use super::page::{resolve_page, PageConfig};
 
 /// Tailored-CV journal export (markdown in, document-wide default style).
 pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    let page = resolve_page(&crate::documents::style::PageSettings::default());
+    let page = resolve_page(&crate::tailoring::style::PageSettings::default());
     render_blocks_pdf(
         &resolved,
         photo,
-        crate::documents::style::PhotoPlacement::default(),
+        crate::tailoring::style::PhotoPlacement::default(),
         &page,
     )
 }
@@ -202,10 +202,10 @@ pub(super) fn wrap_measured(
 pub(crate) fn render_blocks_pdf(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
-    placement: crate::documents::style::PhotoPlacement,
+    placement: crate::tailoring::style::PhotoPlacement,
     page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
-    use crate::documents::style::PhotoPlacement;
+    use crate::tailoring::style::PhotoPlacement;
     use printpdf::*;
 
     let (doc, page1, layer1) =

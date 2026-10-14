@@ -155,12 +155,7 @@ pub async fn duplicate_jd_other_company(
         return Ok(false);
     };
     let this_body = normalize_body(jd_text);
-
-    let rows: Vec<(String, Option<String>)> =
-        sqlx::query_as("SELECT jd_text, company FROM jobs WHERE jd_hash != ?")
-            .bind(jd_hash)
-            .fetch_all(pool)
-            .await?;
+    let rows = super::persistence::job_bodies_except_hash(pool, jd_hash).await?;
 
     Ok(rows.iter().any(|(other_text, other_company)| {
         let other_company = other_company

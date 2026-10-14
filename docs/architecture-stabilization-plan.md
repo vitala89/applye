@@ -219,14 +219,12 @@ No component may gain a gateway dependency while this migration runs.
 
 ### PR 4 - Thin Rust command boundary, part A: high-value domains
 
-**Status:** open as [#585](https://github.com/vitala89/applye/pull/585) on
-`refactor/thin-rust-command-boundaries-a`. Applications, Documents, Interview, and Tracklist Import
-command modules are IPC adapters. Workflow, the pure rules that exist, and SQL live in
-`applications`, `documents`, `interview`, and `tracklist_import`. Interview rejection reuses
-`applications::set_status`. Document block conversion, style rules, and the untrusted-parser guard
-live outside `commands/`. Export still calls the Tailoring renderers under `commands/` until PR 5.
-After this pull request merges, the next step is **PR 5: Thin Rust command boundary, part B.** Do
-not start PR 5 here.
+**Status:** merged as [#585](https://github.com/vitala89/applye/pull/585) at `2bb329c1`.
+Applications, Documents, Interview, and Tracklist Import command modules are IPC adapters.
+Workflow, the pure rules that exist, and SQL live in `applications`, `documents`, `interview`,
+and `tracklist_import`. Interview rejection reuses `applications::set_status`. Document block
+conversion, style rules, and the untrusted-parser guard live outside `commands/`. Tailoring
+renderers moved in PR 5.
 
 Refactor the command modules where IPC, domain rules, and persistence are visibly mixed. Start with:
 
@@ -252,6 +250,13 @@ Preserve command names and serialized contracts unless a separate migration deci
 changes them.
 
 ### PR 5 - Thin Rust command boundary, part B: parsing and workflow-heavy modules
+
+**Status:** open as [#586](https://github.com/vitala89/applye/pull/586) on
+`refactor/thin-rust-command-boundaries-b`. Jobs, Discover, and Tailoring
+implementation live outside `commands/`. Command names and serialized fields are unchanged.
+`generated_doc_get`, `export_docx`, and `export_pdf` stay registered for the PR 6 dormant-surface
+audit. After this pull request merges, the next step is **PR 6: Remove dormant runtime surface.**
+Do not start PR 6 here.
 
 Audit and extract responsibilities from:
 

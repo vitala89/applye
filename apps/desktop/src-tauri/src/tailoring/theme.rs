@@ -10,8 +10,8 @@
 // back to the `body` block first. The block list that reads the result stays in
 // `tailoring`.
 
-use super::tailoring::RuleSpec;
-use crate::documents::style::CvStyle;
+use super::blocks::RuleSpec;
+use crate::tailoring::style::CvStyle;
 
 pub(super) struct EffStyle {
     pub font_family: String,
@@ -159,7 +159,7 @@ pub(super) fn effective_cl(style: &CvStyle, key: Option<&str>) -> EffStyle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::documents::style::CvSectionStyle;
+    use crate::tailoring::style::CvSectionStyle;
     use std::collections::HashMap;
 
     fn section(

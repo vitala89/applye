@@ -7,7 +7,6 @@ mod blocks;
 mod export;
 mod files;
 mod persistence;
-pub(crate) mod style;
 
 pub(crate) use export::{export_cover_letter_bytes, export_cv_bytes};
 pub(crate) use files::{read_cv_file, read_cv_photo, CvImportFile};

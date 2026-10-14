@@ -12,6 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Rust commands for jobs, discover, and tailoring are thin adapters.** Identity, paste, scoring cache, Discover filters and parsers, and Tailoring renderers live beside the command layer. Command names and serialized fields are unchanged. No user-facing behavior was intended to change.
 - **Rust commands for applications, documents, interview, and tracklist import are thin adapters.** Workflow and SQL for those four domains live beside the command layer. Command names and serialized fields are unchanged. No user-facing behavior was intended to change.
 - **Application state and IPC gateways have separate owners.** `JobsStore` lives in the application layer. Data-layer gateways stay stateless: jobs and scoring, application tracking, tracker field edits, profile, and settings. No user-facing behavior was intended to change.
 - **Application feature dependencies are checked.** Feature folders inside `libs/application` can no longer form a cycle, and the generic `libs/core` `models` bucket can only shrink: a new file is rejected, and a legacy allowlist entry must leave with its file. Document region (`de`, `us`, `uk`, `generic`) is document-domain vocabulary in `libs/core`. No user-facing behavior was intended to change.

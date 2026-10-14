@@ -116,10 +116,12 @@ language a review step opens in, stay in the jobs feature.
   A page calls the adapter and does not name a Tauri command. ADR-0005, amendment
   sixty-eight.
 - Command entrypoints under `commands/` are Tauri IPC adapters. Applications, Documents,
-  Interview, and Tracklist Import keep workflow, pure rules, and SQL in `applications`,
-  `documents`, `interview`, and `tracklist_import`. The untrusted-parser guard lives in
-  `untrusted`. Legacy Tailoring renderer modules still sit under `commands/` until
-  Architecture Stabilization PR 5. A full diagram pass is PR 8.
+  Interview, Tracklist Import, Jobs, Discover, and Tailoring keep workflow, pure rules,
+  parsers, renderers, and SQL outside `commands/`. The untrusted-parser guard lives in
+  `untrusted`. Shared URL and HTML helpers live in `url_parts` and `web_text`. Exported-file
+  provenance lives in `exported_paths`. Open and Reveal stay native shell commands.
+  Documents export calls the Tailoring feature directly. The CV style contract lives in
+  `tailoring`, so Tailoring does not depend on Documents. A full diagram pass is PR 8.
 - **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
   generated documents, and the AI result cache.
 - Document export **ships as PDF**, rendered from the same HTML the preview shows. A DOCX renderer

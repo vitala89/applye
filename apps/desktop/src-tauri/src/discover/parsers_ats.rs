@@ -6,8 +6,8 @@
 //! readers take it as an argument and fall back to it when a posting does not
 //! name its own employer. Pure - already-fetched text or JSON in, `RawJob`s out.
 
-use super::discover_parsers::{html_to_text, json_str, RawJob};
-use super::web_text::xml_tag;
+use super::parsers::{html_to_text, json_str, RawJob};
+use crate::web_text::xml_tag;
 
 /// boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true:
 /// { jobs: [{ title, content, absolute_url, location: { name } }] }
@@ -154,5 +154,5 @@ pub(super) fn parse_personio_xml(xml: &str, slug: &str, company_fallback: &str) 
 // The readers' tests live in a sibling file, following `discover_parsers`: the
 // fixtures are longer than the readers they exercise.
 #[cfg(test)]
-#[path = "discover_parsers_ats_tests.rs"]
+#[path = "parsers_ats_tests.rs"]
 mod tests;

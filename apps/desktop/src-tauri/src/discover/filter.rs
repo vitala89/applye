@@ -6,8 +6,8 @@
 // AI, no network - so the rules that decide whether a job is silently dropped
 // stay directly unit-testable.
 
-use super::discover_geo::{loc_matches, region_countries, REMOTE_MARKERS};
-use super::discover_geo_countries::{country_tokens, KNOWN_COUNTRY_CODES};
+use super::geo::{loc_matches, region_countries, REMOTE_MARKERS};
+use super::geo_countries::{country_tokens, KNOWN_COUNTRY_CODES};
 
 pub(super) struct TitleFilter {
     pub(super) positive: Vec<String>,
@@ -253,10 +253,10 @@ mod tests {
     use super::*;
     // Only these two tests read a parser; a module-scope import would be dead in
     // a non-test build and fail clippy -D warnings.
-    use crate::commands::discover_parsers::parse_arbeitsagentur;
+    use crate::discover::parsers::parse_arbeitsagentur;
     // Only the tests read this one; importing it at module scope would be dead
     // in a non-test build and fail clippy -D warnings.
-    use crate::commands::discover_geo::KNOWN_LOCAL_MARKETS;
+    use crate::discover::geo::KNOWN_LOCAL_MARKETS;
 
     /// Every market must recognise its own largest tech city, and must not
     /// recognise another market's. This is the guard against a market being added

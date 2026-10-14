@@ -4,8 +4,8 @@
 
 use tauri::State;
 
-use crate::commands::exported_paths::ExportedPaths;
 use crate::db::Db;
+use crate::exported_paths::ExportedPaths;
 
 #[tauri::command]
 pub async fn cv_document_export(

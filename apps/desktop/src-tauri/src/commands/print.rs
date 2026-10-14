@@ -21,8 +21,8 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
-use super::exported_paths::ExportedPaths;
 use crate::db::Db;
+use crate::exported_paths::ExportedPaths;
 
 /// One-shot "the print route finished rendering" signals, keyed by the hidden
 /// window's label. The export command parks on the receiver; the frontend's
@@ -57,7 +57,7 @@ pub async fn cv_document_export_pdf_wysiwyg(
         let bytes = crate::documents::export_cv_bytes(id, "pdf", &db.pool).await?;
         std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
         // So the open/reveal buttons can reach a file the user asked us to put
-        // outside the app's own folder. See `commands::exported_paths`.
+        // outside the app's own folder. See `exported_paths`.
         exported.remember(std::path::Path::new(&save_path));
         Ok(save_path)
     }
@@ -88,7 +88,7 @@ pub async fn cover_letter_document_export_pdf_wysiwyg(
         let bytes = crate::documents::export_cover_letter_bytes(id, "pdf", &db.pool).await?;
         std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
         // So the open/reveal buttons can reach a file the user asked us to put
-        // outside the app's own folder. See `commands::exported_paths`.
+        // outside the app's own folder. See `exported_paths`.
         exported.remember(std::path::Path::new(&save_path));
         Ok(save_path)
     }
@@ -280,14 +280,14 @@ async fn export_pdf_wysiwyg_core(
         let doc = crate::documents::get(id, &db.pool)
             .await?
             .ok_or_else(|| "document_export: document not found".to_string())?;
-        let page_settings: crate::documents::style::PageSettings = doc
+        let page_settings: crate::tailoring::style::PageSettings = doc
             .style_json
             .as_deref()
             .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
             .and_then(|v| v.get("page").cloned())
             .and_then(|p| serde_json::from_value(p).ok())
             .unwrap_or_default();
-        let page = crate::commands::tailoring_page::resolve_page(&page_settings);
+        let page = crate::tailoring::page::resolve_page(&page_settings);
 
         // Unique label per export so parallel/repeated exports never collide.
         let label = format!(

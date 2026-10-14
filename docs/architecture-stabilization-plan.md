@@ -251,7 +251,8 @@ changes them.
 
 ### PR 5 - Thin Rust command boundary, part B: parsing and workflow-heavy modules
 
-**Status:** in progress on `refactor/thin-rust-command-boundaries-b`. Jobs, Discover, and Tailoring
+**Status:** open as [#586](https://github.com/vitala89/applye/pull/586) on
+`refactor/thin-rust-command-boundaries-b`. Jobs, Discover, and Tailoring
 implementation live outside `commands/`. Command names and serialized fields are unchanged.
 `generated_doc_get`, `export_docx`, and `export_pdf` stay registered for the PR 6 dormant-surface
 audit. After this pull request merges, the next step is **PR 6: Remove dormant runtime surface.**

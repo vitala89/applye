@@ -2,7 +2,8 @@
 
 **As of 2026-10-14.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
 Stabilization PR 4 merged as [#585](https://github.com/vitala89/applye/pull/585) at `2bb329c1`.
-PR 5, thin Rust command boundary part B, is on `refactor/thin-rust-command-boundaries-b`.
+PR 5, thin Rust command boundary part B, is open as
+[#586](https://github.com/vitala89/applye/pull/586) on `refactor/thin-rust-command-boundaries-b`.
 
 ## Active product direction
 

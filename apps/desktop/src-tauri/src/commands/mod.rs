@@ -1,6 +1,12 @@
-// Tauri command handlers - each module maps to a frontend invoke() call.
-// All DB commands are async and receive the shared Db pool via Tauri State.
-// All SQL lives here in Rust; the Angular frontend only calls typed invoke()s.
+// Command entrypoints are Tauri IPC adapters. A command receives Tauri State
+// and serialized arguments, then delegates. Workflow, domain rules, and SQL
+// for the extracted domains live in `applications`, `documents`, `interview`,
+// and `tracklist_import`.
+//
+// Some legacy renderer and parser helpers still sit in this directory,
+// especially the Tailoring modules. They are not IPC adapters. Architecture
+// Stabilization PR 5 finishes that move. The Angular frontend only calls
+// typed invoke()s.
 
 pub mod analytics;
 pub mod applications;
@@ -19,7 +25,6 @@ pub mod discover_parsers_ats;
 pub mod discover_parsers_nofluffjobs;
 pub mod discover_sources;
 pub mod documents;
-pub mod documents_blocks;
 pub mod documents_export;
 pub mod documents_import;
 pub mod documents_style;
@@ -48,6 +53,5 @@ pub mod tailoring_page;
 pub mod tailoring_pdf;
 pub mod tailoring_theme;
 pub mod tracker;
-pub mod untrusted;
 pub mod url_parts;
 pub mod web_text;

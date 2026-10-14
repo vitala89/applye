@@ -193,14 +193,12 @@ repository-wide rename-only churn.
 
 ### PR 3 - Correct state and gateway ownership
 
-**Status:** open as [#584](https://github.com/vitala89/applye/pull/584) on
-`refactor/state-and-gateway-ownership`. `JobsStore` now lives in
-`libs/application`. `libs/data` keeps stateless IPC gateways. `JobsGateway` is jobs and scoring.
-`ApplicationsGateway` is application tracking, including analytics facts. `TrackerGateway` owns the
-tracker-only field write. `ProfileGateway` and `SettingsGateway` replace `ProfileSettingsGateway`.
-`resetAllData` stays on `SettingsGateway` because the Settings Danger Zone is the use case. No
-`CareerGateway`. After this pull request merges, the next step is **PR 4: Thin Rust command
-boundary, part A.** Do not start PR 4 here.
+**Status:** merged as [#584](https://github.com/vitala89/applye/pull/584) at `6a6fdcb5`.
+`JobsStore` lives in `libs/application`. `libs/data` keeps stateless IPC gateways. `JobsGateway` is
+jobs and scoring. `ApplicationsGateway` is application tracking, including analytics facts.
+`TrackerGateway` owns the tracker-only field write. `ProfileGateway` and `SettingsGateway` replace
+`ProfileSettingsGateway`. `resetAllData` stays on `SettingsGateway` because the Settings Danger Zone
+is the use case. No `CareerGateway`. The next step is **PR 4: Thin Rust command boundary, part A.**
 
 Move the reactive `JobsStore` out of `libs/data` into `libs/application` without changing SQLite
 as source of truth.
@@ -220,6 +218,15 @@ own future gateway and must never be appended to this legacy gateway.
 No component may gain a gateway dependency while this migration runs.
 
 ### PR 4 - Thin Rust command boundary, part A: high-value domains
+
+**Status:** open as [#585](https://github.com/vitala89/applye/pull/585) on
+`refactor/thin-rust-command-boundaries-a`. Applications, Documents, Interview, and Tracklist Import
+command modules are IPC adapters. Workflow, the pure rules that exist, and SQL live in
+`applications`, `documents`, `interview`, and `tracklist_import`. Interview rejection reuses
+`applications::set_status`. Document block conversion, style rules, and the untrusted-parser guard
+live outside `commands/`. Export still calls the Tailoring renderers under `commands/` until PR 5.
+After this pull request merges, the next step is **PR 5: Thin Rust command boundary, part B.** Do
+not start PR 5 here.
 
 Refactor the command modules where IPC, domain rules, and persistence are visibly mixed. Start with:
 

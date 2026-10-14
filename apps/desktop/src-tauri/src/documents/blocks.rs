@@ -6,7 +6,7 @@
 // it from here, which is why the section headings and the block tagging can be
 // asserted without producing a file.
 
-pub(super) fn cv_content_to_blocks(
+pub(crate) fn cv_content_to_blocks(
     content_json: &str,
     lang: Option<&str>,
 ) -> Result<Vec<crate::commands::tailoring::StyledBlock>, String> {
@@ -249,7 +249,7 @@ pub(super) fn cv_content_to_blocks(
 /// Structured, block-tagged version of `cover_letter_content_to_markdown`. Body
 /// paragraphs are tagged `body_<i>` so per-paragraph style overrides resolve
 /// through the `body` block down to the document-wide style.
-pub(super) fn cover_letter_content_to_blocks(
+pub(crate) fn cover_letter_content_to_blocks(
     content_json: &str,
 ) -> Result<Vec<crate::commands::tailoring::StyledBlock>, String> {
     use crate::commands::tailoring::{BlockLevel, StyledBlock};

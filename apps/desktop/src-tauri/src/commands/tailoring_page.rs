@@ -8,13 +8,13 @@
 // an unknown size falls back to A4 and every margin is clamped, so a malformed
 // `style_json` degrades instead of breaking the export.
 
-use crate::commands::documents_style::PageSettings;
+use crate::documents::style::PageSettings;
 
 /// Concrete page geometry in millimetres, resolved from `PageSettings`.
 pub(crate) struct PageConfig {
     pub width_mm: f32,
     pub height_mm: f32,
-    pub margin: crate::commands::documents_style::PageMargins,
+    pub margin: crate::documents::style::PageMargins,
 }
 
 fn clamp_mm(v: f32) -> f32 {
@@ -24,7 +24,7 @@ fn clamp_mm(v: f32) -> f32 {
 /// Mirrors the TS `resolvePageSettings`. Accepts legacy presets and 4-side mm;
 /// unknown size falls back to A4 so a malformed `style_json` never breaks export.
 pub(crate) fn resolve_page(p: &PageSettings) -> PageConfig {
-    use crate::commands::documents_style::{MarginSpec, PageMargins};
+    use crate::documents::style::{MarginSpec, PageMargins};
     let (width_mm, height_mm) = match p.size.as_str() {
         "letter" => (215.9, 279.4),
         _ => (210.0, 297.0),
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn resolve_page_maps_presets_to_mm() {
-        use crate::commands::documents_style::{MarginSpec, PageSettings};
+        use crate::documents::style::{MarginSpec, PageSettings};
         let a4_normal = resolve_page(&PageSettings {
             size: "a4".into(),
             margin: MarginSpec::Preset("normal".into()),
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn resolve_page_maps_legacy_preset_and_four_side_mm() {
-        use crate::commands::documents_style::{MarginSpec, PageMargins, PageSettings};
+        use crate::documents::style::{MarginSpec, PageMargins, PageSettings};
         // legacy preset
         let legacy = PageSettings {
             size: "a4".into(),

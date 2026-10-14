@@ -11,7 +11,7 @@
 // `tailoring`.
 
 use super::tailoring::RuleSpec;
-use crate::commands::documents_style::CvStyle;
+use crate::documents::style::CvStyle;
 
 pub(super) struct EffStyle {
     pub font_family: String,
@@ -159,7 +159,7 @@ pub(super) fn effective_cl(style: &CvStyle, key: Option<&str>) -> EffStyle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::documents_style::CvSectionStyle;
+    use crate::documents::style::CvSectionStyle;
     use std::collections::HashMap;
 
     fn section(

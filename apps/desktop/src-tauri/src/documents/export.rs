@@ -3,8 +3,8 @@
 //! and remembering it for Open/Reveal stays in the Tauri command, because that
 //! step uses `ExportedPaths`.
 //!
-//! This is the library export, distinct from the job-specific `generated_docs`
-//! journal. It never touches `applications.cv_path`.
+//! This is the library export. Historical `generated_docs` rows are not this
+//! path and have no live command. It never touches `applications.cv_path`.
 
 use super::blocks::{cover_letter_content_to_blocks, cv_content_to_blocks};
 use super::files::data_uri_to_bytes;

@@ -23,10 +23,9 @@ pub fn open_file(
         .map_err(|e| format!("open_file: {e}"))?;
     // `cmd /C start` on Windows is the one launcher that re-parses its
     // arguments, so it is the only place a metacharacter in a filename could
-    // matter. Two things keep it safe: every name Applye writes goes through
-    // `readable_slug` (alphanumeric plus hyphen, nothing else survives), and
-    // the containment check above means no path from outside that folder ever
-    // reaches here. The empty `""` is `start`'s title argument - without it,
+    // matter. Open only receives a path that already passed containment or
+    // this-run export provenance (`resolve_openable`). The empty `""` is
+    // `start`'s title argument - without it,
     // `start` treats a quoted path as the window title and opens nothing.
     #[cfg(target_os = "windows")]
     std::process::Command::new("cmd")

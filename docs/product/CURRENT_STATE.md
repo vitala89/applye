@@ -1,9 +1,9 @@
 # Current Operational State
 
-**As of 2026-10-14.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
-Stabilization PR 4 merged as [#585](https://github.com/vitala89/applye/pull/585) at `2bb329c1`.
-PR 5, thin Rust command boundary part B, is open as
-[#586](https://github.com/vitala89/applye/pull/586) on `refactor/thin-rust-command-boundaries-b`.
+**As of 2026-10-15.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
+Stabilization PR 5 merged as [#586](https://github.com/vitala89/applye/pull/586) at `ee10d628`.
+PR 6, remove dormant runtime surface, is the current branch
+`refactor/remove-dormant-runtime-surface`.
 
 ## Active product direction
 
@@ -32,12 +32,15 @@ merged as [#577](https://github.com/vitala89/applye/pull/577) and left the produ
 `6a6fdcb5`: `JobsStore` lives in `libs/application`, and gateway ownership is split across jobs and
 scoring, application tracking, tracker field edits, profile, and settings. SQLite stays the source
 of truth. PR 4 merged as [#585](https://github.com/vitala89/applye/pull/585) at `2bb329c1` and made
-the Applications, Documents, Interview, and Tracklist Import Rust commands thin IPC adapters. PR 5
-moves Jobs, Discover, and Tailoring implementation out of `commands/`. The CV style
-contract lives in Tailoring, and Document export calls that feature with no reverse
-dependency. Open and Reveal stay native shell commands. After this pull request merges, the
-next step is **Architecture Stabilization PR 6: Remove dormant runtime surface.** Do not start
-Career Evidence, PR 6, or the file-size campaign in this pull request.
+the Applications, Documents, Interview, and Tracklist Import Rust commands thin IPC adapters. PR 5 merged as [#586](https://github.com/vitala89/applye/pull/586) at `ee10d628` and moved
+Jobs, Discover, and Tailoring implementation out of `commands/`. The CV style contract lives
+in Tailoring, and Document export calls that feature with no reverse dependency. Open and
+Reveal stay native shell commands. PR 6 removes the dormant journal commands
+`generated_doc_get`, `export_docx`, and `export_pdf`, and the unused `validate_theme` IPC
+endpoint. The `generated_docs` table, applied migrations, historical rows, and already
+written files stay. After this pull request merges, the next step is **Architecture
+Stabilization PR 7: Bring production source back under file-size budgets.** Do not start
+Career Evidence or the file-size campaign in this pull request.
 
 ## Implementation sequence
 

@@ -5,29 +5,13 @@
 // measurement, the line wrapper that measures rather than guesses, and the
 // renderer that lays blocks onto pages.
 //
-// It touches no database and no filesystem - `export_pdf` stays behind with the
-// command layer. Everything here turns content already in hand into bytes,
+// It touches no database and no filesystem. Library export calls
+// `render_blocks_pdf`. Everything here turns content already in hand into bytes,
 // which is why the wrapper and the placement can be asserted in tests.
 
-use crate::tailoring::style::CvStyle;
-
-use super::blocks::{resolve_blocks, BlockLevel, RenderBlock};
+use super::blocks::{BlockLevel, RenderBlock};
 use super::fonts::*;
-use super::markdown::md_to_blocks;
-use super::page::{resolve_page, PageConfig};
-
-/// Tailored-CV journal export (markdown in, document-wide default style).
-pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
-    let blocks = md_to_blocks(content_md);
-    let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    let page = resolve_page(&crate::tailoring::style::PageSettings::default());
-    render_blocks_pdf(
-        &resolved,
-        photo,
-        crate::tailoring::style::PhotoPlacement::default(),
-        &page,
-    )
-}
+use super::page::PageConfig;
 
 // ── Embedded CV fonts ───────────────────────────────────────────────────────
 // Metric-compatible, freely-redistributable clones of the proprietary ATS-safe

@@ -87,8 +87,8 @@ The October 2026 architecture audit found the following concrete debt:
    domain-owned folders rather than adding more unrelated models there.
 7. several Rust files under `commands/` contain domain/parsing/persistence responsibilities in
    addition to IPC wiring.
-8. dormant legacy Rust endpoints remain from superseded document/tailoring paths and require a
-   caller audit before removal.
+8. dormant legacy Rust endpoints from superseded document/tailoring paths. PR 6 audited them
+   and removed the ones with no caller. The `generated_docs` table stayed.
 9. the file-size ratchet still reports legacy oversized production files. Known examples include the
    Jobs page and the Cover Letter editor template; the complete list must come from
    `npm run quality:file-size -- --all` at the start of the size-remediation phase.
@@ -251,12 +251,10 @@ changes them.
 
 ### PR 5 - Thin Rust command boundary, part B: parsing and workflow-heavy modules
 
-**Status:** open as [#586](https://github.com/vitala89/applye/pull/586) on
-`refactor/thin-rust-command-boundaries-b`. Jobs, Discover, and Tailoring
-implementation live outside `commands/`. Command names and serialized fields are unchanged.
-`generated_doc_get`, `export_docx`, and `export_pdf` stay registered for the PR 6 dormant-surface
-audit. After this pull request merges, the next step is **PR 6: Remove dormant runtime surface.**
-Do not start PR 6 here.
+**Status:** merged as [#586](https://github.com/vitala89/applye/pull/586) at `ee10d628`.
+Jobs, Discover, and Tailoring implementation live outside `commands/`. Command names and
+serialized fields were unchanged in that pull request. `generated_doc_get`, `export_docx`,
+and `export_pdf` stayed registered for the PR 6 dormant-surface audit.
 
 Audit and extract responsibilities from:
 
@@ -270,6 +268,14 @@ Pure deterministic rules should be testable without Tauri state or a live databa
 focused persistence seams. Provider/filesystem effects remain explicit.
 
 ### PR 6 - Remove dormant runtime surface
+
+**Status:** current, on `refactor/remove-dormant-runtime-surface`. The registered commands
+`generated_doc_get`, `export_docx`, `export_pdf`, and the `validate_theme` IPC endpoint had no
+production caller and are removed. `tailoring::style::validate_theme` stays as the future theme
+trust boundary. The `generated_docs` table, applied migrations, historical rows, and files
+already written under app data stay. Job deletion still cleans historical `generated_docs`
+rows. After this pull request merges, the next step is **PR 7: Bring production source back
+under file-size budgets.** Do not start PR 7 here.
 
 Repo-wide audit every candidate before deletion. Known candidates include superseded generated-document
 and legacy export endpoints from the older tailoring/document path.

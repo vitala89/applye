@@ -121,7 +121,11 @@ language a review step opens in, stay in the jobs feature.
   `untrusted`. Shared URL and HTML helpers live in `url_parts` and `web_text`. Exported-file
   provenance lives in `exported_paths`. Open and Reveal stay native shell commands.
   Documents export calls the Tailoring feature directly. The CV style contract lives in
-  `tailoring`, so Tailoring does not depend on Documents. A full diagram pass is PR 8.
+  `tailoring`, so Tailoring does not depend on Documents. The dormant journal commands
+  `generated_doc_get`, `export_docx`, and `export_pdf` are not registered. The
+  `generated_docs` table remains for older databases, and job deletion still removes
+  those rows. `validate_theme` is a pure Tailoring rule and is not an IPC command.
+  A full diagram pass is PR 8.
 - **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
   generated documents, and the AI result cache.
 - Document export **ships as PDF**, rendered from the same HTML the preview shows. A DOCX renderer

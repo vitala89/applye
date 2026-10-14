@@ -11,24 +11,8 @@
 
 use super::blocks::*;
 use super::fonts::{FONT_LATO_B, FONT_LATO_R, FONT_OPENSANS_B, FONT_OPENSANS_R};
-use super::markdown::{md_to_blocks, parse_inline_runs};
-use super::page::{resolve_page, PageConfig};
-use crate::tailoring::style::CvStyle;
-
-/// Tailored-CV journal export (markdown in, document-wide default style).
-pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
-    let blocks = md_to_blocks(content_md);
-    let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    let page = resolve_page(&crate::tailoring::style::PageSettings::default());
-    // Journal exports have no section tags; a photo (when present) sits at the
-    // top of the document - AboveCenter mirrors that top placement.
-    render_blocks_docx(
-        &resolved,
-        photo,
-        crate::tailoring::style::PhotoPlacement::AboveCenter,
-        &page,
-    )
-}
+use super::markdown::parse_inline_runs;
+use super::page::PageConfig;
 
 /// Builds a styled DOCX paragraph from a `RenderBlock`. Single source of the
 /// per-block run styling + vertical rhythm, reused by the main body flow, the
@@ -61,9 +45,9 @@ fn block_paragraph(b: &RenderBlock, content_tw: i32) -> docx_rs::Paragraph {
     };
     let (before, after) = match b.level {
         // The name sits flush at the top like the editor's `.cvpreview__name
-        // { margin: 0 }`; H2/H3 keep air above to separate sections.
+        // { margin: 0 }`; H2 keeps air above to separate sections.
         BlockLevel::H1 => (0, (b.size_pt * 3.0).round() as u32),
-        BlockLevel::H2 | BlockLevel::H3 => (
+        BlockLevel::H2 => (
             (b.size_pt * 9.0).round() as u32,
             (b.size_pt * 3.0).round() as u32,
         ),
@@ -447,6 +431,7 @@ pub(crate) fn render_blocks_docx(
 mod tests {
     use super::super::blocks::tests::sb;
     use super::*;
+    use crate::tailoring::page::resolve_page;
     use crate::tailoring::style::{CvStyle, PhotoPlacement};
     use crate::tailoring::theme::builtin_theme;
 

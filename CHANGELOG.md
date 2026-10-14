@@ -12,6 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Dormant tailoring-journal export endpoints are no longer registered.** `generated_doc_get`, `export_docx`, and `export_pdf` had no application caller. The unused `validate_theme` IPC command is gone; the pure validator remains. The `generated_docs` table, applied migrations, historical rows, and files already written under app data are unchanged. Job deletion still removes historical `generated_docs` rows.
 - **Rust commands for jobs, discover, and tailoring are thin adapters.** Identity, paste, scoring cache, Discover filters and parsers, and Tailoring renderers live beside the command layer. Command names and serialized fields are unchanged. No user-facing behavior was intended to change.
 - **Rust commands for applications, documents, interview, and tracklist import are thin adapters.** Workflow and SQL for those four domains live beside the command layer. Command names and serialized fields are unchanged. No user-facing behavior was intended to change.
 - **Application state and IPC gateways have separate owners.** `JobsStore` lives in the application layer. Data-layer gateways stay stateless: jobs and scoring, application tracking, tracker field edits, profile, and settings. No user-facing behavior was intended to change.

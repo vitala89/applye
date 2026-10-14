@@ -1,54 +1,5 @@
-// The markdown reader: tailored-CV markdown in, an untagged block list out.
-// Split out of `tailoring.rs`, which was 956 lines against an 800 budget and
-// held this next to the resolver that styles an already-built block list.
-//
-// This is the journal export path, which has no per-section style: every block
-// it produces carries no section key, so the resolver gives them all the
-// document-wide style. Inline `**bold**` spans are read here too, because the
-// same text splitting serves both renderers.
-
-use super::blocks::{BlockLevel, StyledBlock};
-
-/// Parses already-rendered markdown (the tailored-CV journal path, which has no
-/// per-section style) into blocks tagged with no section key - they resolve to
-/// the document-wide style. A `**wrapped**` line becomes bold body text.
-pub(crate) fn md_to_blocks(content_md: &str) -> Vec<StyledBlock> {
-    let mk = |level, text: &str, bold| StyledBlock {
-        level,
-        section_key: None,
-        text: text.to_string(),
-        bold,
-    };
-    content_md
-        .lines()
-        .filter_map(|line| {
-            if let Some(t) = line.strip_prefix("# ") {
-                Some(mk(BlockLevel::H1, t, false))
-            } else if let Some(t) = line.strip_prefix("## ") {
-                Some(mk(BlockLevel::H2, t, false))
-            } else if let Some(t) = line.strip_prefix("### ") {
-                Some(mk(BlockLevel::H3, t, false))
-            } else if let Some(t) = line.strip_prefix("- ").or_else(|| line.strip_prefix("* ")) {
-                Some(mk(BlockLevel::Bullet, t, false))
-            } else if line.trim().is_empty() {
-                None
-            } else {
-                let (text, bold) = strip_bold_wrap(line);
-                Some(mk(BlockLevel::Body, text, bold))
-            }
-        })
-        .collect()
-}
-
-/// Strips a single `**…**` wrap, reporting whether it was bold.
-fn strip_bold_wrap(line: &str) -> (&str, bool) {
-    let t = line.trim();
-    if t.len() >= 4 && t.starts_with("**") && t.ends_with("**") {
-        (t[2..t.len() - 2].trim(), true)
-    } else {
-        (line, false)
-    }
-}
+// Inline `**bold**` spans for the live DOCX renderer. The journal markdown
+// reader left with the dormant generated-document export commands.
 
 #[derive(Debug, Clone)]
 pub(crate) struct InlineRun {
@@ -143,25 +94,5 @@ mod tests {
         let block_bold = true;
         let merged: Vec<bool> = runs.iter().map(|r| block_bold || r.bold).collect();
         assert_eq!(merged, vec![true, true, true]);
-    }
-
-    #[test]
-    fn md_to_blocks_maps_prefixes_and_strips_bold() {
-        let md =
-            "# Name\n\n## Summary\n\n**Fully Bold**\n**Lead Dev**, Acme\n- did a thing\nplain line";
-        let blocks = md_to_blocks(md);
-        assert_eq!(blocks.len(), 6); // blank lines dropped
-        assert_eq!(blocks[0].level, BlockLevel::H1);
-        assert_eq!(blocks[1].level, BlockLevel::H2);
-        // Fully wrapped `**…**` → bold body, wrap stripped.
-        assert_eq!(blocks[2].level, BlockLevel::Body);
-        assert!(blocks[2].bold);
-        assert_eq!(blocks[2].text, "Fully Bold");
-        // Partial wrap (does not end in `**`) → left literal, not bold.
-        assert!(!blocks[3].bold);
-        assert_eq!(blocks[3].text, "**Lead Dev**, Acme");
-        assert_eq!(blocks[4].level, BlockLevel::Bullet);
-        assert_eq!(blocks[5].level, BlockLevel::Body);
-        assert!(!blocks[5].bold);
     }
 }

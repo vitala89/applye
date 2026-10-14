@@ -34,16 +34,6 @@ export const LANGUAGE_NATIVE_NAMES: Record<SupportedLanguage, string> = {
   uk: 'Українська',
 };
 
-export interface GeneratedDoc {
-  id: number;
-  jobId: number;
-  docType: DocType;
-  exportFormat: ExportFormat;
-  inputHash: string;
-  filePath: string;
-  createdAt: string;
-}
-
 export interface TailoringCache {
   id: number;
   jobId: number;

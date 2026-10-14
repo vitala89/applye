@@ -9,8 +9,8 @@
 pub(crate) fn cv_content_to_blocks(
     content_json: &str,
     lang: Option<&str>,
-) -> Result<Vec<crate::commands::tailoring::StyledBlock>, String> {
-    use crate::commands::tailoring::{BlockLevel, StyledBlock};
+) -> Result<Vec<crate::tailoring::StyledBlock>, String> {
+    use crate::tailoring::{BlockLevel, StyledBlock};
 
     let parsed: serde_json::Value = serde_json::from_str(content_json)
         .map_err(|e| format!("cv_content_to_blocks: invalid content_json: {e}"))?;
@@ -251,8 +251,8 @@ pub(crate) fn cv_content_to_blocks(
 /// through the `body` block down to the document-wide style.
 pub(crate) fn cover_letter_content_to_blocks(
     content_json: &str,
-) -> Result<Vec<crate::commands::tailoring::StyledBlock>, String> {
-    use crate::commands::tailoring::{BlockLevel, StyledBlock};
+) -> Result<Vec<crate::tailoring::StyledBlock>, String> {
+    use crate::tailoring::{BlockLevel, StyledBlock};
 
     let parsed: serde_json::Value = serde_json::from_str(content_json)
         .map_err(|e| format!("cover_letter_content_to_blocks: invalid json: {e}"))?;
@@ -327,7 +327,7 @@ mod tests {
 
     #[test]
     fn cv_content_to_blocks_orders_sections_tags_keys_and_hides_invisible() {
-        use crate::commands::tailoring::BlockLevel;
+        use crate::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"summary","order":1,"visible":true,"text":"Backend engineer."},
             {"key":"personal_details","order":0,"visible":true,"fullName":"Jane Doe","email":"jane@example.com"},
@@ -361,7 +361,7 @@ mod tests {
 
     #[test]
     fn cv_content_to_blocks_splits_experience_into_accent_head_and_role() {
-        use crate::commands::tailoring::BlockLevel;
+        use crate::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"experience","order":0,"visible":true,"entries":[
                 {"company":"Acme","industry":"SaaS","role":"Engineer","location":"Berlin","startDate":"2020","endDate":"2023","bullets":["Shipped"]}
@@ -387,7 +387,7 @@ mod tests {
 
     #[test]
     fn cv_content_to_blocks_localizes_section_headings_for_german() {
-        use crate::commands::tailoring::BlockLevel;
+        use crate::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"summary","order":0,"visible":true,"text":"Backend."},
             {"key":"experience","order":1,"visible":true,"entries":[{"company":"Acme","role":"Dev","startDate":"2020","endDate":"2023","bullets":["x"]}]}
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn cv_content_to_blocks_renders_grouped_skills_when_items_absent() {
-        use crate::commands::tailoring::BlockLevel;
+        use crate::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"skills","order":0,"visible":true,"groups":[
                 {"label":"Languages","values":["TypeScript","Angular"]}

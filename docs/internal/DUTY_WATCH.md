@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-14, thin Rust command boundary part B
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/thin-rust-command-boundaries-b`
+- **Pull request:** opened from this branch; number recorded in the follow-up docs commit
+- **Objective:** Architecture Stabilization PR 5. Move Jobs, Discover, and Tailoring implementation out of `commands/` without changing IPC contracts or product behavior.
+- **Completed:**
+  - PR 4 is merged as #585 at `2bb329c1`. Local `main` matched `origin/main`. No competing architecture pull request was open.
+  - Jobs persistence, identity, provenance, paste, legitimacy, scoring cache, archetype matching, and legal URL fetch live in `jobs`. Discover scan, filters, parsers, fetch, and source management live in `discover`. Tailoring blocks, theme, markdown, page, DOCX, PDF, fonts, cache, generated-doc rows, and legacy export files live in `tailoring`.
+  - `commands/jobs.rs`, `job_paste.rs`, `job_identity_source.rs`, `scoring.rs`, `archetypes.rs`, `job_url.rs`, `discover.rs`, `discover_sources.rs`, and `tailoring_journal.rs` only delegate. Open and Reveal are `commands/shell.rs`. `exported_paths`, `web_text`, and `url_parts` left `commands/`.
+  - Documents export calls `tailoring` directly. The PR 4 `documents -> commands::tailoring*` seam is gone.
+  - Command names in `lib.rs` and the serialized argument names are unchanged. No migration or schema change. No TypeScript production change. No dormant command was deleted.
+- **Not completed:** The pull request was not merged. PR 6 was not started. No manual Tauri walkthrough.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/{jobs,discover,tailoring}` and the matching command adapters, plus `exported_paths`, `web_text`, `url_parts`, and the stabilization docs.
+- **Validation:** From `apps/desktop/src-tauri`: `cargo fmt --all -- --check` passed, `cargo test --lib --offline` passed (409 passed, 0 failed, 1 ignored), `cargo clippy --lib --offline -- -D warnings` passed, `cargo check --offline` passed. `npm run quality:attribution` passed. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files). `npm run format:check` passed. `git diff --check` passed. `nx test data --skip-nx-cache` passed (82 tests). `nx run data:type-check --skip-nx-cache` passed. `quality:file-size` runs in the pre-commit hook on the staged diff. `quality:file-size:all` reported the moved modules still near budget and none over it. No Windows native run.
+- **Privacy/security impact:** Legal URL allowlist, 30-second fetch timeout, and parser shape checks are unchanged. Exported-file canonicalization, symlink containment, the extension allowlist, and in-memory provenance moved with their tests. No new network call, telemetry, or career-content log.
+- **Decisions and assumptions:** Discover keeps its own `INSERT OR IGNORE` for scanned jobs because that write must not update a user-owned row. Tailoring still reads `documents::style` types, so documents and tailoring refer to each other; the style contract stays in documents. ATS, profile, tracker, analytics, portal answers, follow-up drafts, health, and settings were not part of this slice. `generated_doc_get`, `export_docx`, and `export_pdf` stay registered for the PR 6 audit.
+- **Next first action:** After this pull request merges, start Architecture Stabilization PR 6: Remove dormant runtime surface. Do not merge this pull request from the agent session. Do not start Career Evidence.
+- **Evidence:** `cargo test --lib --offline` 409 passed, 0 failed, 1 ignored.
+
 ### 2026-10-14, parser guard and document helpers leave commands
 
 - **Status:** complete

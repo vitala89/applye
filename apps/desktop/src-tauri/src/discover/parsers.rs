@@ -13,8 +13,8 @@
 // server. `RawJob` is defined here because this is where every one of them is
 // built.
 
-use super::discover_geo::{location_signal, REMOTE_MARKERS};
-use super::web_text::{strip_html, xml_tag};
+use super::geo::{location_signal, REMOTE_MARKERS};
+use crate::web_text::{strip_html, xml_tag};
 
 /// One job as it comes out of a source feed, before filtering.
 #[derive(Debug, Clone)]
@@ -402,5 +402,5 @@ pub(super) fn parse_arbeitnow(val: &serde_json::Value) -> Vec<RawJob> {
 // budget this module is under, and a fixture-heavy test body is exactly the
 // kind of bulk that budget exists to keep out of the code being read.
 #[cfg(test)]
-#[path = "discover_parsers_tests.rs"]
+#[path = "parsers_tests.rs"]
 mod tests;

@@ -19,7 +19,7 @@ use super::style::{CvStyle, PhotoPlacement};
 /// wrong-font bug), so this reads the raw JSON and overlays only present keys.
 fn resolve_export_style(
     style_json: Option<&str>,
-    theme: &crate::commands::tailoring_theme::CvTheme,
+    theme: &crate::tailoring::theme::CvTheme,
 ) -> CvStyle {
     let v: Option<serde_json::Value> = style_json.and_then(|s| serde_json::from_str(s).ok());
     let field = |k: &str| v.as_ref().and_then(|o| o.get(k));
@@ -70,7 +70,7 @@ pub(crate) async fn export_cv_bytes(
     // The user's style choices live in `style_json`, over the selected theme's
     // seed - resolved together so the export matches the live preview's
     // effective style. Read before moving `content_json` out of `doc`.
-    let theme = crate::commands::tailoring_theme::builtin_theme(doc.theme_id);
+    let theme = crate::tailoring::theme::builtin_theme(doc.theme_id);
     let style = resolve_export_style(doc.style_json.as_deref(), &theme);
     // Section headings follow the document's language, like the preview.
     let lang = doc.language.clone();
@@ -129,17 +129,17 @@ pub(crate) async fn export_cv_bytes(
     match format {
         "docx" | "pdf" => {
             let blocks = cv_content_to_blocks(&content_json, lang.as_deref())?;
-            let resolved = crate::commands::tailoring::resolve_cv_blocks(&style, &theme, &blocks);
-            let page = crate::commands::tailoring_page::resolve_page(&style.page);
+            let resolved = crate::tailoring::resolve_cv_blocks(&style, &theme, &blocks);
+            let page = crate::tailoring::page::resolve_page(&style.page);
             if format == "docx" {
-                crate::commands::tailoring_docx::render_blocks_docx(
+                crate::tailoring::docx::render_blocks_docx(
                     &resolved,
                     photo_bytes.as_deref(),
                     placement,
                     &page,
                 )
             } else {
-                crate::commands::tailoring::render_blocks_pdf(
+                crate::tailoring::render_blocks_pdf(
                     &resolved,
                     photo_bytes.as_deref(),
                     placement,
@@ -168,17 +168,17 @@ pub(crate) async fn export_cover_letter_bytes(
     match format {
         "docx" | "pdf" => {
             let blocks = cover_letter_content_to_blocks(&content_json)?;
-            let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, true);
-            let page = crate::commands::tailoring_page::resolve_page(&style.page);
+            let resolved = crate::tailoring::resolve_blocks(&style, &blocks, true);
+            let page = crate::tailoring::page::resolve_page(&style.page);
             if format == "docx" {
-                crate::commands::tailoring_docx::render_blocks_docx(
+                crate::tailoring::docx::render_blocks_docx(
                     &resolved,
                     None,
                     PhotoPlacement::default(),
                     &page,
                 )
             } else {
-                crate::commands::tailoring::render_blocks_pdf(
+                crate::tailoring::render_blocks_pdf(
                     &resolved,
                     None,
                     PhotoPlacement::default(),
@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn resolve_export_style_seeds_from_theme_then_overrides() {
-        use crate::commands::tailoring_theme::builtin_theme;
+        use crate::tailoring::theme::builtin_theme;
         let aurora = builtin_theme(Some(2));
         // No style_json → pure theme seed (Lato 10pt, accent green) - the
         // wrong-font regression guard.

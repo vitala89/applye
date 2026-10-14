@@ -2,7 +2,7 @@
 // carries, and the deterministic checks that judge them. Split out of
 // `documents`, which owns the library rows themselves - nothing here reads
 // the database or the filesystem, and nothing here renders. The renderers in
-// `commands::tailoring` consume these types; `documents` resolves them out of
+// `tailoring` consumes these types; `documents` resolves them out of
 // a row's `style_json` at export time.
 
 use serde::{Deserialize, Serialize};

@@ -21,8 +21,8 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
-use super::exported_paths::ExportedPaths;
 use crate::db::Db;
+use crate::exported_paths::ExportedPaths;
 
 /// One-shot "the print route finished rendering" signals, keyed by the hidden
 /// window's label. The export command parks on the receiver; the frontend's
@@ -287,7 +287,7 @@ async fn export_pdf_wysiwyg_core(
             .and_then(|v| v.get("page").cloned())
             .and_then(|p| serde_json::from_value(p).ok())
             .unwrap_or_default();
-        let page = crate::commands::tailoring_page::resolve_page(&page_settings);
+        let page = crate::tailoring::page::resolve_page(&page_settings);
 
         // Unique label per export so parallel/repeated exports never collide.
         let label = format!(

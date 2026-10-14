@@ -7,7 +7,7 @@
 // document-wide style. Inline `**bold**` spans are read here too, because the
 // same text splitting serves both renderers.
 
-use super::tailoring::{BlockLevel, StyledBlock};
+use super::blocks::{BlockLevel, StyledBlock};
 
 /// Parses already-rendered markdown (the tailored-CV journal path, which has no
 /// per-section style) into blocks tagged with no section key - they resolve to

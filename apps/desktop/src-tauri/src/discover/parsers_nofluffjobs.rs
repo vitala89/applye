@@ -6,7 +6,7 @@
 //! why the detail reader and the salary formatter live here rather than beside
 //! the single-request feeds. Pure: fetched JSON in, text out.
 
-use super::discover_parsers::{html_to_text, json_str, RawJob};
+use super::parsers::{html_to_text, json_str, RawJob};
 
 /// nofluffjobs.com/api/joboffers/main - shape read tolerantly (root array or
 /// `{ postings: [...] }`, several observed field spellings for company/city)
@@ -190,5 +190,5 @@ pub(super) fn nofluffjobs_salary_line(val: &serde_json::Value) -> Option<String>
 }
 
 #[cfg(test)]
-#[path = "discover_parsers_nofluffjobs_tests.rs"]
+#[path = "parsers_nofluffjobs_tests.rs"]
 mod tests;

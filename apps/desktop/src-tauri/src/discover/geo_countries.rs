@@ -326,7 +326,7 @@ mod tests {
     /// pickable - their tokens exist only to recognise somewhere else.
     #[test]
     fn known_country_codes_covers_every_market_and_the_unpickable_neighbours() {
-        for market in crate::commands::discover_geo::KNOWN_LOCAL_MARKETS {
+        for market in crate::discover::geo::KNOWN_LOCAL_MARKETS {
             assert!(
                 KNOWN_COUNTRY_CODES.contains(market),
                 "{market} is a pickable market with no country code entry"

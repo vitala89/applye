@@ -10,7 +10,7 @@
 // back to the `body` block first. The block list that reads the result stays in
 // `tailoring`.
 
-use super::tailoring::RuleSpec;
+use super::blocks::RuleSpec;
 use crate::documents::style::CvStyle;
 
 pub(super) struct EffStyle {

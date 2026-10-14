@@ -9,10 +9,10 @@
 // section, and the font-embedding pass that makes a Lato CV render as Lato in
 // Word instead of silently substituting.
 
-use super::tailoring::*;
-use super::tailoring_fonts::{FONT_LATO_B, FONT_LATO_R, FONT_OPENSANS_B, FONT_OPENSANS_R};
-use super::tailoring_markdown::{md_to_blocks, parse_inline_runs};
-use super::tailoring_page::{resolve_page, PageConfig};
+use super::blocks::*;
+use super::fonts::{FONT_LATO_B, FONT_LATO_R, FONT_OPENSANS_B, FONT_OPENSANS_R};
+use super::markdown::{md_to_blocks, parse_inline_runs};
+use super::page::{resolve_page, PageConfig};
 use crate::documents::style::CvStyle;
 
 /// Tailored-CV journal export (markdown in, document-wide default style).
@@ -445,10 +445,10 @@ pub(crate) fn render_blocks_docx(
 
 #[cfg(test)]
 mod tests {
-    use super::super::tailoring::tests::sb;
+    use super::super::blocks::tests::sb;
     use super::*;
-    use crate::commands::tailoring_theme::builtin_theme;
     use crate::documents::style::{CvStyle, PhotoPlacement};
+    use crate::tailoring::theme::builtin_theme;
 
     #[test]
     fn docx_embeds_lato_face_when_used() {

@@ -1,11 +1,11 @@
 // The shared export model: one structured block list that both exporters render
 // from, plus the theme and style cascade they both read.
 //
-// Nothing here touches the database, the filesystem or the shell - that half is
-// `tailoring_journal`. The renderers are `tailoring_docx` and `tailoring_pdf`,
-// and they stay separate from this module so neither format owns the model.
+// Nothing here touches the database, the filesystem or the shell. Cache and
+// legacy export files live beside this module. The renderers are `docx` and
+// `pdf`, and they stay separate so neither format owns the model.
 
-pub(crate) use super::tailoring_pdf::render_blocks_pdf;
+pub(crate) use super::pdf::render_blocks_pdf;
 
 // ── Shared export styling ─────────────────────────────────────────────────────
 //
@@ -20,7 +20,7 @@ pub(crate) use super::tailoring_pdf::render_blocks_pdf;
 // user font (Calibri, Lato, …) is mapped to the nearest base family in PDF
 // (sans→Helvetica, serif→Times, mono→Courier). DOCX carries the real font name.
 
-use super::tailoring_theme::{effective_cl, effective_cv, hex_to_rgb, CvTheme};
+use super::theme::{effective_cl, effective_cv, hex_to_rgb, CvTheme};
 use crate::documents::style::CvStyle;
 
 /// Logical role of a block - drives relative size scale and spacing so both
@@ -289,14 +289,14 @@ pub(crate) mod tests {
     // The PDF renderer moved to its own module; its tests moved with it except
     // these, which measure text against the embedded faces the DOCX side also
     // uses.
-    use crate::commands::tailoring_docx::render_blocks_docx;
-    use crate::commands::tailoring_fonts::FONT_CARLITO_R;
-    use crate::commands::tailoring_page::resolve_page;
-    use crate::commands::tailoring_pdf::{
+    use crate::documents::style::{CvStyle, PhotoPlacement};
+    use crate::tailoring::docx::render_blocks_docx;
+    use crate::tailoring::fonts::FONT_CARLITO_R;
+    use crate::tailoring::page::resolve_page;
+    use crate::tailoring::pdf::{
         pdf_font_bytes, pick_pdf_family, text_width_pt, wrap_measured, PdfFamily, EMBEDDED_FACES,
     };
-    use crate::commands::tailoring_theme::builtin_theme;
-    use crate::documents::style::{CvStyle, PhotoPlacement};
+    use crate::tailoring::theme::builtin_theme;
 
     pub(crate) fn sb(level: BlockLevel, key: Option<&str>, text: &str, bold: bool) -> StyledBlock {
         StyledBlock {

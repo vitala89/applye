@@ -1,12 +1,14 @@
-// Command entrypoints are Tauri IPC adapters. A command receives Tauri State
-// and serialized arguments, then delegates. Workflow, domain rules, and SQL
-// for the extracted domains live in `applications`, `documents`, `interview`,
-// and `tracklist_import`.
+// Command entrypoints are Tauri IPC adapters. A command receives Tauri State,
+// an AppHandle, or serialized arguments, then delegates.
 //
-// Some legacy renderer and parser helpers still sit in this directory,
-// especially the Tailoring modules. They are not IPC adapters. Architecture
-// Stabilization PR 5 finishes that move. The Angular frontend only calls
-// typed invoke()s.
+// Jobs, Discover, and Tailoring keep their rules, parsers, renderers, and SQL
+// in `jobs`, `discover`, and `tailoring`. Applications, Documents, Interview,
+// and Tracklist Import already do the same. `exported_paths` and `web_text`
+// are shared support, not commands.
+//
+// Profile, tracker, analytics, portal answers, follow-up drafts, health,
+// settings, and the ATS check still mix adapter code with their helpers.
+// That is outside this slice. The Angular frontend only calls typed invoke()s.
 
 pub mod analytics;
 pub mod applications;
@@ -16,42 +18,24 @@ pub mod ats_format;
 pub mod ats_tokens;
 pub mod database_backup;
 pub mod discover;
-pub mod discover_fetch;
-pub mod discover_filter;
-pub mod discover_geo;
-pub mod discover_geo_countries;
-pub mod discover_parsers;
-pub mod discover_parsers_ats;
-pub mod discover_parsers_nofluffjobs;
 pub mod discover_sources;
 pub mod documents;
 pub mod documents_export;
 pub mod documents_import;
 pub mod documents_style;
-pub mod exported_paths;
 pub mod followup_drafts;
 pub mod health;
 pub mod import;
 pub mod interview;
-pub mod job_identity;
 pub mod job_identity_source;
 pub mod job_paste;
 pub mod job_url;
 pub mod jobs;
-pub mod legitimacy;
 pub mod portal_answers;
 pub mod print;
 pub mod profile;
 pub mod scoring;
 pub mod settings;
-pub mod tailoring;
-pub mod tailoring_docx;
-pub mod tailoring_fonts;
+pub mod shell;
 pub mod tailoring_journal;
-pub mod tailoring_markdown;
-pub mod tailoring_page;
-pub mod tailoring_pdf;
-pub mod tailoring_theme;
 pub mod tracker;
-pub mod url_parts;
-pub mod web_text;

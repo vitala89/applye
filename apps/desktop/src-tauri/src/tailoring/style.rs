@@ -1,9 +1,8 @@
 // CV presentation contract (ROADMAP §16.5): the style choices a document
-// carries, and the deterministic checks that judge them. Split out of
-// `documents`, which owns the library rows themselves - nothing here reads
-// the database or the filesystem, and nothing here renders. The renderers in
-// `tailoring` consumes these types; `documents` resolves them out of
-// a row's `style_json` at export time.
+// carries, and the deterministic checks that judge them. Nothing here reads
+// the database or the filesystem, and nothing here renders. Documents export
+// resolves a row's `style_json` into these types and hands them to the
+// renderers in this feature.
 
 use serde::{Deserialize, Serialize};
 

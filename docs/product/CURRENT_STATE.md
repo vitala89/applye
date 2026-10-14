@@ -33,8 +33,9 @@ merged as [#577](https://github.com/vitala89/applye/pull/577) and left the produ
 scoring, application tracking, tracker field edits, profile, and settings. SQLite stays the source
 of truth. PR 4 merged as [#585](https://github.com/vitala89/applye/pull/585) at `2bb329c1` and made
 the Applications, Documents, Interview, and Tracklist Import Rust commands thin IPC adapters. PR 5
-moves Jobs, Discover, and Tailoring implementation out of `commands/`. Document export calls the
-Tailoring feature. Open and Reveal stay native shell commands. After this pull request merges, the
+moves Jobs, Discover, and Tailoring implementation out of `commands/`. The CV style
+contract lives in Tailoring, and Document export calls that feature with no reverse
+dependency. Open and Reveal stay native shell commands. After this pull request merges, the
 next step is **Architecture Stabilization PR 6: Remove dormant runtime surface.** Do not start
 Career Evidence, PR 6, or the file-size campaign in this pull request.
 

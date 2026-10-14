@@ -9,7 +9,7 @@
 use super::blocks::{cover_letter_content_to_blocks, cv_content_to_blocks};
 use super::files::data_uri_to_bytes;
 use super::persistence::{self, DocumentLibraryItem};
-use super::style::{CvStyle, PhotoPlacement};
+use crate::tailoring::style::{CvStyle, PhotoPlacement};
 
 /// Effective export style - mirrors the TS load-time merge
 /// `{ ...CV_STYLE_DEFAULT, ...themeStyleSeed(theme), ...styleJson }`: the theme

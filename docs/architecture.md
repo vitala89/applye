@@ -120,7 +120,8 @@ language a review step opens in, stay in the jobs feature.
   parsers, renderers, and SQL outside `commands/`. The untrusted-parser guard lives in
   `untrusted`. Shared URL and HTML helpers live in `url_parts` and `web_text`. Exported-file
   provenance lives in `exported_paths`. Open and Reveal stay native shell commands.
-  Documents export calls the Tailoring feature directly. A full diagram pass is PR 8.
+  Documents export calls the Tailoring feature directly. The CV style contract lives in
+  `tailoring`, so Tailoring does not depend on Documents. A full diagram pass is PR 8.
 - **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
   generated documents, and the AI result cache.
 - Document export **ships as PDF**, rendered from the same HTML the preview shows. A DOCX renderer

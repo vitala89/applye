@@ -10,6 +10,7 @@ pub(crate) mod generated;
 pub(crate) mod markdown;
 pub(crate) mod page;
 pub(crate) mod pdf;
+pub(crate) mod style;
 pub(crate) mod theme;
 
 pub(crate) use blocks::{

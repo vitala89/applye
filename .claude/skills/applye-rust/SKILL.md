@@ -30,11 +30,12 @@ src/
 ```
 
 - A new capability belongs in a focused module, registered from `lib.rs`.
-- **Hard budget: 500 non-empty lines of Rust source per file, counted separately from 600 for the
-  file's inline `#[cfg(test)]` items.** Rust keeps its tests in the same file by convention, so one
-  combined number said little about either half; see `docs/governance/CODE_QUALITY.md`. The ratchet
-  is enforced by `npm run quality:file-size`, which is diff-scoped - use
-  `npm run quality:file-size:all` for a repository-wide picture.
+- **Hard budget: 400 lines of Rust source per file, counted separately from 540 for the file's
+  inline `#[cfg(test)]` items.** Those are the current checker values in
+  `docs/governance/CODE_QUALITY.md` and `tools/check-file-size-budgets.mjs`. Do not reuse the older
+  500/600 pair. Rust keeps its tests in the same file by convention, so one combined number said
+  little about either half. The ratchet is enforced by `npm run quality:file-size`, which is
+  diff-scoped — use `npm run quality:file-size:all` for a repository-wide picture.
 - No Rust file is currently over either budget. `discover.rs`, `tailoring.rs`, and `documents.rs`
   were the legacy oversized modules and have been split; they are still the largest domains, so
   extract a cohesive responsibility rather than growing them again.
@@ -51,7 +52,10 @@ src/
 - Naming mirrors the frontend wrapper: `db_*` for storage and plain verbs for behavior.
 - Every command gets typed request and response structs with `serde` derives. Do not pass loose
   `serde_json::Value` across IPC.
-- Keep commands thin: validate, call focused domain logic, persist, return.
+- Keep a new command thin: validate, call focused domain logic, persist, return. Applications,
+  Documents, Interview, Tracklist Import, Jobs, Discover, and Tailoring already do this. ATS,
+  analytics, health, tracker, settings, follow-up drafts, portal answers, and WYSIWYG print still
+  hold more implementation in `commands/`. Do not treat that remainder as already extracted.
 - Prefer typed request objects over long parameter lists.
 - Do not let one command become an orchestration engine. Extract a service/module with explicit
   inputs, outputs, and failure behavior.

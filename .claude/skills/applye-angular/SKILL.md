@@ -21,14 +21,14 @@ Angular 21, standalone, zoneless, Nx monorepo. These rules apply to every change
 
 The dependency stack points one way only:
 
-| Project | Tags | May depend on |
-| --- | --- | --- |
-| `core` | `type:domain scope:shared` | nothing |
-| `ui` | `type:ui scope:shared` | `core` |
-| `i18n` | `type:util scope:shared` | `core` |
-| `data` | `type:data scope:desktop` | `core` |
-| `desktop` | `type:app scope:desktop` | `core` `ui` `i18n` `data` |
-| `web` | `type:app scope:web` | `core` `ui` `i18n` (not `data`) |
+| Project   | Tags                       | May depend on                   |
+| --------- | -------------------------- | ------------------------------- |
+| `core`    | `type:domain scope:shared` | nothing                         |
+| `ui`      | `type:ui scope:shared`     | `core`                          |
+| `i18n`    | `type:util scope:shared`   | `core`                          |
+| `data`    | `type:data scope:desktop`  | `core`                          |
+| `desktop` | `type:app scope:desktop`   | `core` `ui` `i18n` `data`       |
+| `web`     | `type:app scope:web`       | `core` `ui` `i18n` (not `data`) |
 
 - `@nx/enforce-module-boundaries` fails lint on a wrong-way edge. If it fires, move the code rather
   than loosening the rule.
@@ -42,10 +42,11 @@ The dependency stack points one way only:
 - **Standalone**, always. No NgModules.
 - **`changeDetection: ChangeDetectionStrategy.OnPush`** on every new component.
 - **Use `templateUrl` and `styleUrl`**, not large inline templates or styles.
-- **Hard budgets:** 400 non-empty lines for TypeScript/JavaScript source, 300 for templates, and 400
-  for stylesheets. Tests have a 600-line budget. The ratchet is enforced by
-  `npm run quality:file-size`.
-- A component approaching 400 lines or holding roughly 15 signals needs a responsibility review.
+- **Hard budgets** are the table in `docs/governance/CODE_QUALITY.md`, enforced by
+  `npm run quality:file-size` (`tools/check-file-size-budgets.mjs`). Current source limits are
+  TypeScript/JavaScript 350, application-layer TypeScript and `*.store.ts` 225, templates 300,
+  stylesheets 380, and TypeScript tests 580. Do not reuse 400, 250, or 600 from older notes.
+- A component approaching its source budget, or holding roughly 15 signals, needs a responsibility review.
   Extract a child component, facade/store, domain helper, or focused service before it exceeds the
   limit.
 - Do not split by arbitrary line ranges. Extract a cohesive responsibility with an explicit API.
@@ -81,7 +82,7 @@ The dependency stack points one way only:
   behavior.
 - Both light and dark themes must work.
 - Use `@use`, never deprecated `@import`.
-- Split styles by component/responsibility before 400 non-empty lines.
+- Split styles by component/responsibility before the stylesheet budget in `docs/governance/CODE_QUALITY.md`.
 
 ## i18n
 
@@ -94,7 +95,7 @@ The dependency stack points one way only:
 - Test pure functions instead of components when a pure seam exists.
 - A bug fix ships with the regression test that would have caught it.
 - Extracted logic keeps equivalent or improved coverage before the old implementation is removed.
-- Split test files by behavior or unit before 600 non-empty lines.
+- Split test files by behavior or unit before the test budget in `docs/governance/CODE_QUALITY.md`.
 - Run the narrowest useful command first, then widen when the change is shared or cross-cutting.
 
 ## Before handoff

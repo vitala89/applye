@@ -44,6 +44,31 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-16, reconcile stabilized architecture
+
+- **Status:** complete, pull request not yet opened at the time of this entry
+- **Agent/tool:** Cursor
+- **Branch:** `chore/finalize-architecture-stabilization`
+- **Commits:** the reconciliation commit on this branch
+- **Pull request:** opened after this entry; the follow-up docs commit records the number
+- **Objective:** Architecture Stabilization PR 8. Make code, enforcement, architecture docs, domain vocabulary, agent instructions, and operational state describe the same current architecture. Do not implement Career Evidence.
+- **Completed:**
+  - PR 7 is merged as #588 at `4648d7e8`. Local `main` matched `origin/main`. No competing architecture pull request was open.
+  - `docs/architecture.md` now includes `libs/application` and the enforced type/scope graph. Production desktop code is not documented as importing `libs/data`. `apps/web` is not documented as importing desktop-scoped application or data libraries. ADR-0006's shared-application diagram stays future direction.
+  - The application feature checker is documented as implemented: approved edge `jobs -> documents`, cycles, unapproved edges, missing approved edges, type-only imports, self-imports, unresolved relative imports, relative escapes, and the shrinking `core/models` allowlist.
+  - Job and Job Opportunity are distinguished on purpose. AI output stays a proposal. Career Evidence is not implemented.
+  - Agent instructions no longer tell new work to use a 250-line store budget. ADR-0005 keeps the original 250-line decision and records amendment seventy: the checker enforces 225.
+  - Registered Tauri commands: 91, each with a production `tauriInvoke` caller. `generated_doc_get`, `export_docx`, `export_pdf`, and the `validate_theme` IPC command remain unregistered. No command was removed.
+  - Public barrels in `libs/application`, `libs/core`, and `libs/data` resolve. No export was removed.
+  - `libs/core/src/lib/core.ts` is absent. The scaffold finding is closed.
+- **Not completed:** The pull request was not merged. Career Evidence was not started. Near-budget files were not refactored. Untargeted Rust command modules (ATS, analytics, health, tracker, settings, follow-up drafts, portal answers, WYSIWYG print) still contain implementation; that is recorded, not extracted.
+- **Files or packages changed:** architecture and domain docs, agent instructions, Angular and Rust skills, ADR-0005 amendment seventy, `CURRENT_STATE.md`, the stabilization plan, `CHANGELOG.md`, this log.
+- **Validation:** `npm run quality:test` passed (27 tests). `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files); legacy core/models allowlist matches disk. `npm run quality:attribution` passed. `npm run quality:file-size` passed (no changed source files). `npm run quality:file-size:all` checked 1207 tracked files and reported 0 over budget in every category: TypeScript/JavaScript source 0/346, Rust source 0/96, Rust inline tests 0/96, Angular template 0/134, TypeScript/JavaScript test 0/325, stylesheet 0/160, application-layer TypeScript 0/146. `npm run format:check` passed after `nx format:write` on the files it listed. `git diff --check` passed. No lint or type-check: no TypeScript, ESLint, or Rust source changed. No native walkthrough.
+- **Privacy/security impact:** none. Documentation only. Local-first desktop behavior is unchanged.
+- **Decisions and assumptions:** Enforcement and the current tree are the authority for current architecture. Historical ADR chronology stays historical. Job is the persisted discovery record. Job Opportunity is the accepted Company Intelligence concept and is not that row.
+- **Next first action:** After this pull request merges, start Career Evidence PR 1: pure Career Evidence domain foundation. No migration, no profile UI, no web backend. Do not merge this pull request from the agent session.
+- **Evidence:** `npm run quality:file-size:all` on this branch, 0 over budget in every category. Production `tauriInvoke` scan of `generate_handler!` in `apps/desktop/src-tauri/src/lib.rs`.
+
 ### 2026-10-15, close the file-size stabilization gate
 
 - **Status:** complete, pull request open, not merged

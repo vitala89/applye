@@ -1,11 +1,14 @@
 # Current Operational State
 
-**As of 2026-10-15.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
-Stabilization PR 6 merged as [#587](https://github.com/vitala89/applye/pull/587) at `cb723ba0`.
-PR 7, close the file-size stabilization gate, is open as
-[#588](https://github.com/vitala89/applye/pull/588) on `refactor/close-file-size-stabilization`.
-The repository-wide audit reports zero production files over budget, so no source decomposition
-was required.
+**As of 2026-10-16.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
+Stabilization PR 7 merged as [#588](https://github.com/vitala89/applye/pull/588) at `4648d7e8`.
+Architecture Stabilization PR 8 is the final reconciliation pull request, on
+`chore/finalize-architecture-stabilization`. Its exit-criteria audit passes on this branch.
+Merging this pull request completes Architecture Stabilization. The next implementation slice
+after merge is **Career Evidence domain foundation**: pure domain vocabulary and rules,
+draft / AI-inferred / user-confirmed verification, source and provenance, timestamps, and tests.
+That slice reuses existing Candidate Profile concepts. It does not add a persistence migration,
+a profile UI, or a web backend. Do not start that slice in this pull request.
 
 ## Active product direction
 
@@ -27,7 +30,7 @@ Hub, Network CRM, Interview Intelligence, or community features as available. Do
 Hono, D1, authentication, Cloudflare Workers resources, sync, or empty backend scaffolding. ADR-0007
 says the backend is created with the first real backend slice.
 
-`#567`, `#568`, `#569`, `#573`, `#574`, `#575`, `#576`, `#577`, `#584`, and `#585` are merged.
+`#567`, `#568`, `#569`, `#573`, `#574`, `#575`, `#576`, `#577`, `#584`, `#585`, `#586`, `#587`, and `#588` are merged.
 Architecture Stabilization PR 1 removed platform effects from `libs/application` (`915e8072`). PR 2
 merged as [#577](https://github.com/vitala89/applye/pull/577) and left the production feature graph as
 `jobs -> documents`. PR 3 merged as [#584](https://github.com/vitala89/applye/pull/584) at
@@ -41,11 +44,11 @@ Reveal stay native shell commands. PR 6 merged as
 [#587](https://github.com/vitala89/applye/pull/587) at `cb723ba0` and removed the dormant journal
 commands `generated_doc_get`, `export_docx`, and `export_pdf`, and the unused `validate_theme` IPC
 endpoint. The `generated_docs` table, applied migrations, historical rows, and already written
-files stay. PR 7 re-ran `npm run quality:file-size:all` and found zero production files over
-budget. Jobs page effective counts are 298/350 and 236/300; Cover Letter detail is 232/350 and
-207/300. No production source was decomposed. The next step after this pull request merges is
-**Architecture Stabilization PR 8: Architecture enforcement and documentation reconciliation.**
-Do not start PR 8 or Career Evidence in this pull request.
+files stay. PR 7 merged as [#588](https://github.com/vitala89/applye/pull/588) at `4648d7e8`. It re-ran
+`npm run quality:file-size:all` and found zero production files over budget. Jobs page effective
+counts on that audit were 298/350 and 236/300; Cover Letter detail was 232/350 and 207/300. No
+production source was decomposed. PR 8 reconciles architecture docs, domain vocabulary, and agent
+instructions with that enforcement. It does not implement Career Evidence.
 
 ## Implementation sequence
 
@@ -84,7 +87,7 @@ delivered as focused PRs; it is not one large rewrite.
 13+. Community Intelligence
 ```
 
-Career Evidence does not start until the stabilization plan's exit criteria pass. Its first slice
+Career Evidence does not start until this reconciliation pull request merges. Its first slice
 remains pure domain rules for user-confirmed Career Evidence, with tests; it does not include a desktop
 migration, a profile UI, or a web backend.
 
@@ -104,7 +107,7 @@ Checked against `main` on 2026-10-11. Architecture Stabilization is the current 
   cleanup did not re-measure them.
 - **Developer ID signing and notarisation** stay deferred. The blocker is the Apple Developer Program
   fee, already decided. Do not re-propose it as a missed technical task.
-- **Missing tests.** `apps/desktop/src/app/pages/jobs/jobs.component.ts` is 419 lines and has no spec.
+- **Missing tests.** `apps/desktop/src/app/pages/jobs/jobs.component.ts` still has no direct component spec. Its effective file-size count is within the current 350-line budget (298/350 on the PR #588 audit). This is test debt, not file-size debt.
 - **Dependency and security maintenance.** The previously open Dependabot updates were rolled up in
   #572. The August note of a single `glib` alert was not re-audited here.
 - **Feature-index reconciliation.** Historical rows in `docs/product/FEATURE_INDEX.md` are not fully

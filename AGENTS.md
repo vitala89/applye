@@ -16,6 +16,8 @@ Before any non-trivial work, read in order:
 6. `docs/governance/VALIDATION_MATRIX.md`
 7. the smallest relevant roadmap, plan, ADR, design-system, specification, stack skill, and code files
 
+For a new feature, an architecture change, a new domain concept, a schema change, a public library API, or a new bounded context, also read `docs/architecture.md`, `docs/domain-architecture.md`, and the relevant ADR or feature brief before designing. Architecture, naming, ownership, size limits, and boundaries come from those documents. A task triage scores as simple — a typo, a formatting fix, a local command check — does not require that set.
+
 Do not begin from the user request alone. Verify branch, commits, open pull requests, code, and current state first.
 
 ## Conductor model
@@ -134,11 +136,11 @@ the installed `superpowers` and `mattpocock-skills` packs.
 `docs/governance/CODE_QUALITY.md` is mandatory for every code change.
 
 - Apply SOLID pragmatically together with separation of concerns, high cohesion, low coupling, KISS, YAGNI, and explicit typed contracts.
-- New TypeScript/JavaScript source files stay at or below 400 non-empty lines; **application-layer stores at 250**; Angular templates at 300; stylesheets at 400; Rust source modules at 500. Test-file budgets are defined in the quality contract: 600 for a TypeScript test file, and 600 for a Rust file's inline `#[cfg(test)]` items, counted separately from its source.
+- File-size budgets are the table in `docs/governance/CODE_QUALITY.md`, enforced by `tools/check-file-size-budgets.mjs`. Do not copy an older figure from an ADR. The executable contract is TypeScript/JavaScript source 350, application-layer TypeScript and `*.store.ts` 225, Angular template 300, SCSS/CSS 380, Rust source 400, TypeScript/JavaScript test 580, and Rust inline tests 540. Specs match the test budget first. The 225-line matcher is every production TypeScript file under `libs/application/**` plus any `*.store.ts` in source scope. ADR-0005 originally recorded 250 for stores; that chronology stays in the ADR.
 - Existing oversized files are technical debt, not precedent. They may not grow. Extract a focused responsibility before adding behavior.
 - **Components render and delegate. A page does not hold the state of its own screen and does not inject a data gateway** - that state belongs in a signal store in `libs/application` (`ADR-0005`). Domain logic goes to `libs/core`, Tauri/data access to `libs/data`, shared UI to `libs/ui`, and user-facing text to `libs/i18n`.
 - The layer rule binds new code now. An existing page migrates when it is touched for another reason - the same trigger as the size budgets, and one stream of work with them. **Lint enforces it for components, with no exceptions left**: a `*.component.ts` (or `app.ts`) injecting `AiService`, `JobSourceService` or **any `*Gateway`** is a lint **error**. The rule named `DbService` until that class was deleted by the eight-gateway migration; it matches the pattern now, so a new gateway is covered without editing the rule (ADR-0005, amendment sixty-five). The `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist is gone - `jobs` deleted the last entry (ADR-0005, amendment fifty-six). `type:data` also left `type:app`'s allowlist (amendment fifty-five), so `@nx/enforce-module-boundaries` now covers every app file, not just components.
-- Tauri commands stay thin. Rust domains split into command, validation, parsing, domain, persistence, and provider modules where those responsibilities exist.
+- Targeted Rust commands are thin adapters. Applications, Documents, Interview, Tracklist Import, Jobs, Discover, and Tailoring keep workflow outside `commands/`. Other active command modules may still hold more implementation. New command work splits validation, parsing, domain, persistence, and provider modules where those responsibilities exist. The current map is `docs/architecture.md`.
 - Prefer pure functions for business rules and explicit I/O boundaries for SQLite, network, filesystem, keychain, and IPC.
 - Bug fixes require regression tests. New domain behavior requires focused tests. Moved logic keeps equivalent coverage.
 - Do not generate or paste a monolithic file because it is convenient. Use the smallest targeted patch.

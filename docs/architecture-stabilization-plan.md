@@ -90,13 +90,17 @@ The October 2026 architecture audit found the following concrete debt:
 8. dormant legacy Rust endpoints from superseded document/tailoring paths. PR 6 audited them
    and removed the ones with no caller. The `generated_docs` table stayed.
 9. the file-size ratchet had reported legacy oversized production files, including the Jobs page and
-   the Cover Letter editor template. PR 7 re-ran `npm run quality:file-size:all` and found no
-   production file over budget, so those examples are no longer required decomposition work.
-10. `libs/core/src/lib/core.ts` and its generated spec are unused Nx scaffold leftovers.
-11. parts of `docs/architecture.md` lag behind the stricter dependency direction already enforced in
-    code.
+   the Cover Letter editor template. **Resolved in PR 7 (#588, `4648d7e8`).** That pull request
+   re-ran `npm run quality:file-size:all` and found no production file over budget, so those
+   examples are no longer required decomposition work.
+10. `libs/core/src/lib/core.ts` and its generated spec were unused Nx scaffold leftovers.
+    **Resolved before PR 8.** Those paths are absent on `main` at `4648d7e8`. Do not recreate them.
+11. parts of `docs/architecture.md` lagged behind the stricter dependency direction already enforced
+    in code. **Resolved in PR 8**, which rewrites the current physical graph to match
+    `eslint.config.mjs` and the project tags.
 12. `docs/product/CURRENT_STATE.md` still described database backup/restore as in review after PR
-    #573 and the architecture-canon PR #574 had already merged.
+    #573 and the architecture-canon PR #574 had already merged. **Resolved in PR 0.** The original
+    finding stays here so the reason for that cleanup remains visible.
 
 ## Delivery strategy
 
@@ -292,12 +296,11 @@ backup/restore workflow, so audit the post-#573 tree rather than reasoning from 
 
 ### PR 7 - Bring production source back under file-size budgets
 
-**Status:** open as [#588](https://github.com/vitala89/applye/pull/588) on
-`refactor/close-file-size-stabilization`. PR 7 re-ran the canonical
-repository-wide audit with `npm run quality:file-size:all` on `main` at `cb723ba0` (1207 tracked
-files). No production file remained over budget, so no speculative decomposition was performed.
-Earlier architecture and component extractions had already resolved the historical Jobs and Cover
-Letter examples.
+**Status:** merged as [#588](https://github.com/vitala89/applye/pull/588) at `4648d7e8`. PR 7 re-ran
+the canonical repository-wide audit with `npm run quality:file-size:all` on `main` at `cb723ba0`
+(1207 tracked files). No production file remained over budget, so no speculative decomposition was
+performed. Earlier architecture and component extractions had already resolved the historical Jobs
+and Cover Letter examples.
 
 Effective counts from the same masker the checker uses:
 
@@ -308,8 +311,7 @@ Effective counts from the same masker the checker uses:
 
 Translation catalogues and the explicitly documented Discover location data table remain data
 exceptions; do not split data merely to satisfy a line count. Near-budget files stay under the
-normal ratchet. The next step after this pull request merges is **PR 8: Architecture enforcement
-and documentation reconciliation.** Do not start PR 8 here. Do not start Career Evidence.
+normal ratchet. PR 8 is the next section. Do not start Career Evidence in PR 7.
 
 The audit command, kept for the record:
 
@@ -319,15 +321,23 @@ npm run quality:file-size:all
 
 ### PR 8 - Architecture enforcement and documentation reconciliation
 
-After the code is clean:
+**Status:** current, on `chore/finalize-architecture-stabilization`. This is the final
+reconciliation pull request. Its exit-criteria audit passes on this branch. Merging it completes
+Architecture Stabilization. The next implementation slice after merge is Career Evidence domain
+foundation. Do not start that slice here.
+
+The original scope, kept so the reason for the pass stays visible:
 
 - update `docs/architecture.md` so diagrams and prose match the actual enforced direction;
-- document the new application feature-boundary check;
-- ensure `docs/domain-architecture.md` contains every business term introduced by the refactor and no
-  duplicate synonyms;
-- ensure agent instructions point to the final rules rather than refactor-specific exceptions;
-- remove temporary architecture notes that are no longer true;
-- run a final dead-export/caller audit.
+- document the application feature-boundary check, including the approved `jobs -> documents` edge
+  and the legacy `core/models` ratchet;
+- distinguish Job from Job Opportunity, and keep AI output proposal-first;
+- point agent instructions at `docs/governance/CODE_QUALITY.md` instead of the old 250/400/500/600
+  budgets;
+- remove temporary notes that said a later diagram pass would fix the architecture map;
+- repeat the registered-command caller audit. No further dormant command was removed: every command
+  in `generate_handler!` has a production caller, and `generated_doc_get`, `export_docx`,
+  `export_pdf`, and the `validate_theme` IPC command stay unregistered.
 
 Do not create duplicate architecture documents. The existing canonical files remain canonical.
 

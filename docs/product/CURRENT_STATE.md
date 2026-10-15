@@ -2,9 +2,10 @@
 
 **As of 2026-10-15.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
 Stabilization PR 6 merged as [#587](https://github.com/vitala89/applye/pull/587) at `cb723ba0`.
-PR 7, close the file-size stabilization gate, is in progress on
-`refactor/close-file-size-stabilization`. The repository-wide audit reports zero production files
-over budget, so no source decomposition was required.
+PR 7, close the file-size stabilization gate, is open as
+[#588](https://github.com/vitala89/applye/pull/588) on `refactor/close-file-size-stabilization`.
+The repository-wide audit reports zero production files over budget, so no source decomposition
+was required.
 
 ## Active product direction
 

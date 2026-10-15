@@ -292,7 +292,8 @@ backup/restore workflow, so audit the post-#573 tree rather than reasoning from 
 
 ### PR 7 - Bring production source back under file-size budgets
 
-**Status:** in progress on `refactor/close-file-size-stabilization`. PR 7 re-ran the canonical
+**Status:** open as [#588](https://github.com/vitala89/applye/pull/588) on
+`refactor/close-file-size-stabilization`. PR 7 re-ran the canonical
 repository-wide audit with `npm run quality:file-size:all` on `main` at `cb723ba0` (1207 tracked
 files). No production file remained over budget, so no speculative decomposition was performed.
 Earlier architecture and component extractions had already resolved the historical Jobs and Cover

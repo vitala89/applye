@@ -49,8 +49,8 @@ Before a watch can be marked complete:
 - **Status:** complete, pull request open, not merged
 - **Agent/tool:** Cursor
 - **Branch:** `refactor/close-file-size-stabilization`
-- **Commits:** recorded with the pull request
-- **Pull request:** open, number recorded after creation
+- **Commits:** `ad3a0884`, plus the docs commit that records pull request #588
+- **Pull request:** [#588](https://github.com/vitala89/applye/pull/588), not merged
 - **Objective:** Architecture Stabilization PR 7. Prove the repository-wide file-size audit, and make current file-size documentation match the checker. Do not decompose production source unless a file is actually over budget.
 - **Completed:**
   - PR 6 is merged as #587 at `cb723ba0`. Local `main` matched `origin/main`. No competing architecture pull request was open.

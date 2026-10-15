@@ -17,15 +17,20 @@ Review the final diff and confirm that no secrets, local databases, generated ou
 ## Source-size and maintainability gate
 
 The canonical budgets and decomposition rules live in `docs/governance/CODE_QUALITY.md`.
+`tools/check-file-size-budgets.mjs` is the executable contract. It counts effective non-empty lines
+after comment masking. These are the budgets it enforces:
 
-- New TypeScript/JavaScript source files: at most 400 non-empty lines.
-- Angular templates: at most 300 non-empty lines.
-- Stylesheets: at most 400 non-empty lines.
-- Rust source modules: at most 500 non-empty lines.
-- TypeScript tests: at most 600 non-empty lines.
-- Rust inline `#[cfg(test)]` items: at most 600 non-empty lines, counted separately from the module's
-  source rather than added to it.
-- Existing files already above budget may not grow. Extract a cohesive responsibility first.
+- TypeScript / JavaScript source: at most 350 lines.
+- Application-layer store: at most 225 lines.
+- Angular templates: at most 300 lines.
+- SCSS / CSS: at most 380 lines.
+- Rust source modules: at most 400 lines.
+- TypeScript / JavaScript tests: at most 580 lines.
+- Rust inline `#[cfg(test)]` items: at most 540 lines, counted separately from the module's source
+  rather than added to it.
+- A file already above budget may not grow. Extract a cohesive responsibility first.
+- `npm run quality:file-size` is the diff-scoped blocking ratchet. `npm run quality:file-size:all` is
+  the repository-wide audit and always exits zero.
 
 The pre-commit hook checks staged files. CI compares the branch with its base. When a touched file is near or above budget, record its before/after size and the extracted responsibility in the PR and Duty Watch entry.
 

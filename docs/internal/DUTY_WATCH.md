@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-15, close the file-size stabilization gate
+
+- **Status:** complete, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/close-file-size-stabilization`
+- **Commits:** recorded with the pull request
+- **Pull request:** open, number recorded after creation
+- **Objective:** Architecture Stabilization PR 7. Prove the repository-wide file-size audit, and make current file-size documentation match the checker. Do not decompose production source unless a file is actually over budget.
+- **Completed:**
+  - PR 6 is merged as #587 at `cb723ba0`. Local `main` matched `origin/main`. No competing architecture pull request was open.
+  - `npm run quality:file-size:all` on that commit checked 1207 tracked files. Every category reported 0 over budget: TypeScript/JavaScript source 0/346, application-layer store 0/146, Angular template 0/134, stylesheet 0/160, Rust source 0/96, TypeScript/JavaScript test 0/325, Rust inline tests 0/96.
+  - Path A. No production source was decomposed. Historical examples, effective lines: `jobs.component.ts` 298/350, `jobs.component.html` 236/300, `cover-letter-detail.component.ts` 232/350, `cover-letter-detail.component.html` 207/300.
+  - `VALIDATION_MATRIX.md` now lists the enforced budgets (350, 225, 300, 380, 400, 580, 540). Current `CODE_QUALITY.md` store prose says 225. The ratchet section no longer claims the repository currently contains oversized production files. The stabilization plan no longer lists Jobs or Cover Letter decomposition as required PR 7 work.
+  - Checker tests already cover a new file over budget, an existing over-budget file that grows, a staged file, the exact Discover vocabulary exclusion, the Rust source/test split, comment and literal masking, and `--all` exiting zero. No new test was added.
+- **Not completed:** The pull request was not merged. PR 8 was not started. Career Evidence was not started. Agent instruction files that still say a 250-line store budget (`AGENTS.md`, `CLAUDE.md`, `AGENT_START_HERE.md`) were left for PR 8. `ADR-0005` still records the original 250-line decision.
+- **Files or packages changed:** `CODE_QUALITY.md`, `VALIDATION_MATRIX.md`, `architecture-stabilization-plan.md`, `CURRENT_STATE.md`, `DUTY_WATCH.md`.
+- **Validation:** `npm run quality:test` passed (27 tests). `npm run quality:file-size` passed (no changed source files). `npm run quality:file-size:all` reported 1207 tracked files and 0 over budget in every category. `npm run quality:attribution` passed. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files). `npm run format:check` passed. `git diff --check` passed. No native walkthrough; the change is documentation only.
+- **Privacy/security impact:** none. Documentation only. No new data exclusion. No budget change.
+- **Decisions and assumptions:** The checker is authoritative. Near-budget files were not refactored. `--all` stays a report that exits zero.
+- **Next first action:** After this pull request merges, start Architecture Stabilization PR 8: Architecture enforcement and documentation reconciliation. Do not merge this pull request from the agent session. Do not start Career Evidence.
+- **Evidence:** `npm run quality:file-size:all` on `cb723ba0`, 0 over budget in every category.
+
 ### 2026-10-15, remove dormant runtime surface
 
 - **Status:** complete, pull request open, not merged

@@ -133,9 +133,12 @@ Use `npm run quality:file-size:all` for the repository-wide picture. It lists ev
 or within 20% of it and always exits zero: it is a report, not a gate, because failing on debt that
 predates the rule would only block unrelated work.
 
-### Ratchet rule for existing oversized files
+### Ratchet rule for an already-over-budget base
 
-Applye already contains oversized legacy files. They are technical debt, not precedent.
+The ratchet supports an already-over-budget base so old branches and debt do not block unrelated
+work. As of Architecture Stabilization PR 7, the repository-wide audit reports zero tracked
+production files over budget. A `near` entry is a warning, not a violation and not a reason to
+decompose a file that is still inside its budget.
 
 - A new file must stay within its budget.
 - A file that is currently within budget must not cross the budget.
@@ -201,9 +204,11 @@ shrank only while pure logic remained.
 - **The unit is a page store on plain Angular signals.** `signal()`, `computed()`, and methods that
   orchestrate. **Not** an NgRx SignalStore - `jobs.store.ts` records why, and the reason is unchanged:
   a peer range on `@angular/core` would gate every Angular major on someone else's release.
-- **Budget 250 lines**, tighter than an ordinary source file, because a store is the most likely thing
+- **Budget 225 lines**, tighter than an ordinary source file, because a store is the most likely thing
   to become the second god-object once the component stops being the first. A page whose state does
-  not fit decomposes into several stores by responsibility. It does not get one bigger store.
+  not fit decomposes into several stores by responsibility. It does not get one bigger store. The
+  original `ADR-0005` decision recorded 250; the checker enforces 225, and that ADR keeps the
+  chronology rather than being rewritten to the current number.
 - **A store is testable without a `TestBed`.** If it is not, the dependencies are wrong.
 - Pure rules still belong in `libs/core` or in a page-local pure module. A store orchestrates; it does
   not calculate.

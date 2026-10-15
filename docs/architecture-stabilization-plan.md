@@ -89,9 +89,9 @@ The October 2026 architecture audit found the following concrete debt:
    addition to IPC wiring.
 8. dormant legacy Rust endpoints from superseded document/tailoring paths. PR 6 audited them
    and removed the ones with no caller. The `generated_docs` table stayed.
-9. the file-size ratchet still reports legacy oversized production files. Known examples include the
-   Jobs page and the Cover Letter editor template; the complete list must come from
-   `npm run quality:file-size -- --all` at the start of the size-remediation phase.
+9. the file-size ratchet had reported legacy oversized production files, including the Jobs page and
+   the Cover Letter editor template. PR 7 re-ran `npm run quality:file-size:all` and found no
+   production file over budget, so those examples are no longer required decomposition work.
 10. `libs/core/src/lib/core.ts` and its generated spec are unused Nx scaffold leftovers.
 11. parts of `docs/architecture.md` lag behind the stricter dependency direction already enforced in
     code.
@@ -269,14 +269,12 @@ focused persistence seams. Provider/filesystem effects remain explicit.
 
 ### PR 6 - Remove dormant runtime surface
 
-**Status:** open as [#587](https://github.com/vitala89/applye/pull/587) on
-`refactor/remove-dormant-runtime-surface`. The registered commands
-`generated_doc_get`, `export_docx`, `export_pdf`, and the `validate_theme` IPC endpoint had no
-production caller and are removed. `tailoring::style::validate_theme` stays as the future theme
-trust boundary. The `generated_docs` table, applied migrations, historical rows, and files
-already written under app data stay. Job deletion still cleans historical `generated_docs`
-rows. After this pull request merges, the next step is **PR 7: Bring production source back
-under file-size budgets.** Do not start PR 7 here.
+**Status:** merged as [#587](https://github.com/vitala89/applye/pull/587) at `cb723ba0`. The
+registered commands `generated_doc_get`, `export_docx`, `export_pdf`, and the `validate_theme` IPC
+endpoint had no production caller and are removed. `tailoring::style::validate_theme` stays as the
+future theme trust boundary. The `generated_docs` table, applied migrations, historical rows, and
+files already written under app data stay. Job deletion still cleans historical `generated_docs`
+rows. The next step after that merge is **PR 7**, recorded below.
 
 Repo-wide audit every candidate before deletion. Known candidates include superseded generated-document
 and legacy export endpoints from the older tailoring/document path.
@@ -294,30 +292,30 @@ backup/restore workflow, so audit the post-#573 tree rather than reasoning from 
 
 ### PR 7 - Bring production source back under file-size budgets
 
-Run:
+**Status:** open as [#588](https://github.com/vitala89/applye/pull/588) on
+`refactor/close-file-size-stabilization`. PR 7 re-ran the canonical
+repository-wide audit with `npm run quality:file-size:all` on `main` at `cb723ba0` (1207 tracked
+files). No production file remained over budget, so no speculative decomposition was performed.
+Earlier architecture and component extractions had already resolved the historical Jobs and Cover
+Letter examples.
+
+Effective counts from the same masker the checker uses:
+
+- `jobs.component.ts` 298/350 (TypeScript/JavaScript source)
+- `jobs.component.html` 236/300 (Angular template)
+- `cover-letter-detail.component.ts` 232/350 (TypeScript/JavaScript source)
+- `cover-letter-detail.component.html` 207/300 (Angular template)
+
+Translation catalogues and the explicitly documented Discover location data table remain data
+exceptions; do not split data merely to satisfy a line count. Near-budget files stay under the
+normal ratchet. The next step after this pull request merges is **PR 8: Architecture enforcement
+and documentation reconciliation.** Do not start PR 8 here. Do not start Career Evidence.
+
+The audit command, kept for the record:
 
 ```text
-npm run quality:file-size -- --all
+npm run quality:file-size:all
 ```
-
-Treat the output as the authoritative inventory. Translation catalogues and the explicitly documented
-Discover location data table remain data exceptions; do not split data merely to satisfy a line count.
-
-For every production source/template/style file reported OVER:
-
-- name its responsibilities;
-- extract by cohesion, not by arbitrary line ranges;
-- preserve behavior and tests;
-- add missing test seams where the extraction exposes untested orchestration.
-
-Known required work includes:
-
-- Jobs page decomposition below the TypeScript source budget and adding coverage for critical parent
-  wiring/orchestration;
-- Cover Letter editor template decomposition below the Angular-template budget.
-
-Continue until the repo-wide audit reports no production OVER entries except explicit canonical data
-exclusions.
 
 ### PR 8 - Architecture enforcement and documentation reconciliation
 

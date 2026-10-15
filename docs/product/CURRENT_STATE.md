@@ -1,9 +1,11 @@
 # Current Operational State
 
 **As of 2026-10-15.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
-Stabilization PR 5 merged as [#586](https://github.com/vitala89/applye/pull/586) at `ee10d628`.
-PR 6, remove dormant runtime surface, is open as
-[#587](https://github.com/vitala89/applye/pull/587) on `refactor/remove-dormant-runtime-surface`.
+Stabilization PR 6 merged as [#587](https://github.com/vitala89/applye/pull/587) at `cb723ba0`.
+PR 7, close the file-size stabilization gate, is open as
+[#588](https://github.com/vitala89/applye/pull/588) on `refactor/close-file-size-stabilization`.
+The repository-wide audit reports zero production files over budget, so no source decomposition
+was required.
 
 ## Active product direction
 
@@ -35,12 +37,15 @@ of truth. PR 4 merged as [#585](https://github.com/vitala89/applye/pull/585) at 
 the Applications, Documents, Interview, and Tracklist Import Rust commands thin IPC adapters. PR 5 merged as [#586](https://github.com/vitala89/applye/pull/586) at `ee10d628` and moved
 Jobs, Discover, and Tailoring implementation out of `commands/`. The CV style contract lives
 in Tailoring, and Document export calls that feature with no reverse dependency. Open and
-Reveal stay native shell commands. PR 6 removes the dormant journal commands
-`generated_doc_get`, `export_docx`, and `export_pdf`, and the unused `validate_theme` IPC
-endpoint. The `generated_docs` table, applied migrations, historical rows, and already
-written files stay. After this pull request merges, the next step is **Architecture
-Stabilization PR 7: Bring production source back under file-size budgets.** Do not start
-Career Evidence or the file-size campaign in this pull request.
+Reveal stay native shell commands. PR 6 merged as
+[#587](https://github.com/vitala89/applye/pull/587) at `cb723ba0` and removed the dormant journal
+commands `generated_doc_get`, `export_docx`, and `export_pdf`, and the unused `validate_theme` IPC
+endpoint. The `generated_docs` table, applied migrations, historical rows, and already written
+files stay. PR 7 re-ran `npm run quality:file-size:all` and found zero production files over
+budget. Jobs page effective counts are 298/350 and 236/300; Cover Letter detail is 232/350 and
+207/300. No production source was decomposed. The next step after this pull request merges is
+**Architecture Stabilization PR 8: Architecture enforcement and documentation reconciliation.**
+Do not start PR 8 or Career Evidence in this pull request.
 
 ## Implementation sequence
 

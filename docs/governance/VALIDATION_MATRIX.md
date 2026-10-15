@@ -21,7 +21,8 @@ The canonical budgets and decomposition rules live in `docs/governance/CODE_QUAL
 after comment masking. These are the budgets it enforces:
 
 - TypeScript / JavaScript source: at most 350 lines.
-- Application-layer store: at most 225 lines.
+- Application-layer production TypeScript (`libs/application/**`) and `*.store.ts`: at most 225 lines.
+  Specs and tests match the test budget first.
 - Angular templates: at most 300 lines.
 - SCSS / CSS: at most 380 lines.
 - Rust source modules: at most 400 lines.

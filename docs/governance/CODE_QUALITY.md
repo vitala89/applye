@@ -61,15 +61,23 @@ adding it. Counting comments against the same budget that this document and `AGE
 ("why, not what") was a direct contradiction, and it had already produced one wrong incentive:
 deleting an explanation to fit under a limit rather than restructuring the code.
 
-| File category                  |    Budget | Required action before exceeding it                                                         |
-| ------------------------------ | --------: | ------------------------------------------------------------------------------------------- |
-| TypeScript / JavaScript source | 350 lines | Extract a focused service, store, pure helper, domain module, or child component            |
-| Application-layer store        | 225 lines | Split by responsibility into a second store or a pure use-case module                       |
-| Angular template               | 300 lines | Extract a child component or repeated view section                                          |
-| SCSS / CSS                     | 380 lines | Split by component or responsibility and reuse design tokens                                |
-| Rust source module             | 400 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
-| TypeScript test file           | 580 lines | Split by behavior or unit under test                                                        |
-| Rust inline tests              | 540 lines | Move large inline tests to focused test modules or fixtures                                 |
+| File category                        |    Budget | Required action before exceeding it                                                         |
+| ------------------------------------ | --------: | ------------------------------------------------------------------------------------------- |
+| TypeScript / JavaScript source       | 350 lines | Extract a focused service, store, pure helper, domain module, or child component            |
+| Application-layer TypeScript / store | 225 lines | Split by responsibility; a store splits into another store or a pure use-case               |
+| Angular template                     | 300 lines | Extract a child component or repeated view section                                          |
+| SCSS / CSS                           | 380 lines | Split by component or responsibility and reuse design tokens                                |
+| Rust source module                   | 400 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
+| TypeScript test file                 | 580 lines | Split by behavior or unit under test                                                        |
+| Rust inline tests                    | 540 lines | Move large inline tests to focused test modules or fixtures                                 |
+
+The 225-line row is the checker's second budget, matched before ordinary TypeScript source. It
+applies to every production TypeScript file under `libs/application/**`, and to any `*.store.ts`
+file inside the source scope (`apps/`, `libs/`, `tools/`). Specs and tests match the test rule
+first and use 580. A service or utility in `libs/application` does not get the 350-line TypeScript
+budget. The checker still prints this row as `Application-layer store`; that string is the label
+for this wider matcher, not a store-only rule. Stores remain the reason the budget is tighter than
+350: once a page component stops being the god-object, its store is the next candidate.
 
 ### Why these numbers, not the old ones
 
@@ -78,20 +86,20 @@ lines a file happens to carry, unless the numbers moved too. They did, and the a
 not guessed: a repo-wide pass through the same maskers (`git ls-files`, tracked source under
 `apps/`, `libs/`, `tools/`) found comments are roughly this share of non-empty lines per category:
 
-| Category                     | Comments, measured |
-| ---------------------------- | -----------------: |
-| Application-layer store      |                30% |
-| Rust source                  |                20% |
-| TypeScript/JavaScript source |                19% |
-| Stylesheet                   |                11% |
-| Rust inline tests            |                10% |
-| TypeScript/JavaScript test   |                 7% |
-| Angular template             |                 3% |
+| Category                             | Comments, measured |
+| ------------------------------------ | -----------------: |
+| Application-layer TypeScript / store |                30% |
+| Rust source                          |                20% |
+| TypeScript/JavaScript source         |                19% |
+| Stylesheet                           |                11% |
+| Rust inline tests                    |                10% |
+| TypeScript/JavaScript test           |                 7% |
+| Angular template                     |                 3% |
 
 Each new budget is the lower of two candidates: the old budget fully compensated for its category's
 measured cut, and the largest file already in the repository for that category (with a small
 margin). The second candidate is what actually constrained the table above - full compensation would
-put the store budget near 175, but `portal-answers.service.ts` already sits at 218 effective lines,
+put the 225-line category near 175, but `portal-answers.service.ts` already sits at 218 effective lines,
 and this change must not fail a file nobody has touched. Angular templates kept their original 300:
 the measured cut is 3% overall and 0% at the median, so most templates carry no comments to exclude,
 and lowering the number would not restore any pressure comments never relaxed. Every number above was
@@ -204,11 +212,14 @@ shrank only while pure logic remained.
 - **The unit is a page store on plain Angular signals.** `signal()`, `computed()`, and methods that
   orchestrate. **Not** an NgRx SignalStore - `jobs.store.ts` records why, and the reason is unchanged:
   a peer range on `@angular/core` would gate every Angular major on someone else's release.
-- **Budget 225 lines**, tighter than an ordinary source file, because a store is the most likely thing
+- **Budget 225 lines** for every production TypeScript file under `libs/application` and for any
+  `*.store.ts` the source scope matches. Tests are matched earlier and stay on the test budget. A
+  service or utility in `libs/application` does not fall back to the ordinary 350-line TypeScript
+  budget. The number is tighter than that ordinary budget because a store is the most likely thing
   to become the second god-object once the component stops being the first. A page whose state does
   not fit decomposes into several stores by responsibility. It does not get one bigger store. The
-  original `ADR-0005` decision recorded 250; the checker enforces 225, and that ADR keeps the
-  chronology rather than being rewritten to the current number.
+  original `ADR-0005` decision recorded 250 for stores; the checker enforces 225 on the wider matcher
+  above, and that ADR keeps the chronology rather than being rewritten to the current number.
 - **A store is testable without a `TestBed`.** If it is not, the dependencies are wrong.
 - Pure rules still belong in `libs/core` or in a page-local pure module. A store orchestrates; it does
   not calculate.

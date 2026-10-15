@@ -2,8 +2,10 @@
 
 **As of 2026-10-16.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
 Stabilization PR 7 merged as [#588](https://github.com/vitala89/applye/pull/588) at `4648d7e8`.
-Architecture Stabilization PR 8 is the final reconciliation pull request, on
-`chore/finalize-architecture-stabilization`. Its exit-criteria audit passes on this branch.
+Architecture Stabilization PR 8 is open as
+[#589](https://github.com/vitala89/applye/pull/589) on
+`chore/finalize-architecture-stabilization`. It is the final reconciliation pull request.
+Its exit-criteria audit passes on this branch.
 Merging this pull request completes Architecture Stabilization. The next implementation slice
 after merge is **Career Evidence domain foundation**: pure domain vocabulary and rules,
 draft / AI-inferred / user-confirmed verification, source and provenance, timestamps, and tests.

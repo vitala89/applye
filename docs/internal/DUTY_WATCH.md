@@ -46,11 +46,11 @@ Before a watch can be marked complete:
 
 ### 2026-10-16, reconcile stabilized architecture
 
-- **Status:** complete, pull request not yet opened at the time of this entry
+- **Status:** complete, pull request open, not merged
 - **Agent/tool:** Cursor
 - **Branch:** `chore/finalize-architecture-stabilization`
-- **Commits:** the reconciliation commit on this branch
-- **Pull request:** opened after this entry; the follow-up docs commit records the number
+- **Commits:** `308aa7bf`, plus the commit that records pull request #589
+- **Pull request:** [#589](https://github.com/vitala89/applye/pull/589), not merged
 - **Objective:** Architecture Stabilization PR 8. Make code, enforcement, architecture docs, domain vocabulary, agent instructions, and operational state describe the same current architecture. Do not implement Career Evidence.
 - **Completed:**
   - PR 7 is merged as #588 at `4648d7e8`. Local `main` matched `origin/main`. No competing architecture pull request was open.

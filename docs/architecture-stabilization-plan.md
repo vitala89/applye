@@ -321,7 +321,8 @@ npm run quality:file-size:all
 
 ### PR 8 - Architecture enforcement and documentation reconciliation
 
-**Status:** current, on `chore/finalize-architecture-stabilization`. This is the final
+**Status:** open as [#589](https://github.com/vitala89/applye/pull/589) on
+`chore/finalize-architecture-stabilization`. This is the final
 reconciliation pull request. Its exit-criteria audit passes on this branch. Merging it completes
 Architecture Stabilization. The next implementation slice after merge is Career Evidence domain
 foundation. Do not start that slice here.

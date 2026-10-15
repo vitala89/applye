@@ -10,7 +10,7 @@ Applye is an open-source, privacy-first job-search productivity app for German/E
 
 - Nx monorepo.
 - Tauri 2 desktop app with Rust backend and SQLite.
-- Angular frontend with TypeScript, Angular CDK, NgRx Signals, and shared design-system libraries.
+- Angular frontend with TypeScript, Angular CDK, signal stores in `libs/application`, and shared design-system libraries. NgRx is not used.
 - Jest, ESLint, Prettier, Husky, and commitlint.
 
 ## Architecture Direction
@@ -20,7 +20,7 @@ Applye is an open-source, privacy-first job-search productivity app for German/E
 - Treat job sources, notifications, sync, plugins, and AI integrations as explicit boundaries.
 - Favor small, testable modules with clear data ownership.
 - Shared contracts belong in `libs/core`.
-- Frontend data access should go through `libs/data`.
+- Desktop screen state and use-case orchestration live in `libs/application`. Production app code does not call `libs/data` directly. Stateless Tauri gateways live in `libs/data`. The enforced graph is `docs/architecture.md`.
 - Shared UI should live in `libs/ui`.
 - Translations should live in `libs/i18n`; avoid hardcoded user-facing strings.
 
@@ -38,13 +38,14 @@ Applye is an open-source, privacy-first job-search productivity app for German/E
 - Mobile: **no target and no directory**. The plan and its preconditions are in
   `docs/mobile-target.md`.
 - Domain models and interfaces: `libs/core`.
-- Tauri invoke wrappers and service abstractions: `libs/data`.
+- Desktop application state and use-case orchestration: `libs/application`.
+- Stateless Tauri invoke wrappers and service abstractions: `libs/data`.
 - Shared Angular components and tokens: `libs/ui`.
 - Translations: `libs/i18n`.
 - Versioned prompt/skill content: `libs/skills`. Markdown only, compiled into
   the Rust binary by `include_str!` rather than imported by TypeScript, so it is
   deliberately not an Nx project - see `docs/architecture.md`.
-- TODO: Confirm the long-term module map as features stabilize.
+  The physical module map above is current. Future web and Company Intelligence libraries are accepted direction in ADR-0006 and ADR-0007, not extra directories.
 
 ## Design Sources
 

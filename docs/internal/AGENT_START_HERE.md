@@ -8,20 +8,22 @@ Before any non-trivial design, feature, refactor, bug fix, review, or code edit,
 
 Applye intentionally keeps these concerns in existing canonical documents instead of creating duplicate files named `DDD_ARCHITECTURE.md`, `UBIQUITOUS_LANGUAGE.md`, `ARCHITECTURE_GUIDELINES.md`, `BACKEND_ARCHITECTURE.md`, `FRONTEND_ARCHITECTURE.md`, `CODE_STYLE.md`, or `AGENT_DEVELOPMENT_RULES.md`. Their canonical equivalents are:
 
-| Concern | Canonical source |
-| --- | --- |
-| DDD architecture and tactical-pattern policy | `docs/domain-architecture.md` |
-| Ubiquitous language and domain naming | `docs/domain-architecture.md` |
-| Overall architecture and dependency direction | `docs/architecture.md` plus applicable ADRs |
+| Concern                                            | Canonical source                                                           |
+| -------------------------------------------------- | -------------------------------------------------------------------------- |
+| DDD architecture and tactical-pattern policy       | `docs/domain-architecture.md`                                              |
+| Ubiquitous language and domain naming              | `docs/domain-architecture.md`                                              |
+| Overall architecture and dependency direction      | `docs/architecture.md` plus applicable ADRs                                |
 | Desktop/backend boundaries, Rust/Tauri/data access | `docs/architecture.md`, `docs/governance/CODE_QUALITY.md`, applicable ADRs |
-| Frontend/application/UI boundaries | `docs/architecture.md`, `docs/governance/CODE_QUALITY.md`, `ADR-0005` |
-| Code style, maintainability and file-size budgets | `docs/governance/CODE_QUALITY.md` |
-| Agent development workflow and mandatory gates | `AGENTS.md` and this file |
-| Required validation | `docs/governance/VALIDATION_MATRIX.md` |
+| Frontend/application/UI boundaries                 | `docs/architecture.md`, `docs/governance/CODE_QUALITY.md`, `ADR-0005`      |
+| Code style, maintainability and file-size budgets  | `docs/governance/CODE_QUALITY.md`                                          |
+| Agent development workflow and mandatory gates     | `AGENTS.md` and this file                                                  |
+| Required validation                                | `docs/governance/VALIDATION_MATRIX.md`                                     |
 
 If a canonical document and existing code disagree, treat that as a finding. Do not silently choose a third convention. Verify the relevant ADR/current state and either follow the authoritative decision or explicitly update the stale documentation in the same task when appropriate.
 
-Before any non-trivial task, read these files in order:
+Task triage decides depth. A typo, formatting fix, or other simple task does not require the full set below. A new feature, architecture refactor, new domain concept, schema change, new public API, or new bounded context does.
+
+Before that non-trivial work, read these files in order:
 
 1. `AGENTS.md`
 2. `docs/internal/PROJECT_CONTEXT.md`
@@ -38,7 +40,7 @@ Do not begin implementation from the user request alone. First verify the curren
 
 For every proposed new or changed symbol, model, workflow, command, gateway, API, module, or user-facing business term, check the ubiquitous language first. Reuse an existing canonical term when it represents the same concept. If a genuinely new business concept is needed, define it deliberately and update the domain language rather than introducing an undocumented synonym.
 
-For every file you plan to grow, check its responsibility and current non-empty line count before editing. File-size budgets come from `docs/governance/CODE_QUALITY.md`; do not guess or copy stale numbers into feature code or task prompts. Existing oversized files are technical debt, not precedent, and may not grow.
+For every file you plan to grow, check its responsibility and current non-empty line count before editing. File-size budgets come from `docs/governance/CODE_QUALITY.md`; do not guess or copy stale numbers into feature code or task prompts. If a base file is already over budget, it is technical debt rather than precedent and may not grow. The current repository-wide audit reports zero production files over budget.
 
 ## Canonical roles
 
@@ -67,7 +69,7 @@ Before editing, state briefly:
 - what validation is required for the affected layers;
 - whether the task affects privacy, security, data migration, Tauri IPC, AI providers, or external tools;
 - which domain owns the work and which terms it introduces or changes. Reuse the ubiquitous language in `docs/domain-architecture.md`; do not create Aggregates, Entities, Value Objects, Repositories, Domain Events, or physical bounded-context libraries merely to satisfy a DDD pattern;
-- where the work sits in the layering and what owns its state. A page component renders and delegates; screen state belongs in a signal store in `libs/application`, budget 250, and a page does not inject a data gateway (`ADR-0005`). The rule binds new code now; an existing page migrates when it is touched for another reason. Lint enforces it for components with no exceptions left: injecting `AiService`, `JobSourceService` or any `*Gateway` in a `*.component.ts` is an error, and the `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist is gone rather than empty - there is nothing to add a file to;
+- where the work sits in the layering and what owns its state. A page component renders and delegates; screen state belongs in a signal store in `libs/application`, and a page does not inject a data gateway (`ADR-0005`). The size limit is the application-layer row in `docs/governance/CODE_QUALITY.md` (225 lines for production TypeScript under `libs/application` and for any `*.store.ts`). ADR-0005's original store decision was 250; do not copy that number into new work. The rule binds new code now; an existing page migrates when it is touched for another reason. Lint enforces it for components with no exceptions left: injecting `AiService`, `JobSourceService` or any `*Gateway` in a `*.component.ts` is an error, and the `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist is gone rather than empty - there is nothing to add a file to;
 - which touched files are near or above their code-size budgets, what responsibility each file owns, and where the new behavior will be tested.
 
 Before adding framework or library code, use the configured read-only documentation MCP tools or current official docs for the installed version. Do not send source code, secrets, personal data, or private prompts to a documentation MCP.

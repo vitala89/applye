@@ -22,19 +22,42 @@ Rust 2021 behind Tauri 2, SQLite through `sqlx`, no server. Everything under
 
 ```text
 src/
-├── lib.rs          app setup, state, the invoke_handler registry
-├── db/             pool, migrations, shared query helpers
-├── keys/           OS keychain access
-├── ai/             provider clients and the CLI bridge
-└── commands/       one module per domain area
+├── lib.rs                 app setup and the invoke_handler registry
+├── main.rs                binary entry
+├── db.rs                  pool, migrations, shared query helpers
+├── keys.rs                OS keychain access
+├── startup.rs             launch failure reporting
+├── ai/                    provider clients and the CLI bridge
+├── commands/              Tauri IPC adapters, plus remaining legacy command modules
+├── applications/          extracted Applications implementation
+├── documents/             extracted Documents implementation
+├── interview/             extracted Interview implementation
+├── tracklist_import/      extracted Tracklist Import implementation
+├── jobs/                  extracted Jobs implementation
+├── discover/              extracted Discover implementation
+├── tailoring/             extracted Tailoring implementation
+├── database_backup/       backup and restore
+├── untrusted.rs           parser panic guard
+├── url_parts.rs           shared URL helpers
+├── web_text.rs            shared HTML and text helpers
+└── exported_paths.rs      exported-file provenance
 ```
 
-- A new capability belongs in a focused module, registered from `lib.rs`.
-- **Hard budget: 500 non-empty lines of Rust source per file, counted separately from 600 for the
-  file's inline `#[cfg(test)]` items.** Rust keeps its tests in the same file by convention, so one
-  combined number said little about either half; see `docs/governance/CODE_QUALITY.md`. The ratchet
-  is enforced by `npm run quality:file-size`, which is diff-scoped - use
-  `npm run quality:file-size:all` for a repository-wide picture.
+`commands/` holds Tauri IPC adapters. Applications, Documents, Interview, Tracklist Import, Jobs,
+Discover, and Tailoring keep workflow, rules, persistence, parsers, and renderers in the feature
+directories above. ATS, analytics, health, tracker, settings, follow-up drafts, portal answers, and
+WYSIWYG print still hold more implementation inside `commands/`. Do not treat that remainder as
+already extracted.
+
+- A new Tauri command is registered from `lib.rs`. Its IPC adapter belongs under `commands/`.
+  Substantial implementation belongs under the owning feature or support module. A new capability
+  does not automatically belong in `commands/`.
+- **Hard budget: 400 lines of Rust source per file, counted separately from 540 for the file's
+  inline `#[cfg(test)]` items.** Those are the current checker values in
+  `docs/governance/CODE_QUALITY.md` and `tools/check-file-size-budgets.mjs`. Do not reuse the older
+  500/600 pair. Rust keeps its tests in the same file by convention, so one combined number said
+  little about either half. The ratchet is enforced by `npm run quality:file-size`, which is
+  diff-scoped — use `npm run quality:file-size:all` for a repository-wide picture.
 - No Rust file is currently over either budget. `discover.rs`, `tailoring.rs`, and `documents.rs`
   were the legacy oversized modules and have been split; they are still the largest domains, so
   extract a cohesive responsibility rather than growing them again.
@@ -51,7 +74,10 @@ src/
 - Naming mirrors the frontend wrapper: `db_*` for storage and plain verbs for behavior.
 - Every command gets typed request and response structs with `serde` derives. Do not pass loose
   `serde_json::Value` across IPC.
-- Keep commands thin: validate, call focused domain logic, persist, return.
+- Keep a new command thin: validate, call focused domain logic, persist, return. Applications,
+  Documents, Interview, Tracklist Import, Jobs, Discover, and Tailoring already do this. ATS,
+  analytics, health, tracker, settings, follow-up drafts, portal answers, and WYSIWYG print still
+  hold more implementation in `commands/`. Do not treat that remainder as already extracted.
 - Prefer typed request objects over long parameter lists.
 - Do not let one command become an orchestration engine. Extract a service/module with explicit
   inputs, outputs, and failure behavior.

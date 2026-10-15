@@ -35,15 +35,19 @@ The main Claude Code session remains the conductor. Skills and subagents are spe
 Applye is layered, and the direction of every dependency is enforced by
 `@nx/enforce-module-boundaries` in `eslint.config.mjs`, not by convention:
 
-```
-apps/desktop  ->  libs/application  ->  libs/data  ->  libs/core
-                  libs/ui, libs/i18n                   (pure domain, no Angular, no Tauri)
-```
+The current physical graph, including what `apps/web` may and may not import, is
+`docs/architecture.md`. Do not reconstruct it from this file. In short, production desktop code
+reaches `libs/application`, `libs/ui`, `libs/i18n`, and `libs/core`. It does not reach `libs/data`.
+`libs/application` reaches `libs/data`, `libs/core`, and `libs/i18n`. `apps/web` may use shared
+`ui`, `i18n`, and `core`. It may not import desktop-scoped `libs/application` or `libs/data`.
+ADR-0006's shared-application diagram is accepted future direction, not that permission.
 
 **A page component renders and delegates. It does not hold the state of its own screen, and it does
 not inject a data gateway.** Screen state - what is loaded, what is in flight, what the user selected -
-belongs in a **signal store in `libs/application`**, budget **250 lines**. Plain `signal()` and
-`computed()`, never NgRx: `jobs.store.ts` records why, and the reason has not changed.
+belongs in a **signal store in `libs/application`**. Plain `signal()` and `computed()`, never NgRx:
+`jobs.store.ts` records why, and the reason has not changed. The executable size contract is the
+table in `docs/governance/CODE_QUALITY.md`: 225 lines for every production TypeScript file under
+`libs/application` and for any `*.store.ts`, not the original 250-line store decision in ADR-0005.
 
 This is `ADR-0005`, and it was measured rather than assumed. Page classes that are view, state and
 orchestration at once reach 700 to 1000 lines, and extracting pure helpers does not bring them back -
@@ -69,7 +73,7 @@ Three things a new session must know before writing code:
 
 - Read `docs/governance/CODE_QUALITY.md` before every code change.
 - Check file size and responsibility before adding code.
-- Existing oversized files may not grow. Extract a focused responsibility before adding behavior.
+- An over-budget base file may not grow. Extract a focused responsibility before adding behavior. The current repository-wide audit reports zero production files over budget.
 - Apply SOLID pragmatically, keep domain logic pure where practical, and keep I/O at explicit boundaries.
 - Identify the test seam first. Bug fixes require regression tests.
 - Use the `applye-angular` or `applye-rust` skill for stack-specific work.

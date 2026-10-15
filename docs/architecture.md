@@ -18,16 +18,17 @@ Angular assets; its planned account-backed backend is defined in
 ```
 applye/
 ├── apps/
-│   ├── desktop/          Tauri 2 + Angular - the primary app
+│   ├── desktop/          Tauri 2 + Angular — the primary app
 │   │   ├── src/          Angular frontend (UI, routes, components)
 │   │   └── src-tauri/    Rust backend (commands, SQLite, AI bridge, file I/O)
-│   └── web/              Angular web surface (currently static at applye.dev)
+│   └── web/              static Angular web surface (applye.dev); no account runtime yet
 └── libs/
-    ├── core/             domain models, types, IPC contracts (framework-agnostic)
-    ├── data/             Tauri invoke wrappers, DB/AI service abstractions
-    ├── ui/               shared Angular components + design tokens
-    ├── i18n/             translations (en/de/ru/es/fr/uk)
-    └── skills/           markdown skill files (AI prompts), versioned
+    ├── core/             domain model, contracts, pure rules
+    ├── data/             stateless desktop/Tauri gateways
+    ├── application/      desktop application state and use-case orchestration
+    ├── ui/               shared presentational Angular UI and tokens
+    ├── i18n/             shared translations (en/de/ru/es/fr/uk)
+    └── skills/           Rust-embedded AI prompt files; intentionally not an Nx project
 ```
 
 There is no `apps/mobile`. The plan for a mobile target, and the conditions
@@ -36,39 +37,117 @@ entry that builds nothing reads as a target that exists.
 
 ## Layers and the dependency rule
 
-The libraries are a stack, and dependencies only ever point downward:
+Two constraints apply together. A dependency is legal only when **both** the `type:` rule and the
+`scope:` rule in `eslint.config.mjs` allow it. Tags today:
 
+| Project       | `type:`            | `scope:`        |
+| ------------- | ------------------ | --------------- |
+| `desktop`     | `type:app`         | `scope:desktop` |
+| `web`         | `type:app`         | `scope:web`     |
+| `application` | `type:application` | `scope:desktop` |
+| `data`        | `type:data`        | `scope:desktop` |
+| `core`        | `type:domain`      | `scope:shared`  |
+| `ui`          | `type:ui`          | `scope:shared`  |
+| `i18n`        | `type:util`        | `scope:shared`  |
+
+Production `type:` directions:
+
+```text
+type:app          -> application, ui, util, domain
+type:application  -> data, domain, util
+type:data         -> domain, util
+type:ui           -> domain, util
+type:util         -> domain, util
+type:domain       -> domain
 ```
-        apps/desktop            apps/web
-        (type:app)              (type:app)
-        scope:desktop           scope:web
-             │                       │
-    ┌────────┼────────┬──────────┐   │ (styles only - no TypeScript
-    ▼        ▼        ▼          ▼   ▼  dependency on any library)
-  data      i18n     ui        core
- type:data type:util type:ui  type:domain
- scope:desktop  ────── scope:shared ──────
+
+Production app code cannot depend on `type:data`. A `*.spec.ts` or `*.harness.ts` may, because a
+spec fakes the gateway its store calls. That exception is the second `depConstraints` block in
+`eslint.config.mjs`, and it is not a production dependency.
+
+Scope directions:
+
+```text
+scope:desktop -> desktop, shared
+scope:web     -> web, shared
+scope:shared  -> shared
 ```
 
-- **`core` (type:domain)** depends on nothing. Framework-agnostic models, types and pure functions.
-  It is the only layer both other libraries and the apps may reach into freely, and the only place a
-  contract shared with Rust is allowed to live.
-- **`ui` (type:ui)** depends on nothing either: presentational Angular components and the design
-  tokens. It never imports `data`, so a shared component can never trigger IPC.
-- **`i18n` (type:util)** and **`data` (type:data)** depend on `core` only.
-- **`data` is `scope:desktop` on purpose.** It wraps Tauri IPC, and the web app has no Tauri
-  runtime; the tag is what stops someone importing it into `apps/web` and shipping a broken page.
-  Those wrappers are stateless. Reactive application state, including `JobsStore`, lives in
-  `libs/application`. SQLite remains the source of truth.
-- **Apps depend on libraries. Libraries never depend on apps, and never on each other sideways.**
+`libs/application` and `libs/data` are `scope:desktop`. `apps/web` therefore cannot import them,
+even though `type:app` is allowed to depend on `type:application`. The current web surface uses
+`libs/ui` styles and tokens. The tags also allow it to import shared `ui`, `i18n`, and `core` from
+TypeScript. They do not allow the desktop application or data layers.
 
-This is enforced, not merely documented: every project carries `type:` and `scope:` tags in its
-`project.json`, and `@nx/enforce-module-boundaries` in `eslint.config.mjs` fails the lint run on any
-edge that points the wrong way. Adding a new library means giving it tags; `npm run lint` will tell
-you immediately if its dependencies contradict them.
+### Current physical architecture
+
+```text
+apps/desktop
+     |
+     +------> libs/application ------> libs/data ------> libs/core
+     |              |                      |
+     |              +--------------------->|  (data may also use i18n)
+     |              +------> libs/i18n
+     |              +------> libs/core
+     |
+     +------> libs/ui -------> libs/core, libs/i18n   (permitted; ui must not import data)
+     +------> libs/i18n -----> libs/core
+     +------> libs/core
+
+apps/web
+     |
+     +------> libs/ui, libs/i18n, libs/core     (shared scope; styles are what web uses today)
+     X libs/application                         (scope:desktop)
+     X libs/data                                (scope:desktop)
+```
+
+Libraries never depend upward on apps or on a higher layer. Library-to-library dependencies are
+permitted only in the downward directions above. `ui` must not import `data`, so a shared component
+cannot trigger IPC. `application` must not import `ui`, so a store cannot reach for a component.
+
+This is enforced, not merely documented: `@nx/enforce-module-boundaries` fails the lint run on an
+edge that points the wrong way.
 
 Imports go through the published entry point (`@applye/core`, never
 `@applye/core/lib/models/job.model`). Deep imports bypass the public API and are treated as a defect.
+
+### Accepted future direction, not the current graph
+
+[ADR-0006](product/decisions/ADR-0006-career-company-network-interview-intelligence.md) draws a
+future logical picture in which desktop and web share application use cases and domain rules, with
+separate local and web adapters. That decision stands. It does not mean today's `apps/web` may
+import today's `libs/application`. That library is desktop-scoped until a later slice creates a
+shared application boundary on purpose. [ADR-0007](product/decisions/ADR-0007-web-backend-platform.md)
+names the future web runtime (Cloudflare Workers, TypeScript, Hono, D1, R2). No `apps/api` exists,
+and this document does not create one.
+
+## What `libs/application` owns
+
+`libs/application` owns screen and application state, page stores, and use-case orchestration. A
+store coordinates domain rules from `libs/core` with stateless gateways from `libs/data`. The
+precedent is `libs/application/src/lib/jobs/jobs.store.ts`: plain `signal()` and `computed()`, no
+NgRx. [ADR-0005](product/decisions/ADR-0005-application-layer-owns-page-state.md) is the decision.
+
+It does not own Tauri IPC, SQLite, navigation, toasts, clipboard, native dialogs, or browser
+storage. Those effects stay in `apps/desktop`. A store returns an outcome or a destination; the page
+navigates, notifies, copies, or opens a dialog. Business and data commands go through `libs/data`.
+Presentation-only shell effects, opening or revealing a file this app just wrote, go through
+`apps/desktop/src/app/core/native-shell`. Production app code does not skip the application layer
+to call `libs/data`.
+
+ESLint rejects, in production files under `libs/application/src`:
+
+- `@tauri-apps/*` and a dynamic import of `@tauri-apps/api/core`;
+- `@angular/router`;
+- `navigator`, `localStorage`, and `sessionStorage`, including member access;
+- `ToastService`.
+
+Specs are exempt so they can fake an effect. The same file also stops a component (`*.component.ts`
+or `app.ts`) from injecting `AiService`, `JobSourceService`, or any `*Gateway`.
+
+The file-size contract for this layer, and for every other category, is the table in
+[CODE_QUALITY.md](governance/CODE_QUALITY.md). The checker enforces 225 lines on every production
+TypeScript file under `libs/application` and on any `*.store.ts` in source scope. ADR-0005 originally
+chose 250 for stores; that history stays in the ADR. The executable number is 225.
 
 ## Application feature direction
 
@@ -80,11 +159,30 @@ belongs to the domain. Type-only imports still count. Specs do not. Production c
 library does not import `@applye/application` or the library barrel; that hides the feature edge.
 
 The allowed edges, each with a reason, live in `tools/lib/application-feature-policy.mjs`.
-`npm run quality:application-boundaries` fails on a cycle, on an edge that is not in that policy,
-on a self-import of the application library, and when the legacy
-`libs/core/src/lib/models` bucket gains a file or keeps an allowlist entry for a file that has moved. Shared document vocabulary, including `DocumentRegionTag` and
-`inferDocumentRegion`, lives in `libs/core` under `documents/`. Job-workflow rules, such as which
-language a review step opens in, stay in the jobs feature.
+The only approved production edge is `jobs -> documents`: the job application workflow orchestrates
+document generation, review, export, linking, and gap-fill. Documents do not orchestrate jobs.
+`npm run quality:application-boundaries` runs
+`tools/check-application-feature-boundaries.mjs`. It fails when:
+
+- the feature graph contains a cycle, even if both directions were listed;
+- a production cross-feature edge is not in the policy;
+- an approved edge has no production import left;
+- production code imports `@applye/application` or the library barrel by a relative path;
+- a relative import cannot be resolved, because the graph would miss that edge;
+- a relative import leaves `libs/application/src/lib`.
+
+Type-only imports count. Specs do not. A non-relative import other than the application barrel is
+not a feature edge in this checker; Nx still owns library tags. Shared document vocabulary,
+including `DocumentRegionTag` and `inferDocumentRegion`, lives in `libs/core` under `documents/`.
+Job-workflow rules, such as which language a review step opens in, stay in the jobs feature.
+
+### Legacy `core/models` ratchet
+
+`libs/core/src/lib/models` is a legacy bucket. New bounded-context concepts do not go there. They
+use a domain-owned folder such as `documents/`, `career/`, `company/`, `network/`, or `interview/`.
+`legacyCoreModelFiles` in the same policy module is a shrinking allowlist. A file on disk that is
+not listed fails. A listed name that is no longer on disk fails. Moving or deleting a legacy model
+removes its allowlist entry in the same change, and that filename may not come back into the bucket.
 
 ## Frontend (Angular)
 
@@ -115,22 +213,28 @@ language a review step opens in, stay in the jobs feature.
   adapter calls the existing guarded Rust commands. `libs/application` calls neither.
   A page calls the adapter and does not name a Tauri command. ADR-0005, amendment
   sixty-eight.
-- Command entrypoints under `commands/` are Tauri IPC adapters. Applications, Documents,
-  Interview, Tracklist Import, Jobs, Discover, and Tailoring keep workflow, pure rules,
-  parsers, renderers, and SQL outside `commands/`. The untrusted-parser guard lives in
-  `untrusted`. Shared URL and HTML helpers live in `url_parts` and `web_text`. Exported-file
-  provenance lives in `exported_paths`. Open and Reveal stay native shell commands.
-  Documents export calls the Tailoring feature directly. The CV style contract lives in
-  `tailoring`, so Tailoring does not depend on Documents. The dormant journal commands
-  `generated_doc_get`, `export_docx`, and `export_pdf` are not registered. The
-  `generated_docs` table remains for older databases, and job deletion still removes
-  those rows. `validate_theme` is a pure Tailoring rule and is not an IPC command.
-  A full diagram pass is PR 8.
-- **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
-  generated documents, and the AI result cache.
-- Document export **ships as PDF**, rendered from the same HTML the preview shows. A DOCX renderer
-  (`docx-rs`) exists in the backend but is not surfaced in the UI; treat it as dormant rather than
-  as a second supported format.
+- Architecture Stabilization made the **targeted** command modules thin adapters:
+  Applications, Documents, Interview, Tracklist Import, Jobs, Discover, and Tailoring.
+  Their workflow, pure rules, parsers, renderers, and SQL live outside `commands/`.
+  Other active modules still hold more of their implementation beside the IPC entrypoint,
+  including ATS, analytics, health, tracker, settings, follow-up drafts, portal answers,
+  and the WYSIWYG print path. That is the current tree, not a leftover task to rewrite
+  every command.
+- The untrusted-parser guard lives in `untrusted`. Shared URL and HTML helpers live in
+  `url_parts` and `web_text`. Exported-file provenance lives in `exported_paths`. Open and
+  Reveal stay native shell commands. Documents export calls the Tailoring feature directly.
+  The CV style contract lives in `tailoring`, so Tailoring does not depend on Documents.
+- **SQLite** (via `sqlx`) is the desktop source of truth for profile, jobs, applications,
+  pipeline history, the document library, and the AI result cache.
+- **Document Library export is live for DOCX and structured PDF.** `cv_document_export` and
+  `cover_letter_document_export` take `format: 'docx' | 'pdf'`. Separate WYSIWYG PDF commands
+  render the on-screen document: `cv_document_export_pdf_wysiwyg` and
+  `cover_letter_document_export_pdf_wysiwyg`. Tracker report export is its own WYSIWYG command.
+- The old Tailoring journal commands `generated_doc_get`, `export_docx`, and `export_pdf` are
+  not registered. Those names are not the Document Library export above. `validate_theme` is a
+  pure Tailoring rule and is not an IPC command. The `generated_docs` table remains only so
+  older databases still open; job hard-delete still removes those historical rows. There is
+  no live `generated_doc_get` endpoint. Editable documents are `document_library` records.
 - Tauri v2 conventions: runtime check via `window.__TAURI_INTERNALS__`; events via `emit` + the
   `Emitter` trait; window actions need a capability entry under `src-tauri/capabilities/`.
 

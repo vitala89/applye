@@ -3612,6 +3612,17 @@ analytics facts. `TrackerGateway` takes the tracker-only field write. `ProfileGa
 `SettingsGateway` replace `ProfileSettingsGateway`. `resetAllData` stays with settings. No schema,
 migration, or Rust command name changes.
 
+## Amendment seventy, 2026-10-16: the executable budget is 225, and the original decision stays 250
+
+The decision above chose a 250-line budget for a page store. Later quality work changed the
+executable matcher. `tools/check-file-size-budgets.mjs` now enforces **225** lines, and that row
+matches every production TypeScript file under `libs/application/**` plus any `*.store.ts` in
+source scope. Specs still match the test budget first. The canonical table is
+`docs/governance/CODE_QUALITY.md`.
+
+This amendment does not rewrite the 250-line paragraphs above. They record the decision as it was
+made. New work uses 225.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

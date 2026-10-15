@@ -252,7 +252,7 @@ async fn db_delete_job_core(id: i64, pool: &sqlx::SqlitePool) -> Result<(), Stri
         "generated_docs",
         "scoring_cache",
     ] {
-        // Audited: `table` is a literal from the array above, not caller input.
+        // Literal names, never caller input. Keep generated_docs so older rows cannot block delete or stay orphaned.
         sqlx::query(sqlx::AssertSqlSafe(format!(
             "DELETE FROM {table} WHERE job_id = ?"
         )))

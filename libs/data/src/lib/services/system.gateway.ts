@@ -15,13 +15,11 @@ import { tauriInvoke } from '../tauri.invoke';
  * it in a domain gateway would have made a dozen unrelated consumers inject
  * that domain's token.
  *
- * **Four wrappers were deleted rather than moved**, because nothing in the
- * application called them - not a store, not a component, not a spec:
- * `generatedDocGet`, `exportDocx` and `exportPdf` are the old tailoring-journal
- * export path, superseded by the document-library export the app actually uses.
- * **Those Rust commands are still registered.** Database backup is not one of
- * them: `backupDatabase` and `prepareDatabaseRestore` are the Settings actions,
- * and they are different commands on purpose.
+ * **The old tailoring-journal wrappers stayed deleted.** Architecture
+ * Stabilization PR 6 also removed the dormant Rust endpoints
+ * `generated_doc_get`, `export_docx`, and `export_pdf`. Nothing in the
+ * application called them. Database backup is a different workflow:
+ * `backupDatabase` and `prepareDatabaseRestore` are the Settings actions.
  */
 @Injectable({ providedIn: 'root' })
 export class SystemGateway {

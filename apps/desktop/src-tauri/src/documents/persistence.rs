@@ -2,7 +2,7 @@
 //! commit, and unlink-before-delete live in these statements.
 //!
 //! The library (ROADMAP §16) is the live, editable CV / cover-letter store,
-//! distinct from `generated_docs`, which stays the export journal.
+//! distinct from historical `generated_docs` rows, which have no live command.
 //! `content_json` is a serialized JSON string whose shape is locked as a typed
 //! contract in `libs/core` (`CvContent` for `doc_type = 'cv'`,
 //! `CoverLetterContent` for `doc_type = 'cover_letter'`). This module only

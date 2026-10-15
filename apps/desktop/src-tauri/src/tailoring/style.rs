@@ -201,7 +201,9 @@ fn is_hex_color(s: &str) -> bool {
 /// path). Returns a note per problem; empty = safe to store. Built-in themes
 /// always pass. Deliberately strict: rejects malformed hex, out-of-range
 /// numerics, and unknown enum values so untrusted descriptors cannot smuggle
-/// unexpected values into the render path.
+/// unexpected values into the render path. Not an IPC command: nothing in the
+/// application calls it yet, so the library build allows it to be unused.
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn validate_theme(descriptor_json: Option<String>) -> Vec<StyleNote> {
     let mut notes: Vec<StyleNote> = Vec::new();
     let Some(raw) = descriptor_json else {

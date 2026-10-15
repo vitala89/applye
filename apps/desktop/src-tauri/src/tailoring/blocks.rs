@@ -29,7 +29,6 @@ use crate::tailoring::style::CvStyle;
 pub(crate) enum BlockLevel {
     H1,
     H2,
-    H3,
     Body,
     Bullet,
     /// An experience/education entry's lead line (company / institution). Body
@@ -47,7 +46,6 @@ impl BlockLevel {
         match self {
             BlockLevel::H1 => 1.6,
             BlockLevel::H2 => 1.3,
-            BlockLevel::H3 => 1.15,
             BlockLevel::Body
             | BlockLevel::Bullet
             | BlockLevel::EntryHead
@@ -55,7 +53,7 @@ impl BlockLevel {
         }
     }
     pub(crate) fn is_heading(self) -> bool {
-        matches!(self, BlockLevel::H1 | BlockLevel::H2 | BlockLevel::H3)
+        matches!(self, BlockLevel::H1 | BlockLevel::H2)
     }
 }
 
@@ -114,7 +112,7 @@ pub(crate) struct RenderBlock {
 ///
 /// Colour rules, by block role:
 /// - `H1` (name): theme header title colour (accent or dark).
-/// - `H2`/`H3` (section title): theme section title colour.
+/// - `H2` (section title): theme section title colour.
 /// - `EntryHead` (company/institution): theme entry-company colour.
 /// - `Body`/`Bullet`/`EntryRole`: per-section colour ?? document body colour ??
 ///   dark - the no-accent-leak rule, so body text is never green.
@@ -158,7 +156,7 @@ pub(crate) fn resolve_cv_blocks(
                         CvTheme::TEXT_RGB
                     }
                 }
-                BlockLevel::H2 | BlockLevel::H3 => {
+                BlockLevel::H2 => {
                     if theme.section_title_accent {
                         accent
                     } else {
@@ -177,8 +175,7 @@ pub(crate) fn resolve_cv_blocks(
                 }
             };
 
-            let uppercase =
-                theme.section_upper && matches!(b.level, BlockLevel::H2 | BlockLevel::H3);
+            let uppercase = theme.section_upper && matches!(b.level, BlockLevel::H2);
             let text = if uppercase {
                 b.text.to_uppercase()
             } else {
@@ -193,20 +190,20 @@ pub(crate) fn resolve_cv_blocks(
             };
 
             let rule_below = match b.level {
-                BlockLevel::H2 | BlockLevel::H3 => theme.section_rule,
+                BlockLevel::H2 => theme.section_rule,
                 // Thin rule under each entry's role line, as in the editor.
                 BlockLevel::EntryRole => theme.entry_rule,
                 _ => None,
             };
 
             // CV heading sizes mirror the editor's CSS, NOT the generic
-            // `BlockLevel::scale()` (which the journal/cover-letter paths use):
+            // `BlockLevel::scale()` (which the cover-letter path uses):
             // the name is `.cvpreview__name { font-size: 1.6rem }` ≈ 1.9× the
             // 10pt body, and section titles carry NO CSS font-size - they inherit
             // the body size and read as headings via uppercase + bold + colour.
             let cv_scale = match b.level {
                 BlockLevel::H1 => 1.9,
-                BlockLevel::H2 | BlockLevel::H3 => 1.0,
+                BlockLevel::H2 => 1.0,
                 BlockLevel::Body
                 | BlockLevel::Bullet
                 | BlockLevel::EntryHead

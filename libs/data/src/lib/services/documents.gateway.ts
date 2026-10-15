@@ -18,11 +18,11 @@ import { tauriInvoke } from '../tauri.invoke';
  * **The sixth per-domain gateway** - see `CODE_QUALITY.md` for the migration
  * and `DraftsGateway` for the pattern.
  *
- * **This is the export path that survived.** `SystemGateway`'s pull request
- * deleted `exportDocx`, `exportPdf` and `generatedDocGet` - the old
- * tailoring-journal route - because nothing called them. The methods here are
- * what the CV and cover-letter lists actually invoke, which is why the deletion
- * over there was safe.
+ * **This is the export path that survived.** The old tailoring-journal
+ * wrappers (`exportDocx`, `exportPdf`, `generatedDocGet`) and their Rust
+ * endpoints were removed in Architecture Stabilization PR 6 because nothing
+ * in the application called them. The methods here are what the CV and
+ * cover-letter lists actually invoke.
  *
  * `printWindowReady` sits with the exports rather than in `SystemGateway`
  * because it is one half of the WYSIWYG print handshake: the renderer tells

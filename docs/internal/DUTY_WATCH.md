@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-15, remove dormant runtime surface
+
+- **Status:** complete, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `refactor/remove-dormant-runtime-surface`
+- **Commits:** `10a42744`, plus the docs commit that records pull request #587
+- **Pull request:** [#587](https://github.com/vitala89/applye/pull/587), not merged
+- **Objective:** Architecture Stabilization PR 6. Remove registered runtime surface that has no production caller, without dropping historical data.
+- **Completed:**
+  - PR 5 is merged as #586 at `ee10d628`. Local `main` matched `origin/main`. No competing architecture pull request was open.
+  - Every command in `lib.rs` `generate_handler!` was compared with production `tauriInvoke('…')` literals. The only registered commands with no production caller were `generated_doc_get`, `export_docx`, `export_pdf`, and `validate_theme`.
+  - Those four IPC endpoints are unregistered. `tailoring/generated.rs` and `tailoring/files.rs` are gone. The journal-only `md_to_docx_bytes`, `md_to_pdf_bytes`, `md_to_blocks`, and `BlockLevel::H3` left with them because nothing else constructed or called them. `parse_inline_runs` and the live `render_blocks_*` paths stay.
+  - The TypeScript `GeneratedDoc` interface had no production consumer and is removed. `DocType` and `ExportFormat` stay.
+  - `tailoring::style::validate_theme` and its tests stay. It is allowed as dead code outside tests because the future theme trust boundary has no production caller yet.
+  - No automated stale-registration scanner was added. A parser would have to ignore translation keys that share command-like names and keep an allowlist for native-only endpoints. That is more brittle than this audit.
+- **Not completed:** The pull request was not merged. PR 7 was not started. No manual native walkthrough.
+- **Files or packages changed:** Tailoring command adapter and modules, `lib.rs`, style IPC, job-delete comment, gateway comments, `GeneratedDoc`, and the stabilization docs.
+- **Validation:** From `apps/desktop/src-tauri`: `cargo fmt --all -- --check` passed, `cargo test --lib --offline` passed (408 passed, 0 failed, 1 ignored), `cargo clippy --lib --offline -- -D warnings` passed, `cargo check --offline` passed. `npm run quality:file-size` passed. `npm run quality:attribution` passed. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files). `npm run format:check` passed. `git diff --check` passed. `nx test core --skip-nx-cache` passed (480 tests). `nx run core:type-check --skip-nx-cache` passed. `nx lint core,data --skip-nx-cache` passed. `nx test data --skip-nx-cache` passed (82 tests). `nx run data:type-check --skip-nx-cache` passed. `quality:file-size:all` reported 0 files over budget and a near-budget list that this pull request did not touch. No Windows or desktop native run. The first CI run failed because the pull-request body gained a Cursor footer; that footer was removed before this docs commit.
+- **Privacy/security impact:** No migration, no dropped table, no deletion of files under `app_data/companies`. Job hard-delete still removes historical `generated_docs` rows. Open/Reveal containment is unchanged.
+- **Decisions and assumptions:** `export_pdf` and `export_docx` translation keys are UI copy, not the removed commands. Tracker `exportPdf()` and document `exportPdfWysiwyg()` call different commands and stay. Backup, health, hash, tailoring cache, document-library export, WYSIWYG PDF, and tracker report export stay.
+- **Next first action:** After this pull request merges, start Architecture Stabilization PR 7: Bring production source back under file-size budgets. The repo-wide audit on this branch reported no production file over budget, so PR 7 starts by re-running `npm run quality:file-size:all` and reconciling the plan's known examples with that inventory. Do not merge this pull request from the agent session. Do not start Career Evidence.
+- **Evidence:** production `tauriInvoke` scan; `cargo test --lib --offline` 408 passed, 0 failed, 1 ignored.
+
 ### 2026-10-14, thin Rust command boundary part B
 
 - **Status:** complete

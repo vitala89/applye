@@ -22,14 +22,36 @@ Rust 2021 behind Tauri 2, SQLite through `sqlx`, no server. Everything under
 
 ```text
 src/
-├── lib.rs          app setup, state, the invoke_handler registry
-├── db/             pool, migrations, shared query helpers
-├── keys/           OS keychain access
-├── ai/             provider clients and the CLI bridge
-└── commands/       one module per domain area
+├── lib.rs                 app setup and the invoke_handler registry
+├── main.rs                binary entry
+├── db.rs                  pool, migrations, shared query helpers
+├── keys.rs                OS keychain access
+├── startup.rs             launch failure reporting
+├── ai/                    provider clients and the CLI bridge
+├── commands/              Tauri IPC adapters, plus remaining legacy command modules
+├── applications/          extracted Applications implementation
+├── documents/             extracted Documents implementation
+├── interview/             extracted Interview implementation
+├── tracklist_import/      extracted Tracklist Import implementation
+├── jobs/                  extracted Jobs implementation
+├── discover/              extracted Discover implementation
+├── tailoring/             extracted Tailoring implementation
+├── database_backup/       backup and restore
+├── untrusted.rs           parser panic guard
+├── url_parts.rs           shared URL helpers
+├── web_text.rs            shared HTML and text helpers
+└── exported_paths.rs      exported-file provenance
 ```
 
-- A new capability belongs in a focused module, registered from `lib.rs`.
+`commands/` holds Tauri IPC adapters. Applications, Documents, Interview, Tracklist Import, Jobs,
+Discover, and Tailoring keep workflow, rules, persistence, parsers, and renderers in the feature
+directories above. ATS, analytics, health, tracker, settings, follow-up drafts, portal answers, and
+WYSIWYG print still hold more implementation inside `commands/`. Do not treat that remainder as
+already extracted.
+
+- A new Tauri command is registered from `lib.rs`. Its IPC adapter belongs under `commands/`.
+  Substantial implementation belongs under the owning feature or support module. A new capability
+  does not automatically belong in `commands/`.
 - **Hard budget: 400 lines of Rust source per file, counted separately from 540 for the file's
   inline `#[cfg(test)]` items.** Those are the current checker values in
   `docs/governance/CODE_QUALITY.md` and `tools/check-file-size-budgets.mjs`. Do not reuse the older

@@ -11,7 +11,7 @@ Before implementation:
 
 1. State the responsibility of each file you will touch.
 2. Check its current non-empty line count against the repository budget.
-3. Existing oversized files may not grow. Extract a cohesive responsibility first.
+3. An over-budget base file may not grow. Extract a cohesive responsibility first. The current repository-wide audit reports zero production files over budget.
 4. Identify the test seam before writing behavior.
 5. Use read-only documentation MCP tools or official docs for version-sensitive APIs.
 

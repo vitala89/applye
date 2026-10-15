@@ -73,7 +73,7 @@ Three things a new session must know before writing code:
 
 - Read `docs/governance/CODE_QUALITY.md` before every code change.
 - Check file size and responsibility before adding code.
-- Existing oversized files may not grow. Extract a focused responsibility before adding behavior.
+- An over-budget base file may not grow. Extract a focused responsibility before adding behavior. The current repository-wide audit reports zero production files over budget.
 - Apply SOLID pragmatically, keep domain logic pure where practical, and keep I/O at explicit boundaries.
 - Identify the test seam first. Bug fixes require regression tests.
 - Use the `applye-angular` or `applye-rust` skill for stack-specific work.

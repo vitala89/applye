@@ -15,7 +15,7 @@ Before designing, writing, refactoring, or reviewing code:
 - Read `docs/architecture.md` and the applicable ADRs for system, frontend, backend/Tauri, dependency, and state-ownership decisions.
 - Read `docs/governance/CODE_QUALITY.md` for code style, maintainability, layer ownership, and the authoritative file-size budgets, plus the relevant Angular or Rust skill.
 - Read `docs/governance/VALIDATION_MATRIX.md` before choosing verification.
-- Check the responsibility and current non-empty line count of every file you plan to grow. Existing oversized files may not grow.
+- Check the responsibility and current non-empty line count of every file you plan to grow. An over-budget base file may not grow. The current repository-wide audit reports zero production files over budget.
 - A component renders and delegates. It does not hold the state of its own screen and does not inject a data gateway; screen state belongs in `libs/application` (`ADR-0005`).
 - Extract cohesive responsibilities instead of creating monolithic components, services, commands, or modules.
 - Apply SOLID pragmatically, keep domain logic pure where practical, keep I/O at explicit boundaries, and use typed contracts across Angular, Tauri IPC, Rust, and SQLite.

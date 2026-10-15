@@ -44,6 +44,19 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-16, align agent skills with the enforced graph
+
+- **Status:** complete, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `chore/finalize-architecture-stabilization`
+- **Pull request:** [#589](https://github.com/vitala89/applye/pull/589), not merged
+- **Objective:** Remove the two remaining agent-skill contradictions on PR 8. Do not start Career Evidence.
+- **Completed:** The Angular skill dependency table now includes `libs/application` and forbids production desktop code from depending on `libs/data`. Business IPC and native-shell Open/Reveal are separate paths. The Rust skill maps the extracted feature modules and says a new capability's implementation does not automatically live under `commands/`. Current agent docs describe an over-budget file as a conditional rule rather than as a present inventory.
+- **Not completed:** The pull request was not merged. No production source changed. Career Evidence was not started.
+- **Validation:** `npm run quality:test` passed (27 tests). `npm run quality:application-boundaries` passed (`jobs -> documents`, 8 files). `npm run quality:attribution` passed. `npm run quality:file-size` passed (no changed source files). `npm run quality:file-size:all` checked 1207 tracked files and reported 0 over budget in every category. `npm run format:check` passed. `git diff --check` passed.
+- **Privacy/security impact:** none.
+- **Next first action:** After #589 merges, start Career Evidence PR 1: pure Career Evidence domain foundation. Do not merge this pull request from the agent session.
+
 ### 2026-10-16, reconcile stabilized architecture
 
 - **Status:** complete, pull request open, not merged

@@ -40,7 +40,7 @@ Do not begin implementation from the user request alone. First verify the curren
 
 For every proposed new or changed symbol, model, workflow, command, gateway, API, module, or user-facing business term, check the ubiquitous language first. Reuse an existing canonical term when it represents the same concept. If a genuinely new business concept is needed, define it deliberately and update the domain language rather than introducing an undocumented synonym.
 
-For every file you plan to grow, check its responsibility and current non-empty line count before editing. File-size budgets come from `docs/governance/CODE_QUALITY.md`; do not guess or copy stale numbers into feature code or task prompts. Existing oversized files are technical debt, not precedent, and may not grow.
+For every file you plan to grow, check its responsibility and current non-empty line count before editing. File-size budgets come from `docs/governance/CODE_QUALITY.md`; do not guess or copy stale numbers into feature code or task prompts. If a base file is already over budget, it is technical debt rather than precedent and may not grow. The current repository-wide audit reports zero production files over budget.
 
 ## Canonical roles
 

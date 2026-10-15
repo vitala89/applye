@@ -19,21 +19,26 @@ Angular 21, standalone, zoneless, Nx monorepo. These rules apply to every change
 
 ## Layers - check before you import
 
-The dependency stack points one way only:
+A dependency is legal only when both the `type:` rule and the `scope:` rule in `eslint.config.mjs`
+allow it. The current permissions are:
 
-| Project   | Tags                       | May depend on                   |
-| --------- | -------------------------- | ------------------------------- |
-| `core`    | `type:domain scope:shared` | nothing                         |
-| `ui`      | `type:ui scope:shared`     | `core`                          |
-| `i18n`    | `type:util scope:shared`   | `core`                          |
-| `data`    | `type:data scope:desktop`  | `core`                          |
-| `desktop` | `type:app scope:desktop`   | `core` `ui` `i18n` `data`       |
-| `web`     | `type:app scope:web`       | `core` `ui` `i18n` (not `data`) |
+| Project       | Tags                             | May depend on                                                 |
+| ------------- | -------------------------------- | ------------------------------------------------------------- |
+| `core`        | `type:domain scope:shared`       | no other project                                              |
+| `i18n`        | `type:util scope:shared`         | `core`                                                        |
+| `ui`          | `type:ui scope:shared`           | `core`, `i18n`. Not `data` or `application`                   |
+| `data`        | `type:data scope:desktop`        | `core`, `i18n`                                                |
+| `application` | `type:application scope:desktop` | `data`, `core`, `i18n`. Not `ui`                              |
+| `desktop`     | `type:app scope:desktop`         | `application`, `ui`, `i18n`, `core`. Not `data` in production |
+| `web`         | `type:app scope:web`             | `ui`, `i18n`, `core`. Not `application` or `data`             |
 
 - `@nx/enforce-module-boundaries` fails lint on a wrong-way edge. If it fires, move the code rather
   than loosening the rule.
-- `data` wraps Tauri IPC and is `scope:desktop`. The web app has no Tauri runtime and must never
-  import it.
+- Production desktop code reaches `libs/application`. It does not reach `libs/data`.
+  `libs/application` is what calls the data gateways.
+- `apps/web` cannot import `libs/application` or `libs/data` because both are `scope:desktop`.
+- A `*.spec.ts` or `*.harness.ts` may name `libs/data` so a test can fake the gateway its store
+  calls. That is the controlled exception in `eslint.config.mjs`, not a production dependency.
 - Import from the entry point, for example `@applye/core`, never an internal library path.
 - A new library needs `tags` in `project.json` and an entry in `tsconfig.base.json` paths.
 
@@ -59,7 +64,11 @@ The dependency stack points one way only:
 - Component-local view state uses `signal()` and `computed()`.
 - State that outlives a component, or that two features share, belongs in a focused service/store.
 - Long workflows belong in services, not in the page that happens to start them.
-- Never call `invoke()` from a component. Every Tauri call goes through `libs/data`.
+- Components do not call custom Tauri business or data commands directly. Business and data IPC
+  goes through `libs/data` behind application orchestration: page to `libs/application` to
+  `libs/data` to the Tauri command. Presentation-only Open and Reveal use
+  `apps/desktop/src/app/core/native-shell`, which calls the guarded shell commands.
+  `libs/application` does not own those effects.
 - Parsing, scoring, validation, mapping, and other reusable business rules belong in `libs/core` as
   pure functions where practical.
 - Keep services cohesive. A service should not become a second monolithic component.

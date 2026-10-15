@@ -11,7 +11,7 @@ Before designing, editing, refactoring, or reviewing code:
 2. Read `docs/architecture.md` and the applicable ADRs for system, frontend, backend/Tauri, dependency, and state-ownership decisions.
 3. Read `docs/governance/CODE_QUALITY.md` for code style, maintainability rules, layer ownership, and the authoritative file-size budgets, plus the relevant Angular or Rust skill.
 4. Read `docs/governance/VALIDATION_MATRIX.md` before deciding how the change will be verified.
-5. Check the responsibility and current non-empty line count of every file you plan to grow. Existing oversized files may not grow. Extract a cohesive responsibility first.
+5. Check the responsibility and current non-empty line count of every file you plan to grow. An over-budget base file may not grow. The current repository-wide audit reports zero production files over budget. Extract a cohesive responsibility first.
 6. Identify the test seam before implementation. Bug fixes require regression tests.
 7. Do not invent a new business term, architecture pattern, folder convention, layer boundary, or size limit when the repository already defines one. If canon and code disagree, report the conflict and resolve it deliberately rather than inventing a third convention.
 8. Use the configured documentation MCP tools only for minimal versioned API questions. Never send source code, secrets, personal data, CV/job content, credentials, or private prompts.

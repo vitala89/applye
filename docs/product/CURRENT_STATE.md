@@ -1,16 +1,11 @@
 # Current Operational State
 
 **As of 2026-10-16.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
-Stabilization PR 7 merged as [#588](https://github.com/vitala89/applye/pull/588) at `4648d7e8`.
-Architecture Stabilization PR 8 is open as
-[#589](https://github.com/vitala89/applye/pull/589) on
-`chore/finalize-architecture-stabilization`. It is the final reconciliation pull request.
-Its exit-criteria audit passes on this branch.
-Merging this pull request completes Architecture Stabilization. The next implementation slice
-after merge is **Career Evidence domain foundation**: pure domain vocabulary and rules,
-draft / AI-inferred / user-confirmed verification, source and provenance, timestamps, and tests.
-That slice reuses existing Candidate Profile concepts. It does not add a persistence migration,
-a profile UI, or a web backend. Do not start that slice in this pull request.
+Stabilization PR #589 merged at `b827f539`. Architecture Stabilization is complete. The current
+implementation slice is **Career Evidence domain foundation**: pure domain rules for lifecycle,
+provenance, and user confirmation, with tests. It reuses the existing Profile, Experience,
+Education, and Story Bank. It does not add desktop persistence, a profile UI, AI extraction, or
+a web backend.
 
 ## Active product direction
 
@@ -32,7 +27,7 @@ Hub, Network CRM, Interview Intelligence, or community features as available. Do
 Hono, D1, authentication, Cloudflare Workers resources, sync, or empty backend scaffolding. ADR-0007
 says the backend is created with the first real backend slice.
 
-`#567`, `#568`, `#569`, `#573`, `#574`, `#575`, `#576`, `#577`, `#584`, `#585`, `#586`, `#587`, and `#588` are merged.
+`#567`, `#568`, `#569`, `#573`, `#574`, `#575`, `#576`, `#577`, `#584`, `#585`, `#586`, `#587`, `#588`, and `#589` are merged.
 Architecture Stabilization PR 1 removed platform effects from `libs/application` (`915e8072`). PR 2
 merged as [#577](https://github.com/vitala89/applye/pull/577) and left the production feature graph as
 `jobs -> documents`. PR 3 merged as [#584](https://github.com/vitala89/applye/pull/584) at
@@ -49,16 +44,19 @@ endpoint. The `generated_docs` table, applied migrations, historical rows, and a
 files stay. PR 7 merged as [#588](https://github.com/vitala89/applye/pull/588) at `4648d7e8`. It re-ran
 `npm run quality:file-size:all` and found zero production files over budget. Jobs page effective
 counts on that audit were 298/350 and 236/300; Cover Letter detail was 232/350 and 207/300. No
-production source was decomposed. PR 8 reconciles architecture docs, domain vocabulary, and agent
-instructions with that enforcement. It does not implement Career Evidence.
+production source was decomposed. PR 8 merged as [#589](https://github.com/vitala89/applye/pull/589)
+at `b827f539` and reconciled architecture docs, domain vocabulary, and agent instructions with that
+enforcement. Architecture Stabilization is complete. Career Evidence domain foundation is the
+current product slice. Desktop persistence, Career Profile UI, and AI Career Discovery have not
+started.
 
 ## Implementation sequence
 
 Dependency order, not dates. PR #573 made local database backup/restore available before destructive
 testing, and PR #574 made the architecture canon mandatory for agents. A full repository architecture
 audit after those merges found several pre-existing boundary violations and legacy exceptions. Because
-Applye is public and Career Evidence will become a foundational bounded context, **Architecture
-Stabilization is now a blocking engineering step before Career Evidence**.
+Applye is public and Career Evidence will become a foundational bounded context, Architecture
+Stabilization was a blocking engineering step before Career Evidence. PR #589 completed it.
 
 The execution plan and exit criteria are in
 [Architecture Stabilization Plan](../architecture-stabilization-plan.md). The stabilization work is
@@ -89,13 +87,13 @@ delivered as focused PRs; it is not one large rewrite.
 13+. Community Intelligence
 ```
 
-Career Evidence does not start until this reconciliation pull request merges. Its first slice
-remains pure domain rules for user-confirmed Career Evidence, with tests; it does not include a desktop
-migration, a profile UI, or a web backend.
+Career Evidence domain foundation is the current slice: pure domain rules for user-confirmed
+Career Evidence, with tests. It does not include a desktop migration, a profile UI, or a web
+backend. The next slice after it merges is Career Evidence desktop persistence.
 
 ## Maintenance backlog
 
-Checked against `main` on 2026-10-11. Architecture Stabilization is the current engineering gate; the items below remain separate maintenance unless a stabilization PR explicitly absorbs one.
+Checked against `main` on 2026-10-11. Architecture Stabilization is complete. The items below remain separate maintenance.
 
 - **Installer smoke-test phase 2.** `installer-smoke-test.yml` is still `workflow_dispatch`-only.
   `release.yml` has no smoke step. Wiring it in still needs an explicit go-ahead.

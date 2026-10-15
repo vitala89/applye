@@ -269,7 +269,8 @@ focused persistence seams. Provider/filesystem effects remain explicit.
 
 ### PR 6 - Remove dormant runtime surface
 
-**Status:** current, on `refactor/remove-dormant-runtime-surface`. The registered commands
+**Status:** open as [#587](https://github.com/vitala89/applye/pull/587) on
+`refactor/remove-dormant-runtime-surface`. The registered commands
 `generated_doc_get`, `export_docx`, `export_pdf`, and the `validate_theme` IPC endpoint had no
 production caller and are removed. `tailoring::style::validate_theme` stays as the future theme
 trust boundary. The `generated_docs` table, applied migrations, historical rows, and files

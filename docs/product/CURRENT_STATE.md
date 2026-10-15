@@ -2,8 +2,8 @@
 
 **As of 2026-10-15.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
 Stabilization PR 5 merged as [#586](https://github.com/vitala89/applye/pull/586) at `ee10d628`.
-PR 6, remove dormant runtime surface, is the current branch
-`refactor/remove-dormant-runtime-surface`.
+PR 6, remove dormant runtime surface, is open as
+[#587](https://github.com/vitala89/applye/pull/587) on `refactor/remove-dormant-runtime-surface`.
 
 ## Active product direction
 

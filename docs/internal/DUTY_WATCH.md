@@ -44,6 +44,31 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-16, Career Evidence domain foundation
+
+- **Status:** complete, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `feat/career-evidence-domain`
+- **Commits:** `7d31e1aa`, plus the commit that records pull request #590
+- **Pull request:** [#590](https://github.com/vitala89/applye/pull/590), not merged
+- **Objective:** Career Evidence PR 1. Pure domain lifecycle, provenance, and user confirmation in `libs/core`. No persistence, UI, AI integration, or web backend.
+- **Completed:**
+  - Local `main` and `origin/main` were `b827f539` (`chore: reconcile stabilized architecture (#589)`). PR #589 is merged. No competing Career Evidence pull request was open.
+  - Architecture Stabilization is recorded complete. The stabilization plan status is completed by PR #589.
+  - Career Evidence lives in `libs/core/src/lib/career/` and is exported from the `libs/core` barrel. Nothing was added under `libs/core/src/lib/models`.
+  - Origin (`user | ai | import`) is separate from review state (`draft | proposal | confirmed | rejected`). AI and import proposals start unconfirmed. `confirmCareerEvidence` is the only path to a fact. Rejected evidence is not factual. Blank statements are rejected. Confirmation time exists only on a confirmed record. Provenance is copied through confirm and reject.
+  - No revise operation. The reconfirmation rule for a later edit is documented in the feature brief and the domain module.
+  - Profile, ExperienceEntry, EducationEntry, StoryBank, and profile markdown were not changed.
+- **Not completed:** The pull request was not merged. Desktop persistence, Career Profile UI, and AI Career Discovery were not started. Shared-contract matrix rows beyond `libs/core` (`npm run type-check`, `npm test`, `npm run desktop:build`, Cargo) were not run. No native walkthrough.
+- **Files or packages changed:** `libs/core` Career Evidence module and barrel, `CURRENT_STATE.md`, feature index, Career Intelligence feature brief, domain architecture, stabilization plan status, changelog, this log.
+- **Validation:** `npx nx lint core --skip-nx-cache` passed with 0 errors and 17 existing warnings in unrelated CV and compensation files. `npx nx test core --skip-nx-cache` passed (32 suites, 492 tests). `npx nx run core:type-check --skip-nx-cache` passed. `npx nx build core --skip-nx-cache` passed. `npm run quality:test` passed (27 tests). `npm run quality:file-size` passed. `npm run quality:file-size:all` checked 1209 tracked files and reported 0 over budget in every category: TypeScript/JavaScript source 0/347, Rust source 0/96, Rust inline tests 0/96, Angular template 0/134, TypeScript/JavaScript test 0/326, stylesheet 0/160, application-layer TypeScript 0/146. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files); legacy core/models allowlist matches disk. `npm run quality:attribution` passed. `npm run format:check` passed. `git diff --check` passed.
+- **Privacy/security impact:** none. No network, telemetry, external AI call, database, cloud, or automatic sharing. Desktop local-first behavior is unchanged.
+- **Decisions and assumptions:** The maintainer accepted the grilled contract: one lifecycle type, explicit operations, no create-already-confirmed factory, and no revise operation in this slice. Timestamps are caller-supplied ISO strings. No persistence identity.
+- **Risks or compatibility impact:** New public `libs/core` API. Existing profile runtime behavior is unchanged.
+- **Open issues or blockers:** none on this slice.
+- **Next first action:** Review pull request #590 and do not merge it from the agent session. After it merges, start Career Evidence PR 2: desktop persistence. No profile UI and no AI extraction in that slice.
+- **Evidence:** `npm run quality:file-size:all` on this branch, 0 over budget in every category. `npx nx test core --skip-nx-cache`, 492 tests passed.
+
 ### 2026-10-16, align agent skills with the enforced graph
 
 - **Status:** complete, pull request open, not merged

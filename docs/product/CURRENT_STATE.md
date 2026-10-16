@@ -2,7 +2,9 @@
 
 **As of 2026-10-16.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
 Stabilization PR #589 merged at `b827f539`. Architecture Stabilization is complete. The current
-implementation slice is **Career Evidence domain foundation**: pure domain rules for lifecycle,
+implementation slice is **Career Evidence domain foundation**, open as
+[#590](https://github.com/vitala89/applye/pull/590) on `feat/career-evidence-domain` and not
+merged: pure domain rules for lifecycle,
 provenance, and user confirmation, with tests. It reuses the existing Profile, Experience,
 Education, and Story Bank. It does not add desktop persistence, a profile UI, AI extraction, or
 a web backend.

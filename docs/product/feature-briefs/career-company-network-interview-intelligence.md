@@ -33,6 +33,7 @@ AI extracts proposed evidence and asks follow-up questions about ownership, deci
 collaboration, measurable outcomes and lessons.
 
 Proposed concepts:
+
 - Career Evidence;
 - Experience;
 - Project;
@@ -45,6 +46,33 @@ Proposed concepts:
 
 AI-derived facts remain proposals until the user confirms/edits/rejects them.
 
+### Career Evidence foundation
+
+A career claim enters because the user wrote it, because an import inferred it, or because AI
+proposed it. Text existing in a CV, career history, or interview transcript proves that the text
+was in that source. It does not make every interpretation of it a confirmed fact.
+
+```text
+user / import / AI
+        |
+        v
+ draft / proposal
+      /     \
+ confirm   reject
+    |         |
+    v         v
+confirmed   rejected
+```
+
+Only confirmed Career Evidence may be used as a user-owned factual claim. Confirmation is an
+explicit user action. AI and import cannot create a confirmed fact by themselves. A rejected
+proposal remains in the lifecycle and is not factual. A confirmation time exists only while the
+evidence is confirmed. Provenance stays attached when the user confirms or rejects it.
+
+A later lifecycle slice must clear that confirmation when the factual statement or its provenance
+changes. This foundation does not include that edit, desktop persistence, Career Profile UI, or
+AI discovery. The existing Profile, experience, education, and story bank stay as they are.
+
 Career Intelligence can explain adjacent-role opportunities using evidence and gaps, for example
 Senior Product Engineer, without pretending role fit is mathematically certain.
 
@@ -53,6 +81,7 @@ Senior Product Engineer, without pretending role fit is mathematically certain.
 Company is first-class and can relate to multiple jobs, applications, contacts and interviews.
 
 Suggested tabs:
+
 - Overview;
 - Jobs;
 - Technology;
@@ -65,6 +94,7 @@ Suggested tabs:
 - Activity.
 
 Research may collect legally/publicly available:
+
 - business description, products, markets and locations;
 - official revenue/funding facts or labelled third-party estimates;
 - recent company signals/news;
@@ -84,6 +114,7 @@ positioning and knowledge-gap preparation.
 Provider-neutral job-search CRM.
 
 Core concepts:
+
 - Person/discovered person;
 - Contact;
 - Relationship;
@@ -96,6 +127,7 @@ Core concepts:
 Channels include LinkedIn, email, phone, interview, meeting, event and referral.
 
 The system tracks:
+
 - who was contacted;
 - where and when;
 - what was promised;
@@ -112,6 +144,7 @@ with reasons such as changed company, changed role, broken link, wrong person, d
 LinkedIn is a Network channel, subject to current official API permissions and policy.
 
 Potential capabilities:
+
 - profile review for headline, About, experience, skills, Featured and Open-to-Work positioning;
 - professional-brand plan based on Career Evidence and target roles;
 - technical/product post ideas grounded in real experience;
@@ -132,12 +165,14 @@ Source -> Observation -> Claim -> Verification
 ```
 
 Verification:
+
 - verified;
 - user_verified;
 - supported;
 - unverified.
 
 Freshness:
+
 - fresh;
 - aging;
 - stale;
@@ -151,6 +186,7 @@ and reported questions.
 ### Research
 
 Inputs:
+
 - saved Job Description;
 - Career Evidence;
 - Company Intelligence;
@@ -166,11 +202,13 @@ User-defined/custom stages remain supported.
 Generate a structured curriculum rather than one long chat.
 
 Adapt to available time:
+
 - crash course;
 - multi-day plan;
 - full preparation.
 
 Possible modules:
+
 - technical topics;
 - frontend/backend/cloud stack;
 - architecture;
@@ -196,6 +234,7 @@ Possible modules:
 Prepare strong but honest answers from evidence.
 
 Evidence levels:
+
 - production ownership;
 - production experience;
 - adjacent/collaborative exposure;
@@ -208,10 +247,12 @@ If a gap matters, create a learning plan rather than inventing experience.
 ### Mock Interview
 
 Modes:
+
 - Coach: hints/corrections allowed;
 - Real Interview: no hints until completion.
 
 Styles:
+
 - supportive;
 - neutral;
 - challenging.
@@ -223,6 +264,7 @@ Follow-up questions respond to the user's previous answer rather than following 
 Separate answer content from delivery.
 
 Capabilities:
+
 - "Make it sound like me";
 - full answer vs speaking notes;
 - natural-professional vocabulary matching actual language level;
@@ -236,12 +278,14 @@ Do not optimise for robotic perfection.
 ## 7. Real Interview Debrief
 
 After each real stage the user can:
+
 - paste/write notes;
 - upload transcript/TXT/PDF/DOCX;
 - narrate what happened;
 - add questions manually.
 
 AI creates a **Draft Interview Report**:
+
 - detected interviewer questions;
 - candidate answers;
 - follow-ups;
@@ -251,6 +295,7 @@ AI creates a **Draft Interview Report**:
 Before durable save, the user can confirm/edit/remove/add questions.
 
 Confirmed real questions preserve where possible:
+
 - original wording;
 - normalized wording;
 - topic/skill;
@@ -261,6 +306,7 @@ Confirmed real questions preserve where possible:
 - provenance.
 
 Answer review distinguishes:
+
 - technical correctness for factual questions;
 - evidence/trade-offs/clarity for open-ended architecture/behavioral questions;
 - content feedback from delivery feedback.
@@ -272,6 +318,7 @@ Debrief updates the next Preparation Plan.
 Real confirmed interview questions become reusable personal knowledge.
 
 Filters may include:
+
 - company;
 - role;
 - stage;
@@ -298,6 +345,7 @@ Private Interview Experience
 ```
 
 Shareable examples:
+
 - company;
 - role/seniority/region where safe;
 - stage;
@@ -306,6 +354,7 @@ Shareable examples:
 - non-identifying process notes.
 
 Do not publish by default:
+
 - candidate answers;
 - interviewer identity/email;
 - private notes;
@@ -321,6 +370,7 @@ Public insights must be evidence-aware, e.g. "reported by 6 candidates during 20
 ### Desktop
 
 Keep:
+
 - local SQLite;
 - private Career Profile;
 - jobs/applications/pipeline;
@@ -334,6 +384,7 @@ Keep:
 ### Web
 
 Evolve into a full application:
+
 - authenticated accounts;
 - server-side user database;
 - Career/Profile workflows;

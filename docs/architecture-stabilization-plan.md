@@ -1,6 +1,10 @@
 # Architecture Stabilization Plan
 
-Status: **blocking product-development gate before Career Evidence**
+Status: **completed by PR #589** (`b827f539`)
+
+This plan is completed historical work. Architecture Stabilization met its exit criteria in PR #589
+and is no longer an active blocking gate. The sections below stay as the record of why the work was
+required and how each pull request left the repository.
 
 Applye is public and the repository is part of the product's engineering portfolio. Before adding the
 Career Evidence bounded context, the existing desktop, web, shared TypeScript libraries, and Rust/Tauri

@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
+import { madeWithEditor } from './pr-editor-footer.mjs';
+
 const argv = process.argv.slice(2);
 
 function valueAfter(flag) {
@@ -19,13 +21,6 @@ function git(args, { allowFailure = false } = {}) {
     throw error;
   }
 }
-
-const editorAttribution =
-  'cursor|claude|chatgpt|codex|copilot|gemini|antigravity|grok|devin|windsurf|aider';
-const madeWithEditor = new RegExp(
-  `^\\s*made with\\s+(?:\\[(?:${editorAttribution})\\]\\([^)\\r\\n]*\\)|(?:${editorAttribution})\\b)`,
-  'i',
-);
 
 const forbidden = [
   /^\s*co-authored-by\s*:/i,

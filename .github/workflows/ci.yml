@@ -29,6 +29,12 @@ jobs:
   ci:
     name: Lint / Test / Build (affected) + Rust
     runs-on: ubuntu-latest
+    # pull-requests: write lets the footer step delete an editor line that sits
+    # above the maintained description. The rest of the job does not edit GitHub.
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -69,14 +75,26 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v5
 
+      - name: Remove editor footer above the maintained pull request description
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node tools/remove-pr-editor-footer.mjs
+
       - name: Test and enforce code-quality guardrails
         env:
           QUALITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-          PR_BODY: ${{ github.event.pull_request.body || '' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm run quality:test
           npm run quality:application-boundaries
           npm run quality:file-size -- --base "$QUALITY_BASE"
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
+            PR_BODY="$(gh pr view "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --json body --jq .body)"
+            export PR_BODY
+          fi
           npm run quality:attribution -- --base "$QUALITY_BASE" --pr-body-env PR_BODY
 
       - name: Nx affected (lint, test, build)

@@ -44,6 +44,22 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-17, Career Evidence CI attribution footer
+
+- **Status:** partial, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `feat/career-evidence-domain`
+- **Pull request:** [#590](https://github.com/vitala89/applye/pull/590), not merged
+- **Objective:** Make `Lint / Test / Build (affected) + Rust` pass. The run failed in about one minute on the editor footer in the pull request description. Do not merge and do not start desktop persistence.
+- **Completed:** CI now deletes an editor-footer line that sits above the maintained description, then runs the attribution guard on the updated description. The guard itself still rejects that footer in commit text and inside the maintained section. The available GitHub token cannot edit the description directly; the workflow token can.
+- **Not completed:** The pull request was not merged. Desktop persistence was not started. This entry was written before the new GitHub run was observed.
+- **Files or packages changed:** attribution helper, CI workflow, current state, this log.
+- **Validation:** `npm run quality:test` passed (28 tests). The GitHub run is the proof that the footer step and the attribution guard pass together.
+- **Privacy/security impact:** The CI job token may edit pull request descriptions. The step only removes editor-footer lines before the maintained section. No career data, storage, or network path in the product changed.
+- **Open issues or blockers:** none on the seal. Confirm the GitHub run for this commit.
+- **Next first action:** If that run is green, review pull request #590 and do not merge it from the agent session. After it merges, start Career Evidence PR 2: desktop persistence.
+- **Evidence:** The failed run was `39056724137`, attribution line `pull request body:96`.
+
 ### 2026-10-17, Career Evidence seal and shared-contract validation
 
 - **Status:** partial, pull request open, not merged

@@ -13,6 +13,8 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { withoutEditorFooter } from './pr-editor-footer.mjs';
+
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fileSizeScript = join(repositoryRoot, 'tools', 'check-file-size-budgets.mjs');
 const attributionScript = join(repositoryRoot, 'tools', 'check-attribution.mjs');
@@ -175,6 +177,41 @@ test('attribution guard accepts a normal commit message and rejects forbidden tr
   );
   result = run(process.execPath, [attributionScript, '--message-file', ordinaryProse]);
   assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+test('editor footer before the maintained pull request section can be removed', () => {
+  const marker = '<!-- CURSOR_AGENT_PR_BODY_BEGIN -->';
+  const body = [
+    '## Scope',
+    '',
+    'Made with [Cursor](https://cursor.com)',
+    '',
+    marker,
+    'Maintained description.',
+    'Co-authored-by: Helper <helper@example.com>',
+    '',
+  ].join('\n');
+
+  const cleaned = withoutEditorFooter(body);
+
+  assert.equal(cleaned.includes('Made with [Cursor](https://cursor.com)'), false);
+  assert.match(cleaned, /## Scope/);
+  assert.match(cleaned, /Maintained description\./);
+  assert.match(cleaned, /Co-authored-by: Helper/);
+  assert.ok(cleaned.indexOf(marker) < cleaned.indexOf('Co-authored-by'));
+
+  const inside = `${marker}\nMade with [Cursor](https://cursor.com)\n`;
+  assert.match(withoutEditorFooter(inside), /Made with \[Cursor\]/);
+
+  const result = run(
+    process.execPath,
+    [attributionScript, '--base', 'HEAD', '--pr-body-env', 'QUALITY_PR_BODY'],
+    {
+      env: { QUALITY_PR_BODY: body },
+    },
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Made with \[Cursor\]/);
 });
 
 test('attribution guard scans branch commits and pull-request text', (t) => {

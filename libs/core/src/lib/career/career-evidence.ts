@@ -4,11 +4,12 @@
  * stays unconfirmed until `confirmCareerEvidence`. There is no constructor
  * that accepts a status, so a caller cannot stamp a proposal as confirmed.
  *
+ * The seal is a private member. Object spread does not copy it, so rewriting a
+ * proposal as `confirmed` does not produce Career Evidence.
+ *
  * A later slice may edit a record. That edit has to clear confirmation when
  * the statement or provenance changes. This module has no update operation.
  */
-
-declare const careerEvidenceBrand: unique symbol;
 
 /** How the statement entered Applye. Independent of whether the user accepted it. */
 export type CareerEvidenceOrigin = 'user' | 'ai' | 'import';
@@ -35,7 +36,14 @@ export interface CareerEvidenceProvenance {
   readonly capturedAt: string;
 }
 
-export interface CareerEvidence {
+/**
+ * Nominal Career Evidence. The private seal is what `draftCareerEvidence`,
+ * `proposeCareerEvidence`, `confirmCareerEvidence`, and `rejectCareerEvidence`
+ * return. A copied object is not this type, confirmed or otherwise.
+ */
+export declare class CareerEvidence {
+  private constructor();
+  private readonly seal: never;
   readonly statement: string;
   readonly reviewState: CareerEvidenceReviewState;
   readonly provenance: CareerEvidenceProvenance;
@@ -43,7 +51,16 @@ export interface CareerEvidence {
   readonly updatedAt: string;
   readonly confirmedAt?: string;
   readonly rejectedAt?: string;
-  readonly [careerEvidenceBrand]: true;
+}
+
+interface CareerEvidenceData {
+  readonly statement: string;
+  readonly reviewState: CareerEvidenceReviewState;
+  readonly provenance: CareerEvidenceProvenance;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly confirmedAt?: string;
+  readonly rejectedAt?: string;
 }
 
 export interface CareerEvidenceDraftInput {
@@ -178,7 +195,7 @@ function copyProvenance(provenance: CareerEvidenceProvenance): CareerEvidencePro
   };
 }
 
-function seal(evidence: Omit<CareerEvidence, typeof careerEvidenceBrand>): CareerEvidence {
+function seal(evidence: CareerEvidenceData): CareerEvidence {
   return evidence as CareerEvidence;
 }
 

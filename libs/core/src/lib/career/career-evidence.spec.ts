@@ -146,6 +146,22 @@ describe('Career Evidence public lifecycle', () => {
     expect(confirmCareerEvidence(confirmed, '2026-10-16T12:00:00.000Z')).toBe(confirmed);
   });
 
+  it('does not let object spread turn a proposal into confirmed evidence', () => {
+    const evidence = proposal('ai');
+    const rewritten = {
+      ...evidence,
+      reviewState: 'confirmed' as const,
+      confirmedAt: reviewedAt,
+    };
+
+    // @ts-expect-error Object spread drops the seal, so a rewritten proposal is not Career Evidence.
+    isConfirmedCareerEvidence(rewritten);
+
+    expect(evidence.reviewState).toBe('proposal');
+    expect(evidence.confirmedAt).toBeUndefined();
+    expect(isConfirmedCareerEvidence(evidence)).toBe(false);
+  });
+
   it('rejects an empty clock or capture time', () => {
     expect(() => draftCareerEvidence({ statement, capturedAt: '  ' }, createdAt)).toThrow(
       /capture time is empty/,

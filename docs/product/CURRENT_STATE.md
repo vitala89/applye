@@ -1,11 +1,14 @@
 # Current Operational State
 
-**As of 2026-10-16.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
+**As of 2026-10-17.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
 Stabilization PR #589 merged at `b827f539`. Architecture Stabilization is complete. The current
 implementation slice is **Career Evidence domain foundation**, open as
 [#590](https://github.com/vitala89/applye/pull/590) on `feat/career-evidence-domain` and not
 merged: pure domain rules for lifecycle,
-provenance, and user confirmation, with tests. It reuses the existing Profile, Experience,
+provenance, and user confirmation, with tests. `CareerEvidence` is nominal, so copying a proposal
+does not make it confirmed evidence. The pull request description still contains a legacy
+attribution line above the maintained section; CI attribution fails until that line is deleted.
+It reuses the existing Profile, Experience,
 Education, and Story Bank. It does not add desktop persistence, a profile UI, AI extraction, or
 a web backend.
 

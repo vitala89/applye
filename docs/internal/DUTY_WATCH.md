@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-17, Career Evidence seal and shared-contract validation
+
+- **Status:** partial, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `feat/career-evidence-domain`
+- **Commits:** `8b22fb08`, plus the commit that records this watch
+- **Pull request:** [#590](https://github.com/vitala89/applye/pull/590), not merged
+- **Objective:** Close the three review blockers on the existing Career Evidence pull request. Do not open another pull request, do not merge, and do not start desktop persistence.
+- **Completed:**
+  - `CareerEvidence` is nominal. The seal is a private member. Object spread does not copy it, so a proposal rewritten with `reviewState: 'confirmed'` is not `CareerEvidence`. The previous unique-symbol property was copied by spread and still type-checked.
+  - Regression coverage is the `@ts-expect-error` spread case in `career-evidence.spec.ts`. `tsc -p libs/core/tsconfig.spec.json --noEmit` accepts that directive.
+  - Shared-contract commands from `docs/governance/VALIDATION_MATRIX.md` were run on `8b22fb08`.
+- **Not completed:** The pull request was not merged. Desktop persistence was not started. The legacy description line `Made with [Cursor](https://cursor.com)` is still above the maintained section. Updating the pull request preserves that prefix, and the available GitHub token cannot delete it. `quality:attribution` fails on that line. A double assertion (`as unknown as CareerEvidence`) can still bypass the seal at compile time; the seal is not a runtime token.
+- **Files or packages changed:** `libs/core` Career Evidence module and spec, changelog, this log.
+- **Validation:** `npx nx lint core --skip-nx-cache` passed with 0 errors and the existing CV and compensation warnings. `npx nx test core --skip-nx-cache` passed (32 suites, 493 tests). `npx nx run core:type-check --skip-nx-cache` passed. `npx tsc -p libs/core/tsconfig.spec.json --noEmit` passed. `npm run quality:file-size` passed. `npm run quality:application-boundaries` passed. `npm run quality:test` passed (27 tests). `npm run format:check` passed. `git diff --check` against `origin/main` passed. `npm run type-check` passed for 7 projects. `npm test` passed for 7 projects. `npm run desktop:build` passed. `cargo +1.94.0 test --lib --manifest-path apps/desktop/src-tauri/Cargo.toml` passed (408 passed, 0 failed, 1 ignored). `cargo +1.94.0 clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings` passed. The image Rust was 1.83.0; Cargo.toml requires 1.94.0, so the Cargo commands used the 1.94.0 toolchain. Commit attribution passed. Pull-request attribution failed: `pull request body:96: Made with [Cursor](https://cursor.com)`.
+- **Privacy/security impact:** none beyond the type seal. No network, telemetry, database, or new storage. Confirmation is still only produced by `confirmCareerEvidence` for values the type system accepts as Career Evidence.
+- **Decisions and assumptions:** The maintainer's lifecycle contract is unchanged. The seal change is the implementation of that contract, not a new product decision. No revise operation and no persistence.
+- **Risks or compatibility impact:** `CareerEvidence` is a nominal class type rather than a structural interface. Nothing outside `libs/core` constructs it. The public operations are unchanged.
+- **Open issues or blockers:** Delete the legacy `Made with [Cursor](https://cursor.com)` line from the pull request description. Text above the agent marker is preserved on update, and the GitHub token available here cannot edit the pull request.
+- **Next first action:** Delete that description line, then review pull request #590. Do not merge it from the agent session. After it merges, start Career Evidence PR 2: desktop persistence. No profile UI and no AI extraction in that slice.
+- **Evidence:** `npm test` and `npm run type-check` on this branch, both 7 projects. `cargo +1.94.0 test --lib` result `408 passed; 0 failed; 1 ignored`.
+
 ### 2026-10-16, Career Evidence domain foundation
 
 - **Status:** complete, pull request open, not merged

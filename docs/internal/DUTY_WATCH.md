@@ -44,6 +44,24 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-17, Career Evidence type-only seal and CI revert
+
+- **Status:** partial, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `feat/career-evidence-domain`
+- **Pull request:** [#590](https://github.com/vitala89/applye/pull/590), not merged
+- **Objective:** Remove the pull-request footer workaround from repository CI, and make `CareerEvidence` a type-only nominal API. Do not merge and do not start desktop persistence.
+- **Completed:**
+  - Restored `.github/workflows/ci.yml`, `tools/check-attribution.mjs`, and `tools/check-quality-guardrails.test.mjs` to `main`. Deleted `tools/pr-editor-footer.mjs` and `tools/remove-pr-editor-footer.mjs`. The attribution guard is unchanged. CI does not rewrite pull request descriptions and does not gain `pull-requests: write`.
+  - `CareerEvidence` is `export type`, intersecting an unexported seal class. The lifecycle functions stay runtime exports. Object spread still drops the seal.
+- **Not completed:** The pull request was not merged. Desktop persistence was not started. GitHub CI for this commit is not observed yet.
+- **Files or packages changed:** Career Evidence module and spec, CI and attribution files restored to `main`, current state, this log.
+- **Validation:** `npx nx lint core --skip-nx-cache` passed. `npx nx test core --skip-nx-cache` passed (32 suites, 494 tests). `npx tsc -p libs/core/tsconfig.lib.json --noEmit` passed. `npx tsc -p libs/core/tsconfig.spec.json --noEmit` passed. `npx nx build core --skip-nx-cache` passed. The built JavaScript exports the lifecycle functions and does not export a `CareerEvidence` value. The declaration file exports `type CareerEvidence`. `npm run quality:file-size` passed. `npm run quality:attribution` against `origin/main` passed. `npm run quality:application-boundaries` passed. `npm run quality:test` passed (27 tests). `npm run format:check` passed. `git diff --check` passed. `npm run type-check` passed for 7 projects. `npm test` passed for 7 projects. `npm run desktop:build` passed. `cargo +1.94.0 test --lib` passed (408 passed, 0 failed, 1 ignored). `cargo +1.94.0 clippy -- -D warnings` passed.
+- **Privacy/security impact:** The CI job no longer has pull-request write permission from this branch. No career data storage or network path changed.
+- **Open issues or blockers:** If the pull request description still has two copies around the agent marker, delete the copy above `<!-- CURSOR_AGENT_PR_BODY_BEGIN -->`. Do not change CI to do that.
+- **Next first action:** Review pull request #590 on the new head after its GitHub checks finish. Do not merge it from the agent session. After it merges, start Career Evidence PR 2: desktop persistence.
+- **Evidence:** Core build declaration is `export type CareerEvidence`. Runtime module exports `draftCareerEvidence`, `proposeCareerEvidence`, `confirmCareerEvidence`, `rejectCareerEvidence`, and `isConfirmedCareerEvidence`.
+
 ### 2026-10-17, Career Evidence CI attribution footer
 
 - **Status:** partial, pull request open, not merged

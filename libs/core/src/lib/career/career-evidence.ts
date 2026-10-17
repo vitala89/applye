@@ -4,8 +4,9 @@
  * stays unconfirmed until `confirmCareerEvidence`. There is no constructor
  * that accepts a status, so a caller cannot stamp a proposal as confirmed.
  *
- * The seal is a private member. Object spread does not copy it, so rewriting a
- * proposal as `confirmed` does not produce Career Evidence.
+ * The seal is a private member of an unexported class. `CareerEvidence` is only
+ * a type. Object spread does not copy the seal, so rewriting a proposal as
+ * `confirmed` does not produce Career Evidence.
  *
  * A later slice may edit a record. That edit has to clear confirmation when
  * the statement or provenance changes. This module has no update operation.
@@ -37,13 +38,18 @@ export interface CareerEvidenceProvenance {
 }
 
 /**
- * Nominal Career Evidence. The private seal is what `draftCareerEvidence`,
- * `proposeCareerEvidence`, `confirmCareerEvidence`, and `rejectCareerEvidence`
- * return. A copied object is not this type, confirmed or otherwise.
+ * Nominal seal. It is not exported. Object spread drops the private member, so
+ * a copied proposal is not `CareerEvidence`.
  */
-export declare class CareerEvidence {
-  private constructor();
+declare class CareerEvidenceSeal {
   private readonly seal: never;
+}
+
+/**
+ * Career Evidence as a type. There is no runtime class and no constructor.
+ * The lifecycle functions are the only way to obtain a value of this type.
+ */
+export type CareerEvidence = CareerEvidenceSeal & {
   readonly statement: string;
   readonly reviewState: CareerEvidenceReviewState;
   readonly provenance: CareerEvidenceProvenance;
@@ -51,7 +57,7 @@ export declare class CareerEvidence {
   readonly updatedAt: string;
   readonly confirmedAt?: string;
   readonly rejectedAt?: string;
-}
+};
 
 interface CareerEvidenceData {
   readonly statement: string;

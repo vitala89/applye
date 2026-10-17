@@ -5,9 +5,8 @@ Stabilization PR #589 merged at `b827f539`. Architecture Stabilization is comple
 implementation slice is **Career Evidence domain foundation**, open as
 [#590](https://github.com/vitala89/applye/pull/590) on `feat/career-evidence-domain` and not
 merged: pure domain rules for lifecycle,
-provenance, and user confirmation, with tests. `CareerEvidence` is nominal, so copying a proposal
-does not make it confirmed evidence. CI deletes an editor footer that sits above the maintained
-pull request description before the attribution check.
+provenance, and user confirmation, with tests. `CareerEvidence` is a nominal type, so copying a
+proposal does not make it confirmed evidence. There is no runtime class.
 It reuses the existing Profile, Experience,
 Education, and Story Bank. It does not add desktop persistence, a profile UI, AI extraction, or
 a web backend.

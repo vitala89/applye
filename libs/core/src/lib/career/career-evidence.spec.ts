@@ -1,5 +1,5 @@
 import {
-  type CareerEvidence,
+  CareerEvidence,
   confirmCareerEvidence,
   draftCareerEvidence,
   isConfirmedCareerEvidence,
@@ -12,6 +12,12 @@ const createdAt = '2026-10-16T09:00:00.000Z';
 const reviewedAt = '2026-10-16T10:00:00.000Z';
 
 const statement = 'Owned frontend architecture for a high-volume workflow.';
+
+function careerEvidenceIsTypeOnly(): void {
+  // @ts-expect-error CareerEvidence is a type. The module does not export a runtime class.
+  const runtimeValue = CareerEvidence;
+  void runtimeValue;
+}
 
 function proposal(origin: 'ai' | 'import' = 'ai'): CareerEvidence {
   return proposeCareerEvidence(
@@ -146,8 +152,8 @@ describe('Career Evidence public lifecycle', () => {
     expect(confirmCareerEvidence(confirmed, '2026-10-16T12:00:00.000Z')).toBe(confirmed);
   });
 
-  it('does not let object spread turn a proposal into confirmed evidence', () => {
-    const evidence = proposal('ai');
+  it('exposes Career Evidence as a type and drops the seal on object spread', () => {
+    const evidence: CareerEvidence = proposal('ai');
     const rewritten = {
       ...evidence,
       reviewState: 'confirmed' as const,
@@ -160,6 +166,10 @@ describe('Career Evidence public lifecycle', () => {
     expect(evidence.reviewState).toBe('proposal');
     expect(evidence.confirmedAt).toBeUndefined();
     expect(isConfirmedCareerEvidence(evidence)).toBe(false);
+  });
+
+  it('keeps the type-only Career Evidence check in the compiled test', () => {
+    expect(typeof careerEvidenceIsTypeOnly).toBe('function');
   });
 
   it('rejects an empty clock or capture time', () => {

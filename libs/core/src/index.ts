@@ -22,6 +22,7 @@ export * from './lib/types/common.types';
 export * from './lib/profile/profile-markdown';
 export * from './lib/profile/profile-education';
 export * from './lib/profile/profile-experience';
+export * from './lib/career/career-evidence';
 export * from './lib/profile/compensation-target';
 export * from './lib/profile/profile-languages';
 export * from './lib/profile/split-display-name';

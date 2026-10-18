@@ -1,5 +1,9 @@
 # Applye - Project Instructions (Working Agreement & Build Guide)
 
+## Design First: required approval before code
+
+For new features, integrations, substantial refactors, schema/API/domain changes, and security/privacy-sensitive work, follow [Design First](../governance/DESIGN_FIRST.md). Review the existing architecture, produce System Design and relevant diagrams, and obtain explicit user approval before implementation. Implementation PRs must link the approved design. Minor non-behavioral edits may use lightweight triage.
+
 This file is the working agreement for building Applye. It tells any developer or AI agent
 **how** to build, in what order, and what rules never to break. Pair it with `ROADMAP.md`
 (the _what_) - this file is the _how_.

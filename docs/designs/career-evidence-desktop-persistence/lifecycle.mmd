@@ -1,0 +1,21 @@
+stateDiagram-v2
+  [*] --> draft: user text
+  [*] --> proposal: ai or import
+  draft --> confirmed: confirmCareerEvidence
+  proposal --> confirmed: confirmCareerEvidence
+  draft --> rejected: rejectCareerEvidence
+  proposal --> rejected: rejectCareerEvidence
+  confirmed --> confirmed: same value, no write
+  rejected --> rejected: same value, no write
+
+  note right of confirmed
+    Factual claim.
+    updatedAt equals confirmedAt.
+    Statement, provenance, and createdAt stay.
+  end note
+
+  note right of rejected
+    Retained. Not a fact.
+    updatedAt equals rejectedAt.
+    No path back to confirmed in this slice.
+  end note

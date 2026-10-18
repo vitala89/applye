@@ -70,8 +70,10 @@ proposal remains in the lifecycle and is not factual. A confirmation time exists
 evidence is confirmed. Provenance stays attached when the user confirms or rejects it.
 
 A later lifecycle slice must clear that confirmation when the factual statement or its provenance
-changes. This foundation does not include that edit, desktop persistence, Career Profile UI, or
-AI discovery. The existing Profile, experience, education, and story bank stay as they are.
+changes. This foundation does not include that edit. Desktop persistence is a pending design at
+`docs/designs/career-evidence-desktop-persistence/` and is not implemented on `main`. Career
+Profile UI and AI discovery are not started. The existing Profile, experience, education, and
+story bank stay as they are.
 
 Career Intelligence can explain adjacent-role opportunities using evidence and gaps, for example
 Senior Product Engineer, without pretending role fit is mathematically certain.

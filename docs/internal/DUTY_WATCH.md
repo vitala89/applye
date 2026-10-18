@@ -49,6 +49,8 @@ Before a watch can be marked complete:
 - **Status:** partial, pull request open, not merged
 - **Agent/tool:** Cursor
 - **Branch:** `feat/career-evidence-persistence`
+- **Commits:** `b347c02e`
+- **Pull request:** [#591](https://github.com/vitala89/applye/pull/591), not merged
 - **Base:** `4534d700` (`origin/main` after #590)
 - **Objective:** Add local SQLite persistence for Career Evidence without a profile UI, AI discovery, or a web backend.
 - **Completed:**
@@ -63,7 +65,7 @@ Before a watch can be marked complete:
 - **Decisions and assumptions:** Row identity is `career_evidence.id`. The domain type is unchanged. Insert refuses an already confirmed or rejected value. Lifecycle update writes only review state and its timestamps. Empty optional provenance is stored as NULL. Grilling frontier was empty: the slice contract and the existing gateway/command style fixed the API.
 - **Risks or compatibility impact:** The migration is additive. An older backup restores, then `Db::init` applies `0031`. There is no down migration.
 - **Open issues or blockers:** Native launch against an existing database is outstanding in backlog section H. Do not merge from this session.
-- **Next first action:** Review the Career Evidence desktop persistence pull request. Do not merge it from the agent session. After it merges, start Career Profile / Evidence UI.
+- **Next first action:** Review pull request #591. Do not merge it from the agent session. After it merges, start Career Profile / Evidence UI.
 - **Evidence:** Rust tests cover the migration chain, round-trip, illegal review combinations, and the refusal to rewrite a confirmed statement or provenance.
 
 ### 2026-10-17, Career Evidence type-only seal and CI revert

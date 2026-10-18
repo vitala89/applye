@@ -4,7 +4,9 @@
 Stabilization PR #589 merged at `b827f539`. Career Evidence domain foundation merged as
 [#590](https://github.com/vitala89/applye/pull/590) at `4534d700`. `CareerEvidence` is a nominal
 type with no runtime class and no persistence id. The current implementation slice is **Career
-Evidence desktop persistence**: a local SQLite row, a thin Tauri command surface, and a desktop
+Evidence desktop persistence**, open as
+[#591](https://github.com/vitala89/applye/pull/591) on `feat/career-evidence-persistence` and not
+merged: a local SQLite row, a thin Tauri command surface, and a desktop
 gateway. It does not add Career Profile UI, AI Career Discovery, a web backend, or a conversion
 of the existing Profile, Experience, Education, or Story Bank.
 

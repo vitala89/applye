@@ -1,5 +1,9 @@
 # Applye Agent Start Here
 
+## Design First: mandatory pre-implementation gate
+
+After triage and architecture discovery, follow [Design First](../governance/DESIGN_FIRST.md) for any feature, integration, significant refactor, data/API/IPC/domain change, or security/privacy-sensitive work. Deliver a diagrammed design and wait for explicit user approval **before writing implementation code**. A design-only PR may precede an implementation PR. No silent architectural deviations.
+
 This repository uses the Intentloom Duty Watch workflow for AI-assisted development.
 
 ## Mandatory architecture canon

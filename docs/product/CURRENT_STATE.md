@@ -4,7 +4,8 @@
 Stabilization PR #589 merged at `b827f539`. Career Evidence domain foundation merged as
 [#590](https://github.com/vitala89/applye/pull/590). `CareerEvidence` is a nominal type with no
 runtime class and no persistence id. The current gate is the **Career Evidence desktop persistence
-design**, pending maintainer approval under Design First. [#591](https://github.com/vitala89/applye/pull/591)
+design**, open as [#595](https://github.com/vitala89/applye/pull/595) and pending maintainer
+approval under Design First. [#591](https://github.com/vitala89/applye/pull/591)
 is an unapproved implementation prototype and is not the approved architecture. Do not continue
 its production code until that design is explicitly approved. Career Profile UI, AI Career
 Discovery, and a web backend have not started. Existing Profile, Experience, Education, and Story

@@ -46,9 +46,11 @@ Before a watch can be marked complete:
 
 ### 2026-10-19, Career Evidence persistence design
 
-- **Status:** partial, design pull request not yet the approval
+- **Status:** partial, design pull request open, not approved
 - **Agent/tool:** Cursor
 - **Branch:** `docs/career-evidence-desktop-persistence-design`
+- **Commits:** `f5d227a8`
+- **Pull request:** [#595](https://github.com/vitala89/applye/pull/595), not an approval
 - **Base:** `21cab03b`
 - **Objective:** Write the Design First proposal for Career Evidence desktop persistence. Do not continue or merge [#591](https://github.com/vitala89/applye/pull/591).
 - **Completed:** Design README, data-flow, lifecycle, and sequence diagrams. Approval status is pending. Operational docs now say #590 is merged and #591 is an unapproved prototype.
@@ -58,7 +60,7 @@ Before a watch can be marked complete:
 - **Privacy/security impact:** The design keeps Career Evidence in local SQLite and forbids logging statement or provenance text. No storage code changed.
 - **Decisions and assumptions:** Confirmed and rejected rows keep `updatedAt` equal to the review clock, matching `confirmCareerEvidence` and `rejectCareerEvidence`. Draft and proposal keep `updatedAt` equal to `createdAt`. Lifecycle save is a compare-and-set `UPDATE`. These are proposals until the maintainer approves them.
 - **Open issues or blockers:** Approval is required before any further production edit of #591 or a replacement implementation.
-- **Next first action:** Review the design pull request and approve it explicitly, or reject the clock and compare-and-set decisions. Do not merge #591 from the agent session.
+- **Next first action:** Review pull request #595 and approve that revision explicitly, or reject the clock and compare-and-set decisions. Do not merge #591 from the agent session.
 - **Evidence:** `docs/designs/career-evidence-desktop-persistence/README.md` status is Pending maintainer approval.
 
 ### 2026-10-17, Career Evidence type-only seal and CI revert

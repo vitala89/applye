@@ -4,6 +4,7 @@ import {
   draftCareerEvidence,
   isConfirmedCareerEvidence,
   proposeCareerEvidence,
+  rehydrateCareerEvidence,
   rejectCareerEvidence,
 } from '../../index';
 
@@ -177,5 +178,64 @@ describe('Career Evidence public lifecycle', () => {
       /capture time is empty/,
     );
     expect(() => confirmCareerEvidence(proposal(), ' ')).toThrow(/Confirmation time is empty/);
+  });
+});
+
+describe('Career Evidence rehydration', () => {
+  function storedFrom(evidence: CareerEvidence) {
+    return {
+      statement: evidence.statement,
+      reviewState: evidence.reviewState,
+      origin: evidence.provenance.origin,
+      sourceLabel: evidence.provenance.sourceLabel ?? null,
+      sourceRef: evidence.provenance.sourceRef ?? '',
+      capturedAt: evidence.provenance.capturedAt,
+      createdAt: evidence.createdAt,
+      updatedAt: evidence.updatedAt,
+      confirmedAt: evidence.confirmedAt,
+      rejectedAt: evidence.rejectedAt,
+    };
+  }
+
+  it('rebuilds a draft, a proposal, a confirmation, and a rejection', () => {
+    const userDraft = draftCareerEvidence({ statement, capturedAt }, createdAt);
+    const aiProposal = proposal('ai');
+    const imported = proposal('import');
+    const confirmed = confirmCareerEvidence(aiProposal, reviewedAt);
+    const rejected = rejectCareerEvidence(imported, reviewedAt);
+
+    for (const evidence of [userDraft, aiProposal, imported, confirmed, rejected]) {
+      const loaded = rehydrateCareerEvidence(storedFrom(evidence));
+      expect(loaded).toEqual(evidence);
+      expect(isConfirmedCareerEvidence(loaded)).toBe(evidence.reviewState === 'confirmed');
+    }
+    expect(rehydrateCareerEvidence(storedFrom(userDraft)).provenance.sourceLabel).toBeUndefined();
+    expect(rehydrateCareerEvidence(storedFrom(confirmed)).provenance.sourceLabel).toBe('2024 CV');
+    expect(rehydrateCareerEvidence(storedFrom(confirmed)).createdAt).toBe(createdAt);
+  });
+
+  it('rejects impossible stored combinations', () => {
+    const evidence = proposal('ai');
+    const base = storedFrom(evidence);
+    expect(() => rehydrateCareerEvidence({ ...base, reviewState: 'confirmed' })).toThrow(
+      /confirmation time/,
+    );
+    expect(() =>
+      rehydrateCareerEvidence({
+        ...base,
+        reviewState: 'draft',
+        origin: 'user',
+        confirmedAt: reviewedAt,
+      }),
+    ).toThrow(/cannot carry a review time/);
+    expect(() => rehydrateCareerEvidence({ ...base, reviewState: 'nope' })).toThrow(
+      /review state is not recognized/,
+    );
+    expect(() => rehydrateCareerEvidence({ ...base, statement: '   ' })).toThrow(
+      /statement is empty/,
+    );
+    expect(() => rehydrateCareerEvidence({ ...base, origin: 'user' })).toThrow(
+      /proposal comes from AI or import/,
+    );
   });
 });

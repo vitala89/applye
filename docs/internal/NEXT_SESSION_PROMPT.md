@@ -4,9 +4,10 @@ Copy everything below the line into a fresh session.
 
 ---
 
-**The strategic direction is accepted and merged. Local database backup and restore is in review
-on `feat/database-backup-restore`. Do not start Career Evidence until that pull request is merged.
-After it merges, the next product-development slice is Career Evidence domain foundation.**
+**Architecture Stabilization is merged. Career Evidence domain foundation is merged as #590 at
+`4534d700`. The current product slice is Career Evidence desktop persistence. Do not start Career
+Profile UI or AI Career Discovery until that persistence pull request is merged. After it merges,
+the next product-development slice is Career Profile / Evidence UI.**
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
 `docs/product/CURRENT_STATE.md`, the newest entry in `docs/internal/DUTY_WATCH.md`, and
@@ -70,10 +71,11 @@ Dependency order, not dates:
 13+. Community Intelligence
 ```
 
-**The next product-development feature is step 1, Career Evidence domain foundation:** pure domain
-rules in `libs/core` for user-confirmed Career Evidence, with tests. No desktop migration, no UI,
-and no web backend in that slice. Grill before changing a `libs/` public API or the application-layer
-shape (`ADR-0005`).
+**The current product-development feature is step 2, Career Evidence desktop persistence:** local
+SQLite for the lifecycle already defined in `libs/core`. The row id is not part of `CareerEvidence`.
+There is no revise operation, no Career Profile UI, no AI Career Discovery, and no web backend in
+that slice. After it merges, step 3 is Career Profile / Evidence UI. Grill before changing a `libs/`
+public API, a schema, or the application-layer shape (`ADR-0005`).
 
 ## Maintenance backlog
 
@@ -93,8 +95,8 @@ maintainer before starting one.
    still recorded open from the August handoff. This cleanup did not re-measure them.
 5. **Developer ID signing and notarisation.** Still deferred. The blocker is the Apple Developer
    Program fee, a business decision already made. Do not re-propose it as a technical oversight.
-6. **Missing tests.** `apps/desktop/src/app/pages/jobs/jobs.component.ts` is 419 lines and has no
-   spec file.
+6. **Missing tests.** `apps/desktop/src/app/pages/jobs/jobs.component.ts` still has no direct
+   component spec. The PR #588 audit counted it at 298/350. This is test debt, not file-size debt.
 7. **Dependency and security maintenance.** Open Dependabot pull requests exist. Do not treat a
    version-bump PR as the product roadmap.
 8. **Feature-index reconciliation.** Historical rows in `docs/product/FEATURE_INDEX.md` are still not

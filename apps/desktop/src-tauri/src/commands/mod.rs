@@ -16,6 +16,7 @@ pub mod archetypes;
 pub mod ats;
 pub mod ats_format;
 pub mod ats_tokens;
+pub mod career_evidence;
 pub mod database_backup;
 pub mod discover;
 pub mod discover_sources;

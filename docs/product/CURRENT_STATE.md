@@ -1,15 +1,12 @@
 # Current Operational State
 
-**As of 2026-10-17.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
-Stabilization PR #589 merged at `b827f539`. Architecture Stabilization is complete. The current
-implementation slice is **Career Evidence domain foundation**, open as
-[#590](https://github.com/vitala89/applye/pull/590) on `feat/career-evidence-domain` and not
-merged: pure domain rules for lifecycle,
-provenance, and user confirmation, with tests. `CareerEvidence` is a nominal type, so copying a
-proposal does not make it confirmed evidence. There is no runtime class.
-It reuses the existing Profile, Experience,
-Education, and Story Bank. It does not add desktop persistence, a profile UI, AI extraction, or
-a web backend.
+**As of 2026-10-18.** Verify `git rev-parse --short HEAD` before trusting a hash. Architecture
+Stabilization PR #589 merged at `b827f539`. Career Evidence domain foundation merged as
+[#590](https://github.com/vitala89/applye/pull/590) at `4534d700`. `CareerEvidence` is a nominal
+type with no runtime class and no persistence id. The current implementation slice is **Career
+Evidence desktop persistence**: a local SQLite row, a thin Tauri command surface, and a desktop
+gateway. It does not add Career Profile UI, AI Career Discovery, a web backend, or a conversion
+of the existing Profile, Experience, Education, or Story Bank.
 
 ## Active product direction
 
@@ -50,9 +47,9 @@ files stay. PR 7 merged as [#588](https://github.com/vitala89/applye/pull/588) a
 counts on that audit were 298/350 and 236/300; Cover Letter detail was 232/350 and 207/300. No
 production source was decomposed. PR 8 merged as [#589](https://github.com/vitala89/applye/pull/589)
 at `b827f539` and reconciled architecture docs, domain vocabulary, and agent instructions with that
-enforcement. Architecture Stabilization is complete. Career Evidence domain foundation is the
-current product slice. Desktop persistence, Career Profile UI, and AI Career Discovery have not
-started.
+enforcement. Architecture Stabilization is complete. Career Evidence domain foundation merged as
+#590 at `4534d700`. The current product slice is Career Evidence desktop persistence. Career
+Profile UI and AI Career Discovery have not started.
 
 ## Implementation sequence
 
@@ -91,9 +88,10 @@ delivered as focused PRs; it is not one large rewrite.
 13+. Community Intelligence
 ```
 
-Career Evidence domain foundation is the current slice: pure domain rules for user-confirmed
-Career Evidence, with tests. It does not include a desktop migration, a profile UI, or a web
-backend. The next slice after it merges is Career Evidence desktop persistence.
+Career Evidence domain foundation is merged. The current slice is Career Evidence desktop
+persistence: migration `0031_career_evidence`, local SQLite, and a desktop gateway. It does not
+include Career Profile UI, AI Career Discovery, or a web backend. The next slice after it merges
+is Career Profile / Evidence UI.
 
 ## Maintenance backlog
 

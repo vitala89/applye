@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-18, Career Evidence desktop persistence
+
+- **Status:** partial, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `feat/career-evidence-persistence`
+- **Base:** `4534d700` (`origin/main` after #590)
+- **Objective:** Add local SQLite persistence for Career Evidence without a profile UI, AI discovery, or a web backend.
+- **Completed:**
+  - Migration `0031_career_evidence` adds `career_evidence`. Shipped migrations `0001`–`0030` were not edited. The new checksum is pinned in `db.rs`.
+  - Insert stores a draft or proposal. A lifecycle save records confirm or reject for an existing row and does not update the statement, provenance, or `created_at`.
+  - `CareerEvidence` still has no id. `PersistedCareerEvidence` in `libs/data` pairs the SQLite id with a value from `rehydrateCareerEvidence`.
+  - Backup stays `VACUUM INTO` of the whole database. Restore still opens through `Db::init`, which runs pending migrations. No backup code change.
+- **Not completed:** The pull request is not merged. `npm run desktop:dev` was not run. That launch check is section H of `docs/internal/NATIVE_GATE_BACKLOG.md`.
+- **Files or packages changed:** Career Evidence migration, Rust feature and commands, core rehydration, data gateway, operational docs.
+- **Validation:** `npm run quality:file-size` passed. `npm run quality:application-boundaries` passed. `npm run format:check` passed. `git diff --check` passed. `npm run type-check` passed for 7 projects. `npm run lint` passed for 7 projects. `npm test` passed for 7 projects. `npm run desktop:build` passed. `cargo fmt --check` passed. `cargo test --lib` passed (415 passed, 0 failed, 1 ignored). `cargo clippy -- -D warnings` passed. `cargo check` passed. `npm run quality:attribution` without a base fails on the already published #590 squash commit `4534d700`, which contains `Co-authored-by: Cursor Agent`. That history was not rewritten. The pull-request check is `node tools/check-attribution.mjs --base origin/main` after this branch's own commit.
+- **Privacy/security impact:** Career Evidence text stays in the local SQLite database. No new network call, telemetry, account, or external AI call. Persistence errors name the operation and do not include the statement or provenance.
+- **Decisions and assumptions:** Row identity is `career_evidence.id`. The domain type is unchanged. Insert refuses an already confirmed or rejected value. Lifecycle update writes only review state and its timestamps. Empty optional provenance is stored as NULL. Grilling frontier was empty: the slice contract and the existing gateway/command style fixed the API.
+- **Risks or compatibility impact:** The migration is additive. An older backup restores, then `Db::init` applies `0031`. There is no down migration.
+- **Open issues or blockers:** Native launch against an existing database is outstanding in backlog section H. Do not merge from this session.
+- **Next first action:** Review the Career Evidence desktop persistence pull request. Do not merge it from the agent session. After it merges, start Career Profile / Evidence UI.
+- **Evidence:** Rust tests cover the migration chain, round-trip, illegal review combinations, and the refusal to rewrite a confirmed statement or provenance.
+
 ### 2026-10-17, Career Evidence type-only seal and CI revert
 
 - **Status:** partial, pull request open, not merged

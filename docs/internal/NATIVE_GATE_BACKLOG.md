@@ -566,3 +566,13 @@ because synthetic clicks do not reach the webview.
 - [ ] After a successful wizard export, Open and Reveal still open the file and its folder.
 - [ ] Saving a job, deleting a job, and a failed document action still show the same toasts. A
       refused precondition stays on the status line and does not toast.
+
+## H. Career Evidence desktop persistence
+
+Migration `0031_career_evidence` runs when the desktop database opens. There is no Career Evidence
+screen in this slice, so the check is that an existing local database still launches.
+
+- [ ] Quit Applye if it is open. Launch `npm run desktop:dev` against the usual app-data database.
+- [ ] Confirm the window opens and the existing jobs, applications, and profile are still there.
+- [ ] Quit and launch once more. Confirm it still opens. That second launch is the already-applied
+      migration, not a second schema change.

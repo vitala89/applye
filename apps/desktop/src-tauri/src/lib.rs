@@ -1,5 +1,6 @@
 mod ai;
 mod applications;
+mod career_evidence;
 mod commands;
 mod database_backup;
 mod db;
@@ -126,6 +127,9 @@ pub fn run() {
             commands::tracker::tracker_custom_columns_list,
             commands::tracker::tracker_custom_column_add,
             commands::tracker::tracker_custom_column_remove,
+            commands::career_evidence::db_insert_career_evidence,
+            commands::career_evidence::db_list_career_evidence,
+            commands::career_evidence::db_save_career_evidence_lifecycle,
             commands::applications::db_list_applications,
             commands::applications::db_upsert_application,
             commands::applications::db_set_application_status,

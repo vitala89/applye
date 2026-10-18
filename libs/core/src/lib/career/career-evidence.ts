@@ -10,6 +10,8 @@
  *
  * A later slice may edit a record. That edit has to clear confirmation when
  * the statement or provenance changes. This module has no update operation.
+ * `rehydrateCareerEvidence` reads a stored row back into this type. It checks
+ * the same lifecycle combinations and does not expose the seal.
  */
 
 /** How the statement entered Applye. Independent of whether the user accepted it. */
@@ -225,4 +227,130 @@ function optionalText(value: string | undefined): string | undefined {
 
 function hasText(value: string | undefined): value is string {
   return typeof value === 'string' && value.trim() !== '';
+}
+
+/**
+ * Stored lifecycle fields. Persistence identity is not part of this input.
+ * Unknown values are rejected instead of cast to `CareerEvidence`.
+ */
+export interface CareerEvidenceRehydrateInput {
+  statement: unknown;
+  reviewState: unknown;
+  origin: unknown;
+  sourceLabel?: unknown;
+  sourceRef?: unknown;
+  capturedAt: unknown;
+  createdAt: unknown;
+  updatedAt: unknown;
+  confirmedAt?: unknown;
+  rejectedAt?: unknown;
+}
+
+/** Rebuild a nominal Career Evidence value from a stored row. */
+export function rehydrateCareerEvidence(input: CareerEvidenceRehydrateInput): CareerEvidence {
+  const statement = canonicalText(input.statement, 'Career Evidence statement is empty.');
+  const reviewState = reviewStateFrom(input.reviewState);
+  const origin = originFrom(input.origin);
+  const capturedAt = canonicalText(input.capturedAt, 'Career Evidence capture time is empty.');
+  const createdAt = canonicalText(input.createdAt, 'Career Evidence time is empty.');
+  const updatedAt = canonicalText(input.updatedAt, 'Career Evidence time is empty.');
+  const sourceLabel = optionalCanonical(input.sourceLabel);
+  const sourceRef = optionalCanonical(input.sourceRef);
+  const confirmedAt = optionalCanonical(input.confirmedAt);
+  const rejectedAt = optionalCanonical(input.rejectedAt);
+  assertStoredCombination(reviewState, origin, confirmedAt, rejectedAt);
+
+  return seal({
+    statement,
+    reviewState,
+    provenance: {
+      origin,
+      capturedAt,
+      ...(sourceLabel === undefined ? {} : { sourceLabel }),
+      ...(sourceRef === undefined ? {} : { sourceRef }),
+    },
+    createdAt,
+    updatedAt,
+    ...(confirmedAt === undefined ? {} : { confirmedAt }),
+    ...(rejectedAt === undefined ? {} : { rejectedAt }),
+  });
+}
+
+function reviewStateFrom(value: unknown): CareerEvidenceReviewState {
+  switch (value) {
+    case 'draft':
+    case 'proposal':
+    case 'confirmed':
+    case 'rejected':
+      return value;
+    default:
+      throw new Error('Career Evidence review state is not recognized.');
+  }
+}
+
+function originFrom(value: unknown): CareerEvidenceOrigin {
+  switch (value) {
+    case 'user':
+    case 'ai':
+    case 'import':
+      return value;
+    default:
+      throw new Error('Career Evidence origin is not recognized.');
+  }
+}
+
+function assertStoredCombination(
+  reviewState: CareerEvidenceReviewState,
+  origin: CareerEvidenceOrigin,
+  confirmedAt: string | undefined,
+  rejectedAt: string | undefined,
+): void {
+  if (reviewState === 'draft') {
+    if (origin !== 'user') throw new Error('A Career Evidence draft comes from the user.');
+    if (confirmedAt !== undefined || rejectedAt !== undefined) {
+      throw new Error('Draft Career Evidence cannot carry a review time.');
+    }
+    return;
+  }
+  if (reviewState === 'proposal') {
+    if (origin !== 'ai' && origin !== 'import') {
+      throw new Error('A Career Evidence proposal comes from AI or import.');
+    }
+    if (confirmedAt !== undefined || rejectedAt !== undefined) {
+      throw new Error('Proposal Career Evidence cannot carry a review time.');
+    }
+    return;
+  }
+  if (reviewState === 'confirmed') {
+    if (confirmedAt === undefined) {
+      throw new Error('Confirmed Career Evidence is missing its confirmation time.');
+    }
+    if (rejectedAt !== undefined) {
+      throw new Error('Confirmed Career Evidence cannot carry a rejection time.');
+    }
+    return;
+  }
+  if (rejectedAt === undefined) {
+    throw new Error('Rejected Career Evidence is missing its rejection time.');
+  }
+  if (confirmedAt !== undefined) {
+    throw new Error('Rejected Career Evidence cannot carry a confirmation time.');
+  }
+}
+
+function canonicalText(value: unknown, emptyMessage: string): string {
+  if (typeof value !== 'string') throw new Error(emptyMessage);
+  const trimmed = value.trim();
+  if (!trimmed) throw new Error(emptyMessage);
+  if (trimmed !== value) throw new Error('Career Evidence text is not canonical.');
+  return value;
+}
+
+function optionalCanonical(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value !== 'string') throw new Error('Career Evidence text is not canonical.');
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (trimmed !== value) throw new Error('Career Evidence text is not canonical.');
+  return value;
 }

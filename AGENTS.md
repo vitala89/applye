@@ -2,7 +2,7 @@
 
 ## Design First approval gate
 
-For every new feature, integration, material refactor, schema/domain/API/IPC change, or privacy/security-sensitive change, follow [Design First](docs/governance/DESIGN_FIRST.md): inspect the architecture canon, prepare a reviewable System Design with relevant Mermaid diagrams and contracts, and **stop for explicit user approval before implementation**. Material deviations require renewed approval. Simple non-behavioral edits follow the documented lightweight exception. Implementation PRs link the approved design.
+For every new feature, integration, material refactor, schema/domain/API/IPC change, or privacy/security-sensitive change, follow [Design First](docs/governance/DESIGN_FIRST.md): inspect the architecture canon, prepare a reviewable System Design with relevant Excalidraw, draw.io and/or Mermaid diagrams and contracts under `docs/designs/<task-slug>/`, and **stop for explicit user approval before implementation**. Native Excalidraw/draw.io sources require matching SVG previews; choose only the tools relevant to the task. Material deviations require renewed approval. Simple non-behavioral edits follow the documented lightweight exception. Implementation PRs link the approved design.
 
 Applye is an open-source, privacy-first job-search productivity app built as an Nx monorepo with Tauri 2, Angular, Rust, SQLite, TypeScript, and shared domain/UI/i18n libraries. Treat user career data, applications, notes, contacts, notifications, resumes, and imported job content as sensitive by default.
 

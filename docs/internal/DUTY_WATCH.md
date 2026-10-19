@@ -44,6 +44,24 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-19, Career Evidence persistence design approval
+
+- **Status:** complete
+- **Agent/tool:** Cursor
+- **Branch:** `docs/record-career-evidence-persistence-approval`
+- **Pull request:** `docs/record-career-evidence-persistence-approval`
+- **Objective:** Record Vitalii Kasap's explicit approval, on 2026-10-19, of Career Evidence desktop persistence System Design revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`. Do not implement persistence and do not revive #591.
+- **Completed:** The design approval record is Approved for that revision. Current state, the feature index, the domain-architecture status sentence, and the Career Intelligence brief now say the domain foundation is merged, the persistence design is approved, implementation has not started, and the next implementation slice is Career Evidence desktop persistence. Career Profile / Evidence UI stays later.
+- **Not completed:** No migration, gateway, Tauri command, rehydration function, or implementation test.
+- **Files or packages changed:** `docs/designs/career-evidence-desktop-persistence/README.md`, `docs/product/CURRENT_STATE.md`, `docs/product/FEATURE_INDEX.md`, `docs/domain-architecture.md`, `docs/product/feature-briefs/career-company-network-interview-intelligence.md`, this log.
+- **Validation:** `npm run quality:file-size` reported no changed source files. `npm run quality:attribution` passed. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files). `git diff --check` passed. Prettier left the edited Markdown clean. `npm run format:check` still fails only on the untouched `docs/governance/DESIGN_FIRST.md` table already on `main`.
+- **Privacy/security impact:** Approval only. The approved design still keeps Career Evidence in local SQLite and adds no network call. No storage code changed.
+- **Decisions and assumptions:** The immutable approved revision is `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`. Design PR #595 squash-merged as `22ebbb3b43a50626b379bdf194b702a4cd3f9735`. Those two commits have the same tree. Open questions: none. #591 was closed without merge.
+- **Risks or compatibility impact:** No product behavior change. Implementation has not started.
+- **Open issues or blockers:** none for this record.
+- **Next first action:** Implement Career Evidence desktop persistence from approved revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b` in a separate implementation pull request. Do not revive #591. Do not start Career Profile UI.
+- **Evidence:** `docs/designs/career-evidence-desktop-persistence/README.md` status is Approved for `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`.
+
 ### 2026-10-19, persistence design sequence direction
 
 - **Status:** partial, design still pending approval

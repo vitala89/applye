@@ -49,7 +49,7 @@ Before a watch can be marked complete:
 - **Status:** complete
 - **Agent/tool:** Cursor
 - **Branch:** `docs/record-career-evidence-persistence-approval`
-- **Pull request:** `docs/record-career-evidence-persistence-approval`
+- **Pull request:** [#596](https://github.com/vitala89/applye/pull/596)
 - **Objective:** Record Vitalii Kasap's explicit approval, on 2026-10-19, of Career Evidence desktop persistence System Design revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`. Do not implement persistence and do not revive #591.
 - **Completed:** The design approval record is Approved for that revision. Current state, the feature index, the domain-architecture status sentence, and the Career Intelligence brief now say the domain foundation is merged, the persistence design is approved, implementation has not started, and the next implementation slice is Career Evidence desktop persistence. Career Profile / Evidence UI stays later.
 - **Not completed:** No migration, gateway, Tauri command, rehydration function, or implementation test.

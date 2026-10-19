@@ -1,4 +1,8 @@
 flowchart LR
+  subgraph caller ["Caller — not in this slice"]
+    CALL["future application layer"]
+  end
+
   subgraph core ["libs/core — existing"]
     CE["CareerEvidence type<br/>no id, no runtime class"]
     LIFE["draft / propose / confirm / reject"]
@@ -17,8 +21,9 @@ flowchart LR
 
   DB[("local SQLite<br/>career_evidence")]
 
+  CALL -->|"calls lifecycle"| LIFE
   LIFE --> CE
-  CE --> GW
+  CALL -->|"passes CareerEvidence"| GW
   GW -->|"invoke, camelCase"| CMD
   CMD --> FEAT
   FEAT --> SQL
@@ -26,6 +31,7 @@ flowchart LR
   DB --> SQL
   SQL --> FEAT
   FEAT --> CMD
-  CMD --> GW
-  GW --> REHY
+  CMD -->|"raw row"| GW
+  GW -->|"rehydrate row"| REHY
   REHY --> CE
+  GW -->|"id plus CareerEvidence"| CALL

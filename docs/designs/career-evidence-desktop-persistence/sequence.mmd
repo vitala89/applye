@@ -1,32 +1,40 @@
 sequenceDiagram
+  participant Caller as Caller / future application layer
   participant Core as libs/core
   participant Gateway as CareerEvidenceGateway
   participant Cmd as Tauri command
   participant Rust as career_evidence
   participant DB as SQLite
 
-  Note over Core,DB: Insert stores a new draft or proposal only
-  Core->>Gateway: CareerEvidence draft or proposal
+  Note over Caller,DB: Insert stores a new draft or proposal only
+  Caller->>Core: draftCareerEvidence or proposeCareerEvidence
+  Core-->>Caller: CareerEvidence
+  Caller->>Gateway: insertCareerEvidence(evidence)
   Gateway->>Cmd: db_insert_career_evidence
   Cmd->>Rust: insert
   Rust->>DB: INSERT
   DB-->>Rust: row
-  Rust-->>Gateway: flat row
-  Gateway->>Core: rehydrateCareerEvidence
-  Core-->>Gateway: CareerEvidence
-  Gateway-->>Core: id plus CareerEvidence
+  Rust-->>Gateway: raw persistence row
+  Gateway->>Core: rehydrateCareerEvidence(row)
+  Core-->>Gateway: nominal CareerEvidence
+  Gateway-->>Caller: PersistedCareerEvidence
 
-  Note over Core,DB: Lifecycle save is one compare-and-set
-  Core->>Gateway: id plus confirmed or rejected value
+  Note over Caller,DB: Lifecycle save is one compare-and-set
+  Caller->>Core: confirmCareerEvidence or rejectCareerEvidence
+  Core-->>Caller: terminal CareerEvidence
+  Caller->>Gateway: saveCareerEvidenceLifecycle(id, evidence)
   Gateway->>Cmd: db_save_career_evidence_lifecycle
   Cmd->>Rust: save lifecycle
   Rust->>DB: UPDATE WHERE id AND previous review_state AND unchanged columns
   alt rows updated is 1
     DB-->>Rust: terminal row
-    Rust-->>Gateway: flat row
+    Rust-->>Gateway: raw persistence row
+    Gateway->>Core: rehydrateCareerEvidence(row)
+    Core-->>Gateway: nominal CareerEvidence
+    Gateway-->>Caller: PersistedCareerEvidence
   else rows updated is 0
     Rust->>DB: SELECT id
     DB-->>Rust: current row or none
     Rust-->>Gateway: not found, immutable-field error, or illegal transition
+    Gateway-->>Caller: domain or persistence error
   end
-  Gateway->>Core: rehydrate only on success

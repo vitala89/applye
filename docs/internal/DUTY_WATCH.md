@@ -44,6 +44,18 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-19, persistence design sequence direction
+
+- **Status:** partial, design still pending approval
+- **Agent/tool:** Cursor
+- **Branch:** `docs/career-evidence-desktop-persistence-design`
+- **Pull request:** [#595](https://github.com/vitala89/applye/pull/595), not an approval
+- **Objective:** Show the future caller invoking core and the gateway. Do not implement persistence, do not touch #591, and do not mark the design approved.
+- **Completed:** `sequence.mmd` and `data-flow.mmd` now keep `libs/data` depending on `libs/core` for rehydration only. The compare-and-set save is unchanged.
+- **Not completed:** Maintainer approval of a concrete revision.
+- **Validation:** `quality:file-size` reported no changed source files. `quality:attribution` passed. `quality:application-boundaries` passed. `git diff --check` passed. Prettier passed on the edited Markdown. `npm run format:check` still fails only on the untouched `docs/governance/DESIGN_FIRST.md` table already on `main`.
+- **Next first action:** Review the updated #595 diagrams. Do not merge #595 or #591 from the agent session.
+
 ### 2026-10-19, Career Evidence persistence design
 
 - **Status:** partial, design pull request open, not approved

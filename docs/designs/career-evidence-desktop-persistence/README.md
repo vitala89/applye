@@ -16,9 +16,9 @@ Canon: [architecture.md](../../architecture.md), [domain-architecture.md](../../
 
 Mermaid is enough. There is no UI layout and no new deployment.
 
-- [data-flow.mmd](data-flow.mmd) — layer path from the domain value to local SQLite and back
+- [data-flow.mmd](data-flow.mmd) — a future caller moves the domain value; `libs/data` calls `libs/core` only to rehydrate
 - [lifecycle.mmd](lifecycle.mmd) — review states this slice may store
-- [sequence.mmd](sequence.mmd) — insert, and the compare-and-set lifecycle save
+- [sequence.mmd](sequence.mmd) — the caller uses core, then the gateway; the compare-and-set save stays in Rust
 
 ## Problem and scope
 
@@ -41,19 +41,24 @@ Non-goals: Career Profile UI, an application signal store, AI Career Discovery, 
 Career Evidence stays in the Career Intelligence vocabulary. Persistence uses the existing desktop stack. No new bounded-context library and no repository type.
 
 ```text
-CareerEvidence          libs/core          existing domain value
+Caller                  future application layer    not in this slice
+   |                         |
+   | lifecycle call          | gateway call
+   v                         v
+CareerEvidence          libs/core              existing domain value
+                              ^
+                              | rehydrateCareerEvidence
+                              |
+CareerEvidenceGateway   libs/data              proposed Tauri adapter
         |
         v
-CareerEvidenceGateway   libs/data          proposed Tauri adapter
+Tauri command           commands/              proposed thin IPC
         |
         v
-Tauri command           commands/          proposed thin IPC
+career_evidence         src-tauri feature      proposed checks and SQL
         |
         v
-career_evidence         src-tauri feature  proposed checks and SQL
-        |
-        v
-career_evidence table   local SQLite       proposed
+career_evidence table   local SQLite           proposed
 ```
 
 `apps/desktop` production UI does not gain a caller in this slice. A later screen follows ADR-0005: the page renders, a signal store in `libs/application` owns screen state, and that store is what calls the gateway. This design does not add the store.

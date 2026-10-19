@@ -1,14 +1,14 @@
 # Career Evidence desktop persistence
 
-Design-only proposal. This document does not approve itself.
+Design-only proposal. Maintainer approval of revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b` is recorded below. This document does not approve itself.
 
-|                                             |                                                                                                                                              |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status                                      | Pending maintainer approval                                                                                                                  |
-| Revision                                    | Head of this design pull request                                                                                                             |
-| Base                                        | `21cab03b911261d492e6538209a734e525f4ab24`                                                                                                   |
-| Implementation                              | Not started from this design. [#591](https://github.com/vitala89/applye/pull/591) is an earlier unapproved prototype and is not this design. |
-| Next slice after an approved implementation | Career Profile / Evidence UI                                                                                                                 |
+|                                             |                                                                                                                           |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Status                                      | Approved                                                                                                                  |
+| Approved design revision                    | `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`                                                                                |
+| Base                                        | `21cab03b911261d492e6538209a734e525f4ab24`                                                                                |
+| Implementation                              | Not started. [#591](https://github.com/vitala89/applye/pull/591) was closed without merge and is not this implementation. |
+| Next slice after an approved implementation | Career Profile / Evidence UI                                                                                              |
 
 Canon: [architecture.md](../../architecture.md), [domain-architecture.md](../../domain-architecture.md), [ADR-0005](../../product/decisions/ADR-0005-application-layer-owns-page-state.md), [ADR-0006](../../product/decisions/ADR-0006-career-company-network-interview-intelligence.md), [CODE_QUALITY.md](../../governance/CODE_QUALITY.md), [Career Intelligence brief](../../product/feature-briefs/career-company-network-interview-intelligence.md).
 
@@ -256,9 +256,12 @@ Validation for that implementation, from [VALIDATION_MATRIX.md](../../governance
 
 ## Approval record
 
-- **Status:** Pending maintainer approval
-- **Revision:** head of this design pull request, based on `21cab03b`
-- **Reviewer decision:** not given
-- **Date:** 2026-10-19
-- **Open questions:** none. The clock equality and the compare-and-set write are proposed decisions, not options left open.
-- **Implementation PR:** none. Do not treat #591 as the implementation of this design.
+- **Status:** Approved
+- **Approved design revision:** `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`
+- **Design PR:** [#595](https://github.com/vitala89/applye/pull/595)
+- **Design merge commit:** `22ebbb3b43a50626b379bdf194b702a4cd3f9735`
+- **Reviewer / maintainer:** Vitalii Kasap
+- **Decision:** approved for implementation
+- **Approval date:** 2026-10-19
+- **Open questions:** none
+- **Implementation PR:** not started yet. [#591](https://github.com/vitala89/applye/pull/591) was closed without merge and is not this implementation.

@@ -1,0 +1,37 @@
+flowchart LR
+  subgraph caller ["Caller — not in this slice"]
+    CALL["future application layer"]
+  end
+
+  subgraph core ["libs/core — existing"]
+    CE["CareerEvidence type<br/>no id, no runtime class"]
+    LIFE["draft / propose / confirm / reject"]
+    REHY["rehydrateCareerEvidence<br/>proposed"]
+  end
+
+  subgraph data ["libs/data — proposed"]
+    GW["CareerEvidenceGateway"]
+  end
+
+  subgraph desktop ["apps/desktop Tauri — proposed"]
+    CMD["commands/career_evidence<br/>thin IPC"]
+    FEAT["career_evidence feature"]
+    SQL["career_evidence/persistence<br/>SQL only"]
+  end
+
+  DB[("local SQLite<br/>career_evidence")]
+
+  CALL -->|"calls lifecycle"| LIFE
+  LIFE --> CE
+  CALL -->|"passes CareerEvidence"| GW
+  GW -->|"invoke, camelCase"| CMD
+  CMD --> FEAT
+  FEAT --> SQL
+  SQL --> DB
+  DB --> SQL
+  SQL --> FEAT
+  FEAT --> CMD
+  CMD -->|"raw row"| GW
+  GW -->|"rehydrate row"| REHY
+  REHY --> CE
+  GW -->|"id plus CareerEvidence"| CALL

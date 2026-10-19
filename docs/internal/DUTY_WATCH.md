@@ -50,7 +50,7 @@ Before a watch can be marked complete:
 - **Agent/tool:** Cursor
 - **Branch:** `feat/career-evidence-desktop-persistence`
 - **Base:** `d411c56a2a40a5debd90d42de6ac001c8203adaf`
-- **Pull request:** opening from this branch. The number is recorded in the follow-up commit on this branch. This entry does not claim a merge.
+- **Pull request:** [#597](https://github.com/vitala89/applye/pull/597), open, not merged. Head at the implementation commit was `b99a028002dab27617031065f3eb28e039bc3332`.
 - **Objective:** Implement the approved Career Evidence desktop persistence design, revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`. Do not revive #591. Do not start Career Profile / Evidence UI.
 - **Completed:** `rehydrateCareerEvidence` seals stored rows in `libs/core`. `CareerEvidenceGateway` calls `db_insert_career_evidence`, `db_list_career_evidence`, and `db_save_career_evidence_lifecycle`. The Rust feature validates and writes SQLite. Migration `0031_career_evidence.sql` is pinned. Lifecycle saves are one compare-and-set update. A competing confirm/reject test left exactly one winner. [#591](https://github.com/vitala89/applye/pull/591) stayed closed.
 - **Not completed:** No native `desktop:dev` walkthrough. No Career Profile UI. The pull request is not merged.

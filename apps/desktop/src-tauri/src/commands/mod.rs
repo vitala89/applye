@@ -3,8 +3,8 @@
 //
 // Jobs, Discover, and Tailoring keep their rules, parsers, renderers, and SQL
 // in `jobs`, `discover`, and `tailoring`. Applications, Documents, Interview,
-// and Tracklist Import already do the same. `exported_paths` and `web_text`
-// are shared support, not commands.
+// Tracklist Import, and Career Evidence already do the same. `exported_paths`
+// and `web_text` are shared support, not commands.
 //
 // Profile, tracker, analytics, portal answers, follow-up drafts, health,
 // settings, and the ATS check still mix adapter code with their helpers.
@@ -16,6 +16,7 @@ pub mod archetypes;
 pub mod ats;
 pub mod ats_format;
 pub mod ats_tokens;
+pub mod career_evidence;
 pub mod database_backup;
 pub mod discover;
 pub mod discover_sources;

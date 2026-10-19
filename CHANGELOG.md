@@ -31,6 +31,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Added
 
+- **Career Evidence desktop persistence.** The desktop app can store a Career Evidence draft, proposal, confirmation, or rejection in the local SQLite database. A lifecycle save is one compare-and-set write, so a later confirm or reject cannot replace the first terminal state. The domain value still has no persistence id. Backup already copies the whole database, so the new table needs no separate export. There is no Career Profile screen in this slice.
 - **Career Evidence domain foundation.** Shared domain rules for a career claim's origin, review, confirmation, and rejection. AI and imported evidence stay unconfirmed until the user confirms them. Copying a proposal does not make it Career Evidence, so the copy cannot be marked confirmed. No database, desktop UI, or AI extraction in this slice.
 - **Local database backup and restore in Settings.** Save a WAL-consistent copy of the Applye
   SQLite database, then restore it later. The restore checks the file before anything is replaced,

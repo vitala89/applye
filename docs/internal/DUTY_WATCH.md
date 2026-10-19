@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-10-19, Career Evidence desktop persistence
+
+- **Status:** complete, pull request open, not merged
+- **Agent/tool:** Cursor
+- **Branch:** `feat/career-evidence-desktop-persistence`
+- **Base:** `d411c56a2a40a5debd90d42de6ac001c8203adaf`
+- **Pull request:** [#597](https://github.com/vitala89/applye/pull/597), open, not merged. Head at the implementation commit was `b99a028002dab27617031065f3eb28e039bc3332`.
+- **Objective:** Implement the approved Career Evidence desktop persistence design, revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`. Do not revive #591. Do not start Career Profile / Evidence UI.
+- **Completed:** `rehydrateCareerEvidence` seals stored rows in `libs/core`. `CareerEvidenceGateway` calls `db_insert_career_evidence`, `db_list_career_evidence`, and `db_save_career_evidence_lifecycle`. The Rust feature validates and writes SQLite. Migration `0031_career_evidence.sql` is pinned. Lifecycle saves are one compare-and-set update. A competing confirm/reject test left exactly one winner. [#591](https://github.com/vitala89/applye/pull/591) stayed closed.
+- **Not completed:** No native `desktop:dev` walkthrough. No Career Profile UI. The pull request is not merged.
+- **Files or packages changed:** `libs/core` rehydration, `libs/data` gateway, `apps/desktop/src-tauri` migration and feature, canonical state docs, native gate section H.
+- **Validation:** `npm run quality:file-size` passed (`career-evidence.ts` 283/350, `career_evidence/tests.rs` 459/540). `npm run quality:attribution` passed. `npm run quality:application-boundaries` passed; graph is `jobs -> documents` (8 files). `git diff --check` passed. `npm run format:check` fails only on untouched `docs/governance/DESIGN_FIRST.md`, unchanged versus `origin/main`. `npx nx run-many --target=type-check --skip-nx-cache` passed. `npx nx run-many --target=lint --skip-nx-cache` passed. `npx nx run-many --target=test --skip-nx-cache` passed for 7 projects. An earlier `npm test` timed out one untouched `cv-detail.component.spec.ts` hook while the machine was loaded; the skip-cache rerun passed, and Nx marked `desktop:test` flaky because of that earlier timeout. `npm run desktop:build -- --skip-nx-cache` passed. In `apps/desktop/src-tauri`: `cargo fmt --check` passed, `cargo test --lib` passed (420 passed, 1 ignored, 0 failed), `cargo clippy -- -D warnings` passed, `cargo check` passed. The ignored Rust test was already ignored; this slice added none.
+- **Privacy/security impact:** Career Evidence stays in the local SQLite file. No network call, telemetry, account, or AI provider call. Errors and logs do not include statement, source label, or source ref. sqlx errors are not forwarded. No dependency change.
+- **Decisions and assumptions:** Approved revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b` was not rewritten. `0030` was still the latest migration, so this slice added `0031`. Backup remains `VACUUM INTO` of the whole database. Restore still opens through `Db::init`.
+- **Risks or compatibility impact:** Existing databases gain `career_evidence` on next launch. There is no down migration. Recovery is the existing restore path.
+- **Open issues or blockers:** Native gate section H is unchecked. The pull request is not merged.
+- **Next first action:** Review and merge the implementation pull request. Do not start Career Profile / Evidence UI in that review. After merge, the next product slice is Career Profile / Evidence UI.
+- **Evidence:** Migration pin test passed for version 31. `career_evidence::tests::contract::competing_terminal_transitions_leave_exactly_one_winner` passed.
+
 ### 2026-10-19, Career Evidence persistence design approval
 
 - **Status:** complete

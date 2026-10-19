@@ -1,5 +1,6 @@
 mod ai;
 mod applications;
+mod career_evidence;
 mod commands;
 mod database_backup;
 mod db;
@@ -102,6 +103,9 @@ pub fn run() {
             commands::profile::db_upsert_profile,
             commands::profile::db_set_profile_photo,
             commands::profile::hash_text,
+            commands::career_evidence::db_insert_career_evidence,
+            commands::career_evidence::db_list_career_evidence,
+            commands::career_evidence::db_save_career_evidence_lifecycle,
             commands::archetypes::check_archetype_match,
             commands::ats::ats_check_run,
             commands::job_paste::job_paste,

@@ -161,6 +161,58 @@ export function isConfirmedCareerEvidence(evidence: CareerEvidence): boolean {
   );
 }
 
+/**
+ * Rebuild a Career Evidence value from stored fields. The caller must not pass
+ * a persistence id: that key stays beside the domain value. Stored text is
+ * kept only when the lifecycle could already have produced it, so a padded
+ * statement is rejected instead of trimmed into a different statement.
+ */
+export function rehydrateCareerEvidence(input: unknown): CareerEvidence {
+  if (!isRecord(input)) throw new Error('Career Evidence could not be rehydrated.');
+  if ('id' in input) {
+    throw new Error('Career Evidence rehydration does not accept a persistence id.');
+  }
+  const statement = canonicalText(
+    input['statement'],
+    'Career Evidence statement is not canonical.',
+  );
+  const reviewState = reviewStateFrom(input['reviewState']);
+  const provenance = provenanceFromStored(input['provenance']);
+  const createdAt = canonicalText(
+    input['createdAt'],
+    'Career Evidence timestamps are not canonical.',
+  );
+  const updatedAt = canonicalText(
+    input['updatedAt'],
+    'Career Evidence timestamps are not canonical.',
+  );
+  const confirmedAt = absentOrCanonical(
+    input['confirmedAt'],
+    'Career Evidence timestamps are not canonical.',
+  );
+  const rejectedAt = absentOrCanonical(
+    input['rejectedAt'],
+    'Career Evidence timestamps are not canonical.',
+  );
+  assertStoredLifecycle(
+    reviewState,
+    provenance.origin,
+    createdAt,
+    updatedAt,
+    confirmedAt,
+    rejectedAt,
+  );
+  return seal({
+    statement,
+    reviewState,
+    provenance,
+    createdAt,
+    updatedAt,
+    ...(confirmedAt === undefined ? {} : { confirmedAt }),
+    ...(rejectedAt === undefined ? {} : { rejectedAt }),
+  });
+}
+
 function createCareerEvidence(input: {
   statement: string;
   reviewState: 'draft' | 'proposal';
@@ -225,4 +277,90 @@ function optionalText(value: string | undefined): string | undefined {
 
 function hasText(value: string | undefined): value is string {
   return typeof value === 'string' && value.trim() !== '';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function canonicalText(value: unknown, message: string): string {
+  if (typeof value !== 'string' || value.length === 0 || value.trim() !== value) {
+    throw new Error(message);
+  }
+  return value;
+}
+
+function absentOrCanonical(value: unknown, message: string): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value !== 'string') throw new Error(message);
+  if (value.trim() === '') return undefined;
+  if (value.trim() !== value) throw new Error(message);
+  return value;
+}
+
+function reviewStateFrom(value: unknown): CareerEvidenceReviewState {
+  if (value === 'draft' || value === 'proposal' || value === 'confirmed' || value === 'rejected') {
+    return value;
+  }
+  throw new Error('Career Evidence review state is not recognized.');
+}
+
+function provenanceFromStored(value: unknown): CareerEvidenceProvenance {
+  if (!isRecord(value)) throw new Error('Career Evidence could not be rehydrated.');
+  const origin = originFrom(value['origin']);
+  const capturedAt = canonicalText(
+    value['capturedAt'],
+    'Career Evidence provenance is not canonical.',
+  );
+  const sourceLabel = absentOrCanonical(
+    value['sourceLabel'],
+    'Career Evidence provenance is not canonical.',
+  );
+  const sourceRef = absentOrCanonical(
+    value['sourceRef'],
+    'Career Evidence provenance is not canonical.',
+  );
+  return {
+    origin,
+    capturedAt,
+    ...(sourceLabel === undefined ? {} : { sourceLabel }),
+    ...(sourceRef === undefined ? {} : { sourceRef }),
+  };
+}
+
+function originFrom(value: unknown): CareerEvidenceOrigin {
+  if (value === 'user' || value === 'ai' || value === 'import') return value;
+  throw new Error('Career Evidence origin is not recognized.');
+}
+
+function assertStoredLifecycle(
+  reviewState: CareerEvidenceReviewState,
+  origin: CareerEvidenceOrigin,
+  createdAt: string,
+  updatedAt: string,
+  confirmedAt: string | undefined,
+  rejectedAt: string | undefined,
+): void {
+  if (reviewState === 'draft' && origin !== 'user') {
+    throw new Error('Career Evidence origin does not match its review state.');
+  }
+  if (reviewState === 'proposal' && origin !== 'ai' && origin !== 'import') {
+    throw new Error('Career Evidence origin does not match its review state.');
+  }
+  const open = reviewState === 'draft' || reviewState === 'proposal';
+  if (open && (confirmedAt !== undefined || rejectedAt !== undefined || updatedAt !== createdAt)) {
+    throw new Error('Career Evidence lifecycle timestamps are inconsistent.');
+  }
+  if (
+    reviewState === 'confirmed' &&
+    (confirmedAt === undefined || rejectedAt !== undefined || updatedAt !== confirmedAt)
+  ) {
+    throw new Error('Career Evidence lifecycle timestamps are inconsistent.');
+  }
+  if (
+    reviewState === 'rejected' &&
+    (rejectedAt === undefined || confirmedAt !== undefined || updatedAt !== rejectedAt)
+  ) {
+    throw new Error('Career Evidence lifecycle timestamps are inconsistent.');
+  }
 }

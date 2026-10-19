@@ -7,10 +7,11 @@ runtime class and no persistence id. The **Career Evidence desktop persistence**
 is approved. The approved revision is `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`, from design pull
 request [#595](https://github.com/vitala89/applye/pull/595), merged as
 `22ebbb3b43a50626b379bdf194b702a4cd3f9735`. Vitalii Kasap approved that revision on 2026-10-19.
-Implementation has not started from that design. [#591](https://github.com/vitala89/applye/pull/591)
-was closed without merge and is not the implementation. The next implementation slice is Career
-Evidence desktop persistence. Career Profile / Evidence UI, AI Career Discovery, and a web backend
-remain later. Existing Profile, Experience, Education, and Story Bank rows are not converted.
+Desktop persistence is implemented in [#597](https://github.com/vitala89/applye/pull/597) and is awaiting merge.
+It is not merged storage yet. [#591](https://github.com/vitala89/applye/pull/591) was closed without
+merge and was not reused. The next product slice is Career Profile / Evidence UI. AI Career
+Discovery and a web backend remain later. Existing Profile, Experience, Education, and Story Bank
+rows are not converted.
 
 ## Active product direction
 
@@ -52,8 +53,8 @@ counts on that audit were 298/350 and 236/300; Cover Letter detail was 232/350 a
 production source was decomposed. PR 8 merged as [#589](https://github.com/vitala89/applye/pull/589)
 at `b827f539` and reconciled architecture docs, domain vocabulary, and agent instructions with that
 enforcement. Architecture Stabilization is complete. Career Evidence domain foundation merged as
-#590. The Career Evidence desktop persistence System Design is approved, and implementation has
-not started. Career Profile UI and AI Career Discovery have not started.
+#590. Career Evidence desktop persistence is implemented in [#597](https://github.com/vitala89/applye/pull/597)
+and is awaiting merge. Career Profile UI and AI Career Discovery have not started.
 
 ## Implementation sequence
 
@@ -92,11 +93,10 @@ delivered as focused PRs; it is not one large rewrite.
 13+. Community Intelligence
 ```
 
-Career Evidence domain foundation is merged. The Career Evidence desktop persistence System Design
-is approved at `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`. Implementation has not started from that
-design. The next implementation slice is Career Evidence desktop persistence. Career Profile /
-Evidence UI remains later. [#591](https://github.com/vitala89/applye/pull/591) was closed without
-merge and is not the implementation.
+Career Evidence domain foundation is merged. Career Evidence desktop persistence is implemented
+in [#597](https://github.com/vitala89/applye/pull/597) and is awaiting merge. The approved design revision remains
+`805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`. The next product slice is Career Profile / Evidence UI.
+[#591](https://github.com/vitala89/applye/pull/591) was closed without merge and was not reused.
 
 ## Maintenance backlog
 

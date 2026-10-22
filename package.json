@@ -57,7 +57,7 @@
     "@angular-devkit/core": "~21.2.24",
     "@angular-devkit/schematics": "~21.2.24",
     "@angular/build": "~21.2.24",
-    "@angular/cli": "~21.2.24",
+    "@angular/cli": "~21.2.28",
     "@angular/compiler-cli": "~21.2.24",
     "@angular/language-service": "~21.2.24",
     "@commitlint/cli": "^21.2.3",

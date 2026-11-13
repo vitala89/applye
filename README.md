@@ -115,15 +115,25 @@ deterministic code. AI is only spent where judgement is genuinely needed, and on
 
 ### Download
 
-**[Download for macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
+**[Download Applye](https://github.com/vitala89/applye/releases/latest)** - choose the installer
+for your platform from the release assets. On macOS, use `aarch64.dmg` for Apple Silicon
+(M1/M2/M3/M4 and later) or `x64.dmg` for Intel. Windows and Linux installers are listed
+on the same page. You can also [build from source](#build-from-source).
 
-Windows, Linux and Intel macOS builds come from the release workflow and will appear here with the
-next tagged version. Until then, [build from source](#build-from-source) - it is three commands,
-and it works on all three platforms.
-
-> The macOS build is not signed with an Apple Developer certificate, so the first launch needs a
-> right-click on the app and **Open** rather than a double-click. The
-> [release notes](https://github.com/vitala89/applye/releases/latest) explain why and give the one-line alternative.
+> **macOS first launch:** Download `aarch64.dmg` for Apple Silicon (M-series) or `x64.dmg`
+> for Intel, open the DMG, then drag **Applye** into **Applications**. The app is not Apple
+> Developer ID signed or notarized, so right-click **Applye** in Applications and choose
+> **Open**. If macOS says **"Applye is damaged and can't be opened"**, open **Terminal**
+> and run the following commands:
+>
+> ```bash
+> xattr -dr com.apple.quarantine "/Applications/Applye.app"
+> open "/Applications/Applye.app"
+> ```
+>
+> The command removes the quarantine attribute from Applye only. Use it only for a
+> download you trust from [official GitHub Releases](https://github.com/vitala89/applye/releases/latest).
+> If it still fails, download the installer again. Do not disable Gatekeeper globally.
 
 ### Build from source
 

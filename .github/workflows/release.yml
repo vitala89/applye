@@ -122,7 +122,31 @@ jobs:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
           releaseName: 'Applye ${{ github.ref_name }}'
-          releaseBody: 'Download the installer for your OS below. This release was generated automatically.'
+          releaseBody: |
+            Download the installer for your OS from the assets below.
+
+            ## Install on macOS (Apple Silicon or Intel)
+            1. Download the matching `.dmg` file: `aarch64` for Apple Silicon (M-series) or `x64` for Intel.
+            2. Open the `.dmg` and drag `Applye.app` into the `Applications` folder.
+            3. In Applications, right-click `Applye` and choose **Open**.
+
+            **macOS says "Applye is damaged and can't be opened"?**
+            Applye is not yet signed with an Apple Developer ID certificate or notarized by Apple.
+            On some macOS versions, Gatekeeper shows this warning even for an intact app.
+            After downloading from this official repository, open **Terminal** and run:
+
+            ```bash
+            xattr -dr com.apple.quarantine "/Applications/Applye.app"
+            open "/Applications/Applye.app"
+            ```
+
+            This clears the quarantine attribute for **Applye only**; it does not disable
+            Gatekeeper system-wide. Run it only for an installer you trust.
+            If the app still fails to open, download the matching installer again rather
+            than assuming the file is safe.
+
+            The Tauri auto-updater signature is separate from Apple code signing.
+            Apple signing and notarization are not available for this build yet.
           releaseDraft: true
           prerelease: false
           # Generate + attach latest.json so the in-app updater can find it.

@@ -63,15 +63,21 @@ Artifacts land in `apps/desktop/src-tauri/target/release/bundle/`:
 `dmg/Applye_<version>_aarch64.dmg` and `macos/Applye.app`.
 
 The signing key is only for the **auto-updater**, not for Apple code signing. Without an Apple
-Developer certificate and notarization the app is unsigned, so first launch shows a Gatekeeper
-warning and the user has to right-click the app and choose Open, or clear the quarantine flag:
+Developer ID certificate and notarization the app is unsigned. After downloading the matching DMG
+from the official GitHub Releases page, mount it and drag `Applye.app` to `/Applications`.
+Right-click the app in Applications and choose **Open**. On some macOS versions Gatekeeper still
+shows **"Applye is damaged and can't be opened"**. In that case open Terminal and run:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/Applye.app
+xattr -dr com.apple.quarantine "/Applications/Applye.app"
+open "/Applications/Applye.app"
 ```
 
-That is acceptable for an open-source project, but it has to be documented for users rather than
-left as a surprise.
+This removes quarantine from Applye only, not from the whole system. It is a workaround for
+trusted, unsigned downloads, not a repair for a genuinely corrupted file. If launch still fails,
+download the correct installer again. Do not advise users to disable Gatekeeper globally.
+The release workflow's `releaseBody` must contain these installation steps in every draft
+release; publishing only "Download the installer" leaves macOS users blocked.
 
 ### Windows and Linux: do not cross-compile from macOS
 

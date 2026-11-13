@@ -115,11 +115,10 @@ deterministic code. AI is only spent where judgement is genuinely needed, and on
 
 ### Download
 
-**[Download for macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
-
-Windows, Linux and Intel macOS builds come from the release workflow and will appear here with the
-next tagged version. Until then, [build from source](#build-from-source) - it is three commands,
-and it works on all three platforms.
+**[Download Applye](https://github.com/vitala89/applye/releases/latest)** - choose the installer
+for your platform from the release assets. On macOS, use `aarch64.dmg` for Apple Silicon
+(M1/M2/M3/M4 and later) or `x64.dmg` for Intel. Windows and Linux installers are listed
+on the same page. You can also [build from source](#build-from-source).
 
 > **macOS first launch:** Download `aarch64.dmg` for Apple Silicon (M-series) or `x64.dmg`
 > for Intel, open the DMG, then drag **Applye** into **Applications**. The app is not Apple

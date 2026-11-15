@@ -566,3 +566,15 @@ because synthetic clicks do not reach the webview.
 - [ ] After a successful wizard export, Open and Reveal still open the file and its folder.
 - [ ] Saving a job, deleting a job, and a failed document action still show the same toasts. A
       refused precondition stays on the status line and does not toast.
+
+## H. Career Evidence desktop persistence
+
+No agent can drive this. There is no Career Evidence screen in this slice, so the check is a
+launch against an existing database, not a click-through and not the next product task. The next
+product slice remains Career Profile / Evidence UI. Record the result in `docs/internal/DUTY_WATCH.md`
+when it has been walked.
+
+- [ ] Quit any running `tauri dev`, then `npm run desktop:dev` against an existing Applye database.
+- [ ] The app opens and pending migration `0031_career_evidence` applies.
+- [ ] Existing profile, jobs, and applications are still present.
+- [ ] No new Career Evidence screen appears. Do not treat a missing screen as a failure of this slice.

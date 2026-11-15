@@ -214,7 +214,7 @@ removes its allowlist entry in the same change, and that filename may not come b
   A page calls the adapter and does not name a Tauri command. ADR-0005, amendment
   sixty-eight.
 - Architecture Stabilization made the **targeted** command modules thin adapters:
-  Applications, Documents, Interview, Tracklist Import, Jobs, Discover, and Tailoring.
+  Applications, Documents, Interview, Tracklist Import, Jobs, Discover, Tailoring, and Career Evidence.
   Their workflow, pure rules, parsers, renderers, and SQL live outside `commands/`.
   Other active modules still hold more of their implementation beside the IPC entrypoint,
   including ATS, analytics, health, tracker, settings, follow-up drafts, portal answers,

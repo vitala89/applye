@@ -26,6 +26,7 @@ const SEPARATE_LOADER = /\basync\s+load\s*\(/;
 
 const GATEWAY_FILES = [
   'applications.gateway.ts',
+  'career-evidence.gateway.ts',
   'discover.gateway.ts',
   'documents.gateway.ts',
   'drafts.gateway.ts',

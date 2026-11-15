@@ -2,13 +2,13 @@
 
 Design-only proposal. Maintainer approval of revision `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b` is recorded below. This document does not approve itself.
 
-|                                             |                                                                                                                           |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Status                                      | Approved                                                                                                                  |
-| Approved design revision                    | `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`                                                                                |
-| Base                                        | `21cab03b911261d492e6538209a734e525f4ab24`                                                                                |
-| Implementation                              | Not started. [#591](https://github.com/vitala89/applye/pull/591) was closed without merge and is not this implementation. |
-| Next slice after an approved implementation | Career Profile / Evidence UI                                                                                              |
+|                                             |                                                                                                                                                                                                                             |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status                                      | Approved                                                                                                                                                                                                                    |
+| Approved design revision                    | `805acf14f0cf982edbeaa42c2dfcbf3951e54f2b`                                                                                                                                                                                  |
+| Base                                        | `21cab03b911261d492e6538209a734e525f4ab24`                                                                                                                                                                                  |
+| Implementation                              | Implemented in [#597](https://github.com/vitala89/applye/pull/597) / awaiting merge. Migration `0031_career_evidence.sql`. [#591](https://github.com/vitala89/applye/pull/591) was closed without merge and was not reused. |
+| Next slice after an approved implementation | Career Profile / Evidence UI                                                                                                                                                                                                |
 
 Canon: [architecture.md](../../architecture.md), [domain-architecture.md](../../domain-architecture.md), [ADR-0005](../../product/decisions/ADR-0005-application-layer-owns-page-state.md), [ADR-0006](../../product/decisions/ADR-0006-career-company-network-interview-intelligence.md), [CODE_QUALITY.md](../../governance/CODE_QUALITY.md), [Career Intelligence brief](../../product/feature-briefs/career-company-network-interview-intelligence.md).
 
@@ -264,4 +264,4 @@ Validation for that implementation, from [VALIDATION_MATRIX.md](../../governance
 - **Decision:** approved for implementation
 - **Approval date:** 2026-10-19
 - **Open questions:** none
-- **Implementation PR:** not started yet. [#591](https://github.com/vitala89/applye/pull/591) was closed without merge and is not this implementation.
+- **Implementation PR:** [#597](https://github.com/vitala89/applye/pull/597), awaiting merge. The approved revision above is unchanged. [#591](https://github.com/vitala89/applye/pull/591) was closed without merge and was not reused.

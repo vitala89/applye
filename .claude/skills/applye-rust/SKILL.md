@@ -44,7 +44,7 @@ src/
 ```
 
 `commands/` holds Tauri IPC adapters. Applications, Documents, Interview, Tracklist Import, Jobs,
-Discover, and Tailoring keep workflow, rules, persistence, parsers, and renderers in the feature
+Discover, Tailoring, and Career Evidence keep workflow, rules, persistence, parsers, and renderers in the feature
 directories above. ATS, analytics, health, tracker, settings, follow-up drafts, portal answers, and
 WYSIWYG print still hold more implementation inside `commands/`. Do not treat that remainder as
 already extracted.
@@ -75,7 +75,7 @@ already extracted.
 - Every command gets typed request and response structs with `serde` derives. Do not pass loose
   `serde_json::Value` across IPC.
 - Keep a new command thin: validate, call focused domain logic, persist, return. Applications,
-  Documents, Interview, Tracklist Import, Jobs, Discover, and Tailoring already do this. ATS,
+  Documents, Interview, Tracklist Import, Jobs, Discover, Tailoring, and Career Evidence already do this. ATS,
   analytics, health, tracker, settings, follow-up drafts, portal answers, and WYSIWYG print still
   hold more implementation in `commands/`. Do not treat that remainder as already extracted.
 - Prefer typed request objects over long parameter lists.

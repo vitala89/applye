@@ -1,6 +1,19 @@
 import { TranslationMap } from './types';
 
 export const de: TranslationMap = {
+  web_changelog: {
+    title: 'Änderungen',
+    github_releases: 'Releases auf GitHub',
+    releases_soon: 'Releases folgen in Kürze',
+    older_releases: 'Ältere Releases',
+    empty: 'Noch keine Releases.',
+    recent_loading: 'Releases werden geladen…',
+    recent_error: 'Releases konnten nicht geladen werden.',
+    archive_loading: 'Ältere Releases werden geladen…',
+    archive_error: 'Ältere Releases konnten nicht geladen werden.',
+    retry: 'Erneut versuchen',
+    full_notes: 'Vollständige Änderungsliste lesen',
+  },
   nav: {
     dashboard: 'Übersicht',
     discover: 'Entdecken',

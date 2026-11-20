@@ -8,7 +8,6 @@ import { uk } from './i18n/messages/uk';
 import { Landing } from './landing';
 import { Blog } from './blog';
 import { Methodology } from './methodology';
-import { Changelog } from './changelog';
 import { DocsLayout } from './docs/docs-layout';
 
 /**
@@ -335,11 +334,10 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'changelog',
-    component: Changelog,
+    loadComponent: () => import('./changelog').then((m) => m.Changelog),
     title: 'Applye Changelog',
     data: {
-      description:
-        'Every tagged Applye release, reconstructed from the changelog: what changed, what broke, and when.',
+      description: 'Recent Applye releases, short release highlights and a release archive.',
     },
   },
   {

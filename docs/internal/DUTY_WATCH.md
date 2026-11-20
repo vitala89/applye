@@ -44,6 +44,17 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-11-20, compact public web changelog
+
+- **Status:** implementation ready for review, production-build and browser verification pending.
+- **Branch:** `feat/compact-web-changelog`, based on GitHub `main` at `f563cc52`.
+- **Completed:** Recorded approval of [design revision 1](../designs/compact-web-changelog/README.md). The route shows three compact release entries and loads older releases once on first expansion. The web build generates separate static assets from published changelog entries. Complete notes and the original Markdown remain accessible.
+- **Validation:** Web and i18n type-check, lint and tests passed with Nx cache skipped (83 web, 21 i18n and 5 asset tests). Sass compilation, design drift check, repository size, attribution, application-boundary, format and diff checks passed. The generated recent asset is 670 bytes and the archive contains 40 releases.
+- **Pending verification:** The local production build exited during Angular/esbuild compilation. The unchanged `main` source reproduced the failure in the same environment. Loopback binding was denied, so the mobile, keyboard and theme walkthrough is pending a working build and browser preview.
+- **Size and ownership:** `app.routes.ts` went from 341 to 339/350 effective lines and lazy-loads the route. The page renders release state and the web service owns loading and retry. Translation dictionaries are exempt from source budgets.
+- **Privacy/security impact:** The release assets contain public data and use same-origin requests.
+- **Next first action:** Review the feature pull request against production CI, then open the built changelog and use the keyboard to confirm the archive makes only one request.
+
 ### 2026-10-19, Career Evidence persistence design approval
 
 - **Status:** complete

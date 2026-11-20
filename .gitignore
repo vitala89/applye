@@ -115,3 +115,6 @@ walkthrough.md
 media-inbox/
 
 .angular
+
+# Generated release data for the website.
+/apps/web/.generated-changelog/

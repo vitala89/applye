@@ -6,8 +6,22 @@
   "sourceRoot": "apps/web/src",
   "tags": ["type:app", "scope:web"],
   "targets": {
+    "changelog-assets": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node apps/web/tools/generate-changelog-assets.mjs"
+      }
+    },
+    "test-changelog-assets": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --test apps/web/tools/changelog-assets.check.mjs"
+      }
+    },
     "build": {
       "executor": "@angular/build:application",
+      "dependsOn": ["^build", "changelog-assets"],
+      "inputs": ["production", "^production", "{workspaceRoot}/CHANGELOG.md"],
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
@@ -26,6 +40,11 @@
             "glob": "CHANGELOG.md",
             "input": ".",
             "output": "."
+          },
+          {
+            "glob": "*.json",
+            "input": "apps/web/.generated-changelog",
+            "output": "changelog-data"
           }
         ],
         "styles": ["libs/ui/tokens.css", "apps/web/src/styles.scss"]
@@ -56,6 +75,7 @@
     "serve": {
       "continuous": true,
       "executor": "@angular/build:dev-server",
+      "dependsOn": ["changelog-assets"],
       "defaultConfiguration": "development",
       "configurations": {
         "production": {
@@ -79,6 +99,7 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
+      "dependsOn": ["test-changelog-assets"],
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/web/jest.config.cts",
@@ -88,6 +109,7 @@
     "serve-static": {
       "continuous": true,
       "executor": "@nx/web:file-server",
+      "dependsOn": ["changelog-assets"],
       "options": {
         "buildTarget": "web:build",
         "staticFilePath": "dist/apps/web/browser",

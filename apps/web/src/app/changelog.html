@@ -1,51 +1,77 @@
 <div class="clog shell shell--narrow">
   <header class="clog__head">
-    <p class="applye-eyebrow">Changelog</p>
-    <h1 class="clog__h1">What changed, and when.</h1>
-    <p class="clog__lede">
-      Every tagged release, reconstructed from the git history. Applye is pre-1.0, so it follows
-      <code>0.x</code> versioning. This page reads the project's <code>CHANGELOG.md</code> directly,
-      so it never drifts.
-    </p>
-    <p>
-      <app-source-link
-        variant="ghost"
-        path="/releases"
-        label="GitHub Releases"
-        soonLabel="Releases: coming soon"
-      />
-    </p>
+    <h1 class="clog__h1">{{ copy('web_changelog.title') }}</h1>
+    <app-source-link
+      variant="ghost"
+      path="/releases"
+      [label]="copy('web_changelog.github_releases')"
+      [soonLabel]="copy('web_changelog.releases_soon')"
+    />
   </header>
 
-  @switch (status()) { @case ('loading') {
-  <p class="clog__state">Loading the changelog…</p>
-  } @case ('error') {
-  <p class="clog__state">Could not load the changelog. Reload the page, or try again later.</p>
-  } @case ('ready') {
+  @let recent = changelog.recent(); @if (recent.status === 'ready') {
   <div class="clog__list">
-    @for (r of releases(); track r.heading) {
-    <section class="clog__rel">
-      <div class="clog__relhead">
-        @if (r.link && sourcePublic) {
-        <a class="clog__ver" [href]="r.link" target="_blank" rel="noopener">{{ r.heading }}</a>
-        } @else {
-        <span class="clog__ver">{{ r.heading }}</span>
-        } @if (r.date) {
-        <time class="clog__date">{{ r.date }}</time>
-        } @else {
-        <span class="clog__badge">unreleased</span>
-        }
+    @for (release of recent.data.releases; track release.version) {
+    <section class="clog__release">
+      <div class="clog__meta">
+        <h2 class="clog__version">
+          <a [href]="notesHref(release.notesPath)" target="_blank" rel="noopener">
+            {{ release.version }}
+          </a>
+        </h2>
+        <time class="clog__date" [attr.datetime]="release.date">{{ release.date }}</time>
       </div>
-      @for (s of r.sections; track s.name) {
-      <p class="clog__section">{{ s.name }}</p>
-      <ul class="clog__items">
-        @for (it of s.items; track it) {
-        <li [innerHTML]="it"></li>
+      @if (release.highlights.length) {
+      <ul class="clog__highlights">
+        @for (highlight of release.highlights; track $index) {
+        <li>{{ highlight }}</li>
         }
       </ul>
       }
     </section>
+    } @empty {
+    <p class="clog__status">{{ copy('web_changelog.empty') }}</p>
     }
   </div>
-  } }
+
+  @if (recent.data.hasArchive) {
+  <details class="clog__archive" #archiveDisclosure (toggle)="onArchiveToggle(archiveDisclosure)">
+    <summary class="clog__summary">{{ copy('web_changelog.older_releases') }}</summary>
+
+    @let archive = changelog.archive(); @if (archive.status === 'ready') {
+    <ul class="clog__archive-list">
+      @for (release of archive.data; track release.version) {
+      <li class="clog__meta">
+        <a
+          class="clog__version"
+          [href]="notesHref(release.notesPath)"
+          target="_blank"
+          rel="noopener"
+        >
+          {{ release.version }}
+        </a>
+        <time class="clog__date" [attr.datetime]="release.date">{{ release.date }}</time>
+      </li>
+      }
+    </ul>
+    } @else if (archive.status === 'error') {
+    <p class="clog__status" role="status">{{ copy('web_changelog.archive_error') }}</p>
+    <button type="button" class="btn btn--ghost" (click)="changelog.loadArchive()">
+      {{ copy('web_changelog.retry') }}
+    </button>
+    } @else {
+    <p class="clog__status" role="status">{{ copy('web_changelog.archive_loading') }}</p>
+    }
+  </details>
+  } } @else if (recent.status === 'error') {
+  <p class="clog__status" role="status">{{ copy('web_changelog.recent_error') }}</p>
+  <div class="clog__actions">
+    <button type="button" class="btn btn--ghost" (click)="changelog.loadRecent()">
+      {{ copy('web_changelog.retry') }}
+    </button>
+    <a href="/CHANGELOG.md">{{ copy('web_changelog.full_notes') }}</a>
+  </div>
+  } @else {
+  <p class="clog__status" role="status">{{ copy('web_changelog.recent_loading') }}</p>
+  }
 </div>

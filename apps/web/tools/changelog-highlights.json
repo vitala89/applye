@@ -1,0 +1,14 @@
+{
+  "0.29.4": [
+    "Fixed a macOS launch failure.",
+    "On Windows, reinstall if you're upgrading from 0.29.2 or earlier."
+  ],
+  "0.29.3": [
+    "Fixed a dead end when skipping CV tailoring.",
+    "Reduced the AI cost of CV tailoring."
+  ],
+  "0.29.2": [
+    "Check for and install updates from Settings.",
+    "Suggest missing job titles and employers when importing a posting."
+  ]
+}

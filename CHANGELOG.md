@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The website changelog shows three recent releases with short highlights.** Older releases load when you open the archive.
+
 - **Architecture documentation, agent instructions, and enforced boundaries are reconciled with the stabilized codebase.** The current layer map includes `libs/application`. Desktop production code is not described as calling `libs/data` directly, and the static web app is not described as using the desktop-scoped application or data layers.
 - **Dormant tailoring-journal export endpoints are no longer registered.** `generated_doc_get`, `export_docx`, and `export_pdf` had no application caller. The unused `validate_theme` IPC command is gone; the pure validator remains. The `generated_docs` table, applied migrations, historical rows, and files already written under app data are unchanged. Job deletion still removes historical `generated_docs` rows.
 - **Rust commands for jobs, discover, and tailoring are thin adapters.** Identity, paste, scoring cache, Discover filters and parsers, and Tailoring renderers live beside the command layer. Command names and serialized fields are unchanged. No user-facing behavior was intended to change.

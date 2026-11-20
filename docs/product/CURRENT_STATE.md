@@ -102,6 +102,9 @@ merge and is not the implementation.
 
 Checked against `main` on 2026-10-11. Architecture Stabilization is complete. The items below remain separate maintenance.
 
+- **Public web changelog.** [Compact changelog design, revision 1](../designs/compact-web-changelog/README.md)
+  is approved and implemented on `feat/compact-web-changelog`. Next action is pull request review,
+  including the production-build check and keyboard walkthrough.
 - **Installer smoke-test phase 2.** `installer-smoke-test.yml` is still `workflow_dispatch`-only.
   `release.yml` has no smoke step. Wiring it in still needs an explicit go-ahead.
 - **German pack follow-ups** remain in `docs/product/IDEAS.md` (Bewerbungsmappe, `DE-tabular`

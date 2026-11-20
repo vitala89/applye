@@ -1,6 +1,19 @@
 import { TranslationMap } from './types';
 
 export const en: TranslationMap = {
+  web_changelog: {
+    title: 'Changelog',
+    github_releases: 'GitHub Releases',
+    releases_soon: 'Releases coming soon',
+    older_releases: 'Older releases',
+    empty: 'No releases yet.',
+    recent_loading: 'Loading releases…',
+    recent_error: 'Could not load releases.',
+    archive_loading: 'Loading older releases…',
+    archive_error: 'Could not load older releases.',
+    retry: 'Retry',
+    full_notes: 'Read the full changelog',
+  },
   nav: {
     dashboard: 'Dashboard',
     discover: 'Discover',

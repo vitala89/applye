@@ -10,6 +10,19 @@ import { TranslationMap } from './types';
  * which then renders in English rather than as a raw dotted key.
  */
 export const es: TranslationMap = stub(en, {
+  web_changelog: {
+    title: 'Historial de cambios',
+    github_releases: 'Versiones en GitHub',
+    releases_soon: 'Próximas versiones',
+    older_releases: 'Versiones anteriores',
+    empty: 'Aún no hay versiones.',
+    recent_loading: 'Cargando versiones…',
+    recent_error: 'No se pudieron cargar las versiones.',
+    archive_loading: 'Cargando versiones anteriores…',
+    archive_error: 'No se pudieron cargar las versiones anteriores.',
+    retry: 'Volver a intentar',
+    full_notes: 'Leer el historial completo',
+  },
   nav: {
     dashboard: 'Panel',
     discover: 'Descubrir',

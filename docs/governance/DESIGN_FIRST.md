@@ -14,6 +14,19 @@ For every new feature, integration, material refactor, schema migration, new dom
 
 A prior conversation, a task assignment, an AI-generated plan, or silence is **not** approval. Approval must identify the design/revision. If approval is missing, deliver the design and stop.
 
+## Project planning before approval
+
+Every non-trivial design includes a proportionate project plan under the existing
+[Planning Workflow](../product/PLANNING.md): scope, priority, impact, effort, dependencies,
+responsibility, review/approval ownership and exit criteria. For strategic or material decisions,
+include evidence-based SWOT (Strengths, Weaknesses, Opportunities, Threats), alternative evaluation
+and actionable risks. For multi-role work, clarify RACI (Responsible, Accountable, Consulted,
+Informed). Estimate time/capacity in ranges with assumptions, approval/review dependencies and
+verification effort; split large work into reviewable slices. Keep technical design and project
+planning in the same design artifact or a linked existing plan; do not create duplicate canon.
+Owner approval remains required; no commitment to staffing, delivery dates or delegation is
+inferred from a plan.
+
 ## Test planning before code
 
 For every non-exempt change, include the verification plan in the design submitted for approval.
@@ -142,5 +155,6 @@ Typo-only, formatting-only, and other triaged simple changes that do not alter b
 - [ ] Domain naming and Nx dependency constraints checked
 - [ ] Privacy/security, failures, migrations and testing addressed where applicable
 - [ ] UI changes include accessibility acceptance criteria and planned manual/automated checks; non-UI omissions justified
+- [ ] Proportionate project plan covers ownership, dependencies, effort, risks and exit criteria; SWOT/RACI included when applicable
 - [ ] Explicit user approval recorded **before** implementation
 - [ ] Implementation PR references approved design and explains any approved deviations

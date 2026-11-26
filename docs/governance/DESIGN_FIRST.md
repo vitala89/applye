@@ -41,6 +41,27 @@ release gates in the [Validation Matrix](VALIDATION_MATRIX.md) and [release guid
 
 Do not require every diagram or section for an irrelevant concern. Explain omissions briefly; do not invent services, endpoints, domain objects or future features.
 
+## Accessibility by design (UI changes)
+
+For every new or changed user-facing interface, include an accessibility impact assessment before
+approval, even for a visually small change. Use the existing [design system](../../design-system/MASTER.md)
+and [Validation Matrix](VALIDATION_MATRIX.md). Target WCAG (Web Content Accessibility Guidelines)
+2.2 Level AA for web UI and apply relevant criteria and platform guidance to desktop and mobile
+interfaces. Check EN 301 549 and applicable European Accessibility Act / German BFSG obligations
+for the actual product, service and market; this is a design baseline, not a compliance certificate.
+
+Design for visual, hearing, motor, speech, cognitive and temporary access needs. Specify semantic
+structure, accessible names, keyboard and alternative input, focus order and restoration, contrast,
+text resizing/reflow, reduced motion, non-color status cues, understandable errors, and accessible
+alternatives to drag, timed, audio or visual-only interactions where relevant. Include all states
+and both themes; define testable acceptance criteria and planned automated and manual assistive
+technology checks. AI streaming, tool approvals, quizzes and charts require accessible equivalents
+and status feedback where relevant. Record existing barriers, affected scope and remediation plan.
+
+Do not approve a design that knowingly introduces an unresolved barrier to a critical workflow.
+Do not declare compliance based on mockups or automated scores alone. A non-UI task may record
+accessibility as not applicable with rationale.
+
 ## Diagram tools and repository artifacts
 
 Use the **smallest suitable combination**, not all three tools by default:
@@ -120,5 +141,6 @@ Typo-only, formatting-only, and other triaged simple changes that do not alter b
 - [ ] Chosen diagram tools suit the task; diagrams and interfaces match actual architecture
 - [ ] Domain naming and Nx dependency constraints checked
 - [ ] Privacy/security, failures, migrations and testing addressed where applicable
+- [ ] UI changes include accessibility acceptance criteria and planned manual/automated checks; non-UI omissions justified
 - [ ] Explicit user approval recorded **before** implementation
 - [ ] Implementation PR references approved design and explains any approved deviations

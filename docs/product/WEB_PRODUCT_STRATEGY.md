@@ -411,6 +411,11 @@ structured product entities where possible.
 
 ## 6. Free and paid product boundary
 
+**Free and open source at its core.** Applye Desktop remains free and open source; optional
+hosted services, advanced learning experiences and managed AI capabilities may be paid. Existing
+local job-search workflows do not require a subscription or cloud account. External provider
+charges may apply.
+
 The preferred monetization principle is:
 
 > **Do not paywall ownership of local career data. Charge for hosted infrastructure, managed services,

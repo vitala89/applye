@@ -220,6 +220,10 @@ Possible modules:
 - company/business;
 - role-specific gaps.
 
+See the [AI-first learning and career development brief](ai-first-learning-career-development.md)
+for proposed role families, interactive learning, independent and AI-assisted assessment modes,
+and permitted knowledge sources. This extends, rather than replaces, this phased plan.
+
 ### Practice
 
 - question bank by provenance;

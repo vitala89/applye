@@ -3,7 +3,7 @@
 - **Status**: Proposal / candidate product plan
 - **Scope**: Applye web product only
 - **Decision level**: Strategic direction, not a committed delivery roadmap
-- **Last reviewed**: 2026-10-04
+- **Last reviewed**: 2026-11-26
 
 ---
 
@@ -134,6 +134,10 @@ Typical characteristics:
 - comparing companies, compensation, location, language, visa, remote/hybrid, and role constraints;
 - learning from rejections and interview outcomes;
 - willing to use AI as an advisor but not as an autonomous decision maker.
+
+The learning audience may also include employed professionals and career changers, with role-specific
+tracks for engineering, applied AI, product, project/delivery management, HR and leadership.
+Expansion is staged; role-neutral job tracking remains available.
 
 Initial product assumptions can remain strongest for Germany and the wider EU while keeping domain
 models extensible to other markets.
@@ -362,7 +366,12 @@ Potential capabilities:
 - links between learning evidence and target opportunities.
 
 The product should avoid creating artificial engagement loops. Learning exists to improve a real
-career outcome.
+career outcome, including growth between job searches.
+
+The [AI-first learning and career development brief](feature-briefs/ai-first-learning-career-development.md)
+proposes interactive role-based curricula, independent and AI-assisted interview practice, realistic
+project challenges and a curated question knowledge pipeline. Preserve fundamentals and employer
+AI-use rules; do not treat AI-generated content as verified interview evidence.
 
 ### 5.10 Community Knowledge
 
@@ -402,6 +411,11 @@ structured product entities where possible.
 
 ## 6. Free and paid product boundary
 
+**Free and open source at its core.** Applye Desktop remains free and open source; optional
+hosted services, advanced learning experiences and managed AI capabilities may be paid. Existing
+local job-search workflows do not require a subscription or cloud account. External provider
+charges may apply.
+
 The preferred monetization principle is:
 
 > **Do not paywall ownership of local career data. Charge for hosted infrastructure, managed services,
@@ -429,6 +443,7 @@ This is a planning hypothesis, not final packaging.
 | Company Intelligence | Private notes | Preview/basic | Advanced hosted intelligence |
 | Network CRM | Local | Basic | Advanced reminders / intelligence |
 | Interview Intelligence | Private/local | Preview/basic | Cross-history/community intelligence |
+| Learning and practice | Existing local preparation | Public lessons, maps and sample quizzes | Hosted curricula, adaptive coaching and labs |
 | Community knowledge | — | Read/basic | Advanced participation/features |
 | Cross-device sync | — | — | Candidate paid service |
 | Managed AI | — | Limited trial if viable | Paid service |
@@ -437,7 +452,11 @@ This is a planning hypothesis, not final packaging.
 | Alerts / monitoring | — | Limited | Paid service |
 
 No local-only capability should be artificially locked behind a client-side Pro boolean. This follows
-the server-anchored entitlement direction in ADR-0002.
+the server-anchored entitlement direction in draft ADR-0002. The public MIT Desktop Core remains
+free, independently usable and account-optional; provider charges may apply. Optional hosted
+services may be paid. A separate private commercial service repository is a candidate boundary,
+not an approved repository creation or licensing change; see the learning brief. Entitlements must
+be server-authoritative, and existing MIT releases retain their license.
 
 ---
 

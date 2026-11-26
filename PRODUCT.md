@@ -43,6 +43,11 @@ community layer. The differentiator is not autonomous applying; it is evidence-b
 understanding, company/network intelligence, interview preparation and learning from real outcomes.
 Desktop data never leaves the device without explicit intent.
 
+**Free and open source at its core.** Applye Desktop is free and open source. Existing local
+job-search workflows remain available without a mandatory subscription or cloud account. Optional
+hosted services, advanced learning experiences and managed AI capabilities may be paid; external
+AI providers may charge separately. See [Web Product Strategy](docs/product/WEB_PRODUCT_STRATEGY.md).
+
 ## Brand personality
 
 **Calm, precise, tool-like.** A quiet professional instrument that gets out of

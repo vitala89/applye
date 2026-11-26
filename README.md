@@ -312,6 +312,8 @@ and tracks the whole pipeline on your own machine. It runs on Windows, macOS and
 never applies to a job on your behalf.
 
 **Is Applye free? Do I need an account?**
+
+**Free and open source at its core.**
 The desktop app is free and MIT-licensed and works without an Applye account or subscription. You
 can keep using your own AI provider directly. Optional hosted/web services may have separate paid
 plans as they are introduced; they do not make the local desktop workflow dependent on a paid

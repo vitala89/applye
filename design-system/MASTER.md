@@ -33,6 +33,17 @@ first, then use it. Do not introduce raw hex, px, or ad-hoc rgba in components.
 - **Indigo accent appears ONLY on:** primary actions, active/selected states, focus
   rings, scores, AI status, and brand marks. Never as decoration. When in doubt, graphite.
 
+## Inclusive and accessible interaction
+
+Accessibility is a design requirement, not a visual theme or a premium capability. For any UI
+change, follow [Design First](../docs/governance/DESIGN_FIRST.md) and its accessibility acceptance
+criteria. Use WCAG 2.2 Level AA as the web target and relevant platform accessibility guidance
+for native UI. Prefer semantic native controls; use ARIA (Accessible Rich Internet Applications)
+only when necessary and correctly supported. Never remove keyboard focus indicators or convey
+meaning through color alone. Design labels, errors, focus behavior, non-pointer alternatives,
+reflow, readable contrast and reduced motion in both themes. Validate the implemented behavior
+using the [Validation Matrix](../docs/governance/VALIDATION_MATRIX.md), not a screenshot alone.
+
 ## Component contracts
 
 These are the rules most often dropped. Match them exactly.

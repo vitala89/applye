@@ -12,6 +12,21 @@ disagreement stays invisible until two agents score the same task differently.
 Superseded `aif-model-router`, which offered three unnamed tiers (`fast`, `standard`, `deep`) with no
 models, no effort levels, no score and no way to tell whether it had been applied.
 
+## Execution environment and handoff routing
+
+Before routing a task or writing a prompt for another coding agent, resolve the intended execution
+environment (Cursor, Claude Code, Codex, GitHub Copilot, Antigravity or another tool). Reuse an
+explicitly established environment; if it is unknown, ask the maintainer once before handoff.
+For the current session, use its known environment rather than asking unnecessarily. If no answer
+is available, report a model role and effort, not an invented model name.
+
+Use the actual available model picker, configuration or official tool documentation to verify the
+model name and supported effort. Record the intended environment, recommended model or role,
+reasoning effort, current model mismatch (if known), score and budget in the task prompt. Do not
+silently switch providers, start paid delegates or claim a model switch that the tool cannot make.
+Re-triage material scope changes. Accessibility, privacy and security risks and required manual
+verification belong in the existing five-axis score; do not introduce a second scoring system.
+
 ## The score
 
 Five axes, 0-2 each, summed. **Report the digits, not just the total** - the digits are what a
@@ -81,7 +96,7 @@ Printed before anything else happens, in every tool:
 
 ```
 Triage 6/10 (radius 2 · ambiguity 1 · risk 1 · verify 2 · unknowns 0)
-Harness: <tool> · Model: <name> · Effort: <level>
+Harness: <current or target tool> · Model: <verified name or role> · Effort: <supported level>
 Delegation: <plan> · Gate: <yes/no> · Context: <what will be read>
 Budget: ~120k output · Stop when: <the condition that ends the task>
 ```

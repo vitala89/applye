@@ -2,6 +2,40 @@
 
 Use the smallest sufficient validation set for the affected layers. Do not claim a command passed unless it was run and the result was observed.
 
+## Quality gates across the delivery lifecycle
+
+| Gate | Required evidence |
+| --- | --- |
+| Before implementation | Approved Design First revision where applicable; acceptance criteria mapped to tests, affected layers, risk, baseline checks and test environments. |
+| During implementation | Focused tests for new behavior; regression tests for defects; happy paths, failures, edge cases and contract compatibility as applicable. |
+| Before merge | Applicable commands below, changed/affected regression suites, independent review of code and tests, and recorded results against the final PR revision. |
+| Before release | Required automated and manual checks on the actual release candidate, including relevant installer/platform smoke tests, upgrade/data integrity and critical user workflows; see [RELEASE.md](../RELEASE.md). |
+
+Select checks by impact and risk, not by running every suite for every documentation edit. Widen
+coverage for shared contracts, migrations, auth, privacy, billing, security and cross-cutting changes.
+Record each required check as passed, failed, pending or not applicable with rationale; include the
+command or scenario, tested revision/environment and observed result. A required failing or pending
+check is a blocker for declaring the affected feature release-ready. Do not bypass critical security,
+privacy, data-loss or correctness gates. If a native check cannot be performed by an agent, request
+maintainer verification and track it in the native backlog; a merge explicitly accepted with pending
+checks is not authorization to release the affected behavior.
+
+### Risk-driven feature test coverage
+
+- Domain/application: unit tests for business rules, boundaries, state transitions and error paths.
+- Integration/contract: gateways, persistence, API and inter-process communication (IPC), migration,
+  authorization and backwards compatibility where affected.
+- User interface: component and end-to-end flows, keyboard/accessibility, visual states and regression
+  behavior where relevant; native behavior must be verified natively.
+- Performance/security/privacy: representative data sizes, resource limits, access isolation,
+  secret handling, consent and recovery when impacted.
+- AI features: deterministic fixture/mocked-provider checks plus versioned evaluation cases for
+  correctness, grounding, uncertainty, unsafe tool use, malformed output, cancellation, timeout,
+  privacy and cost limits where relevant. Live provider evaluation is opt-in; document the model and
+  configuration without recording private data. A successful demo alone is not an evaluation.
+- Learning/assessment content: verify answers, rubrics, provenance, source rights, role appropriateness,
+  accessibility and progress persistence before publishing. AI-generated material requires review.
+
 ## Always before commit
 
 ```bash
@@ -169,6 +203,37 @@ In addition to Angular checks:
 - verify light and dark themes;
 - run the repository's design-drift check when available;
 - record native-only visual checks as pending if the Tauri UI cannot be launched.
+
+### Accessibility acceptance gate
+
+For UI changes, use the accessibility requirements in [Design First](DESIGN_FIRST.md) and
+[design-system/MASTER.md](../../design-system/MASTER.md). Map affected WCAG 2.2 A/AA criteria and
+platform-specific requirements to actual scenarios. Run available automated accessibility checks
+(e.g. existing axe-core integration) and manual checks; do not install new tools without approval.
+
+- Complete critical flows using keyboard only; verify focus visibility/order, no traps, dialog
+  focus restoration and alternatives to dragging or pointer-only controls.
+- Verify accessible names, roles, values, labels, error associations and meaningful status updates
+  with assistive technology (e.g. VoiceOver, NVDA or TalkBack as appropriate to supported platforms).
+- Check text contrast (4.5:1 normal, 3:1 large), applicable non-text contrast (3:1), both themes,
+  200% text resizing, reflow at the applicable viewport and target size per WCAG 2.2.
+- Check non-color cues, reduced motion, captions/transcripts, time adjustments and understandable
+  language where relevant; ensure charts and AI-streaming feedback have usable alternatives.
+- Check real native UI when the behavior depends on the platform accessibility tree; browser
+  preview alone is insufficient. Use representative test data, not private career data.
+
+Record criterion, scenario, environment/assistive technology, revision, result and remaining
+barriers. Automated scans and Lighthouse scores alone do not establish conformance. Required
+failed or pending checks block release readiness for the affected UI; critical access barriers
+cannot be waived silently. Track existing unrelated accessibility debt separately. No compliance
+claim until its scope and evidence have been independently assessed.
+
+References: [WCAG 2.2](https://www.w3.org/TR/WCAG22/),
+[W3C accessibility evaluation](https://www.w3.org/WAI/test-evaluate/),
+[WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/),
+[European Accessibility Act](https://commission.europa.eu/strategy-and-policy/policies/justice-and-fundamental-rights/disability/european-accessibility-act-eaa_en),
+[German BFSG](https://www.bundesfachstelle-barrierefreiheit.de/DE/Barrierefreiheitsstaerkungsgesetz/barrierefreiheitsstaerkungsgesetz_node).
+Verify the applicable EN 301 549 version and legal scope before a formal compliance claim.
 
 ## AI provider, CLI bridge, shell, MCP, or external-tool changes
 

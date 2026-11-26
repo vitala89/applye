@@ -14,6 +14,32 @@ For every new feature, integration, material refactor, schema migration, new dom
 
 A prior conversation, a task assignment, an AI-generated plan, or silence is **not** approval. Approval must identify the design/revision. If approval is missing, deliver the design and stop.
 
+## Project planning before approval
+
+Every non-trivial design includes a proportionate project plan under the existing
+[Planning Workflow](../product/PLANNING.md): scope, priority, impact, effort, dependencies,
+responsibility, review/approval ownership and exit criteria. For strategic or material decisions,
+include evidence-based SWOT (Strengths, Weaknesses, Opportunities, Threats), alternative evaluation
+and actionable risks. For multi-role work, clarify RACI (Responsible, Accountable, Consulted,
+Informed). Estimate time/capacity in ranges with assumptions, approval/review dependencies and
+verification effort; split large work into reviewable slices. Keep technical design and project
+planning in the same design artifact or a linked existing plan; do not create duplicate canon.
+Owner approval remains required; no commitment to staffing, delivery dates or delegation is
+inferred from a plan.
+
+## Test planning before code
+
+For every non-exempt change, include the verification plan in the design submitted for approval.
+Inspect existing tests and coverage gaps; run relevant existing baseline checks before implementation
+when feasible, recording failures and unavailable environments. Do not write tests implementing the
+new behavior before design approval. After approval, prefer test-first for deterministic domain rules,
+contract changes and reproducible defects; otherwise add tests alongside the implementation. A bug fix
+needs a regression test that fails for the original defect and passes with the fix, or an explicit
+reason and equivalent evidence if automation is impractical. Never weaken a test merely to make it pass.
+
+The approved design is not release approval. Before merge and publication, follow the evidence and
+release gates in the [Validation Matrix](VALIDATION_MATRIX.md) and [release guide](../RELEASE.md).
+
 ## Minimum design proposal
 
 - **Problem and scope:** user outcome, assumptions, non-goals, acceptance criteria, existing behavior and affected files/modules.
@@ -23,10 +49,31 @@ A prior conversation, a task assignment, an AI-generated plan, or silence is **n
 - **Operational behavior:** error states, retries, recovery/rollback, performance and observability without introducing desktop telemetry.
 - **Security and privacy:** data classification, secrets, permissions, user consent and explicit external-provider calls. Preserve desktop local-first and no automatic submissions.
 - **Alternatives and trade-offs:** reuse versus new abstraction, complexity, risks and rejected options.
-- **Verification:** unit/integration/E2E coverage, negative cases, applicable validation commands, acceptance checks and rollout.
+- **Verification:** an explicit test plan linked to acceptance criteria, risk and affected layers; baseline checks, unit/integration/end-to-end (E2E), contract, regression and negative cases, applicable validation commands, manual acceptance checks and rollout. Identify test data, expected outcomes, required environments and any justified omissions. Use the [Validation Matrix](VALIDATION_MATRIX.md).
 - **Approval record:** link to design PR or document revision, reviewer decision, date, open questions, and implementation PR link once created.
 
 Do not require every diagram or section for an irrelevant concern. Explain omissions briefly; do not invent services, endpoints, domain objects or future features.
+
+## Accessibility by design (UI changes)
+
+For every new or changed user-facing interface, include an accessibility impact assessment before
+approval, even for a visually small change. Use the existing [design system](../../design-system/MASTER.md)
+and [Validation Matrix](VALIDATION_MATRIX.md). Target WCAG (Web Content Accessibility Guidelines)
+2.2 Level AA for web UI and apply relevant criteria and platform guidance to desktop and mobile
+interfaces. Check EN 301 549 and applicable European Accessibility Act / German BFSG obligations
+for the actual product, service and market; this is a design baseline, not a compliance certificate.
+
+Design for visual, hearing, motor, speech, cognitive and temporary access needs. Specify semantic
+structure, accessible names, keyboard and alternative input, focus order and restoration, contrast,
+text resizing/reflow, reduced motion, non-color status cues, understandable errors, and accessible
+alternatives to drag, timed, audio or visual-only interactions where relevant. Include all states
+and both themes; define testable acceptance criteria and planned automated and manual assistive
+technology checks. AI streaming, tool approvals, quizzes and charts require accessible equivalents
+and status feedback where relevant. Record existing barriers, affected scope and remediation plan.
+
+Do not approve a design that knowingly introduces an unresolved barrier to a critical workflow.
+Do not declare compliance based on mockups or automated scores alone. A non-UI task may record
+accessibility as not applicable with rationale.
 
 ## Diagram tools and repository artifacts
 
@@ -107,5 +154,7 @@ Typo-only, formatting-only, and other triaged simple changes that do not alter b
 - [ ] Chosen diagram tools suit the task; diagrams and interfaces match actual architecture
 - [ ] Domain naming and Nx dependency constraints checked
 - [ ] Privacy/security, failures, migrations and testing addressed where applicable
+- [ ] UI changes include accessibility acceptance criteria and planned manual/automated checks; non-UI omissions justified
+- [ ] Proportionate project plan covers ownership, dependencies, effort, risks and exit criteria; SWOT/RACI included when applicable
 - [ ] Explicit user approval recorded **before** implementation
 - [ ] Implementation PR references approved design and explains any approved deviations

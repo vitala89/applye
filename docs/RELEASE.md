@@ -37,6 +37,10 @@ installation/launch, upgrade and local-data integrity, and changed native behavi
 artifacts and supported platforms. For future web/hosted releases, verify authentication,
 entitlements, privacy, rollback and deployment smoke tests when affected.
 
+For UI changes, include the required accessibility checks from the Validation Matrix on the actual
+release candidate, including critical keyboard and assistive-technology flows where applicable.
+Do not publish an affected workflow as ready while required accessibility checks remain failed or pending.
+
 Record the version/revision, artifact, platform, test results and outstanding checks in the release
 review. A draft or successful build is not a tested release. Keep a required failed/pending check
 as a release blocker; do not claim untested artifacts are verified. If an artifact cannot be

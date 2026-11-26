@@ -2,6 +2,40 @@
 
 Use the smallest sufficient validation set for the affected layers. Do not claim a command passed unless it was run and the result was observed.
 
+## Quality gates across the delivery lifecycle
+
+| Gate | Required evidence |
+| --- | --- |
+| Before implementation | Approved Design First revision where applicable; acceptance criteria mapped to tests, affected layers, risk, baseline checks and test environments. |
+| During implementation | Focused tests for new behavior; regression tests for defects; happy paths, failures, edge cases and contract compatibility as applicable. |
+| Before merge | Applicable commands below, changed/affected regression suites, independent review of code and tests, and recorded results against the final PR revision. |
+| Before release | Required automated and manual checks on the actual release candidate, including relevant installer/platform smoke tests, upgrade/data integrity and critical user workflows; see [RELEASE.md](../RELEASE.md). |
+
+Select checks by impact and risk, not by running every suite for every documentation edit. Widen
+coverage for shared contracts, migrations, auth, privacy, billing, security and cross-cutting changes.
+Record each required check as passed, failed, pending or not applicable with rationale; include the
+command or scenario, tested revision/environment and observed result. A required failing or pending
+check is a blocker for declaring the affected feature release-ready. Do not bypass critical security,
+privacy, data-loss or correctness gates. If a native check cannot be performed by an agent, request
+maintainer verification and track it in the native backlog; a merge explicitly accepted with pending
+checks is not authorization to release the affected behavior.
+
+### Risk-driven feature test coverage
+
+- Domain/application: unit tests for business rules, boundaries, state transitions and error paths.
+- Integration/contract: gateways, persistence, API and inter-process communication (IPC), migration,
+  authorization and backwards compatibility where affected.
+- User interface: component and end-to-end flows, keyboard/accessibility, visual states and regression
+  behavior where relevant; native behavior must be verified natively.
+- Performance/security/privacy: representative data sizes, resource limits, access isolation,
+  secret handling, consent and recovery when impacted.
+- AI features: deterministic fixture/mocked-provider checks plus versioned evaluation cases for
+  correctness, grounding, uncertainty, unsafe tool use, malformed output, cancellation, timeout,
+  privacy and cost limits where relevant. Live provider evaluation is opt-in; document the model and
+  configuration without recording private data. A successful demo alone is not an evaluation.
+- Learning/assessment content: verify answers, rubrics, provenance, source rights, role appropriateness,
+  accessibility and progress persistence before publishing. AI-generated material requires review.
+
 ## Always before commit
 
 ```bash

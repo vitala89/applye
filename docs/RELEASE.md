@@ -25,7 +25,23 @@ git tag -a v0.30.0 -m "Applye 0.30.0"
 git push origin v0.30.0
 ```
 
-Then review the draft release, download one installer per platform, smoke-test, and publish.
+Then review the draft release, download the applicable installers, run the release smoke tests,
+and publish only after the release gate below.
+
+### Release readiness gate
+
+Apply the [Validation Matrix](governance/VALIDATION_MATRIX.md) to the exact release candidate.
+Confirm the approved feature designs and acceptance criteria, applicable automated regression
+suites, build and security checks, and manual acceptance tests. Exercise critical job-search flows,
+installation/launch, upgrade and local-data integrity, and changed native behavior using the actual
+artifacts and supported platforms. For future web/hosted releases, verify authentication,
+entitlements, privacy, rollback and deployment smoke tests when affected.
+
+Record the version/revision, artifact, platform, test results and outstanding checks in the release
+review. A draft or successful build is not a tested release. Keep a required failed/pending check
+as a release blocker; do not claim untested artifacts are verified. If an artifact cannot be
+verified, defer it rather than silently publishing it as tested. Preserve the existing manual
+smoke-test checklist below and use disposable/test data for destructive scenarios.
 
 **Requirements already in place:** the repository secrets `TAURI_SIGNING_PRIVATE_KEY` and
 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` are configured, and the updater public key is committed in

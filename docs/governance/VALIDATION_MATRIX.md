@@ -204,6 +204,37 @@ In addition to Angular checks:
 - run the repository's design-drift check when available;
 - record native-only visual checks as pending if the Tauri UI cannot be launched.
 
+### Accessibility acceptance gate
+
+For UI changes, use the accessibility requirements in [Design First](DESIGN_FIRST.md) and
+[design-system/MASTER.md](../../design-system/MASTER.md). Map affected WCAG 2.2 A/AA criteria and
+platform-specific requirements to actual scenarios. Run available automated accessibility checks
+(e.g. existing axe-core integration) and manual checks; do not install new tools without approval.
+
+- Complete critical flows using keyboard only; verify focus visibility/order, no traps, dialog
+  focus restoration and alternatives to dragging or pointer-only controls.
+- Verify accessible names, roles, values, labels, error associations and meaningful status updates
+  with assistive technology (e.g. VoiceOver, NVDA or TalkBack as appropriate to supported platforms).
+- Check text contrast (4.5:1 normal, 3:1 large), applicable non-text contrast (3:1), both themes,
+  200% text resizing, reflow at the applicable viewport and target size per WCAG 2.2.
+- Check non-color cues, reduced motion, captions/transcripts, time adjustments and understandable
+  language where relevant; ensure charts and AI-streaming feedback have usable alternatives.
+- Check real native UI when the behavior depends on the platform accessibility tree; browser
+  preview alone is insufficient. Use representative test data, not private career data.
+
+Record criterion, scenario, environment/assistive technology, revision, result and remaining
+barriers. Automated scans and Lighthouse scores alone do not establish conformance. Required
+failed or pending checks block release readiness for the affected UI; critical access barriers
+cannot be waived silently. Track existing unrelated accessibility debt separately. No compliance
+claim until its scope and evidence have been independently assessed.
+
+References: [WCAG 2.2](https://www.w3.org/TR/WCAG22/),
+[W3C accessibility evaluation](https://www.w3.org/WAI/test-evaluate/),
+[WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/),
+[European Accessibility Act](https://commission.europa.eu/strategy-and-policy/policies/justice-and-fundamental-rights/disability/european-accessibility-act-eaa_en),
+[German BFSG](https://www.bundesfachstelle-barrierefreiheit.de/DE/Barrierefreiheitsstaerkungsgesetz/barrierefreiheitsstaerkungsgesetz_node).
+Verify the applicable EN 301 549 version and legal scope before a formal compliance claim.
+
 ## AI provider, CLI bridge, shell, MCP, or external-tool changes
 
 Treat these as security-sensitive. Verify:

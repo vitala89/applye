@@ -136,8 +136,8 @@ freshness and learning usefulness; do not optimize for question count alone.
   by this brief. Review separation of shared contracts, API compatibility, authentication,
   entitlements, deployment and operational costs before implementation.
 
-Use precise copy: **Applye Desktop Core is free and open source. Optional hosted services may
-be paid.** Do not promise every present or future Applye service is free forever.
+Use precise copy: **Free and open source at its core.** Applye Desktop Core is free and open
+source. Optional hosted services may be paid. Do not promise every present or future Applye service is free forever.
 
 ## Proposed sequence and gates
 
@@ -154,6 +154,12 @@ be paid.** Do not promise every present or future Applye service is free forever
 6. After isolation/security review, consider coding playgrounds and realistic agent-assisted
    project challenges. Add backend and AI product tracks, then product/delivery and HR tracks
    after validation with relevant practitioners.
+
+Each feature must follow [Design First](../../governance/DESIGN_FIRST.md) and the
+[Validation Matrix](../../governance/VALIDATION_MATRIX.md): approve the design and test plan before
+implementation, verify software and content quality during development, and pass applicable
+release checks before publishing. AI evaluation and reviewed assessment content are required where
+relevant; do not treat a successful generated response as proof of correctness.
 
 No dates, price points, new runtime dependencies, schema migrations or implementation priority
 changes are committed by this proposal. Evaluate user completion, repeat use, gap closure,

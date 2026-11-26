@@ -82,7 +82,9 @@ Planned capabilities include:
 - authenticated user accounts and server-side persistence;
 - Company Intelligence and target-company research;
 - Network/contacts and job-search CRM workflows;
-- Interview Intelligence, courses, practice and simulations;
+- Interview Intelligence, courses, practice and simulations, including independent and AI-assisted assessments;
+- role-based learning and career development across software, applied AI, product, delivery and people roles;
+- curated, provenance-aware interview knowledge and original practice content;
 - public/community interview reports and question intelligence;
 - company/job/community discovery pages.
 
@@ -99,6 +101,7 @@ See:
 - `docs/product/decisions/ADR-0006-career-company-network-interview-intelligence.md`
 - `docs/product/decisions/ADR-0007-web-backend-platform.md`
 - `docs/product/feature-briefs/career-company-network-interview-intelligence.md`
+- `docs/product/feature-briefs/ai-first-learning-career-development.md` — proposed extension; no change to execution order.
 - `docs/domain-architecture.md`
 
 ---

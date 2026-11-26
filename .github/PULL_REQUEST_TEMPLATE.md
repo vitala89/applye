@@ -24,11 +24,16 @@
 - [ ] Editable sources are committed under `docs/designs/<task-slug>/`; every `.excalidraw`/`.drawio` has a matching, current SVG preview
 - [ ] Diagrams agree with architecture, DDD terminology, ADRs, current code and documented contracts
 - [ ] Error paths, testing, security, local-first boundaries and deployment are covered where relevant
+- [ ] Acceptance criteria and risk-based test plan were defined before implementation; baseline checks and gaps are recorded
 - [ ] Implementation began only after explicit approval of the linked design revision; material deviations were re-approved
 
 ## How to verify
 
-<!-- Commands actually run / screens actually opened. Do not list unrun checks as passed. -->
+<!-- Commands actually run / screens actually opened. Record tested revision/environment and pass/fail/pending/not applicable with rationale. Do not list unrun checks as passed. See docs/governance/VALIDATION_MATRIX.md. -->
+
+- Regression and negative-case coverage:
+- Independent review of implementation and test evidence:
+- Release blockers / outstanding native checks (or none, with evidence):
 
 ## Checklist
 

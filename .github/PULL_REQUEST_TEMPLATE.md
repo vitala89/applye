@@ -25,6 +25,7 @@
 - [ ] Diagrams agree with architecture, DDD terminology, ADRs, current code and documented contracts
 - [ ] Error paths, testing, security, local-first boundaries and deployment are covered where relevant
 - [ ] Acceptance criteria and risk-based test plan were defined before implementation; baseline checks and gaps are recorded
+- [ ] Proportionate project plan, responsibility, dependencies and effort reviewed; SWOT/RACI and risks included where applicable
 - [ ] UI accessibility impact and acceptance criteria reviewed before implementation (or not applicable, with reason)
 - [ ] Implementation began only after explicit approval of the linked design revision; material deviations were re-approved
 

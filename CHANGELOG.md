@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Design First now explicitly requires a risk-based test plan before implementation approval.** Agent and release instructions require recorded baseline, regression, review and release evidence as applicable; pending required checks cannot be described as passed.
+
 - **The website changelog shows three recent releases with short highlights.** Older releases load when you open the archive.
 
 - **Architecture documentation, agent instructions, and enforced boundaries are reconciled with the stabilized codebase.** The current layer map includes `libs/application`. Desktop production code is not described as calling `libs/data` directly, and the static web app is not described as using the desktop-scoped application or data layers.

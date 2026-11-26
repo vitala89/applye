@@ -25,6 +25,7 @@
 - [ ] Diagrams agree with architecture, DDD terminology, ADRs, current code and documented contracts
 - [ ] Error paths, testing, security, local-first boundaries and deployment are covered where relevant
 - [ ] Acceptance criteria and risk-based test plan were defined before implementation; baseline checks and gaps are recorded
+- [ ] UI accessibility impact and acceptance criteria reviewed before implementation (or not applicable, with reason)
 - [ ] Implementation began only after explicit approval of the linked design revision; material deviations were re-approved
 
 ## How to verify
@@ -34,6 +35,7 @@
 - Regression and negative-case coverage:
 - Independent review of implementation and test evidence:
 - Release blockers / outstanding native checks (or none, with evidence):
+- Accessibility evidence (affected criteria, keyboard, assistive technology, automated checks, environments, unresolved barriers or justified N/A):
 
 ## Checklist
 

@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Task routing and accessibility requirements are explicit.** Resolve the coding-agent environment before model selection; UI design, implementation and release reviews require applicable accessibility criteria and recorded verification.
+
 - **Design First now explicitly requires a risk-based test plan before implementation approval.** Agent and release instructions require recorded baseline, regression, review and release evidence as applicable; pending required checks cannot be described as passed.
 
 - **The website changelog shows three recent releases with short highlights.** Older releases load when you open the archive.

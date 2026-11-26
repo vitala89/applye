@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Design First includes proportionate project planning.** Existing Personal Kanban remains; material decisions use SWOT and actionable risk analysis, multi-role work clarifies RACI, and estimates include verification and approval dependencies.
+
 - **Task routing and accessibility requirements are explicit.** Resolve the coding-agent environment before model selection; UI design, implementation and release reviews require applicable accessibility criteria and recorded verification.
 
 - **Design First now explicitly requires a risk-based test plan before implementation approval.** Agent and release instructions require recorded baseline, regression, review and release evidence as applicable; pending required checks cannot be described as passed.
